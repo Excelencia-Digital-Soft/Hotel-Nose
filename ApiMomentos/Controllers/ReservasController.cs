@@ -24,12 +24,13 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("ReservarHabitacion")]
         [AllowAnonymous]
-        public async Task<Respuesta> ReservarHabitacion(int HabitacionID, DateTime FechaReserva, DateTime FechaFin, int TotalHoras, int UsuarioID, string? PatenteVehiculo, string? NumeroTelefono, string? Identificador)
+        public async Task<Respuesta> ReservarHabitacion(int HabitacionID, DateTime FechaReserva, DateTime FechaFin, int TotalHoras, int UsuarioID, bool esReserva, string? PatenteVehiculo, string? NumeroTelefono, string? Identificador)
         {
             Respuesta res = new Respuesta();
             try
             {
-                var VisitaID = await _visita.CrearVisita(PatenteVehiculo, NumeroTelefono, Identificador);
+                if (PatenteVehiculo != null|| NumeroTelefono != null || Identificador != null) { 
+                var VisitaID = await _visita.CrearVisita(esReserva, PatenteVehiculo, NumeroTelefono, Identificador);
                 var habitacion = await GetHabitacionById(HabitacionID);
                 if (habitacion == null)
                 {
@@ -57,6 +58,12 @@ namespace ApiObjetos.Controllers
 
                 res.Message = "La reserva se grabó correctamente";
                 res.Ok = true;
+            }
+                else
+                {
+                    res.Message = $"No se ingresó ningun identificatorio";
+                    res.Ok = false;
+                }
             }
             catch (Exception ex)
             {

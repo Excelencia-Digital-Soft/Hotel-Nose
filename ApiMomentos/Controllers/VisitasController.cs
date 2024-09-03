@@ -18,16 +18,27 @@ namespace ApiObjetos.Controllers
         }
 
 
-        public async Task<int> CrearVisita(string? PatenteVehiculo, string? NumeroTelefono, string? Identificador)
+        public async Task<int> CrearVisita(bool esReserva, string? PatenteVehiculo, string? NumeroTelefono, string? Identificador)
         {
-                Visita nuevaVisita = new Visita
+            Visita nuevaVisita;
+
+            if (esReserva == false) {
+                nuevaVisita = new Visita
                 {
                     PatenteVehiculo = PatenteVehiculo,
                     NumeroTelefono = NumeroTelefono,
-                    Identificador = Identificador
-                };
+                    Identificador = Identificador,
+                    FechaPrimerIngreso = DateTime.Now
 
-                _db.Add(nuevaVisita);
+                };
+            }
+            else nuevaVisita = new Visita
+            {
+                PatenteVehiculo = PatenteVehiculo,
+                NumeroTelefono = NumeroTelefono,
+                Identificador = Identificador
+            };
+            _db.Add(nuevaVisita);
 
                 await _db.SaveChangesAsync();
 
