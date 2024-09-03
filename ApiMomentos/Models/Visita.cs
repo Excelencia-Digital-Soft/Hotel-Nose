@@ -8,6 +8,7 @@ public partial class Visita
     public int VisitaId { get; set; }
 
     public string? PatenteVehiculo { get; set; }
+    public string? Identificador{ get; set; }
 
     public string? NumeroTelefono { get; set; }
 

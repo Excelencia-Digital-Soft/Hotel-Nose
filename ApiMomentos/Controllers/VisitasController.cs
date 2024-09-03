@@ -12,12 +12,31 @@ namespace ApiObjetos.Controllers
     {
         private readonly ApplicationDbContext _db;
 
-        public VisitasController(ApplicationDbContext db, IConfiguration configuration)
+        public VisitasController(ApplicationDbContext db)
         {
             _db = db;
         }
 
-        [HttpPost]
+
+        public async Task<int> CrearVisita(string? PatenteVehiculo, string? NumeroTelefono, string? Identificador)
+        {
+                Visita nuevaVisita = new Visita
+                {
+                    PatenteVehiculo = PatenteVehiculo,
+                    NumeroTelefono = NumeroTelefono,
+                    Identificador = Identificador
+                };
+
+                _db.Add(nuevaVisita);
+
+                await _db.SaveChangesAsync();
+
+
+
+            return nuevaVisita.VisitaId;
+        }
+
+      /*  [HttpPost]
         [Route("CrearVisita")] // Crea un nuevo paciente
         [AllowAnonymous]
 
@@ -48,7 +67,7 @@ namespace ApiObjetos.Controllers
             }
 
             return res;
-        }
+        } */
 
 
         [HttpGet]

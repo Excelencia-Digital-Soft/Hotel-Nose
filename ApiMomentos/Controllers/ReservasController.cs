@@ -5,29 +5,31 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using ApiObjetos.Data;
 using Microsoft.EntityFrameworkCore;
-
 namespace ApiObjetos.Controllers
 {
     public class ReservasController : Controller
     {
         private readonly ApplicationDbContext _db;
         private readonly MovimientosController _movimiento;
+        private readonly VisitasController _visita;
 
         public ReservasController(ApplicationDbContext db, IConfiguration configuration)
         {
             _db = db;
             _movimiento = new MovimientosController(db);
+            _visita =  new VisitasController(db);
 
         }
         #region Reservas
         [HttpPost]
         [Route("ReservarHabitacion")]
         [AllowAnonymous]
-        public async Task<Respuesta> ReservarHabitacion(int VisitaID, int HabitacionID, DateTime FechaReserva, DateTime FechaFin, int TotalHoras, int UsuarioID)
+        public async Task<Respuesta> ReservarHabitacion(int HabitacionID, DateTime FechaReserva, DateTime FechaFin, int TotalHoras, int UsuarioID, string? PatenteVehiculo, string? NumeroTelefono, string? Identificador)
         {
             Respuesta res = new Respuesta();
             try
             {
+                var VisitaID = await _visita.CrearVisita(PatenteVehiculo, NumeroTelefono, Identificador);
                 var habitacion = await GetHabitacionById(HabitacionID);
                 if (habitacion == null)
                 {
