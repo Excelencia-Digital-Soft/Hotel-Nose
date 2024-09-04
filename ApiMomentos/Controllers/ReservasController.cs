@@ -21,6 +21,9 @@ namespace ApiObjetos.Controllers
 
         }
         #region Reservas
+        [HttpPost]
+        [Route("ReservarHabitacion")]
+        [AllowAnonymous]
         public async Task<Respuesta> ReservarHabitacion([FromBody] ReservaRequest request)
         {
             Respuesta res = new Respuesta();
