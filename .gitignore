@@ -1,0 +1,9 @@
+﻿################################################################################
+# Este archivo .gitignore ha sido creado automáticamente por Microsoft(R) Visual Studio.
+################################################################################
+
+/ApiEncuestas/Models/Encuestas.cs
+/.vs
+/obj
+/ApiMomentos/bin/Debug/net6.0/ApiObjetos.dll
+/Hotel.rar

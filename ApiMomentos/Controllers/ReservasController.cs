@@ -21,47 +21,45 @@ namespace ApiObjetos.Controllers
 
         }
         #region Reservas
-        [HttpPost]
-        [Route("ReservarHabitacion")]
-        [AllowAnonymous]
-        public async Task<Respuesta> ReservarHabitacion(int HabitacionID, DateTime FechaReserva, DateTime FechaFin, int TotalHoras, int UsuarioID, bool esReserva, string? PatenteVehiculo, string? NumeroTelefono, string? Identificador)
+        public async Task<Respuesta> ReservarHabitacion([FromBody] ReservaRequest request)
         {
             Respuesta res = new Respuesta();
             try
             {
-                if (PatenteVehiculo != null|| NumeroTelefono != null || Identificador != null) { 
-                var VisitaID = await _visita.CrearVisita(esReserva, PatenteVehiculo, NumeroTelefono, Identificador);
-                var habitacion = await GetHabitacionById(HabitacionID);
-                if (habitacion == null)
+                if (request.PatenteVehiculo != null && request.NumeroTelefono != null && request.Identificador != null)
                 {
-                    res.Message = "Habitación no encontrada.";
-                    res.Ok = false;
-                    return res;
+                    var VisitaID = await _visita.CrearVisita(request.EsReserva, request.PatenteVehiculo, request.NumeroTelefono, request.Identificador);
+                    var habitacion = await GetHabitacionById(request.HabitacionID);
+                    if (habitacion == null)
+                    {
+                        res.Message = "Habitación no encontrada.";
+                        res.Ok = false;
+                        return res;
+                    }
+
+                    Reserva nuevaReserva = new Reserva
+                    {
+                        VisitaId = VisitaID,
+                        HabitacionId = request.HabitacionID,
+                        FechaReserva = request.FechaReserva,
+                        FechaFin = request.FechaFin,
+                        TotalHoras = request.TotalHoras,
+                        UsuarioId = request.UsuarioID,
+                        FechaRegistro = DateTime.Now,
+                        Anulado = false,
+                        Habitacion = habitacion
+                    };
+
+                    _db.Add(nuevaReserva);
+                    await _movimiento.CrearMovimientoHabitacion(VisitaID, (int)habitacion.Categoria.PrecioNormal, request.HabitacionID, habitacion);
+                    await _db.SaveChangesAsync();
+
+                    res.Message = "La reserva se grabó correctamente";
+                    res.Ok = true;
                 }
-
-                Reserva nuevaReserva = new Reserva
-                {
-                    VisitaId = VisitaID,
-                    HabitacionId = HabitacionID,
-                    FechaReserva = FechaReserva,
-                    FechaFin = FechaFin,
-                    TotalHoras = TotalHoras,
-                    UsuarioId = UsuarioID,
-                    FechaRegistro = DateTime.Now,
-                    Anulado = false,
-                    Habitacion = habitacion
-                };
-
-                _db.Add(nuevaReserva);
-                await _movimiento.CrearMovimientoHabitacion(VisitaID, (int)habitacion.Categoria.PrecioNormal, HabitacionID, habitacion);
-                await _db.SaveChangesAsync();
-
-                res.Message = "La reserva se grabó correctamente";
-                res.Ok = true;
-            }
                 else
                 {
-                    res.Message = $"No se ingresó ningun identificatorio";
+                    res.Message = "No se ingresó ningun identificatorio";
                     res.Ok = false;
                 }
             }
@@ -206,4 +204,17 @@ public class TimeRange
 {
     public TimeSpan Start { get; set; }
     public TimeSpan End { get; set; }
+}
+
+public class ReservaRequest
+{
+    public int HabitacionID { get; set; }
+    public DateTime FechaReserva { get; set; }
+    public DateTime FechaFin { get; set; }
+    public int TotalHoras { get; set; }
+    public int UsuarioID { get; set; }
+    public bool EsReserva { get; set; }
+    public string? PatenteVehiculo { get; set; }
+    public string? NumeroTelefono { get; set; }
+    public string? Identificador { get; set; }
 }
