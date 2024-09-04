@@ -55,6 +55,7 @@ namespace ApiObjetos.Controllers
 
                     _db.Add(nuevaReserva);
                     await _movimiento.CrearMovimientoHabitacion(VisitaID, (int)habitacion.Categoria.PrecioNormal, request.HabitacionID, habitacion);
+                    await HabitacionesOcupadas();
                     await _db.SaveChangesAsync();
 
                     res.Message = "La reserva se grabó correctamente";
@@ -125,6 +126,44 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpGet]
+        [Route("HabitacionesOcupadas")]
+        [AllowAnonymous]
+        public async Task HabitacionesOcupadas()
+        {
+            // Get the current date and time
+            DateTime now = DateTime.Now;
+            DateTime yesterday = now.AddDays(-1); // The start of the next day
+
+            // Fetch rooms where the reservation has ended today
+            var habitacionesDesocupadas = await _db.Reservas
+                .Where(r => r.FechaReserva <= now && r.FechaRegistro >= yesterday && r.FechaFin <= now) // Reservations that have ended by now
+                .Select(r => r.Habitacion)
+                .ToListAsync();
+
+            // Update the availability of rooms where the reservation has ended
+            foreach (var habitacion in habitacionesDesocupadas)
+            {
+                habitacion.Disponible = true;
+                _db.Habitaciones.Update(habitacion);
+            }
+
+            // Fetch rooms where the reservation is still ongoing (includes multi-day reservations)
+            var habitacionesReservadas = await _db.Reservas
+                .Where(r => r.FechaReserva <= now && r.FechaFin >= now) // Active reservations, including those that cross midnight
+                .Select(r => r.Habitacion)
+                .ToListAsync();
+
+            // Update the availability of rooms that are currently reserved
+            foreach (var habitacion in habitacionesReservadas)
+            {
+                habitacion.Disponible = false;
+                _db.Habitaciones.Update(habitacion);
+            }
+
+            // Save changes to the database
+            await _db.SaveChangesAsync();
+        }
 
         private async Task<List<TimeRange>> HorariosLibres(int idHabitacion, DateTime dia)
         {
