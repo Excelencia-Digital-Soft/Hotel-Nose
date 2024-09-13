@@ -76,6 +76,149 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpGet]
+        [Route("GetReserva")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetReserva(int idReserva)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                // Find the reservation by idReserva
+                var reserva = await _db.Reservas.FindAsync(idReserva);
+
+                // Check if the reservation exists
+                if (reserva != null)
+                {
+                    res.Data = reserva;
+                    res.Message = "Reserva encontrada.";
+                    res.Ok = true;
+                }
+                else
+                {
+                    res.Message = "No se encontró la reserva.";
+                    res.Ok = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException?.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
+        [HttpGet]
+        [Route("GetReservas")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetReservas()
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                // Retrieve all reservations
+                var reservas = await _db.Reservas.ToListAsync();
+
+                // Check if any reservations exist
+                if (reservas.Any())
+                {
+                    res.Data = reservas;
+                    res.Message = "Reservas encontradas.";
+                    res.Ok = true;
+                }
+                else
+                {
+                    res.Message = "No se encontraron reservas.";
+                    res.Ok = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException?.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
+        [HttpGet]
+        [Route("GetReservasFuturas")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetReservasFuturas()
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                // Get the current date and time
+                var now = DateTime.Now;
+
+                // Retrieve all future reservations (from now onwards)
+                var futurasReservas = await _db.Reservas
+                                               .Where(r => r.FechaReserva >= now)
+                                               .ToListAsync();
+
+                // Check if any future reservations exist
+                if (futurasReservas.Any())
+                {
+                    res.Data = futurasReservas;
+                    res.Message = "Reservas futuras encontradas.";
+                    res.Ok = true;
+                }
+                else
+                {
+                    res.Message = "No se encontraron reservas futuras.";
+                    res.Ok = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException?.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
+
+        [HttpPut]
+        [Route("FinalizarReserva")]
+        [AllowAnonymous]
+        public async Task<Respuesta> FinalizarReserva(int idReserva)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                // Find the Reserva by idReserva
+                var reserva = await _db.Reservas.FindAsync(idReserva);
+
+                // Check if the reservation exists
+                if (reserva != null)
+                {
+                    // Update the FechaFin to DateTime.Now
+                    reserva.FechaFin = DateTime.Now;
+
+                    // Save the changes to the database
+                    await _db.SaveChangesAsync();
+
+                    res.Message = "La reserva se finalizó correctamente.";
+                    res.Ok = true;
+                }
+                else
+                {
+                    res.Message = "La reserva no fue encontrada.";
+                    res.Ok = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException?.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
         private async Task<Habitaciones?> GetHabitacionById(int habitacionId)
         {
                 var a = await _db.Habitaciones
