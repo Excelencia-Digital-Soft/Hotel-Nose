@@ -24,48 +24,54 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("ReservarHabitacion")]
         [AllowAnonymous]
-        public async Task<Respuesta> ReservarHabitacion([FromBody] ReservaRequest request)
+        public async Task<Respuesta> ReservarHabitacion(int VisitaID, int HabitacionID, DateTime FechaReserva, DateTime FechaFin, int TotalHoras, int UsuarioID)
         {
             Respuesta res = new Respuesta();
             try
             {
-                if (request.PatenteVehiculo != null && request.NumeroTelefono != null && request.Identificador != null)
+                // Step 1: Retrieve the room details
+                var habitacion = await GetHabitacionById(HabitacionID);
+                if (habitacion == null)
                 {
-                    var VisitaID = await _visita.CrearVisita(request.EsReserva, request.PatenteVehiculo, request.NumeroTelefono, request.Identificador);
-                    var habitacion = await GetHabitacionById(request.HabitacionID);
-                    if (habitacion == null)
-                    {
-                        res.Message = "Habitación no encontrada.";
-                        res.Ok = false;
-                        return res;
-                    }
-
-                    Reserva nuevaReserva = new Reserva
-                    {
-                        VisitaId = VisitaID,
-                        HabitacionId = request.HabitacionID,
-                        FechaReserva = request.FechaReserva,
-                        FechaFin = request.FechaFin,
-                        TotalHoras = request.TotalHoras,
-                        UsuarioId = request.UsuarioID,
-                        FechaRegistro = DateTime.Now,
-                        Anulado = false,
-                        Habitacion = habitacion
-                    };
-
-                    _db.Add(nuevaReserva);
-                    await _movimiento.CrearMovimientoHabitacion(VisitaID, (int)habitacion.Categoria.PrecioNormal, request.HabitacionID, habitacion);
-                    await HabitacionesOcupadas();
-                    await _db.SaveChangesAsync();
-
-                    res.Message = "La reserva se grabó correctamente";
-                    res.Ok = true;
-                }
-                else
-                {
-                    res.Message = "No se ingresó ningun identificatorio";
+                    res.Message = "Habitación no encontrada.";
                     res.Ok = false;
+                    return res;
                 }
+
+                // Step 2: Retrieve free time slots for the specified day
+                var horariosLibres = await HorariosLibres(HabitacionID, FechaReserva.Date);
+
+                // Step 3: Check if the requested reservation time falls within any of the free slots
+                bool isValidReservation = horariosLibres.Any(horario =>
+                    FechaReserva.TimeOfDay >= horario.Start && FechaFin.TimeOfDay <= horario.End);
+
+                if (!isValidReservation)
+                {
+                    res.Message = "El horario solicitado no está disponible.";
+                    res.Ok = false;
+                    return res;
+                }
+
+                // Step 4: If the reservation is valid, proceed with creating the reservation
+                Reserva nuevaReserva = new Reserva
+                {
+                    VisitaId = VisitaID,
+                    HabitacionId = HabitacionID,
+                    FechaReserva = FechaReserva,
+                    FechaFin = FechaFin,
+                    TotalHoras = TotalHoras,
+                    UsuarioId = UsuarioID,
+                    FechaRegistro = DateTime.Now,
+                    Anulado = false,
+                    Habitacion = habitacion
+                };
+
+                _db.Add(nuevaReserva);
+                await _movimiento.CrearMovimientoHabitacion(VisitaID, (int)habitacion.Categoria.PrecioNormal, HabitacionID, habitacion);
+                await _db.SaveChangesAsync();
+
+                res.Message = "La reserva se grabó correctamente";
+                res.Ok = true;
             }
             catch (Exception ex)
             {
