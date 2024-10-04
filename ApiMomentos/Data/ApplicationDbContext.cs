@@ -59,6 +59,8 @@ public partial class ApplicationDbContext : DbContext
     public virtual DbSet<Usuario> Usuarios { get; set; }
 
     public virtual DbSet<Visita> Visitas { get; set; }
+    public virtual DbSet<Inventario> Inventarios { get; set; }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseSqlServer("Name=ConnectionStrings:DefaultConnection");
@@ -93,6 +95,44 @@ public partial class ApplicationDbContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.PrecioNormal).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.UsuarioId).HasColumnName("UsuarioID");
+        });
+
+        modelBuilder.Entity<Inventario>(entity =>
+        {
+            entity.HasKey(e => e.InventarioId)
+                  .HasName("PK_Inventario");
+
+            entity.Property(e => e.InventarioId)
+                  .HasColumnName("InventarioID");
+
+            entity.Property(e => e.ArticuloId)
+                  .HasColumnName("ArticuloID");
+
+            entity.Property(e => e.HabitacionId)
+                  .HasColumnName("HabitacionID");
+
+            entity.Property(e => e.Cantidad)
+                  .HasDefaultValue(0);
+
+            entity.Property(e => e.FechaRegistro)
+                  .HasColumnType("datetime");
+
+            entity.Property(e => e.Anulado)
+                  .HasDefaultValueSql("((0))");
+
+            // Define relationship with Articulo
+            entity.HasOne(d => d.Articulo)
+                  .WithMany(p => p.Inventarios)  // Assuming `Articulo` has a collection of `Inventarios`
+                  .HasForeignKey(d => d.ArticuloId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_Inventario_Articulo");
+
+            // Define relationship with Habitaciones
+            entity.HasOne(d => d.Habitacion)
+                  .WithMany(p => p.Inventarios)  // Assuming `Habitaciones` has a collection of `Inventarios`
+                  .HasForeignKey(d => d.HabitacionId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_Inventario_Habitacion");
         });
 
         modelBuilder.Entity<Consumo>(entity =>

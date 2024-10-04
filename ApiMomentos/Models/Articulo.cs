@@ -22,4 +22,6 @@ public partial class Articulo
     public virtual InventarioInicial? InventarioInicial { get; set; }
 
     public virtual ICollection<MovimientosStock> MovimientosStocks { get; } = new List<MovimientosStock>();
+    public virtual ICollection<Inventario> Inventarios { get; set; } = new List<Inventario>();
+
 }

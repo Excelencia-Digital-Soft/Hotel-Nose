@@ -30,4 +30,6 @@ public partial class Habitaciones
     public virtual ICollection<Movimiento> Movimientos { get; } = new List<Movimiento>();
 
     public virtual ICollection<Reserva> Reservas { get; } = new List<Reserva>();
+    public virtual ICollection<Inventario> Inventarios { get; set; } = new List<Inventario>();
+
 }
