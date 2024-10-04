@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace ApiObjetos.Models;
 
@@ -26,15 +27,16 @@ public partial class Movimiento
 
     public bool? Anulado { get; set; }
 
+    [JsonIgnore]
     public virtual ICollection<Consumo> Consumos { get; set; } = new List<Consumo>();
-
+    [JsonIgnore]
     public virtual Habitaciones? Habitacion { get; set; }
 
     public virtual ICollection<MovimientosServicio> MovimientosServicios { get; } = new List<MovimientosServicio>();
 
     public virtual ICollection<MovimientosStock> MovimientosStocks { get; } = new List<MovimientosStock>();
 
-
+    [JsonIgnore]
     public virtual Visita? Visita { get; set; }
 
     public virtual Pago? Pago { get; set; } // Navigation property to Pago

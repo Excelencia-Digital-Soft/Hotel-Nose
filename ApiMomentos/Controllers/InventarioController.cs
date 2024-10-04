@@ -21,6 +21,7 @@ namespace ApiObjetos.Controllers
 
         // POST: api/Inventario
         [HttpPost]
+        [Route("AddInventario")]
         public async Task<Respuesta> AddInventario(int Cantidad, int ArticuloID, int HabitacionID)
         {
             Respuesta res = new Respuesta();

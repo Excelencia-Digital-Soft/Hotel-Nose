@@ -40,31 +40,98 @@ namespace ApiObjetos.Controllers
                 return 0;
             }
         }
-
-        public async Task<int> CrearMovimientoConsumos(int visitaId, int totalFacturado, int habitacionId, List<Consumo> consumos)
+        [HttpPost]
+        [Route("ConsumoHabitacion")]
+        [AllowAnonymous]
+        public async Task<Respuesta> ConsumirArticulo(int articuloId, int cantidad, int habitacionId, int visitaId)
         {
-            try
+            Respuesta res = new Respuesta();
+
+            using (var transaction = await _db.Database.BeginTransactionAsync())
             {
-                Movimiento nuevoMovimiento = new Movimiento
+                try
                 {
-                    VisitaId = visitaId,
-                    TotalFacturado = totalFacturado,
-                    Consumos = consumos,
-                    HabitacionId = habitacionId,
-                };
+                    // Step 1: Retrieve the Articulo to get the price
+                    var articulo = await _db.Articulos.FindAsync(articuloId);
+                    if (articulo == null)
+                    {
+                        res.Ok = false;
+                        res.Message = $"Articulo with ID {articuloId} not found.";
+                        return res;
+                    }
 
-                _db.Add(nuevoMovimiento);
+                    // Step 2: Retrieve the Inventario for the specific Articulo and Habitacion
+                    var inventario = await _db.Inventarios
+                        .FirstOrDefaultAsync(i => i.ArticuloId == articuloId && i.HabitacionId == habitacionId);
 
-                await _db.SaveChangesAsync();
+                    if (inventario == null)
+                    {
+                        res.Ok = false;
+                        res.Message = $"No inventario found for Articulo ID {articuloId} in Habitacion ID {habitacionId}.";
+                        return res;
+                    }
 
-                return nuevoMovimiento.MovimientosId;
+                    // Step 3: Ensure enough stock exists
+                    if (inventario.Cantidad < cantidad)
+                    {
+                        res.Ok = false;
+                        res.Message = $"Not enough stock for Articulo ID {articuloId}. Available stock: {inventario.Cantidad}.";
+                        return res;
+                    }
+
+                    // Step 4: Deduct the quantity from the Inventario
+                    inventario.Cantidad -= cantidad;
+                    _db.Inventarios.Update(inventario);
+
+                    // Step 5: Create a new Movimiento, link it to Habitacion and Visita
+                    Movimiento nuevoMovimiento = new Movimiento
+                    {
+                        HabitacionId = habitacionId,
+                        VisitaId = visitaId,  // Associate with Visita
+                        TotalFacturado = articulo.Precio * cantidad, // Calculate total cost based on the price and quantity
+                        FechaRegistro = DateTime.Now,
+                        Anulado = false
+                    };
+                    _db.Movimientos.Add(nuevoMovimiento);
+                    await _db.SaveChangesAsync();  // Save Movimiento first to generate MovimientosId
+
+                    // Step 6: Create a new Consumo and link it to the saved Movimiento
+                    Consumo nuevoConsumo = new Consumo
+                    {
+                        ArticuloId = articulo.ArticuloId,
+                        Cantidad = cantidad,
+                        PrecioUnitario = articulo.Precio,
+                        MovimientosId = nuevoMovimiento.MovimientosId, // Associate with the saved Movimiento
+                        Anulado = false // By default, it's not annulled
+                    };
+                    _db.Consumos.Add(nuevoConsumo);
+
+                    // Step 7: Save all changes to the database
+                    await _db.SaveChangesAsync();
+
+                    // Step 8: Load the related data (Habitacion and Visita) to return in the response
+                    await _db.Entry(nuevoMovimiento).Reference(m => m.Habitacion).LoadAsync();
+                    await _db.Entry(nuevoMovimiento).Reference(m => m.Visita).LoadAsync();
+
+                    // Step 9: Commit the transaction
+                    await transaction.CommitAsync();
+
+                    // Set response on success
+                    res.Ok = true;
+                    res.Message = "Consumo created and stock updated successfully.";
+                    res.Data = nuevoMovimiento; // Return the created movimiento with Habitacion and Visita info
+                }
+                catch (Exception ex)
+                {
+                    // Rollback transaction on error
+                    await transaction.RollbackAsync();
+                    res.Message = $"Error: {ex.Message}";
+                    res.Ok = false;
+                }
             }
-            catch (Exception ex)
-            {
-                return 0;
-            }
+
+            return res;
         }
-
 
         [HttpGet]
         [Route("GetMovimiento")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
