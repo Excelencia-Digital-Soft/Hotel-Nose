@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ApiObjetos.Models;
 
-public partial class Articulo
+public partial class Articulos
 {
     public int ArticuloId { get; set; }
 
@@ -17,11 +17,11 @@ public partial class Articulo
 
     public bool? Anulado { get; set; }
 
-    public virtual ICollection<Consumo> Consumos { get; } = new List<Consumo>();
+    public virtual ICollection<Consumo> Consumo { get; } = new List<Consumo>();
 
     public virtual InventarioInicial? InventarioInicial { get; set; }
 
-    public virtual ICollection<MovimientosStock> MovimientosStocks { get; } = new List<MovimientosStock>();
-    public virtual ICollection<Inventario> Inventarios { get; set; } = new List<Inventario>();
+    public virtual ICollection<Inventarios> Inventarios { get; } = new List<Inventarios>();
 
+    public virtual ICollection<MovimientosStock> MovimientosStock { get; } = new List<MovimientosStock>();
 }

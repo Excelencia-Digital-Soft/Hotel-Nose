@@ -11,5 +11,5 @@ public partial class MediosPago
 
     public string? Descripcion { get; set; }
 
-    public virtual ICollection<Pago> Pagos { get; } = new List<Pago>();
+    public virtual ICollection<Pagos> Pagos { get; } = new List<Pagos>();
 }

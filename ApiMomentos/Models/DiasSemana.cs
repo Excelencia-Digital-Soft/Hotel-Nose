@@ -9,5 +9,5 @@ public partial class DiasSemana
 
     public string? NombreDiaSemana { get; set; }
 
-    public virtual ICollection<Tarifa> Tarifas { get; } = new List<Tarifa>();
+    public virtual ICollection<Tarifas> Tarifas { get; } = new List<Tarifas>();
 }

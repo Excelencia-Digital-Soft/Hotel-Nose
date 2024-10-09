@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ApiObjetos.Models;
 
-public partial class MovimientosUsuario
+public partial class MovimientosUsuarios
 {
     public int MovimientoId { get; set; }
 
@@ -13,5 +13,5 @@ public partial class MovimientosUsuario
 
     public string Accion { get; set; } = null!;
 
-    public virtual Usuario Usuario { get; set; } = null!;
+    public virtual Usuarios Usuario { get; set; } = null!;
 }

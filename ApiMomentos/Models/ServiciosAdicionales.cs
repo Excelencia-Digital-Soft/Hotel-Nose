@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ApiObjetos.Models;
 
-public partial class ServiciosAdicionale
+public partial class ServiciosAdicionales
 {
     public int ServicioId { get; set; }
 
@@ -17,5 +17,5 @@ public partial class ServiciosAdicionale
 
     public bool? Anulado { get; set; }
 
-    public virtual ICollection<MovimientosServicio> MovimientosServicios { get; } = new List<MovimientosServicio>();
+    public virtual ICollection<MovimientosServicios> MovimientosServicios { get; } = new List<MovimientosServicios>();
 }

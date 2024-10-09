@@ -9,9 +9,9 @@ namespace ApiObjetos.Controllers
 {
     public class MovimientosController
     {
-        private readonly ApplicationDbContext _db;
+        private readonly HotelDbContext _db;
 
-        public MovimientosController(ApplicationDbContext db)
+        public MovimientosController(HotelDbContext db)
         {
             _db = db;
         }
@@ -21,7 +21,7 @@ namespace ApiObjetos.Controllers
         {
             try
             {
-                Movimiento nuevoMovimiento = new Movimiento
+                Movimientos nuevoMovimiento = new Movimientos
                 {
                     VisitaId = visitaId,
                     TotalFacturado = totalFacturado,
@@ -84,7 +84,7 @@ namespace ApiObjetos.Controllers
                     _db.Inventarios.Update(inventario);
 
                     // Step 5: Create a new Movimiento, link it to Habitacion and Visita
-                    Movimiento nuevoMovimiento = new Movimiento
+                    Movimientos nuevoMovimiento = new Movimientos
                     {
                         HabitacionId = habitacionId,
                         VisitaId = visitaId,  // Associate with Visita
@@ -104,7 +104,7 @@ namespace ApiObjetos.Controllers
                         MovimientosId = nuevoMovimiento.MovimientosId, // Associate with the saved Movimiento
                         Anulado = false // By default, it's not annulled
                     };
-                    _db.Consumos.Add(nuevoConsumo);
+                    _db.Consumo.Add(nuevoConsumo);
 
                     // Step 7: Save all changes to the database
                     await _db.SaveChangesAsync();

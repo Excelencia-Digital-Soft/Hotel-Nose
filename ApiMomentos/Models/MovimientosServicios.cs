@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ApiObjetos.Models;
 
-public partial class MovimientosServicio
+public partial class MovimientosServicios
 {
     public int MovimientosServicioId { get; set; }
 
@@ -19,7 +19,7 @@ public partial class MovimientosServicio
 
     public bool? Anulado { get; set; }
 
-    public virtual Movimiento? Movimientos { get; set; }
+    public virtual Movimientos? Movimientos { get; set; }
 
-    public virtual ServiciosAdicionale? Servicio { get; set; }
+    public virtual ServiciosAdicionales? Servicio { get; set; }
 }

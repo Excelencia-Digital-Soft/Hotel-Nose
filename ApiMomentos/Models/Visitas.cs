@@ -3,12 +3,13 @@ using System.Collections.Generic;
 
 namespace ApiObjetos.Models;
 
-public partial class Visita
+public partial class Visitas
 {
     public int VisitaId { get; set; }
 
     public string? PatenteVehiculo { get; set; }
-    public string? Identificador{ get; set; }
+
+    public string? Identificador { get; set; }
 
     public string? NumeroTelefono { get; set; }
 
@@ -20,7 +21,7 @@ public partial class Visita
 
     public bool? Anulado { get; set; }
 
-    public virtual ICollection<Movimiento> Movimientos { get; } = new List<Movimiento>();
+    public virtual ICollection<Movimientos> Movimientos { get; } = new List<Movimientos>();
 
-    public virtual ICollection<Reserva> Reservas { get; } = new List<Reserva>();
+    public virtual ICollection<Reservas> Reservas { get; } = new List<Reservas>();
 }

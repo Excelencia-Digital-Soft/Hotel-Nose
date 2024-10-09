@@ -13,5 +13,5 @@ public partial class InventarioInicial
 
     public bool? Anulado { get; set; }
 
-    public virtual Articulo Articulo { get; set; } = null!;
+    public virtual Articulos Articulo { get; set; } = null!;
 }

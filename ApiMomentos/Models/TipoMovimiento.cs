@@ -13,5 +13,5 @@ public partial class TipoMovimiento
 
     public bool? Anulado { get; set; }
 
-    public virtual ICollection<MovimientosStock> MovimientosStocks { get; } = new List<MovimientosStock>();
+    public virtual ICollection<MovimientosStock> MovimientosStock { get; } = new List<MovimientosStock>();
 }

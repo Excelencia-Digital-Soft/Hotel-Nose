@@ -12,9 +12,9 @@ namespace ApiObjetos.Controllers
     [ApiController]
     public class InventarioController : ControllerBase
     {
-        private readonly ApplicationDbContext _db;
+        private readonly HotelDbContext _db;
 
-        public InventarioController(ApplicationDbContext context)
+        public InventarioController(HotelDbContext context)
         {
             _db = context;
         }
@@ -58,7 +58,7 @@ namespace ApiObjetos.Controllers
                 }
 
                 // Create new Inventario entity
-                var newInventario = new Inventario
+                var newInventario = new Inventarios
                 {
                     ArticuloId = ArticuloID,
                     HabitacionId = HabitacionID,

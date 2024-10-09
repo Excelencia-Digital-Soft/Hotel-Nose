@@ -10,9 +10,9 @@ namespace ApiObjetos.Controllers
 {
     public class VisitasController
     {
-        private readonly ApplicationDbContext _db;
+        private readonly HotelDbContext _db;
 
-        public VisitasController(ApplicationDbContext db)
+        public VisitasController(HotelDbContext db)
         {
             _db = db;
         }
@@ -20,10 +20,10 @@ namespace ApiObjetos.Controllers
 
         public async Task<int> CrearVisita(bool esReserva, string? PatenteVehiculo, string? NumeroTelefono, string? Identificador)
         {
-            Visita nuevaVisita;
+            Visitas nuevaVisita;
 
             if (esReserva == false) {
-                nuevaVisita = new Visita
+                nuevaVisita = new Visitas
                 {
                     PatenteVehiculo = PatenteVehiculo,
                     NumeroTelefono = NumeroTelefono,
@@ -32,7 +32,7 @@ namespace ApiObjetos.Controllers
 
                 };
             }
-            else nuevaVisita = new Visita
+            else nuevaVisita = new Visitas
             {
                 PatenteVehiculo = PatenteVehiculo,
                 NumeroTelefono = NumeroTelefono,

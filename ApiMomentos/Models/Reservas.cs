@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ApiObjetos.Models;
 
-public partial class Reserva
+public partial class Reservas
 {
     public int ReservaId { get; set; }
 
@@ -25,5 +25,5 @@ public partial class Reserva
 
     public virtual Habitaciones? Habitacion { get; set; }
 
-    public virtual Visita? Visita { get; set; }
+    public virtual Visitas? Visita { get; set; }
 }

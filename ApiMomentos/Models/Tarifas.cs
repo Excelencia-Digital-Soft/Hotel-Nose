@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ApiObjetos.Models;
 
-public partial class Tarifa
+public partial class Tarifas
 {
     public int TarifaId { get; set; }
 

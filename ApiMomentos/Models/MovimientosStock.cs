@@ -23,9 +23,9 @@ public partial class MovimientosStock
 
     public bool? Anulado { get; set; }
 
-    public virtual Articulo? Articulo { get; set; }
+    public virtual Articulos? Articulo { get; set; }
 
-    public virtual Movimiento? Movimientos { get; set; }
+    public virtual Movimientos? Movimientos { get; set; }
 
     public virtual TipoMovimiento? TipoMovimiento { get; set; }
 }

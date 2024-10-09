@@ -10,9 +10,9 @@ namespace ApiObjetos.Controllers
 {
     public class HabitacionesController : Controller
     {
-        private readonly ApplicationDbContext _db;
+        private readonly HotelDbContext _db;
 
-        public HabitacionesController(ApplicationDbContext db, IConfiguration configuration)
+        public HabitacionesController(HotelDbContext db, IConfiguration configuration)
         {
             _db = db;
         }

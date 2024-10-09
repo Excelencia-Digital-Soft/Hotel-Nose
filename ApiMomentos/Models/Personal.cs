@@ -11,5 +11,5 @@ public partial class Personal
 
     public int RolId { get; set; }
 
-    public virtual Role Rol { get; set; } = null!;
+    public virtual Roles Rol { get; set; } = null!;
 }

@@ -30,10 +30,10 @@ namespace ApiObjetos.Controllers
 
     public class ObjetosController : ControllerBase
     {
-        private readonly ApplicationDbContext _db;
+        private readonly HotelDbContext _db;
         private readonly IConfiguration _configuration;
 
-        public ObjetosController(ApplicationDbContext db, IConfiguration configuration)
+        public ObjetosController(HotelDbContext db, IConfiguration configuration)
         {
             _db = db;
             _configuration = configuration;

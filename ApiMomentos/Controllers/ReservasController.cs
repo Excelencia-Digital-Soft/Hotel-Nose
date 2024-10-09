@@ -9,11 +9,11 @@ namespace ApiObjetos.Controllers
 {
     public class ReservasController : Controller
     {
-        private readonly ApplicationDbContext _db;
+        private readonly HotelDbContext _db;
         private readonly MovimientosController _movimiento;
         private readonly VisitasController _visita;
 
-        public ReservasController(ApplicationDbContext db, IConfiguration configuration)
+        public ReservasController(HotelDbContext db, IConfiguration configuration)
         {
             _db = db;
             _movimiento = new MovimientosController(db);
@@ -56,7 +56,7 @@ namespace ApiObjetos.Controllers
                 }
 
                 // Step 5: If the reservation is valid, proceed with creating the reservation
-                Reserva nuevaReserva = new Reserva
+                Reservas nuevaReserva = new Reservas
                 {
                     VisitaId = VisitaID,
                     HabitacionId = request.HabitacionID,

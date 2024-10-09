@@ -15,5 +15,5 @@ public partial class TipoTarifa
 
     public bool? Anulado { get; set; }
 
-    public virtual ICollection<Tarifa> Tarifas { get; } = new List<Tarifa>();
+    public virtual ICollection<Tarifas> Tarifas { get; } = new List<Tarifas>();
 }

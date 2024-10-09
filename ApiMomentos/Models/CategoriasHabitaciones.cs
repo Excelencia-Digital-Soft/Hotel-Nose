@@ -21,5 +21,5 @@ public partial class CategoriasHabitaciones
 
     public virtual ICollection<Habitaciones> Habitaciones { get; } = new List<Habitaciones>();
 
-    public virtual ICollection<Tarifa> Tarifas { get; } = new List<Tarifa>();
+    public virtual ICollection<Tarifas> Tarifas { get; } = new List<Tarifas>();
 }

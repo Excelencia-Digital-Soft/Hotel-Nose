@@ -23,13 +23,13 @@ public partial class Habitaciones
 
     public virtual CategoriasHabitaciones? Categoria { get; set; }
 
-    public virtual ICollection<HabitacionesVirtuales> HabitacionesVirtualesHabitacion1s { get; } = new List<HabitacionesVirtuales>();
+    public virtual ICollection<HabitacionesVirtuales> HabitacionesVirtualesHabitacion1 { get; } = new List<HabitacionesVirtuales>();
 
-    public virtual ICollection<HabitacionesVirtuales> HabitacionesVirtualesHabitacion2s { get; } = new List<HabitacionesVirtuales>();
+    public virtual ICollection<HabitacionesVirtuales> HabitacionesVirtualesHabitacion2 { get; } = new List<HabitacionesVirtuales>();
 
-    public virtual ICollection<Movimiento> Movimientos { get; } = new List<Movimiento>();
+    public virtual ICollection<Inventarios> Inventarios { get; } = new List<Inventarios>();
 
-    public virtual ICollection<Reserva> Reservas { get; } = new List<Reserva>();
-    public virtual ICollection<Inventario> Inventarios { get; set; } = new List<Inventario>();
+    public virtual ICollection<Movimientos> Movimientos { get; } = new List<Movimientos>();
 
+    public virtual ICollection<Reservas> Reservas { get; } = new List<Reservas>();
 }

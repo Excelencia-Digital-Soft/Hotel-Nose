@@ -13,9 +13,9 @@ namespace ApiObjetos.Controllers
     [ApiController]
     public class ArticulosController : ControllerBase
     {
-        private readonly ApplicationDbContext _db;
+        private readonly HotelDbContext _db;
 
-        public ArticulosController(ApplicationDbContext context)
+        public ArticulosController(HotelDbContext context)
         {
             _db = context;
         }
