@@ -7,16 +7,16 @@
       <UserCircleIcon class="text-white h-8 pr-2"></UserCircleIcon>
       Mi Perfil
     </section>
-    <ul v-show="showResults" id="optionsSelect" class="absolute w-40 z-20  right-2 mt-2 shadow-xl text-white border-4 border-cyan-200 bg-cyan-300 rounded-xl transition duration-200 ease-out md:ease-in">
-      <li class="w-full h-12 flex items-center justify-start py-2 px-1 hover:bg-white hover:text-cyan-400 shadow-md cursor-pointer rounded-t-lg">
+    <ul v-show="showResults" id="optionsSelect" class="menu-column absolute w-40 z-20  right-2 mt-2 ">
+      <li class="w-full h-12 flex items-center justify-start py-2 px-1 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-t-lg">
       <UserCircleIcon class=" h-6 pr-2"></UserCircleIcon><div>mi perfil</div>
     </li>
-    <li class="relative h-12 flex items-center py-2 pl-8 pr-2 hover:bg-white hover:text-cyan-400 shadow-md cursor-pointer">
+    <li class="relative h-12 flex items-center py-2 pl-8 pr-2 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer">
       <span class="absolute left-1 material-symbols-outlined">
       settings
       </span>configuracion
     </li>
-    <li class="relative h-12 flex items-center  py-2 pl-8 pr-2 hover:bg-white hover:text-cyan-400 shadow-md cursor-pointer rounded-b-lg" @click.prevent="logOut">
+    <li class="relative h-12 flex items-center  py-2 pl-8 pr-2 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-b-lg" @click.prevent="logOut">
       <span class="absolute left-1 material-symbols-outlined">logout</span>cerrar sesion
     </li>
     </ul>

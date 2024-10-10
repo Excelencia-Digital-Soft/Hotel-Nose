@@ -8,10 +8,10 @@
     </section>
     <ul v-show="showResults" id="optionsSelect" class="menu-column absolute w-40 z-20 text-sm right-2 mt-2 ">
       <li>
-        <router-link :to="{ name: 'proveedores' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-cyan-400 shadow-md cursor-pointer rounded-lg">
+        <router-link :to="{ name: 'proveedores' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
           Proveedores
         </router-link>
-        <router-link :to="{ name: 'Rooms' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-cyan-400 shadow-md cursor-pointer rounded-lg">
+        <router-link :to="{ name: 'Rooms' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
           Habitaciones
         </router-link>
       </li>

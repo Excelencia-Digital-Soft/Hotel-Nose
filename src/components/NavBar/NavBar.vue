@@ -1,7 +1,7 @@
 <template>
-    <header class=" bg-gradient-to-r from-blue-800 via-blue-400 to-cyan-300 h-16 flex justify-between shadow-md rounded-bl-3xl rounded-br-3xl">
-        <router-link :to="{ name: 'home' }" class="hover:scale-110 ml-6 flex justify-center items-center h-full text-white transition duration-150 ease-out md:ease-in hover:text-gray-900">
-            <img src="../../assets/SGCLOGO2WEB.png" alt="UPCN" class="h-10 w-full">
+    <header class=" principal-convination-color h-16 flex justify-between shadow-md rounded-bl-3xl rounded-br-3xl">
+        <router-link :to="{ name: 'home' }" class=" lexend-exa text-xl font-bold hover:scale-110 ml-6 flex justify-center items-center h-full text-white transition duration-150 ease-out md:ease-in hover:text-gray-900">
+          NOSE
         </router-link>
         <div class="flex h-full items-center">
        

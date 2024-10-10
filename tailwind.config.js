@@ -7,8 +7,47 @@ export default {
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {
+    extend: {      
+      textColor: {
+        DEFAULT: '#ffffff', // Esto establece el color de texto por defecto a blanco
+      },
       colors: {
+        primary: {
+          50: '#FDE8F0',
+          100: '#FBC9E0',
+          200: '#F99DCE',
+          300: '#F66CC2',
+          400: '#F43FB8',
+          500: '#FF49D1',
+          600: '#E639B3',
+          700: '#D4319E',
+          800: '#B92A8B',
+          900: '#A32175',
+        },
+        secondary: {
+          50: '#E6D7FF',
+          100: '#C2A3FF',
+          200: '#9F6DFF',
+          300: '#7B3BFF',
+          400: '#5F00FF',
+          500: '#8D1CFF',
+          600: '#7817D1',
+          700: '#6214B7',
+          800: '#4D0F9E',
+          900: '#3D0A8D',
+        },
+        accent: {
+          50: '#E0E8FF',
+          100: '#B3C5FF',
+          200: '#8DA1FF',
+          300: '#5F7BFF',
+          400: '#3B5CFF',
+          500: '#5494FB',
+          600: '#4681E2',
+          700: '#2D65B4',
+          800: '#1D4A8E',
+          900: '#0F2E6B',
+        },
         'primary-50': 'rgb(var(--primary-50))',
         'primary-100': 'rgb(var(--primary-100))',
         'primary-200': 'rgb(var(--primary-200))',
