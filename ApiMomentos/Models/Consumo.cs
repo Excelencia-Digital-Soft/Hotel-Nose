@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace ApiObjetos.Models;
 
@@ -16,8 +17,9 @@ public partial class Consumo
     public decimal? PrecioUnitario { get; set; }
 
     public bool? Anulado { get; set; }
-
+    [JsonIgnore]
     public virtual Articulos? Articulo { get; set; }
+    [JsonIgnore]
 
     public virtual Movimientos? Movimientos { get; set; }
 }
