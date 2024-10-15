@@ -41,7 +41,7 @@ namespace ApiObjetos.Controllers
                 }
                 catch (Exception ex)
                 {
-                    res.Message = $"Error: {ex.Message}";
+                    res.Message = $"Error: {ex.Message} {ex.InnerException}";
                     res.Ok = false;
                 }
 
@@ -87,7 +87,9 @@ namespace ApiObjetos.Controllers
                 try
                 {
 
-                    var Objeto = await _db.Habitaciones.ToListAsync();
+                    var Objeto = await _db.Habitaciones
+                    .Where(h => h.Anulado == false)
+                    .ToListAsync();
                     res.Ok = true;
                     res.Data = Objeto;
                     return res;
@@ -103,7 +105,35 @@ namespace ApiObjetos.Controllers
                 return res;
             }
 
-            [HttpPut]
+
+        [HttpGet]
+        [Route("GetCategorias")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
+        [AllowAnonymous]
+
+        public async Task<Respuesta> GetCategorias()
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+
+                var Objeto = await _db.CategoriasHabitaciones.ToListAsync();
+                res.Ok = true;
+                res.Data = Objeto;
+                return res;
+
+
+
+            }
+            catch (Exception ex)
+            {
+                res.Message = "Error " + ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+
+        [HttpPut]
             [Route("ActualizarHabitacion")] // Hace un update a un paciente en especifico segun los datos que se le brinden. 
             [AllowAnonymous]
             public async Task<Respuesta> ActualizarHabitacion(int id, string? nuevoNombre, int nuevaCategoria, string? disponibilidad, DateTime proximaReserva, int usuarioId)
