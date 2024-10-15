@@ -4,6 +4,8 @@ import GuestLayout from "../layouts/GuestLayout.vue";
 import Home from "../views/Home.vue";
 import Proveedores from "../views/Proveedores.vue";
 import Rooms from "../views/Rooms.vue";
+import RoomCreate from "../views/RoomCreate.vue";
+
 import { useAuthStore } from '../store/auth';
 const routes = [
   {
@@ -33,6 +35,14 @@ const routes = [
         path: "/Rooms",
         name: "Rooms",
         component: Rooms,
+        meta:{
+          requireAuth:true
+        }
+      },
+      {
+        path: "/RoomCreate",
+        name: "RoomCreate",
+        component: RoomCreate,
         meta:{
           requireAuth:true
         }
