@@ -43,9 +43,9 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("ConsumoHabitacion")]
         [AllowAnonymous]
-        public async Task<Respuesta> ConsumirArticulos(List<ArticuloConsumoDTO> articulos, int habitacionId, int visitaId)
+        public async Task<Respuesta> ConsumirArticulos([FromBody] List<ArticuloConsumoDTO> articulos, int habitacionId, int visitaId)
         {
-            Respuesta res = new Respuesta();
+                Respuesta res = new Respuesta();
 
             using (var transaction = await _db.Database.BeginTransactionAsync())
             {
@@ -75,7 +75,12 @@ namespace ApiObjetos.Controllers
                             res.Message = $"Articulo with ID {articuloDTO.ArticuloId} not found.";
                             return res;
                         }
-
+                        if (articulo.Precio == null || articulo.Precio == 0 || articuloDTO.Cantidad == 0)
+                        {
+                            res.Ok = false;
+                            res.Message = $"Error con el precio del articulo";
+                            return res;
+                        }
                         // Step 3: Retrieve the Inventario for the specific Articulo and Habitacion
                         var inventario = await _db.Inventarios
                             .FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId && i.HabitacionId == habitacionId);

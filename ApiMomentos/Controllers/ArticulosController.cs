@@ -30,7 +30,10 @@ namespace ApiObjetos.Controllers
             try
             {
                 // Step 1: Retrieve all articulos from the database
-                var articulos = await _db.Articulos.ToListAsync();
+                var articulos = await _db.Articulos.
+                    Where(a => a.Anulado != true)
+                    .
+                    ToListAsync();
 
                 // Step 2: Check if any articulos were found
                 if (articulos == null || articulos.Count == 0)
@@ -76,6 +79,142 @@ namespace ApiObjetos.Controllers
                     res.Message = "Artículo obtenido correctamente.";
                     res.Data = articulo; // Return the found articulo
                 }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
+
+        [HttpPut]
+        [Route("UpdateArticulo")]
+        public async Task<Respuesta> UpdateArticulo(int id, string? nombre, decimal? precio)
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+                // Step 1: Retrieve the articulo by ID
+                var articulo = await _db.Articulos.FindAsync(id);
+                if (articulo == null)
+                {
+                    res.Ok = false;
+                    res.Message = $"No se encontró el artículo con ID: {id}.";
+                    return res;
+                }
+
+                // Step 2: Update the articulo fields if the new values are provided
+                if (!string.IsNullOrEmpty(nombre))
+                {
+                    articulo.NombreArticulo = nombre;
+                }
+
+                if (precio.HasValue && precio.Value > 0)
+                {
+                    articulo.Precio = precio.Value;
+                }
+                articulo.FechaRegistro = DateTime.Now;
+                // Step 3: Save changes to the database
+                _db.Articulos.Update(articulo);
+                await _db.SaveChangesAsync();
+
+                // Set response on success
+                res.Ok = true;
+                res.Message = "Artículo actualizado correctamente.";
+                res.Data = articulo;
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
+        [HttpPost]
+        [Route("CreateArticulo")]
+        public async Task<Respuesta> CreateArticulo(string nombre, decimal precio)
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+                // Step 1: Validate the input values
+                if (string.IsNullOrEmpty(nombre))
+                {
+                    res.Ok = false;
+                    res.Message = "El nombre del artículo es obligatorio.";
+                    return res;
+                }
+
+                if (precio <= 0)
+                {
+                    res.Ok = false;
+                    res.Message = "El precio del artículo debe ser mayor a cero.";
+                    return res;
+                }
+
+                // Step 2: Create a new Articulo object
+                Articulos nuevoArticulo = new Articulos
+                {
+                    NombreArticulo = nombre,
+                    Precio = precio,
+                    Anulado = false, // By default, the article is not annulled
+                    FechaRegistro = DateTime.Now,
+                };
+
+                // Step 3: Add the new articulo to the database
+                _db.Articulos.Add(nuevoArticulo);
+                await _db.SaveChangesAsync();
+
+                // Set response on success
+                res.Ok = true;
+                res.Message = "Artículo creado correctamente.";
+                res.Data = nuevoArticulo;
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
+
+        [HttpDelete]
+        [Route("AnularArticulo")]
+        public async Task<Respuesta> AnularArticulo(int id, bool estado)
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+                // Step 1: Retrieve the articulo by ID
+                var articulo = await _db.Articulos.FindAsync(id);
+                if (articulo == null)
+                {
+                    res.Ok = false;
+                    res.Message = $"No se encontró el artículo con ID: {id}.";
+                    return res;
+                }
+
+                // Step 2: Set the Anulado property based on the estado parameter
+                articulo.Anulado = estado;
+
+                // Step 3: Save changes to the database
+                _db.Articulos.Update(articulo);
+                await _db.SaveChangesAsync();
+
+                // Set response on success
+                res.Ok = true;
+                res.Message = estado ? "Artículo anulado correctamente." : "Artículo desanulado correctamente.";
+                res.Data = articulo;
             }
             catch (Exception ex)
             {

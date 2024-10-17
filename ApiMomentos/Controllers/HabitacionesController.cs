@@ -132,89 +132,93 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
-
         [HttpPut]
-            [Route("ActualizarHabitacion")] // Hace un update a un paciente en especifico segun los datos que se le brinden. 
-            [AllowAnonymous]
-            public async Task<Respuesta> ActualizarHabitacion(int id, string? nuevoNombre, int nuevaCategoria, string? disponibilidad, DateTime proximaReserva, int usuarioId)
+        [Route("ActualizarHabitacion")]
+        [AllowAnonymous]
+        public async Task<Respuesta> ActualizarHabitacion(int id, string? nuevoNombre, int nuevaCategoria, string? disponibilidad, DateTime? proximaReserva, int usuarioId)
+        {
+            Respuesta res = new Respuesta();
+            try
             {
-                Respuesta res = new Respuesta();
+                var habitacion = await _db.Habitaciones.FindAsync(id);
+                if (habitacion == null)
+                {
+                    res.Ok = false;
+                    res.Message = "No se encontró la habitación";
+                    return res;
+                }
+
                 try
                 {
-                    var pac = await _db.Habitaciones.FindAsync(id);
-                    if (pac == null)
+                    if (!string.IsNullOrEmpty(nuevoNombre))
                     {
-                        res.Ok = false;
-                        res.Message = "No se encontró el paciente";
-                        return res;
+                        _db.Database.ExecuteSqlRaw(
+                            "UPDATE Habitaciones SET NombreHabitacion = @Nombre WHERE HabitacionID = @Id",
+                            new SqlParameter("@Nombre", nuevoNombre),
+                            new SqlParameter("@Id", id)
+                        );
                     }
 
-                    try
+                    if (nuevaCategoria > 0)
                     {
-                        if (nuevoNombre != null)
-                        {
-                            _db.Database.ExecuteSqlRaw(
-                                "UPDATE Habitaciones SET NombreHabitacion = @Nombre WHERE HabitacionID = @Id",
-                                new SqlParameter("@Nombre", nuevoNombre),
-                                new SqlParameter("@Id", id)
-                            );
-                        }
-                        if (nuevaCategoria != null)
-                        {
-                            _db.Database.ExecuteSqlRaw(
-                                "UPDATE Habitaciones SET CategoriaID = @CategoriaID WHERE HabitacionID = @Id",
-                                new SqlParameter("@CategoriaID", nuevaCategoria),
-                                new SqlParameter("@Id", id)
-                            );
-                        }
-                        if (disponibilidad != null)
-                        {
-                            _db.Database.ExecuteSqlRaw(
-                                "UPDATE Habitaciones SET Disponible = @Disponibilidad WHERE HabitacionID = @Id",
-                                new SqlParameter("@Disponibilidad", disponibilidad),
-                                new SqlParameter("@Id", id)
-                            );
-                        }
-                        if (proximaReserva != null)
-                        {
-                            _db.Database.ExecuteSqlRaw(
-                                "UPDATE Habitaciones SET ProximaReserva = @ProximaReserva WHERE HabitacionID = @Id",
-                                new SqlParameter("@ProximaReserva", proximaReserva),
-                                new SqlParameter("@Id", id)
-                            );
-                        }
-                        if (usuarioId != null)
-                        {
-                            _db.Database.ExecuteSqlRaw(
-                                "UPDATE Habitaciones SET UsuarioID = @UsuarioID WHERE HabitacionID = @Id",
-                                new SqlParameter("@UsuarioID", usuarioId),
-                                new SqlParameter("@Id", id)
-                            );
-                        }
+                        _db.Database.ExecuteSqlRaw(
+                            "UPDATE Habitaciones SET CategoriaID = @CategoriaID WHERE HabitacionID = @Id",
+                            new SqlParameter("@CategoriaID", nuevaCategoria),
+                            new SqlParameter("@Id", id)
+                        );
+                    }
 
-                        // Return successful response
-                        res.Ok = true;
-                        res.Message = "Se actualizó la habitación";
-                        return res;
-                    }
-                    catch (Exception e)
+                    if (!string.IsNullOrEmpty(disponibilidad))
                     {
-                        // Handle inner exception
-                        res.Ok = false;
-                        res.Message = "Error: " + e.Message + e.StackTrace;
-                        return res;
+                        _db.Database.ExecuteSqlRaw(
+                            "UPDATE Habitaciones SET Disponible = @Disponibilidad WHERE HabitacionID = @Id",
+                            new SqlParameter("@Disponibilidad", disponibilidad),
+                            new SqlParameter("@Id", id)
+                        );
                     }
+
+                    if (proximaReserva.HasValue && proximaReserva.Value >= new DateTime(1753, 1, 1) && proximaReserva.Value <= new DateTime(9999, 12, 31))
+                    {
+                        _db.Database.ExecuteSqlRaw(
+                            "UPDATE Habitaciones SET ProximaReserva = @ProximaReserva WHERE HabitacionID = @Id",
+                            new SqlParameter("@ProximaReserva", proximaReserva.Value),
+                            new SqlParameter("@Id", id)
+                        );
+                    }
+
+                    if (usuarioId > 0)
+                    {
+                        _db.Database.ExecuteSqlRaw(
+                            "UPDATE Habitaciones SET UsuarioID = @UsuarioID WHERE HabitacionID = @Id",
+                            new SqlParameter("@UsuarioID", usuarioId),
+                            new SqlParameter("@Id", id)
+                        );
+                    }
+
+                    // Return successful response
+                    res.Ok = true;
+                    res.Message = "Se actualizó la habitación";
+                    return res;
                 }
                 catch (Exception e)
                 {
-                    // Handle outer exception
+                    // Handle inner exception
                     res.Ok = false;
                     res.Message = "Error: " + e.Message + e.StackTrace;
                     return res;
                 }
             }
+            catch (Exception e)
+            {
+                // Handle outer exception
+                res.Ok = false;
+                res.Message = "Error: " + e.Message + e.StackTrace;
+                return res;
+            }
+        }
 
-            [HttpDelete]
+
+        [HttpDelete]
             [Route("AnularHabitacion")] // Encuentra el ID del paciente para luego eliminarlo
             [AllowAnonymous]
             public async Task<Respuesta> AnularHabitacion(int idHabitacion, bool Estado)

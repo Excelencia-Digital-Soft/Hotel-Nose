@@ -121,6 +121,9 @@ namespace ApiObjetos.Controllers
 
             return res;
         }
+
+
+
         [HttpGet]
         [Route("GetInventario")]
         public async Task<Respuesta> GetInventario(int habitacionID)
