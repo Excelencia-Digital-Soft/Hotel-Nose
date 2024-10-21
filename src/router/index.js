@@ -5,6 +5,8 @@ import Home from "../views/Home.vue";
 import Proveedores from "../views/Proveedores.vue";
 import Rooms from "../views/Rooms.vue";
 import RoomCreate from "../views/RoomCreate.vue";
+import CategoryCreate from "../views/CategoryCreate.vue";
+import ArticuloCreate from "../views/ArticuloCreate.vue";
 
 import { useAuthStore } from '../store/auth';
 const routes = [
@@ -43,6 +45,22 @@ const routes = [
         path: "/RoomCreate",
         name: "RoomCreate",
         component: RoomCreate,
+        meta:{
+          requireAuth:true
+        }
+      },
+      {
+        path: "/CategoryCreate",
+        name: "CategoryCreate",
+        component: CategoryCreate,
+        meta:{
+          requireAuth:true
+        }
+      },
+      {
+        path: "/ArticleCreate",
+        name: "ArticleCreate",
+        component: ArticuloCreate,
         meta:{
           requireAuth:true
         }
