@@ -5,7 +5,7 @@
   @apply bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500
 }
 .btn-primary {
-  @apply flex justify-center items-center shadow-lg border-4 bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-secondary-600 hover:via-accent-600 hover:to-primary-600 transition duration-150 ease-in-out md:ease-in border-purple-200;
+  @apply flex justify-center items-center shadow-lg border-4 bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-800 hover:via-secondary-700 hover:to-accent-800 transition duration-150 ease-in-out md:ease-in border-purple-200;
 }
 .btn-secondary {
   @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-lime-200 via-lime-300 to-lime-200  text-white hover:shadow-lg hover:shadow-lime-500/50 hover:from-lime-400 hover:via-lime-400 hover:to-lime-400 transition duration-150 ease-in-out md:ease-in border-lime-100;
@@ -18,7 +18,7 @@
   @apply flex justify-center items-center shadow-lg  bg-gradient-to-r from-indigo-300 via-purple-400 to-purple-300  text-white hover:shadow-lg hover:shadow-purple-500/50 hover:from-indigo-500 hover:via-purple-600 hover:to-purple-500 transition duration-150 ease-in-out md:ease-in border-purple-200;
 }
 .btn-danger {
-  @apply flex justify-center items-center shadow-lg  bg-gradient-to-r from-rose-300 via-rose-400 to-red-200  text-white hover:shadow-lg hover:shadow-red-500/50 hover:from-rose-400 hover:via-rose-500 hover:to-red-400 transition duration-150 ease-in-out md:ease-in border-purple-200;
+  @apply flex justify-center items-center shadow-lg  bg-gradient-to-r from-rose-400 via-rose-500 to-red-500  text-white hover:shadow-lg hover:shadow-red-500/50 hover:from-rose-400 hover:via-rose-500 hover:to-red-400 transition duration-150 ease-in-out md:ease-in;
 }
 .option-menu{
   @apply w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg;
@@ -89,6 +89,25 @@
   --surface-800: 30, 41, 59;
   --surface-900: 15, 23, 42;
   --surface-950: 3, 6, 23;
+}
+
+/* Estilo personalizado para el scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2c2c2c;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #848484;
+  border-radius: 10px;
+  border: 2px solid #2c2c2c;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #f531ca;
 }
 
 body {

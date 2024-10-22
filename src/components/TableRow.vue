@@ -1,35 +1,35 @@
 <template>
-  <div class="table-body" style="max-height: 150px; overflow-y: auto;">
+  <div class="table-body mt-4" style="max-height: 150px; overflow-y: auto;">
     <table class="w-full text-white">
-      <thead>
+      <thead >
         <tr>
-          <th class="border bg-secondary-800 rounded-sm text-sm shadow-sm">Item</th>
-          <th class="border bg-secondary-800 rounded-sm text-sm shadow-sm">Producto</th>
-          <th class="border bg-secondary-800 rounded-sm text-sm shadow-sm">Precio</th>
-          <th class="border bg-secondary-800 rounded-sm text-sm shadow-sm">Cantidad</th>
-          <th class="border bg-secondary-800 rounded-sm text-sm shadow-sm">Total</th>
-          <th class="w-10 bg-white"></th>
-          <th class="w-10 bg-white"></th>
+          <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Item</th>
+          <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Producto</th>
+          <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Precio</th>
+          <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Cantidad</th>
+          <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Total</th>
         </tr>
       </thead>
       <tbody>
-        <tr class="hover:shadow-md text-white" v-for="(detalle, index) in productList" :key="detalle.articuloId">
+        <tr class="hover:shadow-md text-white" v-for="(detalle, index) in props.selectedList" :key="detalle.articuloId">
           <td class="rounded-md text-center shadow-sm">
             {{ index + 1 }}
           </td>
           <td class="rounded-md shadow-sm">
-            <input v-model="detalle.nombreArticulo" type="text" class="w-full bg-inherit border-0" placeholder="Detalles">
+            {{detalle.nombreArticulo}}  
           </td>
           <td class="rounded-md w-1/5 pl-2 shadow-sm">
-            <input v-model="detalle.precio" type="number" inputmode="numeric" class="min-w-[80px] w-full bg-inherit border-0" placeholder="$0">
+            {{ detalle.precio}}
           </td>
           <td class="rounded-md shadow-sm  w-24">
-            <input  type="text" class="w-full  bg-inherit border-0" placeholder="1">
+            <input v-model="detalle.cantidad"  type="number" class="w-full bg-inherit border-0" >
+          </td>
+          <td class="rounded-md w-1/5 pl-2 shadow-sm">
+            {{ detalle.precio * detalle.cantidad}}
           </td>
 
-
           <button @click="quitarRegistro(index)" type="button"
-            class="text-xl h-12 text-white w-full  flex justify-center items-center border-2 bg-red-300 hover:shadow-lg hover:shadow-red-500/50 hover:bg-red-400 border-red-200 rounded-sm shadow-sm transition duration-150 ease-out md:ease-in material-symbols-outlined">delete</button>
+            class="btn-danger rounded-xl text-xl h-12 text-white w-full  flex justify-center items-center mt-1  material-symbols-outlined">delete</button>
         </tr>
 
       </tbody>
@@ -47,20 +47,19 @@ let productList = ref([]);
 const emits = defineEmits(['update:productList']);
 
 watch(() => props.selectedList, (newList) => {
-  console.log("Nuevo listado detectado:", newList);
   if (newList) {
-    productList.value = newList;
-    console.log("escuchamos el cambio", productList.value);
+    emits('update:productList', props.selectedList);
   }
-});
+}, { deep: true });  // Activa el modo 'deep' para escuchar cambios en las propiedades internas
+                    //Como "cantidad" de productos
 
 // Método para quitar un registro
 const quitarRegistro = (index) => {
   // Quitar el producto de productList
-  productList.value.splice(index, 1);
+  props.selectedList.splice(index, 1);
   
   // Emitir el cambio hacia el padre
-  emits('update:productList', productList.value);
+  emits('update:productList',  props.selectedList);
 };
 </script>
 <!-- {
