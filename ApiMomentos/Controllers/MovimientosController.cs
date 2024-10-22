@@ -155,6 +155,62 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpGet]
+        [Route("GetConsumosVisita")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetConsumosVisita(int VisitaID)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                // Get the Movimientos associated with the given VisitaID
+                var movimientos = await _db.Movimientos
+                    .Where(t => t.VisitaId == VisitaID && t.Anulado == false)
+                    .ToListAsync();
+
+                // Check if there are any Movimientos found
+                if (movimientos.Count > 0)
+                {
+                    // Extract the MovimientosIDs from the Movimientos
+                    // Extract the MovimientosIDs from the Movimientos
+                    var movimientoIds = movimientos
+                        .Select(m => m.MovimientosId) // Select MovimientosID
+                        .ToList(); // Create a list of IDs
+
+                    // Get the Consumos associated with the found MovimientosIDs
+                    var consumos = await _db.Consumo
+                        .Where(c => movimientoIds.Contains(c.MovimientosId.GetValueOrDefault()) && c.Anulado == false)
+                        .Join(_db.Articulos,
+                              c => c.ArticuloId,
+                              a => a.ArticuloId,
+                              (c, a) => new
+                              {
+                                  c.ConsumoId,
+                                  c.ArticuloId,
+                                  ArticleName = a.NombreArticulo, // Assuming 'NombreArticulo' is the name column in Articulos table
+                                  c.Cantidad,
+                                  c.PrecioUnitario,
+                                  Total = c.Cantidad * c.PrecioUnitario
+                              })
+                        .ToListAsync();
+
+                    res.Ok = true;
+                    res.Data = consumos; // Return the list of consumos
+                }
+                else
+                {
+                    res.Ok = false;
+                    res.Message= "No se encontraron movimientos para esta visita.";
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Ok = false;
+                res.Message = "Error al obtener los consumos: " + ex.Message;
+            }
+
+            return res;
+        }
 
 
         [HttpGet]

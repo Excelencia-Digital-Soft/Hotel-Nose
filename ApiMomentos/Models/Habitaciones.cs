@@ -22,7 +22,10 @@ public partial class Habitaciones
 
     public bool? Anulado { get; set; }
 
+    public int? VisitaID { get; set; }
+
     public virtual CategoriasHabitaciones? Categoria { get; set; }
+    public virtual Visitas? Visita { get; set; }
 
     public virtual ICollection<HabitacionesVirtuales> HabitacionesVirtualesHabitacion1 { get; } = new List<HabitacionesVirtuales>();
 
@@ -33,4 +36,5 @@ public partial class Habitaciones
     public virtual ICollection<Movimientos> Movimientos { get; } = new List<Movimientos>();
 
     public virtual ICollection<Reservas> Reservas { get; } = new List<Reservas>();
+
 }

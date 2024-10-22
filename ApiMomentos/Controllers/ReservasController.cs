@@ -21,6 +21,71 @@ namespace ApiObjetos.Controllers
 
         }
         #region Reservas
+        /*    [HttpPost]
+            [Route("ReservarHabitacion")]
+            [AllowAnonymous]
+            public async Task<Respuesta> ReservarHabitacion([FromBody] ReservaRequest request)
+            {
+                Respuesta res = new Respuesta();
+                try
+                {
+                    // Step 1: Create a new VisitaID based on the provided vehicle, phone number, and identifier
+                    var VisitaID = await _visita.CrearVisita(request.EsReserva, request.PatenteVehiculo, request.NumeroTelefono, request.Identificador);
+
+                    // Step 2: Retrieve the room details
+                    var habitacion = await GetHabitacionById(request.HabitacionID);
+                    if (habitacion == null)
+                    {
+                        res.Message = "Habitación no encontrada.";
+                        res.Ok = false;
+                        return res;
+                    }
+
+                    // Step 3: Retrieve free time slots for the specified day
+                    var horariosLibres = await HorariosLibres(request.HabitacionID, request.FechaReserva.Date);
+
+                    // Step 4: Check if the requested reservation time falls within any of the free slots
+                    bool isValidReservation = horariosLibres.Any(horario =>
+                        request.FechaReserva.TimeOfDay >= horario.Start && request.FechaFin.TimeOfDay <= horario.End);
+
+                    if (!isValidReservation)
+                    {
+                        res.Message = "El horario solicitado no está disponible.";
+                        res.Ok = false;
+                        return res;
+                    }
+
+                    // Step 5: If the reservation is valid, proceed with creating the reservation
+                    Reservas nuevaReserva = new Reservas
+                    {
+                        VisitaId = VisitaID,
+                        HabitacionId = request.HabitacionID,
+                        FechaReserva = request.FechaReserva,
+                        FechaFin = request.FechaFin,
+                        TotalHoras = request.TotalHoras,
+                        UsuarioId = request.UsuarioID,
+                        FechaRegistro = DateTime.Now,
+                        Anulado = false,
+                        Habitacion = habitacion
+                    };
+
+                    _db.Add(nuevaReserva);
+                    await _movimiento.CrearMovimientoHabitacion(VisitaID, (int)habitacion.Categoria.PrecioNormal, request.HabitacionID, habitacion);
+                    await _db.SaveChangesAsync();
+
+                    res.Message = "La reserva se grabó correctamente";
+                    res.Ok = true;
+                }
+                catch (Exception ex)
+                {
+                    res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                    res.Ok = false;
+                }
+
+                return res;
+            }
+        */
+
         [HttpPost]
         [Route("ReservarHabitacion")]
         [AllowAnonymous]
@@ -33,7 +98,7 @@ namespace ApiObjetos.Controllers
                 var VisitaID = await _visita.CrearVisita(request.EsReserva, request.PatenteVehiculo, request.NumeroTelefono, request.Identificador);
 
                 // Step 2: Retrieve the room details
-                var habitacion = await GetHabitacionById(request.HabitacionID);
+                Habitaciones habitacion = await GetHabitacionById(request.HabitacionID);
                 if (habitacion == null)
                 {
                     res.Message = "Habitación no encontrada.";
@@ -41,27 +106,21 @@ namespace ApiObjetos.Controllers
                     return res;
                 }
 
-                // Step 3: Retrieve free time slots for the specified day
-                var horariosLibres = await HorariosLibres(request.HabitacionID, request.FechaReserva.Date);
-
-                // Step 4: Check if the requested reservation time falls within any of the free slots
-                bool isValidReservation = horariosLibres.Any(horario =>
-                    request.FechaReserva.TimeOfDay >= horario.Start && request.FechaFin.TimeOfDay <= horario.End);
-
-                if (!isValidReservation)
+                // Step 3: Check if the room is available for reservation
+                if (habitacion.Disponible == false)
                 {
-                    res.Message = "El horario solicitado no está disponible.";
+                    res.Message = "La habitación no está disponible.";
                     res.Ok = false;
                     return res;
                 }
 
-                // Step 5: If the reservation is valid, proceed with creating the reservation
+                // Step 4: If the room is available, proceed with creating the reservation
                 Reservas nuevaReserva = new Reservas
                 {
                     VisitaId = VisitaID,
                     HabitacionId = request.HabitacionID,
                     FechaReserva = request.FechaReserva,
-                    FechaFin = request.FechaFin,
+                    FechaFin = null,
                     TotalHoras = request.TotalHoras,
                     UsuarioId = request.UsuarioID,
                     FechaRegistro = DateTime.Now,
@@ -71,6 +130,11 @@ namespace ApiObjetos.Controllers
 
                 _db.Add(nuevaReserva);
                 await _movimiento.CrearMovimientoHabitacion(VisitaID, (int)habitacion.Categoria.PrecioNormal, request.HabitacionID, habitacion);
+                await _db.SaveChangesAsync();
+
+                // Step 5: Update the room's availability and set the current VisitaID
+                habitacion.Disponible = false;
+                habitacion.VisitaID = VisitaID;
                 await _db.SaveChangesAsync();
 
                 res.Message = "La reserva se grabó correctamente";
@@ -84,6 +148,7 @@ namespace ApiObjetos.Controllers
 
             return res;
         }
+
 
 
         [HttpGet]
@@ -190,23 +255,71 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        /* [HttpPut]
+         [Route("FinalizarReserva")]
+         [AllowAnonymous]
+         public async Task<Respuesta> FinalizarReserva(int idReserva)
+         {
+             Respuesta res = new Respuesta();
+             try
+             {
+                 // Find the Reserva by idReserva
+                 var reserva = await _db.Reservas.FindAsync(idReserva);
+
+                 // Check if the reservation exists
+                 if (reserva != null)
+                 {
+                     // Update the FechaFin to DateTime.Now
+                     reserva.FechaFin = DateTime.Now;
+
+                     // Find the associated Habitacion
+                     var habitacion = await _db.Habitaciones.FindAsync(reserva.HabitacionId);
+                     if (habitacion != null)
+                     {
+                         // Update the room's availability to true
+                         habitacion.Disponible = true;
+                         habitacion.VisitaID = null; 
+                     }
+
+                     // Save the changes to the database
+                     await _db.SaveChangesAsync();
+
+                     res.Message = "La reserva se finalizó correctamente.";
+                     res.Ok = true;
+                 }
+                 else
+                 {
+                     res.Message = "La reserva no fue encontrada.";
+                     res.Ok = false;
+                 }
+             }
+             catch (Exception ex)
+             {
+                 res.Message = $"Error: {ex.Message} {ex.InnerException?.Message}";
+                 res.Ok = false;
+             }
+
+             return res;
+         }*/
 
         [HttpPut]
         [Route("FinalizarReserva")]
         [AllowAnonymous]
-        public async Task<Respuesta> FinalizarReserva(int idReserva)
+        public async Task<Respuesta> FinalizarReserva(int idHabitacion)
         {
             Respuesta res = new Respuesta();
             try
             {
                 // Find the Reserva by idReserva
-                var reserva = await _db.Reservas.FindAsync(idReserva);
+                var habitacion = await _db.Habitaciones.FindAsync(idHabitacion);
 
                 // Check if the reservation exists
-                if (reserva != null)
+                if (habitacion != null)
                 {
-                    // Update the FechaFin to DateTime.Now
-                    reserva.FechaFin = DateTime.Now;
+
+                        // Update the room's availability to true
+                        habitacion.Disponible = true;
+                        habitacion.VisitaID = null;
 
                     // Save the changes to the database
                     await _db.SaveChangesAsync();

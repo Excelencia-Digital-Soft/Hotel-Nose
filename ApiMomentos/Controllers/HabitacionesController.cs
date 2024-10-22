@@ -59,7 +59,7 @@ namespace ApiObjetos.Controllers
                 try
                 {
 
-                    var Objeto = await _db.Habitaciones.Where(
+                    var Objeto = await _db.Habitaciones.Include(h => h.Visita).Where(
                     t => t.HabitacionId == idHabitacion
                     ).ToListAsync();
                     res.Ok = true;
@@ -87,7 +87,7 @@ namespace ApiObjetos.Controllers
                 try
                 {
 
-                    var Objeto = await _db.Habitaciones
+                    var Objeto = await _db.Habitaciones.Include(h => h.Visita)
                     .Where(h => h.Anulado == false)
                     .ToListAsync();
                     res.Ok = true;
