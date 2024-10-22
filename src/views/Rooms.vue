@@ -7,7 +7,7 @@
         <div
           v-for="habitacion in habitacionesLibres"
           :key="habitacion.habitacionId"
-          @click="toggleModal(habitacion)"
+          @click="toggleModalLibre(habitacion)"
           class="p-4 border-4 bg-surface-800  rounded-md text-lg font-semibold shadow-sm text-white text-center cursor-pointer hover:bg-primary-400 border-primary-500"
         >
           {{ habitacion.nombreHabitacion }}
@@ -35,17 +35,27 @@
             v-if="show" 
             @close-modal="toggleModal">
   </ReserveRoom>
+
+  <ReserveRoomLibre
+    :room="room"
+    v-if="showFree"
+    @close-modal="toggleModalLibre">
+  </ReserveRoomLibre>
+  
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import axiosClient from '../axiosClient'; // Ajusta la ruta según tu estructura de proyecto
 import ReserveRoom from '../components/ReserveRoom.vue';
+import ReserveRoomLibre from '../components/ReserveRoomLibre.vue';
 let habitaciones = []
 const habitacionesLibres = ref([])
 const habitacionesOcupadas = ref([])
 const room = ref(null);
 const show = ref(false)
+const showFree = ref(false)
+
 const fetchHabitaciones = () => {
   axiosClient.get("/GetHabitaciones")
     .then(({ data }) => {
@@ -68,6 +78,10 @@ const fetchHabitaciones = () => {
 
 function toggleModal(Room){
     show.value = !show.value
+    room.value=Room
+}
+function toggleModalLibre(Room){
+    showFree.value = !showFree.value
     room.value=Room
 }
 // Llamar a la API al montar el componente
