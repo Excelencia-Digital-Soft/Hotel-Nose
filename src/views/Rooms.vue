@@ -22,6 +22,7 @@
         <div
           v-for="habitacion in habitacionesOcupadas"
           :key="habitacion.habitacionId"
+          @click="toggleModal(habitacion)"
           class="p-4 border-4 bg-surface-800  rounded-md text-lg font-semibold shadow-sm text-white text-center cursor-pointer hover:bg-secondary-400 border-secondary-500"
         >
           {{ habitacion.nombreHabitacion }}
@@ -54,6 +55,8 @@ const fetchHabitaciones = () => {
         // Dividir habitaciones en libres y ocupadas
         habitacionesLibres.value = habitaciones.filter(habitacion => habitacion.disponible === true);
         habitacionesOcupadas.value = habitaciones.filter(habitacion => habitacion.disponible === false);
+        console.log("Libres",habitacionesLibres.value)
+        console.log("OCUPADAS",habitacionesOcupadas.value)
       } else {
         console.error('Datos de la API no válidos:', data);
       }

@@ -1,16 +1,17 @@
 <template>
+  <Teleport to="body" >
   <Transition name="modal-outer" appear>
-    <div class="h-full min-h-screen absolute w-full bg-black bg-opacity-40 top-0 left-0 flex justify-center items-center px-8">
+    <div class="fixed w-full h-full  bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
       <Transition name="modal-inner">
         <div
-          class="flex flex-col justify-center fixed mt-10 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900 w-3/4 h-5/6">
+        :class="selectedRoom.Disponible ? 'w-2/4 h-3/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900':' w-3/4 h-5/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900'">
           <i class="fa-thin fa-circle-xmark"></i>
           <!-- Modal Content -->
           <h1 class="self-center text-2xl text-white lexend-exa font-bold mt-5 mb-5">
             {{ room.nombreHabitacion }}
           </h1>
 
-          <form class="grid grid-cols-3 gap-3 mb-2">
+          <form :class="!selectedRoom.Disponible ? 'grid grid-cols-3 gap-3 mb-2' : 'grid-cols-1'">
             <section class="grid grid-cols-2 gap-3 mb-2">
               <div class="grid col-span-2 relative mb-3">
                 <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
@@ -31,8 +32,8 @@
                   maxlength="11" v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
               </div>
             </section>
-            <section class="grid place-items-center  relative mb-3">
-              <label for="cuit" class="text-sm font-semibold leading-6 text-white">Tiempo de Reserva</label>
+            <section v-if="!selectedRoom.Disponible" class="grid place-items-center  relative mb-3">
+              <label class="text-sm font-semibold leading-6 text-white">Tiempo de Reserva</label>
               <div class="card flex">
                 <div class="grid mb-3 mr-4">
                   <label for="hours" class="text-xs font-semibold leading-6 text-white">Horas</label>
@@ -61,7 +62,7 @@
                 </div>
               </div>
             </section>
-            <section class="grid grid-cols-2">
+            <section v-if="!selectedRoom.Disponible" class="grid grid-cols-2">
               <div class="max-w-sm mx-auto mt-4 space-y-4">
                 <!-- Input para la fecha actual -->
                 <div>
@@ -96,14 +97,14 @@
                 </div>
               </div>
             </section>
-            <section class="p-10">
+            <section v-if="!selectedRoom.Disponible" class="p-10">
 
               <button type="button" 
               @click="toggleModalConfirm()"
                 class="btn-primary w-full h-full text-lg font-bold  tracking-wider rounded-3xl">Agregar Consumisión</button>
 
             </section>
-            <section>
+            <section v-if="!selectedRoom.Disponible">
               <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
                 <table class="w-full text-left">
                   <tbody>
@@ -127,7 +128,7 @@
                 </table>
               </div>
             </section>
-            <section>
+            <section v-if="!selectedRoom.Disponible">
               <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
                 <table class="w-full text-left">
                   <tbody>
@@ -187,6 +188,7 @@
       </Transition>
     </div>
   </Transition>
+</Teleport>
 </template>
 
 <script setup>
@@ -205,19 +207,26 @@ const props = defineProps({
 
 onMounted(() => {
   selectedRoom.value.HabitacionID = props.room.habitacionId
+  selectedRoom.value.Disponible = props.room.disponible
   setCurrentDateTime();
+  document.body.style.overflow = 'hidden';
 })
 
 let selectedRoom = ref({
   HabitacionID: 0,
+  Disponible:null,
   FechaReserva: '',
   FechaFin: '',
   TotalHoras: 0,
   UsuarioID: 14,
   PatenteVehiculo: '',
   NumeroTelefono: '',
-  Identificador: ''
+  Identificador: '',
+  esReserva: true,
 })
+
+
+
 
 
 
@@ -247,7 +256,9 @@ let numeroError = ref('');
 const toggleModalConfirm = () => {
   modalConfirm.value = !modalConfirm.value;
 }
-const confirmAndSend = () =>{
+const confirmAndSend = (ConfirmedArticles) =>{
+  
+  console.log(ConfirmedArticles+" Llegamos al ReserveROOM")
   const consumos = [];
 }
 const handleCheat = (cheatIds) => {
@@ -296,21 +307,24 @@ const actualizarFechas = () => {
   const localFechaReserva = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, -1);
 
   selectedRoom.value.FechaReserva = localFechaReserva;
+ // Sumar una hora más
+ const fechaConUnaHoraMas = new Date(now);
+  fechaConUnaHoraMas.setHours(fechaConUnaHoraMas.getHours() + 1);
 
-  // Sumar TotalHoras a FechaReserva
-  const fechaFin = new Date(now.getTime() + selectedRoom.value.TotalHoras * 60 * 60 * 1000);
-  const localFechaFin = new Date(fechaFin.getTime() - fechaFin.getTimezoneOffset() * 60000).toISOString().slice(0, -1);
+  // Convertir la nueva fecha con una hora adicional a la zona horaria local
+  const localFechaReservaConUnaHoraMas = new Date(fechaConUnaHoraMas.getTime() - fechaConUnaHoraMas.getTimezoneOffset() * 60000).toISOString().slice(0, -1);
 
-  selectedRoom.value.FechaFin = localFechaFin;
+  // Aquí puedes asignar la nueva fecha si es necesario
+  selectedRoom.value.FechaFin = localFechaReservaConUnaHoraMas;
 };
 
 
 //Reservar Habitacion
 const reserveRoom = () => {
-  actualizarFechas()
+   actualizarFechas()
   if (numeroError.value || (selectedRoom.PatenteVehiculo == '' && selectedRoom.Identificador == '' && selectedRoom.NumeroTelefono == '')) {
     // No envíes el formulario si hay errores de validación
-    console.log("faltan datos obligatorios perra")
+    console.log("faltan datos obligatorios")
     return;
   }
   console.log("loquese Envía", selectedRoom.value)
