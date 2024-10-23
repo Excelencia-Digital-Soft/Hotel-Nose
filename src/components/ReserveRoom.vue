@@ -280,15 +280,26 @@ let numeroError = ref('');
 const addToConsumos = (selectedItems) => {
   // Add the selected items to the consumos list
   selectedItems.forEach(item => {
-    const total = item.cantidad * item.precio; // Use 'precio' instead of 'precioUnitario'
-    consumos.value.push({
-      consumoId: Date.now(), // Generate a unique ID for the consumption item
-      articuloId: item.articuloId,
-      articleName: item.nombreArticulo,
-      cantidad: item.cantidad,
-      precioUnitario: item.precio,
-      total
-    });
+    const total = item.cantidad * item.precio; // Use 'precio' for total calculation
+
+    // Check if the item already exists in the consumos list
+    const existingItem = consumos.value.find(consumo => consumo.articuloId === item.articuloId);
+
+    if (existingItem) {
+      // If the item exists, update its quantity and total
+      existingItem.cantidad += item.cantidad;
+      existingItem.total += total;
+    } else {
+      // If the item does not exist, add it as a new entry
+      consumos.value.push({
+        consumoId: Date.now(), // Generate a unique ID for the consumption item
+        articuloId: item.articuloId,
+        articleName: item.nombreArticulo,
+        cantidad: item.cantidad,
+        precioUnitario: item.precio,
+        total
+      });
+    }
   });
 };
 
