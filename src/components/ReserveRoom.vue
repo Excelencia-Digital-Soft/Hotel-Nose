@@ -208,6 +208,10 @@ const props = defineProps({
 onMounted(() => {
   selectedRoom.value.HabitacionID = props.room.habitacionId
   selectedRoom.value.Disponible = props.room.disponible
+  if (!selectedRoom.value.Disponible){
+    selectedRoom.value.Identificador = props.room.visita.identificador
+    selectedRoom.value.PatenteVehiculo = props.room.visita.patenteVehiculo
+  }
   setCurrentDateTime();
   document.body.style.overflow = 'hidden';
 })
