@@ -99,9 +99,8 @@
               </div>
             </section>
             <section v-if="!selectedRoom.Disponible" class="p-10">
-
-              <div>
-                <h1 class="text-xl text-white font-bold mb-4">Consumos</h1>
+  <div>
+    <h1 class="text-xl text-white font-bold mb-4">Consumos</h1>
     <ul class="bg-gray-800 rounded-lg p-4 space-y-2 max-h-64 overflow-y-auto">
       <li v-for="consumo in consumos" :key="consumo.consumoId" class="bg-gray-700 p-3 rounded-md">
         <span class="font-semibold">{{ consumo.articleName }}</span>
@@ -109,20 +108,21 @@
         <span class="text-sm text-gray-400"> - Precio: ${{ consumo.precioUnitario }}</span>
         <span class="text-sm font-bold text-green-400"> - Total: ${{ consumo.total }}</span>
       </li>
-      <li v-for="consumo in hardcodedConsumos" :key="consumo.consumoId" class="bg-gray-700 p-3 rounded-md">
-        <span class="font-semibold">{{ consumo.articleName }}</span>
-        <span class="text-sm text-gray-400"> - Cantidad: {{ consumo.cantidad }}</span>
-        <span class="text-sm text-gray-400"> - Precio: ${{ consumo.precioUnitario }}</span>
-        <span class="text-sm font-bold text-green-400"> - Total: ${{ consumo.total }}</span>
-      </li>
     </ul>
   </div>
-              <button type="button" 
-              @click="toggleModalConfirm()"
-              class="btn-primary w-full h-12 text-base font-semibold tracking-wider rounded-3xl mt-4">
-              Agregar Consumisión</button>
-
-            </section>
+  <button type="button" 
+          @click="toggleModalConfirm()"
+          class="btn-primary w-full h-12 text-base font-semibold tracking-wider rounded-3xl mt-4">
+    Agregar Consumisión
+  </button>
+  
+  <!-- Modal Component -->
+  <ModalConfirmacion 
+    v-if="modalConfirm" 
+    @close="toggleModalConfirm"
+    @confirmaAccion="addToConsumos"
+  />
+</section>
             <section v-if="!selectedRoom.Disponible">
               <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
                 <table class="w-full text-left">
@@ -271,45 +271,26 @@ const products = ref();
 const hours = ref(0);
 const minutes = ref(0);
 const selectedTags = ref([]);
-const consumos = [];
-const hardcodedConsumos = [
-        {
-          consumoId: 1003,
-          articuloId: 4,
-          articleName: "WHISKY 50ML",
-          cantidad: 4,
-          precioUnitario: 4000,
-          total: 16000,
-        },
-        {
-          consumoId: 1004,
-          articuloId: 5,
-          articleName: "FERNET BRANCA 50CC",
-          cantidad: 2,
-          precioUnitario: 3200,
-          total: 6400,
-        },
-        {
-          consumoId: 1003,
-          articuloId: 4,
-          articleName: "WHISKY 50ML",
-          cantidad: 4,
-          precioUnitario: 4000,
-          total: 16000,
-        },
-        {
-          consumoId: 1004,
-          articuloId: 5,
-          articleName: "FERNET BRANCA 50CC",
-          cantidad: 2,
-          precioUnitario: 3200,
-          total: 6400,
-        },
-      ];
+const consumos = ref([]);
 let editTagRel = {}
 let cheatRefresh = ref(false);
 let idNewTag = ref(0);
 let numeroError = ref('');
+
+const addToConsumos = (selectedItems) => {
+  // Add the selected items to the consumos list
+  selectedItems.forEach(item => {
+    const total = item.cantidad * item.precio; // Use 'precio' instead of 'precioUnitario'
+    consumos.value.push({
+      consumoId: Date.now(), // Generate a unique ID for the consumption item
+      articuloId: item.articuloId,
+      articleName: item.nombreArticulo,
+      cantidad: item.cantidad,
+      precioUnitario: item.precio,
+      total
+    });
+  });
+};
 
 const toggleModalConfirm = () => {
   modalConfirm.value = !modalConfirm.value;
@@ -317,8 +298,8 @@ const toggleModalConfirm = () => {
 }
 const confirmAndSend = (ConfirmedArticles) =>{
   
-  console.log(ConfirmedArticles+" Llegamos al ReserveROOM")
-  const consumos = [];
+  console.log(JSON.stringify(ConfirmedArticles) +" Llegamos al ReserveROOM");
+  addToConsumos(ConfirmedArticles);
 }
 const handleCheat = (cheatIds) => {
   //le avisamos al componente DropDownTag que actualice para agregar los nuevos datos
