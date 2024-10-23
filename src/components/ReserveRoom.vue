@@ -32,36 +32,7 @@
                   maxlength="11" v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
               </div>
             </section>
-            <section v-if="!selectedRoom.Disponible" class="grid place-items-center  relative mb-3">
-              <label class="text-sm font-semibold leading-6 text-white">Tiempo de Reserva</label>
-              <div class="card flex">
-                <div class="grid mb-3 mr-4">
-                  <label for="hours" class="text-xs font-semibold leading-6 text-white">Horas</label>
-
-                  <InputNumber v-model="hours" showButtons buttonLayout="vertical" style="width: 3rem" :min="0"
-                    :max="99">
-                    <template #incrementbuttonicon>
-                      <span class="pi pi-plus" />
-                    </template>
-                    <template #decrementbuttonicon>
-                      <span class="pi pi-minus" />
-                    </template>
-                  </InputNumber>
-                </div>
-                <div class="grid mb-3">
-                  <label for="minutes" class="text-xs font-semibold leading-6 text-white">Minutos</label>
-                  <InputNumber v-model="minutes" showButtons buttonLayout="vertical" style="width: 3rem" :min="0"
-                    :max="99">
-                    <template #incrementbuttonicon>
-                      <span class="pi pi-plus" />
-                    </template>
-                    <template #decrementbuttonicon>
-                      <span class="pi pi-minus" />
-                    </template>
-                  </InputNumber>
-                </div>
-              </div>
-            </section>
+            
             <section v-if="!selectedRoom.Disponible" class="grid grid-cols-2">
               <div class="max-w-sm mx-auto mt-4 space-y-4">
                 <!-- Input para la fecha actual -->
@@ -97,13 +68,61 @@
                 </div>
               </div>
             </section>
-            <section v-if="!selectedRoom.Disponible" class="p-10">
+            <section v-if="!selectedRoom.Disponible" class="grid place-items-center  relative mb-3">
+              <label class="text-sm font-semibold leading-6 text-white">Tiempo de Reserva</label>
+              <div class="card flex">
+                <div class="grid mb-3 mr-4">
+                  <label for="hours" class="text-xs font-semibold leading-6 text-white">Horas</label>
 
-              <button type="button" 
-              @click="toggleModalConfirm()"
-                class="btn-primary w-full h-full text-lg font-bold  tracking-wider rounded-3xl">Agregar Consumisión</button>
-
+                  <InputNumber v-model="hours" showButtons buttonLayout="vertical" style="width: 3rem" :min="0"
+                    :max="99">
+                    <template #incrementbuttonicon>
+                      <span class="pi pi-plus" />
+                    </template>
+                    <template #decrementbuttonicon>
+                      <span class="pi pi-minus" />
+                    </template>
+                  </InputNumber>
+                </div>
+                <div class="grid mb-3">
+                  <label for="minutes" class="text-xs font-semibold leading-6 text-white">Minutos</label>
+                  <InputNumber v-model="minutes" showButtons buttonLayout="vertical" style="width: 3rem" :min="0"
+                    :max="99">
+                    <template #incrementbuttonicon>
+                      <span class="pi pi-plus" />
+                    </template>
+                    <template #decrementbuttonicon>
+                      <span class="pi pi-minus" />
+                    </template>
+                  </InputNumber>
+                </div>
+              </div>
             </section>
+            <section v-if="!selectedRoom.Disponible" class="p-10">
+  <div>
+    <h1 class="text-xl text-white font-bold mb-4">Consumos</h1>
+    <ul class="bg-gray-800 rounded-lg p-4 space-y-2 max-h-64 overflow-y-auto">
+      <li v-for="consumo in consumos" :key="consumo.consumoId" class="bg-gray-700 p-3 rounded-md">
+        <span class="font-semibold">{{ consumo.articleName }}</span>
+        <span class="text-sm text-gray-400"> - Cantidad: {{ consumo.cantidad }}</span>
+        <span class="text-sm text-gray-400"> - Precio: ${{ consumo.precioUnitario }}</span>
+        <span class="text-sm font-bold text-green-400"> - Total: ${{ consumo.total }}</span>
+      </li>
+    </ul>
+  </div>
+  <button type="button" 
+          @click="toggleModalConfirm()"
+          class="btn-primary w-full h-12 text-base font-semibold tracking-wider rounded-3xl mt-4">
+    Agregar Consumisión
+  </button>
+  
+  <!-- Modal Component -->
+  <ModalConfirmacion 
+    v-if="modalConfirm" 
+    @close="toggleModalConfirm"
+    @confirmaAccion="addToConsumos"
+  />
+</section>
             <section v-if="!selectedRoom.Disponible">
               <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
                 <table class="w-full text-left">
@@ -172,9 +191,8 @@
               </div>
             </section>
             <div class="col-span-3 flex justify-center items-center w-full">
-              <button @click="reserveRoom" type="button"
-                class="btn-primary w-2/4 h-16 rounded-2xl ">Ocupar
-                Habitacion</button>
+              <button @click="endRoomReserve" type="button"
+                class="btn-primary w-2/4 h-16 rounded-2xl ">Desocupar Habitacion</button>
             </div>
           </form>
           <button
@@ -192,6 +210,7 @@
 </template>
 
 <script setup>
+
 import { computed } from 'vue';
 import { onMounted, ref, watch } from 'vue';
 import axiosClient from '../axiosClient';
@@ -208,10 +227,10 @@ const props = defineProps({
 onMounted(() => {
   selectedRoom.value.HabitacionID = props.room.habitacionId
   selectedRoom.value.Disponible = props.room.disponible
-  if (!selectedRoom.value.Disponible){
-    selectedRoom.value.Identificador = props.room.visita.identificador
-    selectedRoom.value.PatenteVehiculo = props.room.visita.patenteVehiculo
-  }
+  selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
+  selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono; // Safe access
+  selectedRoom.value.PatenteVehiculo = props.room.visita?.patenteVehiculo; // Safe access
+
   setCurrentDateTime();
   document.body.style.overflow = 'hidden';
 })
@@ -252,18 +271,46 @@ const products = ref();
 const hours = ref(0);
 const minutes = ref(0);
 const selectedTags = ref([]);
+const consumos = ref([]);
 let editTagRel = {}
 let cheatRefresh = ref(false);
 let idNewTag = ref(0);
 let numeroError = ref('');
 
+const addToConsumos = (selectedItems) => {
+  // Add the selected items to the consumos list
+  selectedItems.forEach(item => {
+    const total = item.cantidad * item.precio; // Use 'precio' for total calculation
+
+    // Check if the item already exists in the consumos list
+    const existingItem = consumos.value.find(consumo => consumo.articuloId === item.articuloId);
+
+    if (existingItem) {
+      // If the item exists, update its quantity and total
+      existingItem.cantidad += item.cantidad;
+      existingItem.total += total;
+    } else {
+      // If the item does not exist, add it as a new entry
+      consumos.value.push({
+        consumoId: Date.now(), // Generate a unique ID for the consumption item
+        articuloId: item.articuloId,
+        articleName: item.nombreArticulo,
+        cantidad: item.cantidad,
+        precioUnitario: item.precio,
+        total
+      });
+    }
+  });
+};
+
 const toggleModalConfirm = () => {
   modalConfirm.value = !modalConfirm.value;
+  console.log(selectedRoom.value);
 }
 const confirmAndSend = (ConfirmedArticles) =>{
   
-  console.log(ConfirmedArticles+" Llegamos al ReserveROOM")
-  const consumos = [];
+  console.log(JSON.stringify(ConfirmedArticles) +" Llegamos al ReserveROOM");
+  addToConsumos(ConfirmedArticles);
 }
 const handleCheat = (cheatIds) => {
   //le avisamos al componente DropDownTag que actualice para agregar los nuevos datos
@@ -324,19 +371,11 @@ const actualizarFechas = () => {
 
 
 //Reservar Habitacion
-const reserveRoom = () => {
-   actualizarFechas()
-  if (numeroError.value || (selectedRoom.PatenteVehiculo == '' && selectedRoom.Identificador == '' && selectedRoom.NumeroTelefono == '')) {
-    // No envíes el formulario si hay errores de validación
-    console.log("faltan datos obligatorios")
-    return;
-  }
-  console.log("loquese Envía", selectedRoom.value)
-  debugger
-  axiosClient.post('/ReservarHabitacion', selectedRoom.value)
-    .then(res => {
+const endRoomReserve = () => {
+  axiosClient.put(`/FinalizarReserva?idHabitacion=${selectedRoom.value.HabitacionID}`)
+  .then(res => {
       console.log(res.data);
-      alert("Reservacion Exitosa");
+      alert("Se terminó la reserva exitosamente");
       emits('close-modal');
       window.location.reload();
     })
