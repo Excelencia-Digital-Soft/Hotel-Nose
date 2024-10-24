@@ -5,7 +5,7 @@
   @apply bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500
 }
 .btn-primary {
-  @apply flex justify-center items-center shadow-lg border-4 bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-800 hover:via-secondary-700 hover:to-accent-800 transition duration-150 ease-in-out md:ease-in border-purple-200;
+  @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-800 hover:via-secondary-700 hover:to-accent-800 transition duration-150 ease-in-out md:ease-in border-purple-200;
 }
 .btn-secondary {
   @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-lime-200 via-lime-300 to-lime-200  text-white hover:shadow-lg hover:shadow-lime-500/50 hover:from-lime-400 hover:via-lime-400 hover:to-lime-400 transition duration-150 ease-in-out md:ease-in border-lime-100;

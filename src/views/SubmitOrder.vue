@@ -17,7 +17,7 @@
                   <!-- Iteramos sobre los productos -->
                   <div v-for="producto in computedProductos" :key="producto.articuloId" @click="toggleSeleccion(producto)"
                     :class="{
-                    'relative  hover:bg-surface-700 cursor-pointer text-white rounded-lg p-4 flex flex-col items-center justify-center': true,
+                    'relative  hover:bg-surface-700 cursor-pointer text-white rounded-lg p-4 flex flex-col items-center justify-between': true,
                     'ring-4 bg-secondary-900 ring-primary-500': seleccionados.includes(producto)
                   }">
                     <!-- Imagen del producto, en este caso un placeholder -->
@@ -26,13 +26,14 @@
                     </div>
                     <!-- Nombre del producto -->
                     <p>{{ producto.nombreArticulo }}</p>
+                    <p class="text-sm text-green-600">${{ producto.precio }}</p>
                   </div>
                 </div>
               </div>
             </div>
 
                 <!-- TABLE CONTENT -->
-                <TableRowModal v-show="show" class="w-full" :selectedList="seleccionados" @update:productList="actualizarSeleccionados" @close="toggleTable" />
+                <TableRowModal v-show="show" :selectedList="seleccionados" @update:productList="actualizarSeleccionados" @close="toggleTable" />
                 <button @click="toggleTable"
 							class="w-full text-white font-bold principal-convination-color rounded-2xl  flex items-center justify-evenly cursor-pointer  px-5 h-12  mt-4"
 							id="signUp">

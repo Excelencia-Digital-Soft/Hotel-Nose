@@ -1,52 +1,65 @@
 <template>
- 
-    <Transition name="modal-outer" appear>
-      <div
-        class="fixed w-full h-full overflow-auto z-20 bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center px-8">
-        <Transition name="modal-inner">
-          <div class="table-body mt-4" style="max-height: 100vh; overflow-y: auto;">
-            <table class="w-full text-white">
-              <thead>
-                <tr>
-                  <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Item</th>
-                  <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Producto</th>
-                  <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Precio</th>
-                  <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Cantidad</th>
-                  <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Total</th>
-                  <th class=" bg-secondary-800 w-12 rounded-sm text-sm shadow-sm"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr class="hover:shadow-md text-white" v-for="(detalle, index) in props.selectedList"
-                  :key="detalle.articuloId">
-                  <td class="rounded-md text-center shadow-sm">
-                    {{ index + 1 }}
-                  </td>
-                  <td class="rounded-md shadow-sm">
-                    {{ detalle.nombreArticulo }}
-                  </td>
-                  <td class="rounded-md w-1/5 pl-2 shadow-sm">
-                    {{ detalle.precio }}
-                  </td>
-                  <td class="rounded-md shadow-sm  w-24">
-                    <input v-model="detalle.cantidad" type="number" class="w-full bg-inherit border-0">
-                  </td>
-                  <td class="rounded-md w-1/5 pl-2 shadow-sm">
-                    {{ detalle.precio * detalle.cantidad }}
-                  </td>
 
-                  <button @click="quitarRegistro(index)" type="button"
-                    class="btn-danger rounded-xl text-xl h-12 text-white w-full  flex justify-center items-center mt-1  material-symbols-outlined">delete</button>
-                </tr>
-                <button
-                  class="btn-danger absolute text-md  w-12 h-12 top-6 right-6 rounded-full border-2 border-purple-200"
-                  @click="emits('close')">X</button>
-              </tbody>
-            </table>
+  <Transition name="modal-outer" appear>
+    <div
+      class="fixed w-full h-full overflow-auto z-20 bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center p-2">
+      <Transition name="modal-inner">
+        <div class="flex flex-col justify-between  mt-4" style="max-height: 90vh; overflow-y: auto;">
+          <table class="w-full text-xs text-white">
+            <thead>
+              <tr>
+                <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Item</th>
+                <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Producto</th>
+                <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Precio</th>
+                <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Cantidad</th>
+                <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Total</th>
+                <th class=" bg-secondary-800 w-12 rounded-sm text-sm shadow-sm"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="hover:shadow-md text-white" v-for="(detalle, index) in props.selectedList"
+                :key="detalle.articuloId">
+                <td class="rounded-md text-center shadow-sm">
+                  {{ index + 1 }}
+                </td>
+                <td class="rounded-md shadow-sm">
+                  {{ detalle.nombreArticulo }}
+                </td>
+                <td class="rounded-md  pl-2 shadow-sm">
+                  {{ detalle.precio }}
+                </td>
+                <td class="rounded-md shadow-sm w-8  ">
+                  <input v-model="detalle.cantidad" type="number" class="w-full bg-inherit border-0">
+                </td>
+                <td class="rounded-md  pl-2 shadow-sm">
+                  {{ detalle.precio * detalle.cantidad }}
+                </td>
+
+                <button @click="quitarRegistro(index)" type="button"
+                  class="btn-danger rounded-xl text-xl h-12 text-white w-full  flex justify-center items-center mt-1  material-symbols-outlined">delete</button>
+              </tr>
+
+            </tbody>
+          </table>
+          <div class="flex w-full items-center">
+
+            <button type="button"
+              class="btn-danger -bottom-8 right-8 text-md w-1/3 h-12  rounded-2xl transition-colors border-2 border-purple-200 mx-4"
+              @click="emits('close')">volver</button>
+            <button
+              class="w-full text-white font-bold btn-primary rounded-2xl  flex items-center justify-evenly cursor-pointer  px-5 h-12 mr-4 border-2 border-purple-200"
+              id="signUp">
+              Encargar
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
           </div>
-        </Transition>
-      </div>
-    </Transition>
+
+
+
+        </div>
+      </Transition>
+    </div>
+  </Transition>
 
 </template>
 
