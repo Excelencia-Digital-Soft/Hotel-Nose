@@ -12,7 +12,7 @@
             />
             <div class="container mx-auto">
               <!-- Contenedor con overflow-hidden y altura de 500px -->
-              <div style="max-height: 50vh; overflow-y: auto;">
+              <div style="max-height: 65vh; overflow-y: auto;">
                 <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 m-2">
                   <!-- Iteramos sobre los productos -->
                   <div v-for="producto in computedProductos" :key="producto.articuloId" @click="toggleSeleccion(producto)"
@@ -32,11 +32,11 @@
             </div>
 
                 <!-- TABLE CONTENT -->
-                <TableRow class="w-full" :selectedList="seleccionados" @update:productList="actualizarSeleccionados"></TableRow>
-                <button @click=""
+                <TableRowModal v-show="show" class="w-full" :selectedList="seleccionados" @update:productList="actualizarSeleccionados" @close="toggleTable" />
+                <button @click="toggleTable"
 							class="w-full text-white font-bold principal-convination-color rounded-2xl  flex items-center justify-evenly cursor-pointer  px-5 h-12  mt-4"
 							id="signUp">
-							Solicitar pedido<span class="material-symbols-outlined">
+							Ver Listado<span class="material-symbols-outlined">
 arrow_forward
 </span></button>
               </div>
@@ -48,13 +48,13 @@ arrow_forward
 <script setup>
 import { onMounted, ref,computed } from 'vue';
 import axiosClient from '../axiosClient';
-import TableRow from '../components/TableRow.vue';
+import TableRowModal from '../components/TableRowModal.vue';
 
 let isLoading = ref(false)
 const keyword = ref('');
 const productos = ref([])
 const computedProductos = computed(() => productos.value.filter(i => i.nombreArticulo.toLowerCase().includes(keyword.value.toLowerCase())))
-
+const show = ref(false)
 
 onMounted(() => {
   fetchArticulos();
@@ -79,6 +79,10 @@ const toggleSeleccion = (producto) => {
 const actualizarSeleccionados = (nuevaLista) => {
   seleccionados.value = nuevaLista;
 };
+
+const toggleTable = ()=>{
+  show.value = !show.value
+}
 
 const fetchArticulos = () => {
   axiosClient.get("/api/Articulos/GetArticulos")
