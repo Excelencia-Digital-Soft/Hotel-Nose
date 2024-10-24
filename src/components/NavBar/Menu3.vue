@@ -4,7 +4,7 @@
       id="header" 
       class="relative font-bold flex justify-center h-full w-full  items-center text-white hover:shadow-lg hover:shadow-cyan-500/50 rounded-full transition-colors py-2"
     >
-      Archivos
+      Habitaciones
     </section>
     <ul v-show="showResults" id="optionsSelect" class="menu-column absolute w-40 z-20 text-sm right-2 mt-2 ">
       <li>
@@ -12,13 +12,10 @@
           Habitaciones
         </router-link>
         <router-link :to="{ name: 'RoomCreate' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
-          Crear Habitacion
+          Crear Habitaciones
         </router-link>
         <router-link :to="{ name: 'CategoryCreate' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
-          Crear Categoria
-        </router-link>
-        <router-link :to="{ name: 'ArticleCreate' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
-          Crear Articulo
+          Categorías
         </router-link>
       </li>
     </ul>

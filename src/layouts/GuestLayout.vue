@@ -4,7 +4,7 @@
 			id="container">
 			<div class="form-container sign-up-container">
 				<form action="#">
-					<h1 class="text-xl tracking-wider">¡Crea tu cuenta!</h1>
+					<h1 class="text-xl text-white tracking-wider">¡Crea tu cuenta!</h1>
 					<!-- <div class="social-container">
 				<a href="#" class="social"><i class="fab fa-facebook-f"></i></a>
 				<a href="#" class="social"><i class="fab fa-google-plus-g"></i></a>
@@ -33,7 +33,7 @@
 			</div>
 			<div class="form-container sign-in-container">
 				<form action="#">
-					<h1 class="text-2xl tracking-wider">¡Bienvenido!</h1>
+					<h1 class="text-2xl text-white tracking-wider">¡Bienvenido!</h1>
 					<input
 						class="w-full mt-8 text-sm relative colors-input-login my-2"
 						type="text" placeholder="Ingresa tu Usuario" v-model="username" />
@@ -48,7 +48,7 @@
 				</form>
 			</div>
 			<div class="overlay-container">
-				<div class="overlay bg-blue-800 backdrop-filter backdrop-blur-md bg-opacity-30">
+				<div class="overlay bg-primary-700 backdrop-filter backdrop-blur-md bg-opacity-30">
 					<div class="overlay-panel text-white overlay-left ">
 						<h1>Bienvenido de vuelta!</h1>
 						<p>Para mantenerse conectado con nosotros, inicie sesión con su información personal</p>
@@ -58,9 +58,9 @@
 							Iniciar sesión</button>
 					</div>
 					<div class="overlay-panel overlay-right">
-						<img src="../assets/SGCLOGOwhite3.png" alt="UPCN" class="h-28">
+						<div  alt="MOTEL X" class="h-1/3 text-white lexend-exa text-[70px] font-bold">NOSE</div>
 						<button @click="togglePanel"
-							class="btn-switch flex items-center cursor-pointer  px-5 h-12 border-2 mt-8"
+							class="btn-switch  flex items-center cursor-pointer  px-5 h-12 border-2 mt-8"
 							id="signUp">
 							Crear nueva cuenta</button>
 					</div>
@@ -299,8 +299,8 @@ form {
 }
 
 .overlay {
-	background: -webkit-linear-gradient(to right, #279b9f, #01B6BD);
-	background: linear-gradient(to right, #13228b, #52a3ff);
+	background: -webkit-linear-gradient(to right, #a855f7, #06b6d4);
+	background: linear-gradient(to right, #8e2fe7, #ec4899);
 	background-repeat: no-repeat;
 	background-size: cover;
 	background-position: 0 0;
