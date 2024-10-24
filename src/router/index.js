@@ -7,7 +7,7 @@ import Rooms from "../views/Rooms.vue";
 import RoomCreate from "../views/RoomCreate.vue";
 import CategoryCreate from "../views/CategoryCreate.vue";
 import ArticuloCreate from "../views/ArticuloCreate.vue";
-
+import SubmitOrder from "../views/SubmitOrder.vue";
 import { useAuthStore } from '../store/auth';
 const routes = [
   {
@@ -61,6 +61,14 @@ const routes = [
         path: "/ArticleCreate",
         name: "ArticleCreate",
         component: ArticuloCreate,
+        meta:{
+          requireAuth:true
+        }
+      },
+      {
+        path: "/SubmitOrder",
+        name: "SubmitOrder",
+        component: SubmitOrder,
         meta:{
           requireAuth:true
         }

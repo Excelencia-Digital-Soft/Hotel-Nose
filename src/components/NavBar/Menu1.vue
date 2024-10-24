@@ -6,8 +6,11 @@
     >
       Cargas
     </section>
-    <ul v-show="showResults" id="optionsSelect" class="absolute w-40 z-20 text-sm right-2 mt-2 shadow-xl text-white border-4 border-cyan-200 bg-cyan-300 rounded-xl transition duration-200 ease-out md:ease-in">
+    <ul v-show="showResults" id="optionsSelect" class="menu-column absolute w-40 z-20 text-sm right-2 mt-2">
       <li>
+        <router-link :to="{ name: 'SubmitOrder' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
+          Hacer Pedido 
+        </router-link>
       </li>
     </ul>
   </button>
