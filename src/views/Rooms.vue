@@ -31,8 +31,7 @@
     </div>
   </div>
   <ReserveRoom
-            :room="room" 
-            v-if="show" 
+            :room="roomToInventory" 
             @close-modal="toggleModal">
   </ReserveRoom>
 
@@ -41,6 +40,8 @@
     v-if="showFree"
     @close-modal="toggleModalLibre">
   </ReserveRoomLibre>
+
+  
   
 </template>
 

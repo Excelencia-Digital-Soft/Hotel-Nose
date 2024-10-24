@@ -63,6 +63,12 @@
             >
               Actualizar
             </button>
+            <button
+              @click="showInventoryRoom(habitacion)"
+              class="bg-blue-500 text-white px-2 py-1 mt-2 rounded hover:bg-blue-700"
+            >
+              Inventario
+            </button>
         </div>
         <div
   v-if="showDeleteModal"
@@ -143,22 +149,34 @@
       </div>
     </div>
   </div>
+  
+  <div
+  v-if="showInventoryModal"
+  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+>
+  <ModalInventory
+    :room="roomToInventory"
+    @close-modal="showInventoryRoom">
+  </ModalInventory>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import axiosClient from '../axiosClient'; // Adjust the path according to your project structure
-
+import ModalInventory from '../components/ModalInventory.vue'
 const habitaciones = ref([]);
 const categorias = ref([]);
 const newRoomName = ref('');
 const showDeleteModal = ref(false); // Controls the visibility of the delete modal
 const showUpdateModal = ref(false); 
+const showInventoryModal = ref(false);
 const selectedCategory = ref(null);
 const updateRoomCategory = ref(null);
 const updateRoomName = ref(null);
 const roomToUpdate = ref(null);
 const roomToDelete = ref(null);
+const roomToInventory = ref(null)
 
 // Fetch rooms and categories initially
 const fetchHabitaciones = () => {
@@ -192,6 +210,12 @@ const fetchCategorias = () => {
 function confirmDeleteRoom(room) {
   roomToDelete.value = room; // Set the room that is to be deleted
   showDeleteModal.value = true; // Show the delete modal
+}
+
+function showInventoryRoom(room) {
+  roomToInventory.value = room; 
+  showInventoryModal.value = !showInventoryModal.value; //
+  console.log(roomToInventory.value);
 }
 
 function cancelDeleteRoom() {
