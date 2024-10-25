@@ -32,6 +32,7 @@
   </div>
   <ReserveRoom
             :room="roomToInventory" 
+            v-if="show"
             @close-modal="toggleModal">
   </ReserveRoom>
 
