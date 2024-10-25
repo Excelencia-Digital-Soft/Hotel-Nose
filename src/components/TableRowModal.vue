@@ -4,20 +4,20 @@
     <div
       class="fixed w-full h-full overflow-auto z-20 bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center p-2">
       <Transition name="modal-inner">
-        <div class="flex flex-col justify-between  mt-4" style="max-height: 90vh; overflow-y: auto;">
+        <div class="w-full flex flex-col justify-between  mt-4" style="max-height: 90vh; overflow-y: auto;">
           <table class="w-full text-xs text-white">
             <thead>
               <tr>
-                <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Item</th>
-                <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Producto</th>
-                <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Precio</th>
-                <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Cantidad</th>
-                <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Total</th>
-                <th class=" bg-secondary-800 w-12 rounded-sm text-sm shadow-sm"></th>
+                <th class=" bg-secondary-800 border-white border-r-2  text-sm shadow-sm">Item</th>
+                <th class=" bg-secondary-800 border-white border-r-2  text-sm shadow-sm">Producto</th>
+                <th class=" bg-secondary-800 border-white border-r-2  text-sm shadow-sm">Precio</th>
+                <th class=" bg-secondary-800 border-white border-r-2 w-1/6  text-sm shadow-sm">Cantidad</th>
+                <th class=" bg-secondary-800 border-white border-r-2  text-sm shadow-sm">Total</th>
+                <th class=" bg-secondary-800 w-12  text-sm shadow-sm"></th>
               </tr>
             </thead>
             <tbody>
-              <tr class="hover:shadow-md text-white" v-for="(detalle, index) in props.selectedList"
+              <tr class="hover:shadow-md hover:shadow-secondary-400 text-white m-2" v-for="(detalle, index) in props.selectedList"
                 :key="detalle.articuloId">
                 <td class="rounded-md text-center shadow-sm">
                   {{ index + 1 }}
@@ -28,7 +28,7 @@
                 <td class="rounded-md  pl-2 shadow-sm">
                   {{ detalle.precio }}
                 </td>
-                <td class="rounded-md shadow-sm w-8  ">
+                <td class="rounded-md shadow-sm  ">
                   <input v-model="detalle.cantidad" type="number" class="w-full bg-inherit border-0">
                 </td>
                 <td class="rounded-md  pl-2 shadow-sm">
@@ -74,6 +74,7 @@ const emits = defineEmits(['close', 'update:productList']);
 
 watch(() => props.selectedList, (newList) => {
   if (newList) {
+    console.log("Listado de Productos",props.selectedList)
     emits('update:productList', props.selectedList);
   }
 }, { deep: true });  // Activa el modo 'deep' para escuchar cambios en las propiedades internas
