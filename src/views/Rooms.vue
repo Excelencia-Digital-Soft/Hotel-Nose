@@ -3,7 +3,7 @@
     <!-- Panel Izquierdo: Habitaciones Libres -->
     <div class="w-1/2 p-4 flex flex-col items-center">
       <h2 class="text-xl text-white lexend-exa font-bold mb-4">HABITACIONES LIBRES</h2>
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div
           v-for="habitacion in habitacionesLibres"
           :key="habitacion.habitacionId"
@@ -18,7 +18,7 @@
     <!-- Panel Derecho: Habitaciones Ocupadas -->
     <div class="w-1/2 p-4 flex flex-col items-center">
       <h2 class="text-xl text-white lexend-exa font-bold mb-4">HABITACIONES OCUPADAS</h2>
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div
           v-for="habitacion in habitacionesOcupadas"
           :key="habitacion.habitacionId"
