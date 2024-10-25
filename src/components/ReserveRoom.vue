@@ -305,7 +305,6 @@ const addToConsumos = (selectedItems) => {
 
 const toggleModalConfirm = () => {
   modalConfirm.value = !modalConfirm.value;
-  console.log(selectedRoom.value);
 }
 const confirmAndSend = (ConfirmedArticles) =>{
   
