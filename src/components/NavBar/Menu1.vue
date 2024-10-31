@@ -11,6 +11,9 @@
         <router-link :to="{ name: 'SubmitOrder' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
           Hacer Pedido 
         </router-link>
+        <router-link :to="{ name: 'ReceptionOrder' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
+          Recibir Pedido 
+        </router-link>
       </li>
     </ul>
   </button>

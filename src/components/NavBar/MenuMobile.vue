@@ -67,12 +67,7 @@ const menuItems = ref([
     label: 'Habitaciones',
     submenu: [
       { label: 'Ver Rooms', route: { name: 'Rooms' } },
-      { label: 'Crear Room', route: { name: 'RoomCreate' } }
-    ]
-  },
-  {
-    label: 'Categorías',
-    submenu: [
+      { label: 'Crear Room', route: { name: 'RoomCreate' } },
       { label: 'Crear Categoría', route: { name: 'CategoryCreate' } }
     ]
   },
