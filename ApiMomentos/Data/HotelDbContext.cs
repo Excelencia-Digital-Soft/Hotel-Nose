@@ -33,6 +33,7 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<InventarioInicial> InventarioInicial { get; set; }
 
     public virtual DbSet<Inventarios> Inventarios { get; set; }
+    public virtual DbSet<InventarioGeneral> InventarioGeneral { get; set; }
 
     public virtual DbSet<MediosPago> MediosPago { get; set; }
 
@@ -229,6 +230,20 @@ public partial class HotelDbContext : DbContext
                 .HasForeignKey(d => d.HabitacionId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK__Inventari__Habit__42ACE4D4");
+        });
+
+        modelBuilder.Entity<InventarioGeneral>(entity =>
+        {
+            entity.Property(e => e.InventarioId).HasColumnName("InventarioID");
+            entity.Property(e => e.ArticuloId).HasColumnName("ArticuloID");
+            entity.Property(e => e.Cantidad).HasDefaultValueSql("((0))");
+            entity.Property(e => e.FechaRegistro).HasColumnType("date");
+
+            entity.HasOne(d => d.Articulo).WithMany(p => p.InventarioGeneral)
+                .HasForeignKey(d => d.ArticuloId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__Inventari__Artic__43A1090D");
+
         });
 
         modelBuilder.Entity<MediosPago>(entity =>
