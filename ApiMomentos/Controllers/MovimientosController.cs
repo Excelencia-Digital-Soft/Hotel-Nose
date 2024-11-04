@@ -85,24 +85,30 @@ namespace ApiObjetos.Controllers
                         var inventario = await _db.Inventarios
                             .FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId && i.HabitacionId == habitacionId);
 
-                        if (inventario == null)
+                        if (inventario == null || inventario.Cantidad < articuloDTO.Cantidad)
                         {
-                            res.Ok = false;
-                            res.Message = $"No inventario found for Articulo ID {articuloDTO.ArticuloId} in Habitacion ID {habitacionId}.";
-                            return res;
-                        }
+                            var inventarioGeneral = await _db.InventarioGeneral.FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId);
+                            inventarioGeneral.Cantidad -= articuloDTO.Cantidad;
+                            if (inventarioGeneral.Cantidad < 0)
+                            {
+                                res.Ok = false;
+                                res.Message = $"No hay suficiente producto";
+                                return res;
+                            }
+                            _db.InventarioGeneral.Update(inventarioGeneral);
 
-                        // Step 4: Ensure enough stock exists
-                        if (inventario.Cantidad < articuloDTO.Cantidad)
-                        {
-                            res.Ok = false;
-                            res.Message = $"Not enough stock for Articulo ID {articuloDTO.ArticuloId}. Available stock: {inventario.Cantidad}.";
-                            return res;
                         }
-
+                        else { 
                         // Step 5: Deduct the quantity from the Inventario
                         inventario.Cantidad -= articuloDTO.Cantidad;
+                            if (inventario.Cantidad < 0)
+                            {
+                                res.Ok = false;
+                                res.Message = $"No hay suficiente producto en la habitación (ESTO ESTA MAL, PENSAR LUEGO CON LUCAS)";
+                                return res;
+                            }
                         _db.Inventarios.Update(inventario);
+                        }
 
                         // Step 6: Calculate total for this articulo (price * quantity)
                         decimal totalArticulo = articulo.Precio * articuloDTO.Cantidad;
