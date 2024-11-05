@@ -60,7 +60,77 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpGet]
+        [Route("GetInventarioConHabitacion")]
+        public async Task<Respuesta> GetInventarioConHabitacion(int idHabitacion)
+        {
+            Respuesta res = new Respuesta();
 
+            try
+            {
+                InventarioDTO inventario = new InventarioDTO();
+                // Step 1: Retrieve all Inventarios for the specified habitacionID
+                var inventarioGeneral = await _db.InventarioGeneral
+                    .Where(i => i.Cantidad > 0)
+                    .Include(i => i.Articulo) // Include related Articulo data
+                    .ToListAsync();
+                var inventarioHabitacion = await _db.Inventarios
+                    .Where(i => i.HabitacionId == idHabitacion)
+                    .Include(i => i.Articulo)
+                    .ToListAsync();
+                var combinedInventarioDict = inventarioGeneral
+                      .ToDictionary(i => i.Articulo.ArticuloId, i => new InventarioDTO
+                      {
+                          InventarioId = i.InventarioId,
+                          ArticuloId = i.Articulo.ArticuloId,
+                          Cantidad = i.Cantidad
+                      });
+
+                // Update quantities from inventarioHabitacion into combinedInventarioDict
+                foreach (var habitacionItem in inventarioHabitacion)
+                {
+                    if (habitacionItem.Articulo != null)
+                    {
+                        var articuloId = habitacionItem.Articulo.ArticuloId;
+
+                        if (combinedInventarioDict.ContainsKey(articuloId))
+                        {
+                            // Add the quantity if the item exists in inventarioGeneral
+                            combinedInventarioDict[articuloId].Cantidad += habitacionItem.Cantidad;
+                        }
+                        else
+                        {
+                            // Add new entry if not present in inventarioGeneral
+                            combinedInventarioDict[articuloId] = new InventarioDTO
+                            {
+                                InventarioId = habitacionItem.InventarioId,
+                                ArticuloId = articuloId,
+                                Cantidad = habitacionItem.Cantidad
+                            };
+                        }
+                    }
+                }
+                    // Step 2: Check if any inventarios were found
+                    if (combinedInventarioDict == null)
+                {
+                    res.Ok = false;
+                    res.Message = "No se encontraron productos en el inventario.";
+                }
+                else
+                {
+                    res.Ok = true;
+                    res.Message = "Productos obtenidos correctamente.";
+                    res.Data = combinedInventarioDict; // Return the list of Inventarios
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
 
 
         [HttpGet]
@@ -104,5 +174,15 @@ namespace ApiObjetos.Controllers
     {
         public int InventarioId { get; set; }
         public int Cantidad { get; set; }
+    }
+
+    public class InventarioDTO
+    {
+        public int InventarioId { get; set; }
+
+        public int? ArticuloId { get; set; }
+
+        public int? Cantidad { get; set; }
+
     }
 }

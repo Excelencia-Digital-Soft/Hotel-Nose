@@ -45,7 +45,7 @@ namespace ApiObjetos.Controllers
         [AllowAnonymous]
         public async Task<Respuesta> ConsumirArticulos([FromBody] List<ArticuloConsumoDTO> articulos, int habitacionId, int visitaId)
         {
-                Respuesta res = new Respuesta();
+            Respuesta res = new Respuesta();
 
             using (var transaction = await _db.Database.BeginTransactionAsync())
             {
@@ -69,52 +69,50 @@ namespace ApiObjetos.Controllers
                     {
                         // Step 2: Retrieve the Articulo to get the price
                         var articulo = await _db.Articulos.FindAsync(articuloDTO.ArticuloId);
-                        if (articulo == null)
+                        if (articulo == null || articulo.Precio == null || articulo.Precio == 0 || articuloDTO.Cantidad == 0)
                         {
                             res.Ok = false;
-                            res.Message = $"Articulo with ID {articuloDTO.ArticuloId} not found.";
+                            res.Message = $"Error with the price or existence of the article ID: {articuloDTO.ArticuloId}";
                             return res;
                         }
-                        if (articulo.Precio == null || articulo.Precio == 0 || articuloDTO.Cantidad == 0)
-                        {
-                            res.Ok = false;
-                            res.Message = $"Error con el precio del articulo";
-                            return res;
-                        }
-                        // Step 3: Retrieve the Inventario for the specific Articulo and Habitacion
-                        var inventario = await _db.Inventarios
+
+                        int remainingQuantity = articuloDTO.Cantidad;
+
+                        // Step 3: Retrieve and attempt to consume from the Habitacion inventory
+                        var inventarioHabitacion = await _db.Inventarios
                             .FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId && i.HabitacionId == habitacionId);
 
-                        if (inventario == null || inventario.Cantidad < articuloDTO.Cantidad)
+                        if (inventarioHabitacion != null && inventarioHabitacion.Cantidad > 0)
                         {
-                            var inventarioGeneral = await _db.InventarioGeneral.FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId);
-                            inventarioGeneral.Cantidad -= articuloDTO.Cantidad;
-                            if (inventarioGeneral.Cantidad < 0)
+                            int quantityToDeduct = Math.Min(inventarioHabitacion.Cantidad ?? 0, remainingQuantity);
+                            inventarioHabitacion.Cantidad -= quantityToDeduct;
+                            remainingQuantity -= quantityToDeduct;
+                            _db.Inventarios.Update(inventarioHabitacion);
+                        }
+
+                        // Step 4: If still more is needed, try deducting from InventarioGeneral
+                        if (remainingQuantity > 0)
+                        {
+                            var inventarioGeneral = await _db.InventarioGeneral
+                                .FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId);
+
+                            if (inventarioGeneral == null || inventarioGeneral.Cantidad < remainingQuantity)
                             {
                                 res.Ok = false;
-                                res.Message = $"No hay suficiente producto";
+                                res.Message = $"Insufficient product stock in general inventory.";
                                 return res;
                             }
+
+                            // Deduct remaining quantity from InventarioGeneral
+                            inventarioGeneral.Cantidad -= remainingQuantity;
                             _db.InventarioGeneral.Update(inventarioGeneral);
-
-                        }
-                        else { 
-                        // Step 5: Deduct the quantity from the Inventario
-                        inventario.Cantidad -= articuloDTO.Cantidad;
-                            if (inventario.Cantidad < 0)
-                            {
-                                res.Ok = false;
-                                res.Message = $"No hay suficiente producto en la habitación (ESTO ESTA MAL, PENSAR LUEGO CON LUCAS)";
-                                return res;
-                            }
-                        _db.Inventarios.Update(inventario);
                         }
 
-                        // Step 6: Calculate total for this articulo (price * quantity)
+                        // Step 5: Calculate total for this articulo (price * quantity)
                         decimal totalArticulo = articulo.Precio * articuloDTO.Cantidad;
                         totalFacturado += totalArticulo;
 
-                        // Step 7: Create a new Consumo for each Articulo and add it to the list
+                        // Step 6: Create a new Consumo for each Articulo and add it to the list
                         Consumo nuevoConsumo = new Consumo
                         {
                             ArticuloId = articulo.ArticuloId,
@@ -127,21 +125,21 @@ namespace ApiObjetos.Controllers
                         consumosToAdd.Add(nuevoConsumo);
                     }
 
-                    // Step 8: Save all Consumos in one go
+                    // Step 7: Save all Consumos in one go
                     _db.Consumo.AddRange(consumosToAdd);
 
-                    // Step 9: Update Movimiento with the total facturado for all items
+                    // Step 8: Update Movimiento with the total facturado for all items
                     nuevoMovimiento.TotalFacturado = totalFacturado;
                     _db.Movimientos.Update(nuevoMovimiento);
 
-                    // Step 10: Save all changes to the database
+                    // Step 9: Save all changes to the database
                     await _db.SaveChangesAsync();
 
-                    // Step 11: Load the related data (Habitacion and Visita) to return in the response
+                    // Step 10: Load related data (Habitacion and Visita) to return in the response
                     await _db.Entry(nuevoMovimiento).Reference(m => m.Habitacion).LoadAsync();
                     await _db.Entry(nuevoMovimiento).Reference(m => m.Visita).LoadAsync();
 
-                    // Step 12: Commit the transaction
+                    // Step 11: Commit the transaction
                     await transaction.CommitAsync();
 
                     // Set response on success
@@ -153,13 +151,14 @@ namespace ApiObjetos.Controllers
                 {
                     // Rollback transaction on error
                     await transaction.RollbackAsync();
-                    res.Message = $"Error: {ex.Message}";
+                    res.Message = $"Error: {ex.Message} {ex.InnerException}";
                     res.Ok = false;
                 }
             }
 
             return res;
         }
+
 
         [HttpGet]
         [Route("GetConsumosVisita")]
