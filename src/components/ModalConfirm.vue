@@ -72,8 +72,15 @@ import { onMounted, ref,computed } from 'vue';
 import axiosClient from '../axiosClient';
 import TableRow from './TableRow.vue';
 const props = defineProps({
-  name: String
+  name: String,
+  habitacionId: Number,
 });
+
+onMounted(() => {
+  HabitacionID.value = props.habitacionId
+  document.body.style.overflow = 'hidden';
+})
+const HabitacionID = ref(0);
 const emits = defineEmits(["close", "confirmaAccion"]);
 let isLoading = ref(false)
 const keyword = ref('');
@@ -112,8 +119,8 @@ const actualizarSeleccionados = (nuevaLista) => {
 };
 
 const fetchArticulos = () => {
-  axiosClient.get("/api/Articulos/GetArticulos")
-    .then(({ data }) => {
+  axiosClient.get(`/GetInventarioConHabitacion?idhabitacion=${HabitacionID.value}`)
+  .then(({ data }) => {
       if (data && data.data) {
         console.log(data.data)
         productos.value = data.data.map(articulo => {

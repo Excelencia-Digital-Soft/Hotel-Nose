@@ -8,6 +8,7 @@ import RoomCreate from "../views/RoomCreate.vue";
 import CategoryCreate from "../views/CategoryCreate.vue";
 import ArticuloCreate from "../views/ArticuloCreate.vue";
 import SubmitOrder from "../views/SubmitOrder.vue";
+import InventoryManager from "../views/InventoryManager.vue"
 import { useAuthStore } from '../store/auth';
 const routes = [
   {
@@ -69,6 +70,14 @@ const routes = [
         path: "/SubmitOrder",
         name: "SubmitOrder",
         component: SubmitOrder,
+        meta:{
+          requireAuth:true
+        }
+      },
+      {
+        path: "/InventoryManager",
+        name: "InventoryManager",
+        component: InventoryManager,
         meta:{
           requireAuth:true
         }

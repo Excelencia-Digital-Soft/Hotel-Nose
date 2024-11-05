@@ -8,7 +8,7 @@
           <i class="fa-thin fa-circle-xmark"></i>
           <!-- Modal Content -->
           <h1 class="self-center text-2xl text-white lexend-exa font-bold mt-5 mb-5">
-            {{ room.nombreHabitacion }}
+            {{ selectedRoom.nombreHabitacion }}
           </h1>
 
           <form :class="!selectedRoom.Disponible ? 'grid grid-cols-3 gap-3 mb-2' : 'grid-cols-1'">
@@ -121,6 +121,7 @@
     v-if="modalConfirm" 
     @close="toggleModalConfirm"
     @confirmaAccion="addToConsumos"
+    :habitacionId="selectedRoom.value.HabitacionID"
   />
 </section>
             <section v-if="!selectedRoom.Disponible">
@@ -225,6 +226,7 @@ const props = defineProps({
 
 
 onMounted(() => {
+  selectedRoom.value.nombreHabitacion = props.room.nombreHabitacion
   selectedRoom.value.HabitacionID = props.room.habitacionId
   selectedRoom.value.Disponible = props.room.disponible
   selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
@@ -238,6 +240,7 @@ onMounted(() => {
 let selectedRoom = ref({
   HabitacionID: 0,
   Disponible:null,
+  nombreHabitacion: '',
   FechaReserva: '',
   FechaFin: '',
   TotalHoras: 0,
