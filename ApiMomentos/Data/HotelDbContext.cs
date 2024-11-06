@@ -25,6 +25,7 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<Consumo> Consumo { get; set; }
 
     public virtual DbSet<DiasSemana> DiasSemana { get; set; }
+    public virtual DbSet<Encargos> Encargos { get; set; }
 
     public virtual DbSet<Habitaciones> Habitaciones { get; set; }
 
@@ -531,6 +532,27 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.UsuarioId).HasColumnName("UsuarioID");
         });
 
+
+        modelBuilder.Entity<Encargos>(entity =>
+        {
+            entity.HasKey(e => e.EncargosId).HasName("PK_Encargos"); 
+            entity.Property(e => e.ArticuloId).HasColumnName("ArticuloId");
+            entity.Property(e => e.VisitaId).HasColumnName("VisitaId");
+            entity.Property(e => e.CantidadArt).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Entregado).HasDefaultValueSql("((0))"); ;
+            entity.Property(e => e.FechaCrea).HasDefaultValueSql("GETDATE()"); ;
+            entity.Property(e => e.Anulado).HasDefaultValueSql("((0))"); ;
+
+            entity.HasOne(d => d.Articulo).WithMany(p => p.Encargos)
+                .HasForeignKey(d => d.ArticuloId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Encargos_Articulos");
+
+            entity.HasOne(d => d.Visita).WithMany(p => p.Encargos)
+                .HasForeignKey(d => d.VisitaId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Encargos_Visitas");
+        });
         OnModelCreatingPartial(modelBuilder);
     }
 
