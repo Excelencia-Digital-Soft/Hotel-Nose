@@ -24,5 +24,7 @@ public partial class Articulos
     [JsonIgnore]
     public virtual ICollection<Inventarios> Inventarios { get; } = new List<Inventarios>();
     [JsonIgnore]
+    public virtual ICollection<Encargos> Encargos { get; } = new List<Encargos>();
+    [JsonIgnore]
     public virtual ICollection<MovimientosStock> MovimientosStock { get; } = new List<MovimientosStock>();
 }
