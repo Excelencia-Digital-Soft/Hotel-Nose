@@ -90,7 +90,7 @@ namespace ApiObjetos.Controllers
         }
 
 
-        [HttpPut]
+        [HttpPut]   
         [Route("UpdateArticulo")]
         public async Task<Respuesta> UpdateArticulo(int id, string? nombre, decimal? precio)
         {
