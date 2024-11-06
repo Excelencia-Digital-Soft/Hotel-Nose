@@ -84,7 +84,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Add DbContext
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<HotelDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add Cron Job
