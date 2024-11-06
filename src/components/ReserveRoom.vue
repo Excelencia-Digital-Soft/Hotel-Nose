@@ -113,15 +113,19 @@
   <button type="button" 
           @click="toggleModalConfirm()"
           class="btn-primary w-full h-12 text-base font-semibold tracking-wider rounded-3xl mt-4">
-    Agregar Consumisión
+    Consumo general
+  </button>
+  <button type="button" 
+          @click="toggleModalConfirm()"
+          class="btn-primary w-full h-12 text-base font-semibold tracking-wider rounded-3xl mt-4">
+    Consumo habitación
   </button>
   
   <!-- Modal Component -->
   <ModalConfirmacion 
     v-if="modalConfirm" 
     @close="toggleModalConfirm"
-    @confirmaAccion="addToConsumos"
-    :habitacionId="selectedRoom.value.HabitacionID"
+    @confirmaAccion="agregarConsumos"
   />
 </section>
             <section v-if="!selectedRoom.Disponible">
@@ -224,16 +228,17 @@ const props = defineProps({
   room: Object,
 });
 
-
 onMounted(() => {
-  selectedRoom.value.nombreHabitacion = props.room.nombreHabitacion
-  selectedRoom.value.HabitacionID = props.room.habitacionId
-  selectedRoom.value.Disponible = props.room.disponible
+  selectedRoom.value.nombreHabitacion = props.room.nombreHabitacion;
+  selectedRoom.value.HabitacionID = props.room.habitacionId;
+  selectedRoom.value.Disponible = props.room.disponible;
+  selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
   selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
   selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono; // Safe access
   selectedRoom.value.PatenteVehiculo = props.room.visita?.patenteVehiculo; // Safe access
-
+  console.log(selectedRoom.value.HabitacionID)
   setCurrentDateTime();
+  actualizarConsumos();
   document.body.style.overflow = 'hidden';
 })
 
@@ -279,8 +284,7 @@ let editTagRel = {}
 let cheatRefresh = ref(false);
 let idNewTag = ref(0);
 let numeroError = ref('');
-
-const addToConsumos = (selectedItems) => {
+/* const addToConsumos = (selectedItems) => {
   // Add the selected items to the consumos list
   selectedItems.forEach(item => {
     const total = item.cantidad * item.precio; // Use 'precio' for total calculation
@@ -304,15 +308,63 @@ const addToConsumos = (selectedItems) => {
       });
     }
   });
+}; */
+
+const agregarConsumos = (selectedItems) => {
+  console.log(selectedItems);
+  axiosClient.post(
+    `/ConsumoGeneral?habitacionId=${selectedRoom.value.HabitacionID}&visitaId=${selectedRoom.value.VisitaID}`,
+    selectedItems // Send selectedItems directly as the body
+  )
+  .then(response => {
+    actualizarConsumos();
+    console.log('Consumo agregado exitosamente:', response.data);
+  })
+  .catch(error => {
+    console.error('Error al agregar consumo:', error);
+  });
 };
 
+const actualizarConsumos = () => {
+  axiosClient.get(`/GetConsumosVisita?VisitaID=${selectedRoom.value.VisitaID}`)
+    .then(({ data }) => {
+      if (data && data.data) {
+        consumos.value = []; // Clear the array before adding new data
+        data.data.forEach(item => {
+          // Check if the item already exists in the consumos list
+          const existingItem = consumos.value.find(consumo => consumo.articuloId === item.articuloId);
+
+          if (existingItem) {
+            // Update the existing item’s quantity and recalculate subtotal if it exists
+            existingItem.cantidad += item.cantidad;
+            existingItem.total = existingItem.cantidad * existingItem.precioUnitario; // Recalculate subtotal
+          } else {
+            // Add new item if it doesn't already exist
+            consumos.value.push({
+              consumoId: item.consumoId,
+              articuloId: item.articuloId,
+              articleName: item.articleName,
+              cantidad: item.cantidad,
+              precioUnitario: item.precioUnitario,
+              total: item.cantidad * item.precioUnitario // Initial subtotal
+            });
+          }
+        });
+      } else {
+        console.error('Datos de la API no válidos:', data);
+      }
+    })
+    .catch(error => {
+      console.error('Error al obtener los consumos:', error);
+    });
+};
 const toggleModalConfirm = () => {
   modalConfirm.value = !modalConfirm.value;
 }
 const confirmAndSend = (ConfirmedArticles) =>{
   
   console.log(JSON.stringify(ConfirmedArticles) +" Llegamos al ReserveROOM");
-  addToConsumos(ConfirmedArticles);
+  agregarConsumos(ConfirmedArticles)
 }
 const handleCheat = (cheatIds) => {
   //le avisamos al componente DropDownTag que actualice para agregar los nuevos datos

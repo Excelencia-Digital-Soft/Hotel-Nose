@@ -6,18 +6,12 @@
           <div
             class=" w-4/6  bg-surface-900 fixed top-6 flex flex-col justify-evenly items-start p-8 pb-12 rounded-3xl self-start mt-0  border-8 border-purple-300/75 ">
             <h2 class="text-lg font-bold text-white">Lista de Productos</h2>
-            <input 
-                type="text"
-                v-model="keyword" 
-                class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors " 
-                placeholder="Buscar productos"
-            />
             <div class="container mx-auto">
               <!-- Contenedor con overflow-hidden y altura de 500px -->
               <div style="max-height: 50vh; overflow-y: auto;">
                 <div class="grid grid-cols-3 gap-4 mx-2">
                   <!-- Iteramos sobre los productos -->
-                  <div v-for="producto in computedProductos" :key="producto.articuloId" @click="toggleSeleccion(producto)"
+                  <div v-for="producto in productos" :key="producto.articuloId" @click="toggleSeleccion(producto)"
                     :class="{
                     'relative  hover:bg-surface-700 cursor-pointer text-white rounded-lg p-4 flex flex-col items-center justify-center': true,
                     'ring-4 bg-secondary-900 ring-primary-500': seleccionados.includes(producto)
@@ -28,6 +22,8 @@
                     </div>
                     <!-- Nombre del producto -->
                     <p>{{ producto.nombreArticulo }}</p>
+                    <p>En stock: {{ producto.cantidad }}</p>
+
                   </div>
                 </div>
               </div>
@@ -35,7 +31,7 @@
 
                 <!-- TABLE CONTENT -->
                 <TableRow class="w-full" :selectedList="seleccionados" @update:productList="actualizarSeleccionados"></TableRow>
-            <h3 class="text-md text-white font-semibold">"{{ props.name }}"</h3>
+                <h3 class="text-md text-white font-semibold">"{{ props.name }}"</h3>
             <h3 class="text-md text-white font-semibold">¿Seguro que desea confirmar?</h3>
             <div class="flex">
               <button type="button"
@@ -68,26 +64,15 @@
 </template>
 
 <script setup>
-import { onMounted, ref,computed } from 'vue';
+import { onMounted, ref } from 'vue';
 import axiosClient from '../axiosClient';
 import TableRow from './TableRow.vue';
 const props = defineProps({
   name: String,
-  habitacionId: Number,
 });
-
-onMounted(() => {
-  HabitacionID.value = props.habitacionId
-  document.body.style.overflow = 'hidden';
-})
-const HabitacionID = ref(0);
 const emits = defineEmits(["close", "confirmaAccion"]);
 let isLoading = ref(false)
-const keyword = ref('');
 const productos = ref([])
-const computedProductos = computed(() => productos.value.filter(i => i.nombreArticulo.toLowerCase().includes(keyword.value.toLowerCase())))
-
-
 const confirmarAccion = () => {
 
   isLoading.value = true;
@@ -96,37 +81,41 @@ const confirmarAccion = () => {
 }
 onMounted(() => {
   fetchArticulos();
+  console.log(productos.value)
   seleccionados = ref([])// le asignamos como variable reactiva en el montado para luego 
 })
 let seleccionados = null;
 
 // Método para agregar o quitar productos del array 'seleccionados'
 const toggleSeleccion = (producto) => {
-  const index = seleccionados.value.indexOf(producto);
+  const index = seleccionados.value.findIndex(p => p.articuloId === producto.articuloId);
   if (index === -1) {
     // Si no está seleccionado, lo agregamos
-    seleccionados.value.push(producto);
-    console.log(seleccionados.value)
+    seleccionados.value.push({ articuloId: producto.articuloId,
+      nombreArticulo: producto.nombreArticulo,
+      precio: producto.precio,
+      cantidad: 1,
+      maximo: producto.cantidad
+     });
   } else {
     // Si ya está seleccionado, lo quitamos
     seleccionados.value.splice(index, 1);
   }
 };
 
-// Método para actualizar seleccionados cuando se emite desde TableRow
+
 const actualizarSeleccionados = (nuevaLista) => {
   seleccionados.value = nuevaLista;
 };
 
 const fetchArticulos = () => {
-  axiosClient.get(`/GetInventarioConHabitacion?idhabitacion=${HabitacionID.value}`)
-  .then(({ data }) => {
+  axiosClient.get("/GetInventarioGeneral")
+    .then(({ data }) => {
       if (data && data.data) {
-        console.log(data.data)
-        productos.value = data.data.map(articulo => {
+        productos.value = data.data.filter(a => a.cantidad > 0).map(articulo => {
           return {
-            ...articulo,  // Copia las propiedades del objeto original
-            cantidad: 1   // Añade el campo 'cantidad' con valor 1
+            ...articulo.articulo,
+            cantidad: articulo.cantidad  
           };
         });
 

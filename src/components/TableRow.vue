@@ -22,7 +22,7 @@
             {{ detalle.precio}}
           </td>
           <td class="rounded-md shadow-sm  w-24">
-            <input v-model="detalle.cantidad"  type="number" class="w-full bg-inherit border-0" >
+            <input v-model="detalle.cantidad" :max="detalle.maximo" :min="1" type="number"   @input="validateQuantity(detalle)"   class="w-full bg-inherit border-0" >
           </td>
           <td class="rounded-md w-1/5 pl-2 shadow-sm">
             {{ detalle.precio * detalle.cantidad}}
@@ -61,6 +61,15 @@ const quitarRegistro = (index) => {
   // Emitir el cambio hacia el padre
   emits('update:productList',  props.selectedList);
 };
+
+const validateQuantity = (detalle) => {
+  if (detalle.cantidad > detalle.maximo) {
+    detalle.cantidad = detalle.maximo;  // Limit to max stock
+  } else if (detalle.cantidad < 1) {
+    detalle.cantidad = 1;  // Prevent quantity from going below 1
+  }
+};
+
 </script>
 <!-- {
   "idFact": 0,
