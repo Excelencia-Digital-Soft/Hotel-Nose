@@ -116,17 +116,11 @@
     Consumo general
   </button>
   <button type="button" 
-          @click="toggleModalConfirm()"
+          @click="toggleModalConfirmHabitacion()"
           class="btn-primary w-full h-12 text-base font-semibold tracking-wider rounded-3xl mt-4">
     Consumo habitación
   </button>
   
-  <!-- Modal Component -->
-  <ModalConfirmacion 
-    v-if="modalConfirm" 
-    @close="toggleModalConfirm"
-    @confirmaAccion="agregarConsumos"
-  />
 </section>
             <section v-if="!selectedRoom.Disponible">
               <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
@@ -207,7 +201,14 @@
           :name="selectedRoom.Identificador" 
           @confirmaAccion="confirmAndSend"
           @close="toggleModalConfirm"/>
+
+          <ModalConfirmHabitacion v-if="modalConfirmHabitacion" 
+          :name="selectedRoom.Identificador" 
+          :habitacionID="selectedRoom.HabitacionID"
+          @confirmaAccion="confirmAndSendHabitacion"
+          @close="toggleModalConfirmHabitacion"/> 
         </div>
+
       </Transition>
     </div>
   </Transition>
@@ -222,6 +223,7 @@ import axiosClient from '../axiosClient';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
 import ModalConfirm from './ModalConfirm.vue';
+import ModalConfirmHabitacion from './ModalConfirmHabitacion.vue';
 
 const emits = defineEmits(["close-modal"])
 const props = defineProps({
@@ -272,6 +274,8 @@ const tableData = ref({
 });
 
 let modalConfirm = ref(false);
+let modalConfirmHabitacion = ref(false);
+
 const currentDate = ref('');
 const currentTime = ref('');
 const pizza = ref();
@@ -325,6 +329,21 @@ const agregarConsumos = (selectedItems) => {
   });
 };
 
+const agregarConsumosHabitacion = (selectedItems) => {
+  console.log(selectedItems);
+  axiosClient.post(
+    `/ConsumoHabitacion?habitacionId=${selectedRoom.value.HabitacionID}&visitaId=${selectedRoom.value.VisitaID}`,
+    selectedItems // Send selectedItems directly as the body
+  )
+  .then(response => {
+    actualizarConsumos();
+    console.log('Consumo agregado exitosamente:', response.data);
+  })
+  .catch(error => {
+    console.error('Error al agregar consumo:', error);
+  });
+};
+
 const actualizarConsumos = () => {
   axiosClient.get(`/GetConsumosVisita?VisitaID=${selectedRoom.value.VisitaID}`)
     .then(({ data }) => {
@@ -361,10 +380,22 @@ const actualizarConsumos = () => {
 const toggleModalConfirm = () => {
   modalConfirm.value = !modalConfirm.value;
 }
+const toggleModalConfirmHabitacion = () => {
+  modalConfirmHabitacion.value = !modalConfirmHabitacion.value;
+}
 const confirmAndSend = (ConfirmedArticles) =>{
   
   console.log(JSON.stringify(ConfirmedArticles) +" Llegamos al ReserveROOM");
   agregarConsumos(ConfirmedArticles)
+}
+
+const confirmAndSendHabitacion = (ConfirmedArticles) =>{
+  
+  console.log(JSON.stringify(ConfirmedArticles) +" Llegamos al ReserveROOM");
+  console.log(ConfirmedArticles)
+  if(ConfirmedArticles.length > 0){
+  agregarConsumosHabitacion(ConfirmedArticles)
+}
 }
 const handleCheat = (cheatIds) => {
   //le avisamos al componente DropDownTag que actualice para agregar los nuevos datos
