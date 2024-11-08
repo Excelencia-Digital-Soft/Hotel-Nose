@@ -40,6 +40,7 @@ namespace ApiObjetos.Controllers
                 return 0;
             }
         }
+
         [HttpPost]
         [Route("ConsumoHabitacion")]
         [AllowAnonymous]
@@ -69,50 +70,47 @@ namespace ApiObjetos.Controllers
                     {
                         // Step 2: Retrieve the Articulo to get the price
                         var articulo = await _db.Articulos.FindAsync(articuloDTO.ArticuloId);
-                        if (articulo == null || articulo.Precio == null || articulo.Precio == 0 || articuloDTO.Cantidad == 0)
+                        if (articulo == null)
                         {
                             res.Ok = false;
-                            res.Message = $"Error with the price or existence of the article ID: {articuloDTO.ArticuloId}";
+                            res.Message = $"Articulo with ID {articuloDTO.ArticuloId} not found.";
                             return res;
                         }
-
-                        int remainingQuantity = articuloDTO.Cantidad;
-
-                        // Step 3: Retrieve and attempt to consume from the Habitacion inventory
-                        var inventarioHabitacion = await _db.Inventarios
+                        if (articulo.Precio == null || articulo.Precio == 0 || articuloDTO.Cantidad == 0)
+                        {
+                            res.Ok = false;
+                            res.Message = $"Error con el precio del articulo";
+                            return res;
+                        }
+                        // Step 3: Retrieve the Inventario for the specific Articulo and Habitacion
+                        var inventario = await _db.Inventarios
                             .FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId && i.HabitacionId == habitacionId);
 
-                        if (inventarioHabitacion != null && inventarioHabitacion.Cantidad > 0)
+                        if (inventario == null || inventario.Cantidad < articuloDTO.Cantidad)
                         {
-                            int quantityToDeduct = Math.Min(inventarioHabitacion.Cantidad ?? 0, remainingQuantity);
-                            inventarioHabitacion.Cantidad -= quantityToDeduct;
-                            remainingQuantity -= quantityToDeduct;
-                            _db.Inventarios.Update(inventarioHabitacion);
+                                res.Ok = false;
+                                res.Message = $"No hay suficiente producto";
+                                return res;
+
                         }
-
-                        // Step 4: If still more is needed, try deducting from InventarioGeneral
-                        if (remainingQuantity > 0)
+                        else
                         {
-                            var inventarioGeneral = await _db.InventarioGeneral
-                                .FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId);
-
-                            if (inventarioGeneral == null || inventarioGeneral.Cantidad < remainingQuantity)
+                            // Step 5: Deduct the quantity from the Inventario
+                            inventario.Cantidad -= articuloDTO.Cantidad;
+                            if (inventario.Cantidad < 0)
                             {
                                 res.Ok = false;
-                                res.Message = $"Insufficient product stock in general inventory.";
+                                res.Message = $"No hay suficiente producto en la habitación";
                                 return res;
                             }
-
-                            // Deduct remaining quantity from InventarioGeneral
-                            inventarioGeneral.Cantidad -= remainingQuantity;
-                            _db.InventarioGeneral.Update(inventarioGeneral);
+                            _db.Inventarios.Update(inventario);
                         }
 
-                        // Step 5: Calculate total for this articulo (price * quantity)
+                        // Step 6: Calculate total for this articulo (price * quantity)
                         decimal totalArticulo = articulo.Precio * articuloDTO.Cantidad;
                         totalFacturado += totalArticulo;
 
-                        // Step 6: Create a new Consumo for each Articulo and add it to the list
+                        // Step 7: Create a new Consumo for each Articulo and add it to the list
                         Consumo nuevoConsumo = new Consumo
                         {
                             ArticuloId = articulo.ArticuloId,
@@ -125,21 +123,140 @@ namespace ApiObjetos.Controllers
                         consumosToAdd.Add(nuevoConsumo);
                     }
 
-                    // Step 7: Save all Consumos in one go
+                    // Step 8: Save all Consumos in one go
                     _db.Consumo.AddRange(consumosToAdd);
 
-                    // Step 8: Update Movimiento with the total facturado for all items
+                    // Step 9: Update Movimiento with the total facturado for all items
                     nuevoMovimiento.TotalFacturado = totalFacturado;
                     _db.Movimientos.Update(nuevoMovimiento);
 
-                    // Step 9: Save all changes to the database
+                    // Step 10: Save all changes to the database
                     await _db.SaveChangesAsync();
 
-                    // Step 10: Load related data (Habitacion and Visita) to return in the response
+                    // Step 11: Load the related data (Habitacion and Visita) to return in the response
                     await _db.Entry(nuevoMovimiento).Reference(m => m.Habitacion).LoadAsync();
                     await _db.Entry(nuevoMovimiento).Reference(m => m.Visita).LoadAsync();
 
-                    // Step 11: Commit the transaction
+                    // Step 12: Commit the transaction
+                    await transaction.CommitAsync();
+
+                    // Set response on success
+                    res.Ok = true;
+                    res.Message = "Consumos created and stock updated successfully.";
+                    res.Data = nuevoMovimiento; // Return the created movimiento with Habitacion and Visita info
+                }
+                catch (Exception ex)
+                {
+                    // Rollback transaction on error
+                    await transaction.RollbackAsync();
+                    res.Message = $"Error: {ex.Message}";
+                    res.Ok = false;
+                }
+            }
+
+            return res;
+        }
+
+        [HttpPost]
+        [Route("ConsumoGeneral")]
+        [AllowAnonymous]
+        public async Task<Respuesta> ConsumirArticulosGeneral([FromBody] List<ArticuloConsumoDTO> articulos, int habitacionId, int visitaId)
+        {
+            Respuesta res = new Respuesta();
+
+            using (var transaction = await _db.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    decimal? totalFacturado = 0;
+                    List<Consumo> consumosToAdd = new List<Consumo>();
+                    Movimientos nuevoMovimiento = new Movimientos
+                    {
+                        HabitacionId = habitacionId,
+                        VisitaId = visitaId,
+                        FechaRegistro = DateTime.Now,
+                        Anulado = false
+                    };
+
+                    _db.Movimientos.Add(nuevoMovimiento);
+                    await _db.SaveChangesAsync(); // Save Movimiento first to generate MovimientosId
+
+                    // Step 1: Process each Articulo in the list
+                    foreach (var articuloDTO in articulos)
+                    {
+                        // Step 2: Retrieve the Articulo to get the price
+                        var articulo = await _db.Articulos.FindAsync(articuloDTO.ArticuloId);
+                        if (articulo == null)
+                        {
+                            res.Ok = false;
+                            res.Message = $"Articulo with ID {articuloDTO.ArticuloId} not found.";
+                            return res;
+                        }
+                        if (articulo.Precio == null || articulo.Precio == 0 || articuloDTO.Cantidad == 0)
+                        {
+                            res.Ok = false;
+                            res.Message = $"Error con el precio del articulo";
+                            return res;
+                        }
+                        // Step 3: Retrieve the Inventario for the specific Articulo and Habitacion
+                        var inventario = await _db.InventarioGeneral
+                            .FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId);
+
+                        if (inventario == null || inventario.Cantidad < articuloDTO.Cantidad)
+                        {
+                            if (inventario.Cantidad < 0)
+                            {
+                                res.Ok = false;
+                                res.Message = $"No hay suficiente producto";
+                                return res;
+                            }
+
+                        }
+                        else
+                        {
+                            // Step 5: Deduct the quantity from the Inventario
+                            inventario.Cantidad -= articuloDTO.Cantidad;
+                            if (inventario.Cantidad < 0)
+                            {
+                                res.Ok = false;
+                                res.Message = $"No hay suficiente producto en el inventario general";
+                                return res;
+                            }
+                            _db.InventarioGeneral.Update(inventario);
+                        }
+
+                        // Step 6: Calculate total for this articulo (price * quantity)
+                        decimal totalArticulo = articulo.Precio * articuloDTO.Cantidad;
+                        totalFacturado += totalArticulo;
+
+                        // Step 7: Create a new Consumo for each Articulo and add it to the list
+                        Consumo nuevoConsumo = new Consumo
+                        {
+                            ArticuloId = articulo.ArticuloId,
+                            Cantidad = articuloDTO.Cantidad,
+                            PrecioUnitario = articulo.Precio,
+                            MovimientosId = nuevoMovimiento.MovimientosId,
+                            Anulado = false
+                        };
+
+                        consumosToAdd.Add(nuevoConsumo);
+                    }
+
+                    // Step 8: Save all Consumos in one go
+                    _db.Consumo.AddRange(consumosToAdd);
+
+                    // Step 9: Update Movimiento with the total facturado for all items
+                    nuevoMovimiento.TotalFacturado = totalFacturado;
+                    _db.Movimientos.Update(nuevoMovimiento);
+
+                    // Step 10: Save all changes to the database
+                    await _db.SaveChangesAsync();
+
+                    // Step 11: Load the related data (Habitacion and Visita) to return in the response
+                    await _db.Entry(nuevoMovimiento).Reference(m => m.Habitacion).LoadAsync();
+                    await _db.Entry(nuevoMovimiento).Reference(m => m.Visita).LoadAsync();
+
+                    // Step 12: Commit the transaction
                     await transaction.CommitAsync();
 
                     // Set response on success
