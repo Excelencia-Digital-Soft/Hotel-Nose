@@ -77,33 +77,48 @@ namespace ApiObjetos.Controllers
                 return res;
             }
 
-            [HttpGet]
-            [Route("GetHabitaciones")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
-            [AllowAnonymous]
-
-            public async Task<Respuesta> GetHabitaciones()
+        [HttpGet]
+        [Route("GetHabitaciones")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetHabitaciones()
+        {
+            Respuesta res = new Respuesta();
+            try
             {
-                Respuesta res = new Respuesta();
-                try
-                {
-
-                    var Objeto = await _db.Habitaciones.Include(h => h.Visita)
+                // Obtener las habitaciones junto con su visita y verificar pedidos pendientes
+                var habitaciones = await _db.Habitaciones
+                    .Include(h => h.Visita)
                     .Where(h => h.Anulado == false)
+                    .Select(h => new
+                    {
+                        h.HabitacionId,
+                        h.NombreHabitacion,
+                        h.CategoriaId,
+                        h.Disponible,
+                        h.ProximaReserva,
+                        h.UsuarioId,
+                        h.FechaRegistro,
+                        h.Anulado,
+                        h.VisitaID,
+                        h.Visita,
+                        // Verificar si hay al menos un encargo pendiente para esta habitación
+                        PedidosPendientes = _db.Encargos
+                            .Any(e => e.VisitaId == h.VisitaID && (e.Anulado ?? false) == false && (e.Entregado ?? false) == false)
+                    })
                     .ToListAsync();
-                    res.Ok = true;
-                    res.Data = Objeto;
-                    return res;
 
-
-
-                }
-                    catch (Exception ex)
-                {
-                    res.Message = "Error " + ex.ToString();
-                    res.Ok = false;
-                }
+                res.Ok = true;
+                res.Data = habitaciones;
                 return res;
             }
+            catch (Exception ex)
+            {
+                res.Message = "Error " + ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
 
 
         [HttpGet]
