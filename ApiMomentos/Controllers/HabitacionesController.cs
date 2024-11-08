@@ -132,6 +132,39 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpGet]
+        [Route("GetVisitaId")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetVisitaId(int idHabitacion)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var habitacion = await _db.Habitaciones
+                    .Where(h => h.HabitacionId == idHabitacion && h.Anulado == false)
+                    .Select(h => h.VisitaID)
+                    .FirstOrDefaultAsync();
+
+                if (habitacion == null)
+                {
+                    res.Ok = false;
+                    res.Message = "No se encontró la habitación o está anulada.";
+                }
+                else
+                {
+                    res.Ok = true;
+                    res.Data = habitacion;
+                    res.Message = "VisitaID encontrado exitosamente.";
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Ok = false;
+                res.Message = $"Error: {ex.Message}";
+            }
+            return res;
+        }
+
         [HttpPut]
         [Route("ActualizarHabitacion")]
         [AllowAnonymous]
