@@ -67,11 +67,11 @@ const routes = [
         }
       },
       {
-        path: "/SubmitOrder",
+        path: "/SubmitOrder/:habitacionId?",
         name: "SubmitOrder",
         component: SubmitOrder,
-        meta:{
-          requireAuth:true
+        meta: {
+          requireAuth: true
         }
       },
       {

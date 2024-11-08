@@ -46,7 +46,7 @@
             <button type="button"
               class="btn-danger -bottom-8 right-8 text-md w-1/3 h-12  rounded-2xl transition-colors border-2 border-purple-200 mx-4"
               @click="emits('close')">volver</button>
-            <button
+            <button @click="EnviarPedido"
               class="w-full text-white font-bold btn-primary rounded-2xl  flex items-center justify-evenly cursor-pointer  px-5 h-12 mr-4 border-2 border-purple-200"
               id="signUp">
               Encargar
@@ -65,9 +65,10 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue';
-
+import axiosClient from '../axiosClient';
 const props = defineProps({
   selectedList: Array,
+  visitaId:Number
 });
 let productList = ref([]);
 const emits = defineEmits(['close', 'update:productList']);
@@ -79,6 +80,26 @@ watch(() => props.selectedList, (newList) => {
   }
 }, { deep: true });  // Activa el modo 'deep' para escuchar cambios en las propiedades internas
 //Como "cantidad" de productos
+
+const EnviarPedido = ()=>{
+
+  // Transformar los datos para el POST
+  const dataToSend = props.selectedList.map((item) => ({
+    cantidad: item.cantidad,
+    articuloId: item.articuloId,
+    visitaId: props.visitaId, // Asumiendo que "3026" es el ID de visita que necesitas enviar
+  }));
+  axiosClient.post('/api/Encargos/AddEncargos', dataToSend)
+      .then(res => {
+        console.log(res.data);
+        alert("Encargado con éxito, tu pedido será entregado en breve");
+        emits('close');
+        window.location.reload();
+      })
+      .catch(error => {
+        console.error(error);
+      });
+} 
 
 // Método para quitar un registro
 const quitarRegistro = (index) => {
