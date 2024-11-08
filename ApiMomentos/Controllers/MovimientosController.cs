@@ -268,7 +268,7 @@ namespace ApiObjetos.Controllers
                 {
                     // Rollback transaction on error
                     await transaction.RollbackAsync();
-                    res.Message = $"Error: {ex.Message}";
+                    res.Message = $"Error: {ex.Message} {ex.InnerException}";
                     res.Ok = false;
                 }
             }
