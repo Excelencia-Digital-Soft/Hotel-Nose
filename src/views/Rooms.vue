@@ -23,8 +23,10 @@
           v-for="habitacion in habitacionesOcupadas"
           :key="habitacion.habitacionId"
           @click="toggleModal(habitacion)"
-          class="p-4 border-4 bg-surface-800  rounded-md text-lg font-semibold shadow-sm text-white text-center cursor-pointer hover:bg-secondary-400 border-secondary-500"
-        >
+          class="p-4 relative border-4 bg-surface-800  rounded-md text-lg font-semibold shadow-sm text-white text-center cursor-pointer hover:bg-secondary-400 border-secondary-500"
+        ><div v-if="habitacion.pedidosPendientes" class="absolute top-2 left-2 p-1 flex justify-center items-center rounded-full bg-red-600"><span class="material-symbols-outlined">
+notifications_active
+</span></div>
           {{ habitacion.nombreHabitacion }}
         </div>
       </div>

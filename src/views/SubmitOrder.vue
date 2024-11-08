@@ -106,7 +106,7 @@ const fetchVisitaId = () => {
       
   }else{
     alert('Esta habitacion no tiene permitido hacer pedidos')
-   
+    router.push({ name: 'home' });
   }
 };
 const fetchArticulos = () => {
