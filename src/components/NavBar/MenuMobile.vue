@@ -80,7 +80,8 @@ const menuItems = ref([
   {
     label: 'Pedidos',
     submenu: [
-      { label: 'Enviar Pedido', route: { name: 'SubmitOrder' } }
+      { label: 'Enviar Pedido', route: { name: 'SubmitOrder' } },
+      { label: 'Recibir Pedido', route: { name: 'ReceptionOrder' } }
     ]
   }
 ]);
