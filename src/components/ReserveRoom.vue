@@ -99,17 +99,38 @@
               </div>
             </section>
             <section v-if="!selectedRoom.Disponible" class="p-10">
-  <div>
-    <h1 class="text-xl text-white font-bold mb-4">Consumos</h1>
-    <ul class="bg-gray-800 rounded-lg p-4 space-y-2 max-h-64 overflow-y-auto">
-      <li v-for="consumo in consumos" :key="consumo.consumoId" class="bg-gray-700 p-3 rounded-md">
+              <div>
+  <h1 class="text-xl text-white font-bold mb-4">Consumos</h1>
+  <div class="bg-gray-800 rounded-lg p-4 max-h-64 overflow-y-auto">
+    <!-- Header row -->
+    <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 text-white font-semibold mb-2">
+      <span>Producto</span>
+      <span>Cantidad</span>
+      <span>Precio</span>
+      <span>Origen</span>
+      <span>Total</span>
+    </div>
+    
+    <!-- Ordered list for the consumos -->
+    <ol class="space-y-2">
+      <li 
+        v-for="consumo in consumos" 
+        :key="consumo.consumoId" 
+        class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 bg-gray-700 p-3 rounded-md text-white"
+      >
         <span class="font-semibold">{{ consumo.articleName }}</span>
-        <span class="text-sm text-gray-400"> - Cantidad: {{ consumo.cantidad }}</span>
-        <span class="text-sm text-gray-400"> - Precio: ${{ consumo.precioUnitario }}</span>
-        <span class="text-sm font-bold text-green-400"> - Total: ${{ consumo.total }}</span>
+        <span class="text-sm text-gray-400">{{ consumo.cantidad }}</span>
+        <span class="text-sm text-gray-400">${{ consumo.precioUnitario }}</span>
+        <span class="text-sm text-gray-400">
+          {{ consumo.esHabitacion ? 'Habitacion' : 'Inv. General' }}
+        </span>
+        <span class="text-sm font-bold text-green-400">${{ consumo.total }}</span>
       </li>
-    </ul>
+    </ol>
   </div>
+</div>
+  
+
   <button type="button" 
           @click="toggleModalConfirm()"
           class="btn-primary w-full h-12 text-base font-semibold tracking-wider rounded-3xl mt-4">
@@ -351,7 +372,7 @@ const actualizarConsumos = () => {
         consumos.value = []; // Clear the array before adding new data
         data.data.forEach(item => {
           // Check if the item already exists in the consumos list
-          const existingItem = consumos.value.find(consumo => consumo.articuloId === item.articuloId);
+          const existingItem = consumos.value.find(consumo => consumo.articuloId === item.articuloId && consumo.esHabitacion === item.esHabitacion);
 
           if (existingItem) {
             // Update the existing item’s quantity and recalculate subtotal if it exists
@@ -365,9 +386,11 @@ const actualizarConsumos = () => {
               articleName: item.articleName,
               cantidad: item.cantidad,
               precioUnitario: item.precioUnitario,
+              esHabitacion: item.esHabitacion,
               total: item.cantidad * item.precioUnitario // Initial subtotal
             });
           }
+          console.log(data.data)
         });
       } else {
         console.error('Datos de la API no válidos:', data);
