@@ -212,6 +212,67 @@ public class EncargosController : ControllerBase
         return res;
     }
 
+    [HttpPost]
+    [Route("AddEncargos")]
+    public async Task<Respuesta> AddEncargos(List<EncargoRequestDTO> encargos)
+    {
+        Respuesta res = new Respuesta();
+        List<Encargos> addedEncargos = new List<Encargos>();
+
+        try
+        {
+            foreach (var EncargoRequestDTO in encargos)
+            {
+                // Validar si el Articulo existe
+                var articulo = await _db.Articulos.FindAsync(EncargoRequestDTO.ArticuloId);
+                if (articulo == null)
+                {
+                    res.Message = $"Articulo con ID {EncargoRequestDTO.ArticuloId} no encontrado.";
+                    res.Ok = false;
+                    return res;
+                }
+
+                // Validar si la Visita existe
+                var visita = await _db.Visitas.FindAsync(EncargoRequestDTO.VisitaId);
+                if (visita == null)
+                {
+                    res.Message = $"Visita con ID {EncargoRequestDTO.VisitaId} no encontrada.";
+                    res.Ok = false;
+                    return res;
+                }
+
+                // Mapear DTO a entidad Encargos
+                var newEncargo = new Encargos
+                {
+                    ArticuloId = EncargoRequestDTO.ArticuloId,
+                    VisitaId = EncargoRequestDTO.VisitaId,
+                    CantidadArt = EncargoRequestDTO.Cantidad,
+                    FechaCrea = DateTime.Now,
+                    Anulado = false
+                };
+
+                // Añadir la entidad Encargo al DbContext
+                await _db.Encargos.AddAsync(newEncargo);
+                addedEncargos.Add(newEncargo);
+            }
+
+            // Guardar todos los cambios en la base de datos
+            await _db.SaveChangesAsync();
+
+            // Configurar la respuesta en caso de éxito
+            res.Ok = true;
+            res.Message = "Encargos agregados exitosamente.";
+            res.Data = addedEncargos;
+        }
+        catch (Exception ex)
+        {
+            res.Message = $"Error: {ex.Message} {ex.InnerException}";
+            res.Ok = false;
+        }
+
+        return res;
+    }
+
     // PUT: api/Encargos/5
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateEncargo(int id, Encargos encargo)

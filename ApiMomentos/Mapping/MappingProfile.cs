@@ -10,6 +10,7 @@
         {
             // Define los mapeos aquí
             CreateMap<Encargos, EncargoDTO>();
+            CreateMap<Encargos, EncargoRequestDTO>();
             // Puedes añadir otros mapeos aquí si es necesario
         }
     }
