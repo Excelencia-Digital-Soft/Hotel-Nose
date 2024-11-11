@@ -117,7 +117,8 @@ namespace ApiObjetos.Controllers
                             Cantidad = articuloDTO.Cantidad,
                             PrecioUnitario = articulo.Precio,
                             MovimientosId = nuevoMovimiento.MovimientosId,
-                            Anulado = false
+                            Anulado = false,
+                            EsHabitacion = true
                         };
 
                         consumosToAdd.Add(nuevoConsumo);
@@ -236,7 +237,8 @@ namespace ApiObjetos.Controllers
                             Cantidad = articuloDTO.Cantidad,
                             PrecioUnitario = articulo.Precio,
                             MovimientosId = nuevoMovimiento.MovimientosId,
-                            Anulado = false
+                            Anulado = false,
+                            EsHabitacion = false
                         };
 
                         consumosToAdd.Add(nuevoConsumo);
@@ -312,6 +314,7 @@ namespace ApiObjetos.Controllers
                                   ArticleName = a.NombreArticulo, // Assuming 'NombreArticulo' is the name column in Articulos table
                                   c.Cantidad,
                                   c.PrecioUnitario,
+                                  c.EsHabitacion,
                                   Total = c.Cantidad * c.PrecioUnitario
                               })
                         .ToListAsync();

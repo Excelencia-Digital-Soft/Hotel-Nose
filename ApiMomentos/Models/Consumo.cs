@@ -15,6 +15,7 @@ public partial class Consumo
     public int? Cantidad { get; set; }
 
     public decimal? PrecioUnitario { get; set; }
+    public bool? EsHabitacion { get; set; }
 
     public bool? Anulado { get; set; }
     [JsonIgnore]
