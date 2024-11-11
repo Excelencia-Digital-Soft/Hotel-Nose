@@ -122,6 +122,7 @@ namespace ApiObjetos.Controllers
                     FechaReserva = request.FechaReserva,
                     FechaFin = null,
                     TotalHoras = request.TotalHoras,
+                    TotalMinutos = request.TotalMinutos,
                     UsuarioId = request.UsuarioID,
                     FechaRegistro = DateTime.Now,
                     Anulado = false,
@@ -520,6 +521,7 @@ public class ReservaRequest
     public DateTime FechaReserva { get; set; }
     public DateTime FechaFin { get; set; }
     public int TotalHoras { get; set; }
+    public int TotalMinutos { get; set; }
     public int UsuarioID { get; set; }
     public bool EsReserva { get; set; }
     public string? PatenteVehiculo { get; set; }

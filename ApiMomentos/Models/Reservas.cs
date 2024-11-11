@@ -16,6 +16,7 @@ public partial class Reservas
     public DateTime? FechaFin { get; set; }
 
     public int? TotalHoras { get; set; }
+    public int? TotalMinutos { get; set; }
 
     public int? UsuarioId { get; set; }
 
