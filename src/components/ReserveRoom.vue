@@ -68,36 +68,7 @@
                 </div>
               </div>
             </section>
-            <section v-if="!selectedRoom.Disponible" class="grid place-items-center  relative mb-3">
-              <label class="text-sm font-semibold leading-6 text-white">Tiempo de Reserva</label>
-              <div class="card flex">
-                <div class="grid mb-3 mr-4">
-                  <label for="hours" class="text-xs font-semibold leading-6 text-white">Horas</label>
-
-                  <InputNumber v-model="hours" showButtons buttonLayout="vertical" style="width: 3rem" :min="0"
-                    :max="99">
-                    <template #incrementbuttonicon>
-                      <span class="pi pi-plus" />
-                    </template>
-                    <template #decrementbuttonicon>
-                      <span class="pi pi-minus" />
-                    </template>
-                  </InputNumber>
-                </div>
-                <div class="grid mb-3">
-                  <label for="minutes" class="text-xs font-semibold leading-6 text-white">Minutos</label>
-                  <InputNumber v-model="minutes" showButtons buttonLayout="vertical" style="width: 3rem" :min="0"
-                    :max="99">
-                    <template #incrementbuttonicon>
-                      <span class="pi pi-plus" />
-                    </template>
-                    <template #decrementbuttonicon>
-                      <span class="pi pi-minus" />
-                    </template>
-                  </InputNumber>
-                </div>
-              </div>
-            </section>
+            <section/>
             <section v-if="!selectedRoom.Disponible" class="p-10">
               <div>
   <h1 class="text-xl text-white font-bold mb-4">Consumos</h1>

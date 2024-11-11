@@ -9,6 +9,19 @@
               </h1>
               
               <form class="grid-cols-1">
+                <section v-if="selectedRoom.Disponible" class="grid place-items-center mb-3">
+    <label class="text-sm font-semibold text-white">Tiempo de Reserva</label>
+  <div class="flex space-x-4">
+    <div>
+      <label class="text-xs font-semibold text-white">Horas</label>
+      <InputNumber v-model="hours" :min="0" :max="99" showButtons />
+    </div>
+    <div>
+      <label class="text-xs font-semibold text-white">Minutos</label>
+      <InputNumber v-model="minutes" :min="0" :max="59" showButtons />
+    </div>
+  </div>
+</section>
                 <section class="grid grid-cols-2 gap-3 mb-2">
               <div class="grid col-span-2 relative mb-3">
                 <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
@@ -52,6 +65,8 @@
   import Checkbox from 'primevue/checkbox';
   import ModalConfirm from './ModalConfirm.vue';
   
+  const hours = ref(0);
+  const minutes = ref(0);
   const emits = defineEmits(["close-modal"])
   const props = defineProps({
     room: Object,
@@ -71,6 +86,7 @@
     FechaReserva: '',
     FechaFin: '',
     TotalHoras: 0,
+    TotalMinutos: 0,
     UsuarioID: 14,
     PatenteVehiculo: '',
     NumeroTelefono: '',
@@ -109,7 +125,10 @@
   
   //SECTOR DE VALIDACIONES DE FORMULARIO
   
-  
+  watch([hours, minutes], ([newHours, newMinutes]) => {
+    selectedRoom.value.TotalHoras = newHours;
+    selectedRoom.value.TotalMinutos = newMinutes;
+});
   // Función para calcular el total automáticamente
   watch([() => tableData.value.descuento, () => tableData.value.tarjeta, () => tableData.value.recargos], () => {
     tableData.value.total = tableData.value.descuento + tableData.value.tarjeta + tableData.value.recargos;
