@@ -29,7 +29,7 @@
         </div>
 
         <!-- TABLE CONTENT -->
-        <TableRowModal v-show="show" :selectedList="seleccionados" @update:productList="actualizarSeleccionados"
+        <TableRowModal v-show="show" :selectedList="seleccionados" :visitaId="visitaId" @update:productList="actualizarSeleccionados"
           @close="toggleTable" />
         <button @click="toggleTable"
           class="w-full text-white font-bold principal-convination-color rounded-2xl  flex items-center justify-evenly cursor-pointer  px-5 h-12  mt-4"
@@ -46,14 +46,20 @@
 import { onMounted, ref, computed } from 'vue';
 import axiosClient from '../axiosClient';
 import TableRowModal from '../components/TableRowModal.vue';
+import { useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
 
-let isLoading = ref(false)
+const router = useRouter();
+const route = useRoute(); // Captura de la ruta actual
+const habitacionId = ref(route.params.habitacionId);  // Obtener habitacionId desde la URL
+let visitaId = ref()
 const keyword = ref('');
 const productos = ref([])
 const computedProductos = computed(() => productos.value.filter(i => i.nombreArticulo.toLowerCase().includes(keyword.value.toLowerCase())))
 const show = ref(false)
 
 onMounted(() => {
+  fetchVisitaId();
   fetchArticulos();
   seleccionados = ref([])// le asignamos como variable reactiva en el montado para luego 
 })
@@ -80,7 +86,29 @@ const actualizarSeleccionados = (nuevaLista) => {
 const toggleTable = () => {
   show.value = !show.value
 }
-
+// Función para obtener el VisitaID de la habitación seleccionada
+const fetchVisitaId = () => {
+  console.log(habitacionId.value)
+  if (habitacionId.value) {
+    axiosClient.get(`/GetVisitaId?idHabitacion=${habitacionId.value}`)
+      .then(response => {
+        visitaId.value = response.data.data;
+        console.log('VisitaID:', visitaId.value);
+        if (!response.data.ok){
+          alert('Esta habitacion no tiene permitido hacer pedidos')
+          router.push({ name: 'home' });
+        }
+      })
+      .catch(error => {
+        console.error('Error al obtener la VisitaID:', error);
+        
+      });
+      
+  }else{
+    alert('Esta habitacion no tiene permitido hacer pedidos')
+    router.push({ name: 'home' });
+  }
+};
 const fetchArticulos = () => {
   axiosClient.get("/api/Articulos/GetArticulos")
     .then(({ data }) => {
