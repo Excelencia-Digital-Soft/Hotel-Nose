@@ -12,67 +12,6 @@
           </h1>
 
           <form :class="!selectedRoom.Disponible ? 'grid grid-cols-3 gap-3 mb-2' : 'grid-cols-1'">
-            <section class="grid grid-cols-2 gap-3 mb-2">
-              <div class="grid col-span-2 relative mb-3">
-                <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
-                <input type="text"
-                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                  v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
-              </div>
-              <div class="grid relative mb-3">
-                <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
-                <input type="text"
-                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                  maxlength="11" v-model="selectedRoom.NumeroTelefono" placeholder="Ingresa Marca y modelo de vehiculo">
-              </div>
-              <div class="grid relative mb-3">
-                <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
-                <input type="text"
-                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                  maxlength="11" v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
-              </div>
-            </section>
-            <section class="timer-container">
-  <div class="timer">
-    <p class="label">Tiempo restante:</p>
-    <p class="time">{{ formattedTime }}</p>
-  </div>
-</section>
-            <section v-if="!selectedRoom.Disponible" class="grid grid-cols-2">
-              <div class="max-w-sm mx-auto mt-4 space-y-4">
-                <!-- Input para la fecha actual -->
-                <div>
-                  <label for="fecha" class="block text-white">Fecha Actual</label>
-                  <input id="fecha" type="date" v-model="currentDate"
-                    class="w-full p-2 border border-gray-700 bg-gray-900 text-white" readonly />
-                </div>
-
-                <!-- Input para la hora actual -->
-                <div>
-                  <label for="hora" class="block text-white">Hora Actual</label>
-                  <input id="hora" type="time" v-model="currentTime"
-                    class="w-full p-2 border border-gray-700 bg-gray-900 text-white" readonly />
-                </div>
-              </div>
-              <div class="card flex flex-col flex-wrap justify-center gap-4">
-                <div class="flex items-center">
-                  <Checkbox v-model="pizza" inputId="ingredient1" name="pizza" value="Avisar Hora Salida" />
-                  <label for="ingredient1" class="ml-2 text-white"> Avisar Hora Salida </label>
-                </div>
-                <div class="flex items-center">
-                  <Checkbox v-model="pizza" inputId="ingredient2" name="pizza" value="Precio por siesta" />
-                  <label for="ingredient2" class="ml-2 text-white"> Precio por siesta </label>
-                </div>
-                <div class="flex items-center">
-                  <Checkbox v-model="pizza" inputId="ingredient3" name="pizza" value="Precio por dormir" />
-                  <label for="ingredient3" class="ml-2 text-white"> Precio por dormir </label>
-                </div>
-                <div class="flex items-center">
-                  <Checkbox v-model="pizza" inputId="ingredient4" name="pizza" value="Pareja" />
-                  <label for="ingredient4" class="ml-2 text-white"> Pareja </label>
-                </div>
-              </div>
-            </section>
             <section v-if="!selectedRoom.Disponible" class="p-10">
               <div>
   <h1 class="text-xl text-white font-bold mb-4">Consumos</h1>
@@ -118,6 +57,33 @@
   </button>
   
 </section>
+        
+            <section class="timer-container">
+  <div class="timer">
+    <p class="label">Tiempo restante:</p>
+    <p class="time">{{ formattedTime }}</p>
+  </div>
+</section>
+<section class="grid grid-cols-2 gap-3 mb-2">
+              <div class="grid col-span-2 relative mb-3">
+                <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
+                <input type="text"
+                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                  v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
+              </div>
+              <div class="grid relative mb-3">
+                <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
+                <input type="text"
+                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                  maxlength="11" v-model="selectedRoom.NumeroTelefono" placeholder="Ingresa Marca y modelo de vehiculo">
+              </div>
+              <div class="grid relative mb-3">
+                <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
+                <input type="text"
+                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                  maxlength="11" v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
+              </div>
+            </section>
             <section v-if="!selectedRoom.Disponible">
               <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
                 <table class="w-full text-left">
@@ -144,7 +110,45 @@
                 </table>
               </div>
             </section>
-            <section v-if="!selectedRoom.Disponible">
+            <section/>
+            <section v-if="!selectedRoom.Disponible" class="grid grid-cols-2">
+              <div class="max-w-sm mx-auto mt-4 space-y-4">
+                <!-- Input para la fecha actual -->
+                <div>
+                  <label for="fecha" class="block text-white">Fecha Actual</label>
+                  <input id="fecha" type="date" v-model="currentDate"
+                    class="w-full p-2 border border-gray-700 bg-gray-900 text-white" readonly />
+                </div>
+
+                <!-- Input para la hora actual -->
+                <div>
+                  <label for="hora" class="block text-white">Hora Actual</label>
+                  <input id="hora" type="time" v-model="currentTime"
+                    class="w-full p-2 border border-gray-700 bg-gray-900 text-white" readonly />
+                </div>
+              </div>
+              <div class="card flex flex-col flex-wrap justify-center gap-4">
+                <div class="flex items-center">
+                  <Checkbox v-model="pizza" inputId="ingredient1" name="pizza" value="Avisar Hora Salida" />
+                  <label for="ingredient1" class="ml-2 text-white"> Avisar Hora Salida </label>
+                </div>
+                <div class="flex items-center">
+                  <Checkbox v-model="pizza" inputId="ingredient2" name="pizza" value="Precio por siesta" />
+                  <label for="ingredient2" class="ml-2 text-white"> Precio por siesta </label>
+                </div>
+                <div class="flex items-center">
+                  <Checkbox v-model="pizza" inputId="ingredient3" name="pizza" value="Precio por dormir" />
+                  <label for="ingredient3" class="ml-2 text-white"> Precio por dormir </label>
+                </div>
+                <div class="flex items-center">
+                  <Checkbox v-model="pizza" inputId="ingredient4" name="pizza" value="Pareja" />
+                  <label for="ingredient4" class="ml-2 text-white"> Pareja </label>
+                </div>
+              </div>
+            </section>
+          
+          
+            <section v-if="selectedRoom.Disponible">
               <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
                 <table class="w-full text-left">
                   <tbody>
