@@ -42,11 +42,12 @@ public class EncargosController : ControllerBase
                                 join v in _db.Visitas on r.VisitaId equals v.VisitaId
                                 join h in _db.Habitaciones on r.HabitacionId equals h.HabitacionId
                                 join a in _db.Articulos on e.ArticuloId equals a.ArticuloId
-                                where !v.Anulado
+                                where !v.Anulado && e.Entregado != true
                                 select new
                                 {
                                     h.HabitacionId,
                                     h.NombreHabitacion,
+                                    h.VisitaID,
                                     Encargo = new
                                     {
                                         e.EncargosId,
@@ -67,11 +68,12 @@ public class EncargosController : ControllerBase
             else
             {
                 // Agrupar por HabitacionId
-                var groupedResult = result.GroupBy(x => new { x.HabitacionId, x.NombreHabitacion })
+                var groupedResult = result.GroupBy(x => new { x.HabitacionId, x.NombreHabitacion, x.VisitaID })
                     .Select(g => new
                     {
                         HabitacionId = g.Key.HabitacionId,
                         NombreHabitacion = g.Key.NombreHabitacion,
+                        VisitaId = g.Key.VisitaID,
                         Encargos = g.Select(x => x.Encargo).ToList()
                     }).ToList();
 
@@ -263,6 +265,83 @@ public class EncargosController : ControllerBase
             res.Ok = true;
             res.Message = "Encargos agregados exitosamente.";
             res.Data = addedEncargos;
+        }
+        catch (Exception ex)
+        {
+            res.Message = $"Error: {ex.Message} {ex.InnerException}";
+            res.Ok = false;
+        }
+
+        return res;
+    }
+
+    [HttpPost]
+    [Route("EntregarEncargo")]
+    public async Task<Respuesta> EntregarEncargo(int encargoId)
+    {
+        Respuesta res = new Respuesta();
+
+        try
+        {
+            // Buscar el encargo por ID
+            var encargo = await _db.Encargos.FindAsync(encargoId);
+
+            // Validar si el encargo existe
+            if (encargo == null)
+            {
+                res.Message = $"Encargo con ID {encargoId} no encontrado.";
+                res.Ok = false;
+                return res;
+            }
+
+            // Actualizar el estado de 'Entregado' a true
+            encargo.Entregado = true;
+
+            // Guardar los cambios en la base de datos
+            await _db.SaveChangesAsync();
+
+            // Configurar la respuesta en caso de éxito
+            res.Ok = true;
+            res.Message = $"Encargo con ID {encargoId} marcado como entregado.";
+            res.Data = encargo;
+        }
+        catch (Exception ex)
+        {
+            res.Message = $"Error: {ex.Message} {ex.InnerException}";
+            res.Ok = false;
+        }
+
+        return res;
+    }
+
+    [HttpPost]
+    [Route("AnularEncargo")]
+    public async Task<Respuesta> AnularEncargo(int encargoId)
+    {
+        Respuesta res = new Respuesta();
+
+        try
+        {
+            // Buscar el encargo por ID
+            var encargo = await _db.Encargos.FindAsync(encargoId);
+
+            // Validar si el encargo existe
+            if (encargo == null)
+            {
+                res.Message = $"Encargo con ID {encargoId} no encontrado.";
+                res.Ok = false;
+                return res;
+            }
+
+            encargo.Anulado = true;
+
+            // Guardar los cambios en la base de datos
+            await _db.SaveChangesAsync();
+
+            // Configurar la respuesta en caso de éxito
+            res.Ok = true;
+            res.Message = $"Encargo con ID {encargoId} marcado como anulado.";
+            res.Data = encargo;
         }
         catch (Exception ex)
         {
