@@ -30,7 +30,7 @@
                 <td><button @click="quitarRegistro(index)" type="button"
                 class="btn-danger rounded-xl text-xl h-12 text-white w-full  flex justify-center items-center mt-1  material-symbols-outlined">delete</button>
 </td>
-                                <button @click="quitarRegistro(index)" type="button"
+                                <button @click="entregarRegistro(index)" type="button"
                 class="btn-primary rounded-xl text-xl h-12 text-white w-full  flex justify-center items-center mt-1 p-2 ">Entregar<span class="material-symbols-outlined">arrow_forward</span></button>
               </tr>
 
@@ -60,12 +60,24 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue';
+import axiosClient from '../axiosClient';
 
 const props = defineProps({
   selectedList: Array,
+  habitacion: Object,
 });
 let productList = ref([]);
+let selectedItem = ref(null);
+let habitacionSeleccionada = ref(null);
 const emits = defineEmits(['close', 'update:productList']);
+
+
+watch(() => props.habitacion, (newHabitacion) => {
+  if (newHabitacion) {
+    habitacionSeleccionada.value = newHabitacion;
+    console.log("Selected Habitacion:", habitacionSeleccionada.value);
+  }
+});
 
 watch(() => props.selectedList, (newList) => {
   if (newList) {
@@ -83,6 +95,60 @@ const quitarRegistro = (index) => {
   // Emitir el cambio hacia el padre
   emits('update:productList', props.selectedList);
 };
+
+const entregarRegistro = async (index) => {
+  if (!habitacionSeleccionada.value) {
+    await new Promise((resolve) => {
+      const stopWatching = watch(
+        () => habitacionSeleccionada.value,
+        (newVal) => {
+          if (newVal) {
+            stopWatching(); // Stop watching after habitacionSeleccionada is updated
+            resolve();
+          }
+        }
+      );
+    });
+  }
+  const encargoId = props.selectedList[index].encargosId; // Extract the encargoId
+  selectedItem.value = {
+    articuloId: props.selectedList[index].articuloId,
+    cantidad: props.selectedList[index].cantidadArt,
+  };
+
+  agregarConsumos([selectedItem.value], encargoId);
+
+  props.selectedList.splice(index, 1);
+  emits("update:productList", props.selectedList);
+};
+
+const agregarConsumos = (selectedItems, encargoId) => {
+  console.log("huh ", habitacionSeleccionada.value)
+  axiosClient.post(
+    `/ConsumoGeneral?habitacionId=${habitacionSeleccionada.value.habitacionId}&visitaId=${habitacionSeleccionada.value.visitaId}`,
+    selectedItems // Send selectedItems directly as the body
+  )
+  .then(response => {
+    console.log('Consumo agregado exitosamente:', response.data);
+    setEncargoEntregado(encargoId);  // Only pass articuloId of the selected item
+  })
+  .catch(error => {
+    console.error('Error al agregar consumo:', error);
+  });
+};
+
+const setEncargoEntregado = (encargoId) => {
+    // Send a POST request to mark the encargo as delivered
+    axiosClient.post(`/api/Encargos/EntregarEncargo?encargoId=${encargoId}`)
+      .then(response => {
+        console.log('Encargo entregado exitosamente:', response.data);
+      })
+      .catch(error => {
+        console.error('Error al entregar el encargo:', error);
+      });
+
+};
+
 </script>
 <style scoped>
 h1 {
