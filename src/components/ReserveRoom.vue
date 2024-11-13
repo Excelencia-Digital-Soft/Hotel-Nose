@@ -137,7 +137,7 @@
                     <tr>
       <td class="p-4">Total</td>
       <td class="p-4 text-right">
-        ${{ (Number(consumos.reduce((sum, consumo) => sum + consumo.total, 0)) + Number(periodoCost) + 1500).toFixed(2) }}
+        ${{ (Number(consumos.reduce((sum, consumo) => sum + consumo.total, 0)) + Number(periodoCost) + Number(adicional)).toFixed(2) }}
       </td>
     </tr>
                   </tbody>

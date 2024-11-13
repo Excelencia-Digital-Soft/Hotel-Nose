@@ -7,7 +7,7 @@
       <div style="max-height: 70vh; overflow-y: auto;">
         <div class="grid grid-cols-1 text-xl gap-4 m-2">
           <!-- Iteramos sobre los productos -->
-          <div v-for="producto in productos" :key="producto.habitacionId" @click="toggleTable(producto.encargos)" class="relative border-4  hover:bg-surface-700 cursor-pointer text-white rounded-lg p-4 flex flex-col items-center justify-between">
+          <div v-for="producto in productos" :key="producto.habitacionId" @click="toggleTableEnvio(producto)" class="relative border-4  hover:bg-surface-700 cursor-pointer text-white rounded-lg p-4 flex flex-col items-center justify-between">
 
             <!-- Nombre de habitacion -->
             <p>{{ producto.nombreHabitacion }}</p>
@@ -18,8 +18,8 @@
     </div>
 
     <!-- TABLE CONTENT -->
-    <TablePedidos v-show="show" :selectedList="seleccionados" @update:productList="actualizarSeleccionados"
-      @close="toggleTable" />
+    <TablePedidos v-show="show" :selectedList="seleccionados" :habitacion="productoSeleccionado" @update:productList="actualizarSeleccionados"
+      @close="toggleTableCierre" />
   </div>
 
 
@@ -31,6 +31,7 @@ import axiosClient from '../axiosClient';
 import TablePedidos from '../components/TablePedidos.vue';
 
 let isLoading = ref(false)
+const productoSeleccionado = ref(null)
 const productos = ref([])
 const show = ref(false)
 
@@ -46,12 +47,18 @@ const actualizarSeleccionados = (nuevaLista) => {
   seleccionados.value = nuevaLista;
 };
 
-const toggleTable = (encargos) => {
-  seleccionados.value = encargos
-  console.log(seleccionados.value)
+const toggleTableEnvio = (producto) => {
+  seleccionados.value = producto.encargos;
+  productoSeleccionado.value = producto;
   show.value = !show.value
   
 }
+
+const toggleTableCierre = () => {
+  show.value = !show.value
+  
+}
+
 
 const fetchArticulos = () => {
   axiosClient.get("/api/Encargos/Habitaciones")
