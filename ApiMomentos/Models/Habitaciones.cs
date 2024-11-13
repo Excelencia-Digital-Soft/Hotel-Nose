@@ -23,7 +23,7 @@ public partial class Habitaciones
     public bool? Anulado { get; set; }
 
     public int? VisitaID { get; set; }
-
+    [JsonIgnore]
     public virtual CategoriasHabitaciones? Categoria { get; set; }
     public virtual Visitas? Visita { get; set; }
 
@@ -37,4 +37,5 @@ public partial class Habitaciones
 
     public virtual ICollection<Reservas> Reservas { get; } = new List<Reservas>();
 
+    public decimal? Precio => Categoria?.PrecioNormal;
 }

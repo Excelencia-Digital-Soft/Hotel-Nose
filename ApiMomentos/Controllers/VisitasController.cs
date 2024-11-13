@@ -93,7 +93,7 @@ namespace ApiObjetos.Controllers
 
                 var Objeto = await _db.Visitas.Where(
                 t => t.VisitaId == id
-                ).ToListAsync();
+                ).Include(r => r.Reservas).ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto[0];
                 return res;

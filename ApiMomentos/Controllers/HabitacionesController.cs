@@ -58,11 +58,17 @@ namespace ApiObjetos.Controllers
                 Respuesta res = new Respuesta();
                 try
                 {
-
-                    var Objeto = await _db.Habitaciones.Include(h => h.Visita).Where(
-                    t => t.HabitacionId == idHabitacion
-                    ).ToListAsync();
-                    res.Ok = true;
+                var Objeto = await _db.Habitaciones
+                    .Where(t => t.HabitacionId == idHabitacion)
+                    .Include(h => h.Categoria)  // Include Categoria to access PrecioNormal
+                    .Select(h => new {
+                        Habitacion = h,
+                        Visita = h.Visita,
+                        Precio = h.Categoria.PrecioNormal,  // Include PrecioNormal from Categoria
+                        ReservaActiva = h.Visita.Reservas.FirstOrDefault(r => r.FechaFin == null) // Only the active reserva
+                    })
+                    .ToListAsync();
+                res.Ok = true;
                     res.Data = Objeto[0];
                     return res;
 
@@ -88,6 +94,8 @@ namespace ApiObjetos.Controllers
                 // Obtener las habitaciones junto con su visita y verificar pedidos pendientes
                 var habitaciones = await _db.Habitaciones
                     .Include(h => h.Visita)
+                        .ThenInclude(v => v.Reservas) // Include all Reservas
+                    .Include(h => h.Categoria)  // Include Categoria to access PrecioNormal
                     .Where(h => h.Anulado == false)
                     .Select(h => new
                     {
@@ -101,7 +109,8 @@ namespace ApiObjetos.Controllers
                         h.Anulado,
                         h.VisitaID,
                         h.Visita,
-                        // Verificar si hay al menos un encargo pendiente para esta habitación
+                        Precio = h.Categoria.PrecioNormal,  // Directly include PrecioNormal from Categoria
+                        ReservaActiva = h.Visita.Reservas.FirstOrDefault(r => r.FechaFin == null), // Only active reserva
                         PedidosPendientes = _db.Encargos
                             .Any(e => e.VisitaId == h.VisitaID && (e.Anulado ?? false) == false && (e.Entregado ?? false) == false)
                     })

@@ -27,5 +27,7 @@ public partial class Visitas
     public virtual ICollection<Encargos> Encargos { get; } = new List<Encargos>();
     
     public virtual ICollection<Reservas> Reservas { get; } = new List<Reservas>();
+    public Reservas ReservaActiva => Reservas?.FirstOrDefault(r => r.FechaFin == null);
+
 
 }
