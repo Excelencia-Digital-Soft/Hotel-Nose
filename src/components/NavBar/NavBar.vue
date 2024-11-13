@@ -1,7 +1,7 @@
 <template>
     <header class=" principal-convination-color h-16 flex justify-between shadow-md rounded-bl-3xl rounded-br-3xl">
         <router-link :to="{ name: 'home' }" class=" lexend-exa text-xl font-bold hover:scale-110 ml-6 flex justify-center items-center h-full text-white transition duration-150 ease-out md:ease-in hover:text-gray-900">
-          NOSE
+          inRoom<img src="../../assets/pin.png" class="h-8 invert" alt="">
         </router-link>
         <div class="hidden md:flex h-full items-center">
           

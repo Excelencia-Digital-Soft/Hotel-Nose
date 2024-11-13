@@ -2,7 +2,10 @@
   <div class=" flex flex-col w-full h-screen justify-center items-center  p-8">
 
         <Transition>
-          <div v-if="show" alt="MOTEL X" class="h-1/3 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent lexend-exa text-[70px] font-bold">NOSE</div>
+          <div v-if="show" alt="MOTEL X" class="h-1/3 flex bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent lexend-exa text-[70px] font-bold"
+          >inRoom<img src="../assets/pin.png" class="h-24 invert" alt="">
+        </div>
+
         </Transition>
 
   </div>
