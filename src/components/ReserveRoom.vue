@@ -32,7 +32,12 @@
                   maxlength="11" v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
               </div>
             </section>
-            
+            <section class="timer-container">
+  <div class="timer">
+    <p class="label">Tiempo restante:</p>
+    <p class="time">{{ formattedTime }}</p>
+  </div>
+</section>
             <section v-if="!selectedRoom.Disponible" class="grid grid-cols-2">
               <div class="max-w-sm mx-auto mt-4 space-y-4">
                 <!-- Input para la fecha actual -->
@@ -68,7 +73,6 @@
                 </div>
               </div>
             </section>
-            <section/>
             <section v-if="!selectedRoom.Disponible" class="p-10">
               <div>
   <h1 class="text-xl text-white font-bold mb-4">Consumos</h1>
@@ -119,21 +123,23 @@
                 <table class="w-full text-left">
                   <tbody>
                     <tr class="border-b border-gray-700">
-                      <td class="p-4">Consumision</td>
-                      <td class="p-4 text-right">$4500</td>
-                    </tr>
-                    <tr class="border-b border-gray-700">
-                      <td class="p-4">Periodo</td>
-                      <td class="p-4 text-right">$9500</td>
-                    </tr>
-                    <tr class="border-b border-gray-700">
-                      <td class="p-4">Adicional</td>
-                      <td class="p-4 text-right">$1500</td>
-                    </tr>
+  <td class="p-4">Consumision</td>
+  <td class="p-4 text-right">${{ consumos.reduce((sum, consumo) => sum + consumo.total, 0) }}</td>
+</tr>
+<tr class="border-b border-gray-700">
+  <td class="p-4">Periodo</td>
+  <td class="p-4 text-right">${{ periodoCost }}</td>
+</tr>
+<tr class="border-b border-gray-700">
+        <td class="p-4">Adicional</td>
+        <td class="p-4 text-right">${{ adicional }}</td> <!-- Display calculated Adicional -->
+      </tr>
                     <tr>
-                      <td class="p-4">Total</td>
-                      <td class="p-4 text-right">$15500</td>
-                    </tr>
+      <td class="p-4">Total</td>
+      <td class="p-4 text-right">
+        ${{ (Number(consumos.reduce((sum, consumo) => sum + consumo.total, 0)) + Number(periodoCost) + 1500).toFixed(2) }}
+      </td>
+    </tr>
                   </tbody>
                 </table>
               </div>
@@ -210,27 +216,45 @@
 <script setup>
 
 import { computed } from 'vue';
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch, onUnmounted } from 'vue';
 import axiosClient from '../axiosClient';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
 import ModalConfirm from './ModalConfirm.vue';
 import ModalConfirmHabitacion from './ModalConfirmHabitacion.vue';
+import dayjs from 'dayjs';
 
 const emits = defineEmits(["close-modal"])
 const props = defineProps({
   room: Object,
 });
 
+const periodoCost = computed(() => {
+  const totalHours = selectedRoom.value.TotalHoras || 0;
+  const totalMinutes = selectedRoom.value.TotalMinutos || 0;
+  const hourlyRate = selectedRoom.value.Precio || 0;
+  const totalPeriod = totalHours + totalMinutes / 60;
+  return (totalPeriod * hourlyRate).toFixed(2);
+});
+
+const adicional = computed(() => {
+  console.log(overtime.value)
+  return (overtime.value * (selectedRoom.value.Precio / 60)).toFixed(2); // Calculates overtime charge
+});
+
 onMounted(() => {
   selectedRoom.value.nombreHabitacion = props.room.nombreHabitacion;
   selectedRoom.value.HabitacionID = props.room.habitacionId;
   selectedRoom.value.Disponible = props.room.disponible;
+  selectedRoom.value.TotalHoras = props.room.reservaActiva.totalHoras;
+  selectedRoom.value.TotalMinutos = props.room.reservaActiva.totalMinutos;
+  selectedRoom.value.FechaReserva = props.room.reservaActiva.fechaReserva;
+  selectedRoom.value.Precio = props.room.precio;
   selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
   selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
   selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono; // Safe access
   selectedRoom.value.PatenteVehiculo = props.room.visita?.patenteVehiculo; // Safe access
-  console.log(selectedRoom.value.HabitacionID)
+  console.log(selectedRoom.value)
   setCurrentDateTime();
   actualizarConsumos();
   document.body.style.overflow = 'hidden';
@@ -243,6 +267,7 @@ let selectedRoom = ref({
   FechaReserva: '',
   FechaFin: '',
   TotalHoras: 0,
+  TotalMinutos: 0,
   UsuarioID: 14,
   PatenteVehiculo: '',
   NumeroTelefono: '',
@@ -272,6 +297,7 @@ const currentDate = ref('');
 const currentTime = ref('');
 const pizza = ref();
 const products = ref();
+const overtime = ref(0);
 const hours = ref(0);
 const minutes = ref(0);
 const selectedTags = ref([]);
@@ -361,7 +387,6 @@ const actualizarConsumos = () => {
               total: item.cantidad * item.precioUnitario // Initial subtotal
             });
           }
-          console.log(data.data)
         });
       } else {
         console.error('Datos de la API no válidos:', data);
@@ -399,7 +424,6 @@ const handleCheat = (cheatIds) => {
 
 };
 
-console.log("tagselected : " + editTagRel.value)
 
 //SECTOR DE VALIDACIONES DE FORMULARIO
 
@@ -462,9 +486,88 @@ const endRoomReserve = () => {
       console.error(error);
     });
 }
+ // LOGICA TIMER
 
+// LOGICA TIMER
+const formattedTime = ref('');
+let timerInterval = null;
+
+// Timer calculation logic, kept separate
+function calculateRemainingTime() {
+  const endTime = dayjs(selectedRoom.value.FechaReserva)
+    .add(selectedRoom.value.TotalHoras, 'hour')
+    .add(selectedRoom.value.TotalMinutos, 'minute');
+  
+  const now = dayjs();
+  const diffInMinutes = endTime.diff(now, 'minute');
+  const isOvertime = diffInMinutes < 0;
+  if(isOvertime && diffInMinutes >= -12 * 60){
+    overtime.value = diffInMinutes * (-1);
+    console.log(overtime.value);
+
+  }
+  if (isOvertime && diffInMinutes < -12 * 60) {
+    overtime.value = 720;
+    clearInterval(timerInterval);
+    formattedTime.value = `-12:00`;
+    return;
+  }
+  const hours = Math.floor(Math.abs(diffInMinutes) / 60) * (isOvertime ? -1 : 1);
+  const minutes = Math.abs(diffInMinutes) % 60;
+  formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+// Watch for changes in selectedRoom
+watch(() => selectedRoom.value, (newValue) => {
+  if (newValue.FechaReserva && newValue.TotalHoras !== undefined && newValue.TotalMinutos !== undefined) {
+    // Start the timer only when selectedRoom data is available
+    if (timerInterval) clearInterval(timerInterval); // Clear any previous interval
+    timerInterval = setInterval(calculateRemainingTime, 1000); // Update every second
+    calculateRemainingTime(); // Initial call to avoid waiting for the first interval
+  }
+},{ deep: true });
+
+// Clean up the interval when the component is unmounted
+onUnmounted(() => {
+  if (timerInterval) clearInterval(timerInterval);
+});
 </script>
 <style scoped>
+.timer-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.timer {
+  text-align: center;
+}
+
+.label {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.time {
+  font-size: 60px;  /* Large numbers */
+  font-weight: bold;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.time span {
+  margin: 0 5px;
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Slight animation effect */
+.time span:active {
+  transform: scale(1.2);
+}
 .modal-outer-enter-active,
 .modal-outer-leave-active {
   transition: opacity 0.3s cubic-bezier(0.52, 0.02, 0.19, 1.02);

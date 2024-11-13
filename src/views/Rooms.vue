@@ -83,6 +83,7 @@ const fetchHabitaciones = () => {
 function toggleModal(Room){
     show.value = !show.value
     room.value=Room
+    console.log(room.value)
 }
 function toggleModalLibre(Room){
     showFree.value = !showFree.value
