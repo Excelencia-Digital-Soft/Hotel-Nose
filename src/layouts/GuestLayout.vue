@@ -58,7 +58,7 @@
 							Iniciar sesión</button>
 					</div>
 					<div class="overlay-panel overlay-right">
-						<div  alt="MOTEL X" class="h-1/3 text-white lexend-exa text-[70px] font-bold">NOSE</div>
+						<div  alt="MOTEL X" class="h-1/4 flex text-white lexend text-[50px] font-bold">inROOM<img src="../assets/pin.png" class="h-16 invert" alt=""></div>
 						<button @click="togglePanel"
 							class="btn-switch  flex items-center cursor-pointer  px-5 h-12 border-2 mt-8"
 							id="signUp">
