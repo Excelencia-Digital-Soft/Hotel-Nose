@@ -83,6 +83,14 @@ const routes = [
           requireAuth:true
         }
       },
+      {
+        path: "/InventoryManager",
+        name: "InventoryManager",
+        component: InventoryManager,
+        meta:{
+          requireAuth:true
+        }
+      },
     ]
   },
   {

@@ -11,6 +11,9 @@
         <router-link :to="{ name: 'ArticleCreate' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
           Agregar Articulos 
         </router-link>
+        <router-link :to="{ name: 'InventoryManager' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
+          Inventario General
+        </router-link>
       </li>
     </ul>
   </button>

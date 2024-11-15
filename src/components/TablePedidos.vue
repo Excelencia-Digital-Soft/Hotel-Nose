@@ -29,8 +29,8 @@
                 </td>
                 <td><button @click="quitarRegistro(index)" type="button"
                 class="btn-danger rounded-xl text-xl h-12 text-white w-full  flex justify-center items-center mt-1  material-symbols-outlined">delete</button>
-</td>
-                                <button @click="entregarRegistro(index)" type="button"
+                </td>
+                <button @click="entregarRegistro(index)" type="button"
                 class="btn-primary rounded-xl text-xl h-12 text-white w-full  flex justify-center items-center mt-1 p-2 ">Entregar<span class="material-symbols-outlined">arrow_forward</span></button>
               </tr>
 
@@ -44,7 +44,7 @@
             <button
               class="w-full text-white font-bold btn-primary rounded-2xl  flex items-center justify-evenly cursor-pointer  px-5 h-12 mr-4 border-2 border-purple-200"
               id="signUp">
-              Encargar
+              Terminar entrega
               <span class="material-symbols-outlined">arrow_forward</span>
             </button>
           </div>
