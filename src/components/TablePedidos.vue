@@ -8,7 +8,7 @@
           <table class="w-full text-xs text-white">
             <thead>
               <tr>
-                <th class=" bg-secondary-800 border-white border-r-2  text-lg shadow-sm">Arcticulo</th>
+                <th class=" bg-secondary-800 border-white border-r-2  text-lg shadow-sm">Articulo</th>
                 <th class=" bg-secondary-800 border-white border-r-2  text-lg shadow-sm">Producto</th>
                 <th class=" bg-secondary-800 border-white border-r-2 w-1/6  text-lg shadow-sm ">Cantidad</th>
                 <th class=" bg-secondary-800 w-12  text-sm shadow-sm"></th>

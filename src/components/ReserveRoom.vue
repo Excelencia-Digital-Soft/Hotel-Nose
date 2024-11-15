@@ -146,54 +146,17 @@
                 </div>
               </div>
             </section>
-          
-          
-            <section v-if="selectedRoom.Disponible">
-              <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
-                <table class="w-full text-left">
-                  <tbody>
-                    <tr class="border-b border-gray-700">
-                      <td class="p-2">Descuento</td>
-                      <td class="p-2">
-                        <input type="number" v-model="tableData.descuento"
-                          class="w-full p-2 bg-gray-900 text-white border border-gray-600" />
-                      </td>
-                    </tr>
-                    <tr class="border-b border-gray-700">
-                      <td class="p-2">Tarjeta</td>
-                      <td class="p-2">
-                        <input type="number" v-model="tableData.tarjeta"
-                          class="w-full p-2 bg-gray-900 text-white border border-gray-600" />
-                      </td>
-                    </tr>
-                    <tr class="border-b border-gray-700">
-                      <td class="p-2">Recargos</td>
-                      <td class="p-2">
-                        <input type="number" v-model="tableData.recargos"
-                          class="w-full p-2 bg-gray-900 text-white border border-gray-600" />
-                      </td>
-                    </tr>
-                    <tr class="border-b border-gray-700">
-                      <td class="p-2">Empeños</td>
-                      <td class="p-2">
-                        <input type="text" v-model="tableData.empenos"
-                          class="w-full p-2 bg-gray-900 text-white border border-gray-600" />
-                      </td>
-                    </tr>
-                    <tr>
-                      <td class="p-2">Total a cobrar</td>
-                      <td class="p-2">
-                        <input type="number" v-model="tableData.total"
-                          class="w-full p-2 bg-gray-900 text-white border border-gray-600" readonly />
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
             <div class="col-span-3 flex justify-center items-center w-full">
-              <button @click="endRoomReserve" type="button"
-                class="btn-primary w-2/4 h-16 rounded-2xl ">Desocupar Habitacion</button>
+              <button @click="openPaymentModal" type="button" class="btn-primary w-2/4 h-16 rounded-2xl">
+    Desocupar Habitacion
+  </button>
+
+  <ModalPagar
+    v-if="modalPayment" 
+    :total="totalAmount" 
+    @close="modalPayment = false"
+    @confirm-payment="handlePaymentConfirmation"
+  />
             </div>
           </form>
           <button
@@ -519,6 +482,10 @@ function calculateRemainingTime() {
   const hours = Math.floor(Math.abs(diffInMinutes) / 60) * (isOvertime ? -1 : 1);
   const minutes = Math.abs(diffInMinutes) % 60;
   formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+
+
+
+
 }
 
 // Watch for changes in selectedRoom
@@ -535,6 +502,30 @@ watch(() => selectedRoom.value, (newValue) => {
 onUnmounted(() => {
   if (timerInterval) clearInterval(timerInterval);
 });
+
+
+// Logica botón para pagar
+import ModalPagar from './ModalPagar.vue';
+
+// States
+const modalPayment = ref(false);
+const totalAmount = ref(null);
+// Props from your existing data, for example:
+
+// Methods
+const openPaymentModal = () => {
+  totalAmount.value = 
+    (Number(consumos.value.reduce((sum, consumo) => sum + consumo.total, 0)) + 
+    Number(periodoCost.value) + 
+    Number(adicional.value));
+    console.log(totalAmount.value);
+  modalPayment.value = true;
+};
+
+const handlePaymentConfirmation = (paymentDetails) => {
+  console.log('Payment Confirmed:', paymentDetails);
+  modalPayment.value = false;
+};
 </script>
 <style scoped>
 .timer-container {
