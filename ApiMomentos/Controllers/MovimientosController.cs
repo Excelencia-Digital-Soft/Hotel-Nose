@@ -17,7 +17,7 @@ namespace ApiObjetos.Controllers
         }
 
 
-        public async Task<int> CrearMovimientoHabitacion(int visitaId, int totalFacturado, int habitacionId, Habitaciones habitacion)
+        public async Task<int> CrearMovimientoHabitacion(int visitaId, decimal totalFacturado, int habitacionId, Habitaciones habitacion)
         {
             try
             {
