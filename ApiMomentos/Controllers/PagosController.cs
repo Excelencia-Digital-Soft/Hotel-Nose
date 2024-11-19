@@ -20,7 +20,7 @@ namespace ApiObjetos.Controllers
         #region Create Pago
         [HttpPost]
         [Route("PagarVisita")] // Paga todos los movimientos de una visita
-        public async Task<Respuesta> PagarVisita(int visitaId, decimal montoEfectivo, decimal montoTarjeta, decimal montoBillVirt, int medioPagoId)
+        public async Task<Respuesta> PagarVisita(int visitaId, decimal montoDescuento, decimal montoEfectivo, decimal montoTarjeta, decimal montoBillVirt, int medioPagoId)
         {
             Respuesta res = new Respuesta();
             try
@@ -59,23 +59,24 @@ namespace ApiObjetos.Controllers
                 decimal totalFacturado = movimientos.Sum(m => m.TotalFacturado ?? 0);
 
                 // Calculate total payment from all sources (efectivo, tarjeta, billetera virtual)
-                decimal totalPagado = montoEfectivo + montoTarjeta + montoBillVirt;
+                /* decimal totalPagado = montoEfectivo + montoTarjeta + montoBillVirt;
 
-                if (totalPagado != totalFacturado)
-                {
-                    res.Ok = false;
-                    res.Message = $"El monto total pagado ({totalPagado}) es diferente que el total a pagar ({totalFacturado}).";
-                    return res;
-                }
-
+                 if (totalPagado != totalFacturado)
+                 {
+                     res.Ok = false;
+                     res.Message = $"El monto total pagado ({totalPagado}) es diferente que el total a pagar ({totalFacturado}).";
+                     return res;
+                 }
+                */
                 // Step 5: Create a new Pago for the Visita with the respective payment methods
                 Pagos nuevoPago = new Pagos
                 {
+                    MontoDescuento = montoDescuento,
                     MontoEfectivo = montoEfectivo,
                     MontoTarjeta = montoTarjeta,
                     MontoBillVirt = montoBillVirt,
                     MedioPagoId = medioPagoId,
-                };
+                }; 
 
                 _db.Pagos.Add(nuevoPago);
                 await _db.SaveChangesAsync();

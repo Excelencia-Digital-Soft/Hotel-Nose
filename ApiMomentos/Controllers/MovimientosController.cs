@@ -17,7 +17,10 @@ namespace ApiObjetos.Controllers
         }
 
 
-        public async Task<int> CrearMovimientoHabitacion(int visitaId, decimal totalFacturado, int habitacionId, Habitaciones habitacion)
+        [HttpPost]
+        [Route("MovimientoHabitacion")]
+        [AllowAnonymous]
+        public async Task<int> CrearMovimientoHabitacion(int visitaId, decimal totalFacturado, int habitacionId)
         {
             try
             {
@@ -25,7 +28,6 @@ namespace ApiObjetos.Controllers
                 {
                     VisitaId = visitaId,
                     TotalFacturado = totalFacturado,
-                    Habitacion = habitacion,
                     HabitacionId = habitacionId,
                 };
 
@@ -425,6 +427,8 @@ namespace ApiObjetos.Controllers
 
             return res;
         }
+
+
 
         [HttpGet]
         [Route("GetMovimientosVisita")] // Obtiene un paciente basado en su idPaciente. Se obtiene la l

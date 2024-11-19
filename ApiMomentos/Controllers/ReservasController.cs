@@ -132,7 +132,7 @@ namespace ApiObjetos.Controllers
 
                 _db.Add(nuevaReserva);
                 await _movimiento.CrearMovimientoHabitacion(VisitaID,
-                Math.Round((decimal)((int)habitacion.Categoria.PrecioNormal * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2), request.HabitacionID, habitacion);
+                Math.Round((decimal)((int)habitacion.Categoria.PrecioNormal * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2), request.HabitacionID);
                 await _db.SaveChangesAsync();
 
                 // Step 5: Update the room's availability and set the current VisitaID
