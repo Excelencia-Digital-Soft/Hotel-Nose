@@ -58,11 +58,33 @@
   
 </section>
         
-            <section class="timer-container">
-  <div class="timer">
+<section class="timer-container flex flex-col items-start space-y-4">
+    <div class="timer">
     <p class="label">Tiempo restante:</p>
     <p class="time">{{ formattedTime }}</p>
   </div>
+  <button 
+  @click="ignorarTiempoExtra()"
+  type="button"
+  :class="[ 
+    'w-full', 
+    'mt-4', 
+    'rounded-lg', 
+    'text-white',
+    { 
+      'bg-gray-600': ignorarTiempo,  // Darken background when pressed
+      'transform translate-y-1': ignorarTiempo,  // Add pressed effect
+      'box-shadow inset 0 2px 5px rgba(0, 0, 0, 0.2)': ignorarTiempo  // Inner shadow effect
+    }
+  ]"
+  :style="{
+    border:'4px solid transparent',
+    borderImage: 'linear-gradient(to right, #667eea, #764ba2, #ff7e5f) 1',
+    borderRadius: '9999px', // Ensure rounded corners
+  }"
+>
+  Ignorar tiempo extra
+</button>
 </section>
 <section class="grid grid-cols-2 gap-3 mb-2">
               <div class="grid col-span-2 relative mb-3">
@@ -154,6 +176,9 @@
   <ModalPagar
     v-if="modalPayment" 
     :total="totalAmount" 
+    :adicional="Number(adicional)"
+    :habitacionId="selectedRoom.HabitacionID"
+    :visitaId="selectedRoom.VisitaID"
     @close="modalPayment = false"
     @confirm-payment="handlePaymentConfirmation"
   />
@@ -263,6 +288,7 @@ let modalConfirmHabitacion = ref(false);
 const currentDate = ref('');
 const currentTime = ref('');
 const pizza = ref();
+const ignorarTiempo = ref(false)
 const products = ref();
 const overtime = ref(0);
 const hours = ref(0);
@@ -468,26 +494,39 @@ function calculateRemainingTime() {
   const now = dayjs();
   const diffInMinutes = endTime.diff(now, 'minute');
   const isOvertime = diffInMinutes < 0;
-  if(isOvertime && diffInMinutes >= -12 * 60){
-    overtime.value = diffInMinutes * (-1);
-    console.log(overtime.value);
+  if(isOvertime && ignorarTiempo.value == false){
+    if(diffInMinutes >= -12 * 60){
+      overtime.value = diffInMinutes * (-1);
+      console.log(overtime.value);
+    }
+    if (diffInMinutes < -12 * 60) {
+      overtime.value = 720;
+      clearInterval(timerInterval);
+      formattedTime.value = `-12:00`;
+      return;
+    }
+    const hours = Math.floor(Math.abs(diffInMinutes) / 60) * (isOvertime ? -1 : 1);
+    const minutes = Math.abs(diffInMinutes) % 60;
+    formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 
-  }
-  if (isOvertime && diffInMinutes < -12 * 60) {
-    overtime.value = 720;
-    clearInterval(timerInterval);
-    formattedTime.value = `-12:00`;
-    return;
-  }
-  const hours = Math.floor(Math.abs(diffInMinutes) / 60) * (isOvertime ? -1 : 1);
-  const minutes = Math.abs(diffInMinutes) % 60;
-  formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 
+  } else if (isOvertime){
+    formattedTime.value = `00:00`
+    overtime.value = 0
+  }
+  else {const hours = Math.floor(Math.abs(diffInMinutes) / 60);
+    const minutes = Math.abs(diffInMinutes) % 60;
+    formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
 
 
 
 }
 
+function ignorarTiempoExtra(){
+  ignorarTiempo.value = !ignorarTiempo.value;
+  calculateRemainingTime()
+}
 // Watch for changes in selectedRoom
 watch(() => selectedRoom.value, (newValue) => {
   if (newValue.FechaReserva && newValue.TotalHoras !== undefined && newValue.TotalMinutos !== undefined) {
@@ -516,8 +555,7 @@ const totalAmount = ref(null);
 const openPaymentModal = () => {
   totalAmount.value = 
     (Number(consumos.value.reduce((sum, consumo) => sum + consumo.total, 0)) + 
-    Number(periodoCost.value) + 
-    Number(adicional.value));
+    Number(periodoCost.value))
     console.log(totalAmount.value);
   modalPayment.value = true;
 };
