@@ -14,13 +14,18 @@
   <div class="flex space-x-4">
     <div>
       <label class="text-xs font-semibold text-white">Horas</label>
-      <InputNumber v-model="hours" :min="0" :max="99" showButtons />
+      <InputNumber v-model="hours" :min="0" :max="99" showButtons/>
     </div>
     <div>
       <label class="text-xs font-semibold text-white">Minutos</label>
-      <InputNumber v-model="minutes" :min="0" :max="59" showButtons />
+      <InputNumber v-model="minutes" :min="0" :max="59" showButtons/>
     </div>
   </div>
+
+  <div class="flex justify-between items-center mt-4">
+  <label class="text-xs font-semibold text-white">Precio de reserva:</label>
+  <span class="text-green-500 font-bold text-sm">{{ periodoCost }}</span>
+</div>
 </section>
                 <section class="grid grid-cols-2 gap-3 mb-2">
               <div class="grid col-span-2 relative mb-3">
@@ -66,6 +71,7 @@
   import ModalConfirm from './ModalConfirm.vue';
   
   const hours = ref(0);
+  const periodoCost = ref(0);
   const minutes = ref(0);
   const emits = defineEmits(["close-modal"])
   const props = defineProps({
@@ -76,6 +82,8 @@
   onMounted(() => {
     selectedRoom.value.HabitacionID = props.room.habitacionId
     selectedRoom.value.Disponible = props.room.disponible
+    selectedRoom.value.Precio = props.room.precio
+    console.log(selectedRoom.value.Precio)
     setCurrentDateTime();
     document.body.style.overflow = 'hidden';
   })
@@ -87,14 +95,19 @@
     FechaFin: '',
     TotalHoras: 0,
     TotalMinutos: 0,
+    Precio: 0,
+    TotalHoras: 0,
+    TotalMinutos: 0,
     UsuarioID: 14,
     PatenteVehiculo: '',
     NumeroTelefono: '',
     Identificador: '',
     esReserva: true,
   })
-  
-  
+
+
+
+
   
   
   
@@ -143,7 +156,20 @@
     // Formato de la hora en hh:mm
     currentTime.value = now.toTimeString().substr(0, 5);
   };
-  
+
+  const updatePeriodoCost = () => {
+      const totalHours = hours || 0;
+      const totalMinutes = minutes || 0;
+      const hourlyRate = selectedRoom.value.Precio || 0;
+      const totalPeriod = totalHours.value + totalMinutes.value / 60;
+      periodoCost.value = (totalPeriod * hourlyRate).toFixed(2);
+      console.log(totalPeriod)
+      console.log(totalHours.value, totalMinutes.value, hourlyRate)
+    };
+
+    watch([hours, minutes], updatePeriodoCost);
+
+
   const validarNumero = (num) => {
     const numero = num;
     if (!numero) {
