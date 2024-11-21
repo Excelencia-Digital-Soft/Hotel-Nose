@@ -2,104 +2,101 @@ import { createRouter, createWebHistory } from "vue-router";
 import DefaultLayout from "../layouts/DefaultLayout.vue";
 import GuestLayout from "../layouts/GuestLayout.vue";
 import Home from "../views/Home.vue";
-import Proveedores from "../views/Proveedores.vue";
 import Rooms from "../views/Rooms.vue";
 import RoomCreate from "../views/RoomCreate.vue";
 import CategoryCreate from "../views/CategoryCreate.vue";
 import ArticuloCreate from "../views/ArticuloCreate.vue";
 import SubmitOrder from "../views/SubmitOrder.vue";
 import ReceptionOrder from "../views/ReceptionOrder.vue";
-import InventoryManager from "../views/InventoryManager.vue"
-import { useAuthStore } from '../store/auth';
+import InventoryManager from "../views/InventoryManager.vue";
+import { useAuthStore } from "../store/auth";
 const routes = [
   {
-    path: '/',
+    path: "/",
     component: DefaultLayout,
-    meta:{
-      requireAuth:true
+    meta: {
+      requireAuth: true,
     },
-    children:[
+    children: [
       {
         path: "/",
         name: "home",
         component: Home,
-        meta:{
-          requireAuth:false
-        }
-      },
-      {
-        path: "/proveedores",
-        name: "proveedores",
-        component: Proveedores,
-        meta:{
-          requireAuth:true
-        }
+        meta: {
+          requireAuth: false,
+        },
       },
       {
         path: "/Rooms",
         name: "Rooms",
         component: Rooms,
-        meta:{
-          requireAuth:true
-        }
+        meta: {
+          requireAuth: true,
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
       },
       {
         path: "/RoomCreate",
         name: "RoomCreate",
         component: RoomCreate,
-        meta:{
-          requireAuth:true
-        }
+        meta: {
+          requireAuth: true,
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
       },
       {
         path: "/CategoryCreate",
         name: "CategoryCreate",
         component: CategoryCreate,
-        meta:{
-          requireAuth:true
-        }
+        meta: {
+          requireAuth: true,
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
       },
       {
         path: "/ArticleCreate",
         name: "ArticleCreate",
         component: ArticuloCreate,
-        meta:{
-          requireAuth:true
-        }
+        meta: {
+          requireAuth: true,
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
       },
       {
         path: "/SubmitOrder/:habitacionId?",
         name: "SubmitOrder",
         component: SubmitOrder,
         meta: {
-          requireAuth: true
-        }
+          requireAuth: false,
+        },
       },
       {
         path: "/ReceptionOrder",
         name: "ReceptionOrder",
         component: ReceptionOrder,
-        meta:{
-          requireAuth:true
-        }
+        meta: {
+          requireAuth: true,
+          roles: [3,4], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
       },
       {
         path: "/InventoryManager",
         name: "InventoryManager",
         component: InventoryManager,
-        meta:{
-          requireAuth:true
-        }
+        meta: {
+          requireAuth: true,
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
       },
-    ]
+    ],
   },
   {
-    path:'/guest',
+    path: "/guest",
     component: GuestLayout,
-    meta:{
-      requireAuth:false
-    }
-  }  
+    meta: {
+      requireAuth: false,
+    },
+  },
 ];
 
 const router = createRouter({
@@ -109,15 +106,22 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   // to and from are both route objects. must call `next`.
-  const authStore = useAuthStore();//si el usuario está logueado y guardado en el state
+  const authStore = useAuthStore(); //si el usuario está logueado y guardado en el state
   const authVerif = authStore.auth !== null && authStore.auth !== undefined;
-  const needAuth = to.meta.requireAuth
+  const userRoleId = authStore.auth?.rol; // Obtén el ID del rol del usuario
+  const needAuth = to.meta.requireAuth;
 
-  if(needAuth && !authVerif){
-    next('/guest')
-  }else{
-    next()
+  if (needAuth && !authVerif) {
+    next("/guest");
   }
-})
+  // Si la ruta tiene roles específicos y el rol del usuario no está incluido
+  if (to.meta.roles && !to.meta.roles.includes(userRoleId)) {
+    alert("Acceso denegado")
+    next("/guest"); // Redirige a una página de acceso denegado
+    return;
+  }
+
+  next(); // Permite continuar si todo está bien
+});
 
 export default router;

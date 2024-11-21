@@ -26,6 +26,7 @@
             <!-- Cada submenú redirige a una ruta diferente -->
             <router-link
               :to="subItem.route"
+              v-show="subItem.rol.includes(auth.auth.rol)"
               class="w-full m-1  bg-secondary-600 flex items-center justify-start py-2 px-1 pl-3 hover:bg-primary-500 hover:text-white shadow-md rounded-lg"
               @click.native="closeMenu"
               >
@@ -49,10 +50,9 @@ import { useAuthStore } from '../../store/auth';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-
+const auth = useAuthStore();
 const logOut = () => {
-  const auth = useAuthStore();
-  auth.auth = null;
+  auth.logOut();
   router.push('/guest');
 };
 // Estado para el menú principal y submenús
@@ -66,22 +66,22 @@ const menuItems = ref([
   {
     label: 'Habitaciones',
     submenu: [
-      { label: 'Ver Rooms', route: { name: 'Rooms' } },
-      { label: 'Crear Room', route: { name: 'RoomCreate' } },
-      { label: 'Crear Categoría', route: { name: 'CategoryCreate' } }
+      { label: 'Ver Rooms', route: { name: 'Rooms' } , rol:[1,2]},
+      { label: 'Crear Room', route: { name: 'RoomCreate' } , rol:[1,2]},
+      { label: 'Crear Categoría', route: { name: 'CategoryCreate' }, rol:[1,2] }
     ]
   },
   {
     label: 'Artículos',
     submenu: [
-      { label: 'Agregar Artículo', route: { name: 'ArticleCreate' } }
+      { label: 'Agregar Artículo', route: { name: 'ArticleCreate' } , rol:[1,2]}
     ]
   },
   {
     label: 'Pedidos',
     submenu: [
-      { label: 'Enviar Pedido', route: { name: 'SubmitOrder' } },
-      { label: 'Recibir Pedido', route: { name: 'ReceptionOrder' } }
+      { label: 'Enviar Pedido', route: { name: 'SubmitOrder' } , rol:[3,4]},
+      { label: 'Recibir Pedido', route: { name: 'ReceptionOrder' }, rol:[3,4] }
     ]
   }
 ]);

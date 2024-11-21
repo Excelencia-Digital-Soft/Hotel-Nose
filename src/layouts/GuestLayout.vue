@@ -89,8 +89,8 @@ let registerRepeatPass = ref('')
 //functions
 const authUser = async () => {
 	let credentials = {
-		username: username.value,
-		password: password.value
+		nombreUsuario: username.value,
+		contraseña: password.value
 	};
 	let success = false;
 	const auth = useAuthStore();

@@ -53,6 +53,7 @@ import { ref, onMounted } from 'vue'
 import axiosClient from '../axiosClient'; // Ajusta la ruta según tu estructura de proyecto
 import ReserveRoom from '../components/ReserveRoom.vue';
 import ReserveRoomLibre from '../components/ReserveRoomLibre.vue';
+
 let habitaciones = []
 const habitacionesLibres = ref([])
 const habitacionesOcupadas = ref([])
