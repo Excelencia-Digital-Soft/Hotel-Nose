@@ -168,10 +168,20 @@
                 </div>
               </div>
             </section>
-            <div class="col-span-3 flex justify-center items-center w-full">
-              <button @click="openPaymentModal" type="button" class="btn-primary w-2/4 h-16 rounded-2xl">
-    Desocupar Habitacion
+            <div class="col-span-3 flex flex-col justify-center items-center w-full">
+  <button 
+    @click="openPaymentModal" 
+    type="button" 
+    :disabled="selectedRoom.pedidosPendientes" 
+    class="btn-primary w-2/4 h-16 rounded-2xl"
+  >
+    Desocupar Habitación
   </button>
+
+  <!-- Conditional warning text -->
+  <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-2 text-center">
+    Hay pedidos pendientes, no se puede desocupar la habitación.
+  </p>
 
   <ModalPagar
     v-if="modalPayment" 
@@ -242,6 +252,7 @@ onMounted(() => {
   selectedRoom.value.TotalMinutos = props.room.reservaActiva.totalMinutos;
   selectedRoom.value.FechaReserva = props.room.reservaActiva.fechaReserva;
   selectedRoom.value.Precio = props.room.precio;
+  selectedRoom.value.pedidosPendientes = props.room.pedidosPendientes,
   selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
   selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
   selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono; // Safe access
@@ -258,6 +269,7 @@ let selectedRoom = ref({
   nombreHabitacion: '',
   FechaReserva: '',
   FechaFin: '',
+  pedidosPendientes: false,
   TotalHoras: 0,
   TotalMinutos: 0,
   UsuarioID: 14,
