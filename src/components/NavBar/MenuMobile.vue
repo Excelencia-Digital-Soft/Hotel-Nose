@@ -26,7 +26,7 @@
             <!-- Cada submenú redirige a una ruta diferente -->
             <router-link
               :to="subItem.route"
-              v-show="subItem.rol.includes(auth.auth.rol)"
+              v-show="auth.auth && subItem.rol.includes(auth.auth.rol)"
               class="w-full m-1  bg-secondary-600 flex items-center justify-start py-2 px-1 pl-3 hover:bg-primary-500 hover:text-white shadow-md rounded-lg"
               @click.native="closeMenu"
               >

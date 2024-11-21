@@ -5,13 +5,10 @@
         </router-link>
         <div class="hidden md:flex h-full items-center">
           
-          <Menu1 v-if="authStore.auth.rol==3 || authStore.auth.rol==4"/>
-         
-          <Menu2 v-if="authStore.auth.rol==1 || authStore.auth.rol==2"/>
-         
-          <Menu3 v-if="authStore.auth.rol==1 || authStore.auth.rol==2"/>
-         
-          <Logout/> 
+          <Menu1 v-if="authStore.auth && (authStore.auth.rol === 3 || authStore.auth.rol === 4)" />
+<Menu2 v-if="authStore.auth && (authStore.auth.rol === 1 || authStore.auth.rol === 2)" />
+<Menu3 v-if="authStore.auth && (authStore.auth.rol === 1 || authStore.auth.rol === 2)" />
+<Logout v-if="authStore.auth" />
           
           
         </div>
