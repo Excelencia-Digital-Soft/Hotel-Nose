@@ -71,7 +71,7 @@
           <button @click="$emit('close')" class="btn-secondary">Cancelar</button>
           <button 
             :disabled="faltaPorPagar > 0"
-            @click="crearMovimientoAdicional"
+            @click.prevent="crearMovimientoAdicional"
             class="btn-primary">
             Confirmar
           </button>
@@ -165,6 +165,7 @@
       axiosClient.put(`/FinalizarReserva?idHabitacion=${idHabitacion}`)
       .then(response => {
         console.log('Reserva finalizada:', response.data);
+        window.location.reload();
       })
       .catch(error => {
         console.error('Error al finalizar reserva:', error);
