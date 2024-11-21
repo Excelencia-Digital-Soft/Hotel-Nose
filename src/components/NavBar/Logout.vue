@@ -33,9 +33,10 @@ const router = useRouter();
 
 const logOut = () => {
   const auth = useAuthStore();
-  auth.auth = null;
+  auth.logOut();
   router.push('/guest');
 };
+
 
 const showResults = ref(false);
 const toggleResults = () => {

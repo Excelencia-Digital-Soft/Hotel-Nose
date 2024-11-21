@@ -5,11 +5,11 @@
         </router-link>
         <div class="hidden md:flex h-full items-center">
           
-          <Menu1/>
+          <Menu1 v-if="authStore.auth.rol==3 || authStore.auth.rol==4"/>
          
-          <Menu2/>
+          <Menu2 v-if="authStore.auth.rol==1 || authStore.auth.rol==2"/>
          
-          <Menu3/>
+          <Menu3 v-if="authStore.auth.rol==1 || authStore.auth.rol==2"/>
          
           <Logout/> 
           
@@ -26,6 +26,9 @@ import Menu2 from './Menu2.vue';
 import Menu3 from './Menu3.vue';
 import MenuMobile from './MenuMobile.vue';
 import { ref } from "vue";
+import { useAuthStore } from "../../store/auth.js";
+
+const authStore = useAuthStore();
 
 
 </script>
