@@ -62,6 +62,8 @@ public partial class HotelDbContext : DbContext
 
     public virtual DbSet<TipoTarifa> TipoTarifa { get; set; }
 
+    public virtual DbSet<Empeño> Empeño{ get; set; }
+
     public virtual DbSet<Usuarios> Usuarios { get; set; }
 
     public virtual DbSet<Visitas> Visitas { get; set; }
@@ -553,6 +555,27 @@ public partial class HotelDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_Encargos_Visitas");
         });
+
+        modelBuilder.Entity<Empeño>(entity =>
+        {
+            entity.HasKey(e => e.EmpeñoID).HasName("PK_Empeño");
+            entity.Property(e => e.VisitaID).HasColumnName("VisitaID");
+            entity.Property(e => e.Detalle).HasColumnName("Detalle");
+            entity.Property(e => e.Monto).HasDefaultValueSql("((0))");
+            entity.Property(e => e.PagoID).HasColumnName("PagoID");
+
+
+           /* entity.HasOne(d => d.Pago).WithMany(p => p.Empeño)
+                .HasForeignKey(d => d.ArticuloId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Encargos_Articulos");
+
+            entity.HasOne(d => d.Visita).WithMany(p => p.Encargos)
+                .HasForeignKey(d => d.VisitaId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_Encargos_Visitas"); */
+        });
+
         OnModelCreatingPartial(modelBuilder);
     }
 
