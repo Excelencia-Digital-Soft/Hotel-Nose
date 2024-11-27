@@ -55,7 +55,7 @@ namespace ApiObjetos.Controllers
                     await _db.SaveChangesAsync();
                 }
                 ultimoCierre.EstadoCierre = true;
-                 
+                ultimoCierre.FechaHoraCierre = DateTime.Now;
                     if (observacion != null)
                     {
                         ultimoCierre.Observaciones = observacion;
@@ -125,6 +125,76 @@ namespace ApiObjetos.Controllers
             return res;
         }
         #endregion
+
+        [HttpGet]
+        [Route("GetCierresConPagos")]
+        public async Task<Respuesta> GetCierresConPagos()
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+                // Get all Cierres and related Pagos using a left join concept
+                var cierres = await _db.Cierre
+                    .Select(c => new
+                    {
+                        c.CierreId,
+                        c.FechaHoraCierre,
+                        c.TotalIngresosEfectivo,
+                        c.TotalIngresosBillVirt,
+                        c.TotalIngresosTarjeta,
+                        c.Observaciones,
+                        c.EstadoCierre,
+                        c.MontoInicialCaja,
+                        Pagos = _db.Pagos
+                            .Where(p => p.CierreId == c.CierreId)
+                            .Select(p => new
+                            {
+                                p.PagoId,
+                                p.MontoEfectivo,
+                                p.MontoTarjeta,
+                                p.MontoBillVirt,
+                                p.MontoDescuento,
+                                p.fechaHora,
+                                p.MedioPagoId,
+                                p.CierreId
+                            })
+                            .ToList()
+                    })
+                    .ToListAsync();
+
+                // Get all Pagos with no associated Cierre (cierreId is null)
+                var pagosSinCierre = await _db.Pagos
+                    .Where(p => p.CierreId == null)
+                    .Select(p => new
+                    {
+                        p.PagoId,
+                        p.MontoEfectivo,
+                        p.MontoTarjeta,
+                        p.MontoBillVirt,
+                        p.MontoDescuento,
+                        p.MedioPagoId,
+                        CierreId = (int?)null
+                    })
+                    .ToListAsync();
+
+                // Returning the data as part of the response
+                res.Ok = true;
+                res.Data = new
+                {
+                    Cierres = cierres,
+                    PagosSinCierre = pagosSinCierre
+                };
+            }
+            catch (Exception ex)
+            {
+                // Handle errors
+                res.Ok = false;
+                res.Message = $"Error: {ex.Message}";
+            }
+
+            return res;
+        }
 
 
         #region Get Cierre

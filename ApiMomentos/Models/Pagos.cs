@@ -19,6 +19,7 @@ public partial class Pagos
     public int? MedioPagoId { get; set; }
 
     public int? CierreId { get; set; }
+    public DateTime? fechaHora { get; set; }    
 
     public virtual Cierre? Cierre { get; set; }
     [JsonIgnore]
