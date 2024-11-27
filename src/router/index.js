@@ -12,6 +12,7 @@ import InventoryManager from "../views/InventoryManager.vue";
 import CierresManager from "../views/CierresManager.vue";
 
 import { useAuthStore } from "../store/auth";
+import EmpeñosManager from "../views/EmpeñosManager.vue";
 const routes = [
   {
     path: "/",
@@ -94,6 +95,15 @@ const routes = [
         path: "/CierresManager",
         name: "CierresManager",
         component: CierresManager,
+        meta: {
+          requireAuth: true,
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
+      },
+      {
+        path: "/EmpenosManager",
+        name: "EmpenosManager",
+        component: EmpeñosManager,
         meta: {
           requireAuth: true,
           roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
