@@ -267,6 +267,59 @@ namespace ApiObjetos.Controllers
 
             return res;
         }
+        private string GetContentType(string path)
+        {
+            var extension = Path.GetExtension(path).ToLowerInvariant();
+
+            // Add other content types as needed
+            return extension switch
+            {
+                ".jpg" or ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".bmp" => "image/bmp",
+                _ => "application/octet-stream", // Default content type for unknown extensions
+            };
+        }
+
+
+        [HttpGet("GetImage/{idArticulo}")]
+        public IActionResult GetImage(int idArticulo)
+        {
+            // Access the database to find the DTOAttachment by fileName
+            var articulo = _db.Articulos.FirstOrDefault(a => a.ArticuloId == idArticulo);
+            var imagen = _db.Imagenes.FirstOrDefault(i => i.ImagenId == articulo.imagenID);
+
+            // Check if the attachment was found
+            if (imagen != null)
+            {
+                // Combine the attachmentPath with the fileName to get the full path
+                var imagePath = Path.Combine(imagen.Origen);
+
+                // Check if the file exists at the specified path
+                if (System.IO.File.Exists(imagePath))
+                {
+                    // Determine the content type based on the file extension
+                    var contentType = GetContentType(imagePath);
+
+                    // Read the file data
+                    var imageData = System.IO.File.ReadAllBytes(imagePath);
+
+                    // Return the file data with the appropriate content type
+                    return File(imageData, contentType);
+                }
+                else
+                {
+                    // Return a 404 Not Found response if the image file does not exist
+                    return NotFound(new { message = "Image file not found" });
+                }
+            }
+            else
+            {
+                // Return a 404 Not Found response if the DTOAttachment record does not exist
+                return NotFound(new { message = "Attachment not found in database" });
+            }
+        }
 
         [HttpDelete]
         [Route("AnularArticulo")]
