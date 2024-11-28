@@ -76,6 +76,7 @@ namespace ApiObjetos.Controllers
                     MontoTarjeta = montoTarjeta,
                     MontoBillVirt = montoBillVirt,
                     MedioPagoId = medioPagoId,
+                    fechaHora = DateTime.Now,
                 }; 
 
                 _db.Pagos.Add(nuevoPago);
