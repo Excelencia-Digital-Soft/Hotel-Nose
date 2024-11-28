@@ -186,6 +186,87 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpPost]
+        [Route("CreateArticuloWithImage")]
+        public async Task<Respuesta> CreateArticuloWithImage([FromForm] string nombre, [FromForm] decimal precio, [FromForm] IFormFile? imagen)
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+                // Validar los valores de entrada
+                if (string.IsNullOrEmpty(nombre))
+                {
+                    res.Ok = false;
+                    res.Message = "El nombre del artículo es obligatorio.";
+                    return res;
+                }
+
+                if (precio <= 0)
+                {
+                    res.Ok = false;
+                    res.Message = "El precio del artículo debe ser mayor a cero.";
+                    return res;
+                }
+
+                // Crear un nuevo objeto Articulo
+                Articulos nuevoArticulo = new Articulos
+                {
+                    NombreArticulo = nombre,
+                    Precio = precio,
+                    Anulado = false, // Por defecto, el artículo no está anulado
+                    FechaRegistro = DateTime.Now
+                };
+
+                // Agregar el artículo a la base de datos
+                _db.Articulos.Add(nuevoArticulo);
+                await _db.SaveChangesAsync();
+
+                // Manejar la imagen si se proporciona
+                if (imagen != null && imagen.Length > 0)
+                {
+                    // Generar un nombre único para la imagen
+                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
+                    var filePath = Path.Combine("wwwroot/uploads", fileName);
+
+                    // Guardar la imagen en la carpeta de uploads
+                    Directory.CreateDirectory("wwwroot/uploads");
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await imagen.CopyToAsync(stream);
+                    }
+
+                    // Crear un nuevo objeto Imagen
+                    Imagenes nuevaImagen = new Imagenes
+                    {
+                        Origen = filePath, // O cualquier otro identificador
+                        NombreArchivo = fileName
+                    };
+
+                    // Agregar la imagen a la base de datos
+                    // Agregar la imagen a la base de datos
+                    _db.Imagenes.Add(nuevaImagen);
+                    await _db.SaveChangesAsync();
+
+                    nuevoArticulo.imagenID = nuevaImagen.ImagenId;
+                    _db.Articulos.Update(nuevoArticulo);
+                    await _db.SaveChangesAsync();
+                    
+                }
+
+                // Responder con éxito
+                res.Ok = true;
+                res.Message = "Artículo creado con imagen correctamente.";
+                res.Data = nuevoArticulo;
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
 
         [HttpDelete]
         [Route("AnularArticulo")]

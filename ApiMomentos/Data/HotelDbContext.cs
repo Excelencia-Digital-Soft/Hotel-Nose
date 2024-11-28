@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using ApiObjetos.Models;
 using Microsoft.EntityFrameworkCore;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ApiObjetos.Data;
 
@@ -67,6 +68,9 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<Usuarios> Usuarios { get; set; }
 
     public virtual DbSet<Visitas> Visitas { get; set; }
+    public virtual DbSet<Imagenes> Imagenes { get; set; } // Asegúrate de que exista esta línea
+
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
@@ -574,6 +578,14 @@ public partial class HotelDbContext : DbContext
                 .HasForeignKey(d => d.VisitaId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_Encargos_Visitas"); */
+        });
+
+        modelBuilder.Entity<Imagenes>(entity =>
+        {
+            entity.HasKey(e => e.ImagenId).HasName("PK_Imagen");
+            entity.Property(e => e.Origen).HasColumnName("Origen");
+            entity.Property(e => e.NombreArchivo).HasColumnName("NombreArchivo");
+
         });
 
         OnModelCreatingPartial(modelBuilder);

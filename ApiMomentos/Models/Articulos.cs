@@ -17,6 +17,10 @@ public partial class Articulos
     public DateTime? FechaRegistro { get; set; }
 
     public bool? Anulado { get; set; }
+
+    public int? imagenID { get; set; }
+    public Imagenes Imagen { get; set; }
+
     [JsonIgnore]
     public virtual ICollection<Consumo> Consumo { get; } = new List<Consumo>();
     [JsonIgnore]

@@ -108,6 +108,8 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API V1");
 });
 
+// Habilitar archivos estáticos (imágenes, CSS, JavaScript, etc.)
+app.UseStaticFiles();
 //app.UseHttpsRedirection();
 app.UseCors("NuevaPolitica");
 app.UseAuthentication();  // Enable JWT authentication
