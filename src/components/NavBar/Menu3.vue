@@ -17,6 +17,12 @@
         <router-link :to="{ name: 'CategoryCreate' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
           Categorías
         </router-link>
+        <router-link :to="{ name: 'CierresManager' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
+          Cierres
+        </router-link>
+        <router-link :to="{ name: 'EmpenosManager' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
+          Empeños
+        </router-link>
       </li>
     </ul>
   </button>

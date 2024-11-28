@@ -9,7 +9,10 @@ import ArticuloCreate from "../views/ArticuloCreate.vue";
 import SubmitOrder from "../views/SubmitOrder.vue";
 import ReceptionOrder from "../views/ReceptionOrder.vue";
 import InventoryManager from "../views/InventoryManager.vue";
+import CierresManager from "../views/CierresManager.vue";
+
 import { useAuthStore } from "../store/auth";
+import EmpeñosManager from "../views/EmpeñosManager.vue";
 const routes = [
   {
     path: "/",
@@ -83,6 +86,24 @@ const routes = [
         path: "/InventoryManager",
         name: "InventoryManager",
         component: InventoryManager,
+        meta: {
+          requireAuth: true,
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
+      },
+      {
+        path: "/CierresManager",
+        name: "CierresManager",
+        component: CierresManager,
+        meta: {
+          requireAuth: true,
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
+      },
+      {
+        path: "/EmpenosManager",
+        name: "EmpenosManager",
+        component: EmpeñosManager,
         meta: {
           requireAuth: true,
           roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
