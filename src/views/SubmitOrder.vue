@@ -18,7 +18,7 @@
         }">
                 <!-- Imagen del producto, en este caso un placeholder -->
                 <div class="w-20 h-20 bg-gray-500 flex items-center justify-center rounded-md mb-2">
-                  <img src="../assets/image59.svg" alt="Imagen del producto" class="w-full h-full object-cover" />
+                  <img :src="producto.imageUrl || '/assets/image59.svg'" alt="Imagen del producto" class="w-full h-full object-cover" />
                 </div>
                 <!-- Nombre del producto -->
                 <p>{{ producto.nombreArticulo }}</p>
@@ -110,25 +110,49 @@ const fetchVisitaId = () => {
     router.push({ name: 'home' });
   }
 };
-const fetchArticulos = () => {
-  axiosClient.get("/GetInventarioGeneral")
-    .then(({ data }) => {
-      if (data && data.data) {
-        productos.value = data.data.map(item => ({
-          ...item.articulo,  // Spread the properties of the 'articulo' object
-          cantidad: item.cantidad,  // Add the 'cantidad' field from the parent object
-        }));
 
-        // Log the final array to verify the structure
-        console.log("Productos:", productos.value);
-      } else {
-        console.error('Datos de la API no válidos:', data);
-      }
-    })
-    .catch(error => {
-      console.error('Error al obtener los productos:', error);
+const fetchImage = async (articuloId) => {
+  try {
+    const response = await axiosClient.get(`api/Articulos/GetImage/${articuloId}`, {
+      responseType: 'blob', // Specify response type as blob to handle binary data
     });
+
+    // Convert blob to a usable object URL
+    const imageUrl = URL.createObjectURL(response.data);
+    return imageUrl; // Return the object URL for the image
+  } catch (error) {
+    console.error(`Error al obtener imagen para articuloId ${articuloId}:`, error);
+    return null; // Return default placeholder if error occurs
+  }
 };
+const fetchArticulos = async () => {
+  try {
+    const response = await axiosClient.get("/GetInventarioGeneral");
+    if (response.data && response.data.data) {
+      // Filter out items with cantidad = 0
+      const validItems = response.data.data.filter(item => item.cantidad > 0);
+
+      // Fetch images and construct the products array
+      productos.value = await Promise.all(
+        validItems.map(async (item) => {
+          const imageUrl = await fetchImage(item.articulo.articuloId); // Fetch image
+          return {
+            ...item.articulo, // Spread properties of 'articulo'
+            cantidad: item.cantidad, // Add 'cantidad'
+            imageUrl, // Add fetched image URL
+          };
+        })
+      );
+
+      console.log("Productos with Images (cantidad > 0):", productos.value); // Verify the structure
+    } else {
+      console.error("Datos de la API no válidos:", response.data);
+    }
+  } catch (error) {
+    console.error("Error al obtener los productos:", error);
+  }
+};
+
 </script>
 
 <style scoped>

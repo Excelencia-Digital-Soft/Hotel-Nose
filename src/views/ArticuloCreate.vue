@@ -2,27 +2,45 @@
   <div class="p-4">
     <!-- Form to Create a New Room -->
     <div class="mb-6">
-      <h2 class="text-xl text-white lexend-exa font-bold mb-4">Crear articulo</h2>
+      <h2 class="text-xl text-white lexend-exa font-bold mb-4">Crear artículo</h2>
       <form @submit.prevent="createArticulo">
         <div class="mb-4">
           <label class="block text-white text-sm font-bold mb-2" for="articuloName">Nombre:</label>
-          <input v-model="newArticuloName"
+          <input 
+            v-model="newArticuloName"
             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="articuloName" type="text" placeholder="Nombre del artículo" required>
+            id="articuloName" 
+            type="text" 
+            placeholder="Nombre del artículo" 
+            required>
         </div>
         <div class="mb-4">
           <label class="block text-white text-sm font-bold mb-2">Precio:</label>
-          <input v-model="newArticuloPrice"
+          <input 
+            v-model="newArticuloPrice"
             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="articuloPrice" type="text" placeholder="0" required>
+            id="articuloPrice" 
+            type="text" 
+            placeholder="0" 
+            required>
         </div>
         <div class="mb-4">
           <label class="block text-white text-sm font-bold mb-2">Imagen:</label>
-          <input @change="onImageChange"
+          <input 
+            @change="onImageChange"
             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="articuloImage" type="file" accept="image/*">
+            id="articuloImage" 
+            type="file" 
+            accept="image/*">
         </div>
-        <button class="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-700" type="submit">
+        <!-- Preview Section -->
+        <div v-if="previewImage" class="mb-4">
+          <label class="block text-white text-sm font-bold mb-2">Vista previa:</label>
+          <img :src="previewImage" alt="Preview" class="w-32 h-32 object-cover border rounded shadow" />
+        </div>
+        <button 
+          class="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-700" 
+          type="submit">
           Crear
         </button>
       </form>
