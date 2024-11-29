@@ -67,23 +67,29 @@
 
         <div class="bg-white p-6 rounded-lg shadow-lg text-center">
           <h2 class="text-xl text-black lexend-exa font-bold mb-4">Actualizar artículo</h2>
-          <form @submit.prevent="updateArticulo(articuloToUpdate?.articuloId)">
-            <div class="mb-4">
-              <label class="block text-black text-sm font-bold mb-2" for="articuloName">Nombre:</label>
-              <input v-model="updateArticuloName"
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="articuloName" type="text" placeholder="Nombre del articulo" required>
-            </div>
-            <div class="mb-4">
-              <label class="block text-black text-sm font-bold mb-2">Precio:</label>
-              <input v-model="updateArticuloPrice"
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="articuloPrice" type="text" placeholder="0" required>
-            </div>
-            <button class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700" type="submit">
-              Actualizar
-            </button>
-          </form>
+  <form @submit.prevent="updateArticulo(articuloToUpdate?.articuloId)">
+    <div class="mb-4">
+      <label class="block text-black text-sm font-bold mb-2" for="articuloName">Nombre:</label>
+      <input v-model="updateArticuloName"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        id="articuloName" type="text" placeholder="Nombre del articulo" required>
+    </div>
+    <div class="mb-4">
+      <label class="block text-black text-sm font-bold mb-2">Precio:</label>
+      <input v-model="updateArticuloPrice"
+        class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+        id="articuloPrice" type="text" placeholder="0" required>
+    </div>
+    <div class="mb-4">
+      <label class="block text-black text-sm font-bold mb-2">Imagen (opcional):</label>
+      <input ref="updateArticuloImage" class="block w-full text-sm text-gray-500" type="file" accept="image/*">
+    </div>
+    <div class="mt-6">
+      <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+        Actualizar
+      </button>
+    </div>
+  </form>
           <button @click="cancelUpdateArticulo" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">
             Cancelar
           </button>
@@ -99,7 +105,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axiosClient from '../axiosClient'; // Adjust the path according to your project structure
-
+const updateArticuloImage = ref(null);
 const articulos = ref([]);
 const newArticuloName = ref('');
 const newArticuloPrice = ref('');
@@ -184,14 +190,35 @@ const createArticulo = async () => {
 const updateArticulo = async (articuloID) => {
   if (updateArticuloName.value && updateArticuloPrice.value) {
     try {
-      // Make sure to format the URL correctly
-      const response = await axiosClient.put(
+      // Step 1: Update article details (name and price)
+      const updateResponse = await axiosClient.put(
         `/api/Articulos/UpdateArticulo?id=${articuloID}&nombre=${encodeURIComponent(updateArticuloName.value)}&precio=${updateArticuloPrice.value}`
       );
-      alert(response.data.message);
-      fetchArticulos(); // Refrescar categorias
+
+      alert(updateResponse.data.message);
+
+      // Step 2: Check if an image is provided for upload
+      const imageFile = updateArticuloImage.value?.files[0];
+      if (imageFile) {
+        const formData = new FormData();
+        formData.append('articuloID', articuloID);
+        formData.append('nuevaImagen', imageFile);
+
+        // Step 3: Send the image to the UpdateArticuloImage endpoint
+        const imageResponse = await axiosClient.put('/api/Articulos/UpdateArticuloImage', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+
+        alert(imageResponse.data.message);
+      }
+
+      // Step 4: Refresh the list of articles and reset the form
+      fetchArticulos();
       updateArticuloName.value = '';
       updateArticuloPrice.value = null;
+      updateArticuloImage.value.value = null;
       cancelUpdateArticulo();
     } catch (error) {
       console.error('Error updating articulo:', error);

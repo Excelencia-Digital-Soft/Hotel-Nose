@@ -61,6 +61,7 @@ const show = ref(false)
 onMounted(() => {
   fetchVisitaId();
   fetchArticulos();
+  console.log(productos);
   seleccionados = ref([])// le asignamos como variable reactiva en el montado para luego 
 })
 let seleccionados = null;
@@ -110,25 +111,24 @@ const fetchVisitaId = () => {
   }
 };
 const fetchArticulos = () => {
-  axiosClient.get("/api/Articulos/GetArticulos")
+  axiosClient.get("/GetInventarioGeneral")
     .then(({ data }) => {
       if (data && data.data) {
-        console.log(data.data)
-        productos.value = data.data.map(articulo => {
-          return {
-            ...articulo,  // Copia las propiedades del objeto original
-            cantidad: 1   // Añade el campo 'cantidad' con valor 1
-          };
-        });
+        productos.value = data.data.map(item => ({
+          ...item.articulo,  // Spread the properties of the 'articulo' object
+          cantidad: item.cantidad,  // Add the 'cantidad' field from the parent object
+        }));
 
+        // Log the final array to verify the structure
+        console.log("Productos:", productos.value);
       } else {
         console.error('Datos de la API no válidos:', data);
       }
     })
     .catch(error => {
-      console.error('Error al obtener las habitaciones:', error);
+      console.error('Error al obtener los productos:', error);
     });
-}
+};
 </script>
 
 <style scoped>
