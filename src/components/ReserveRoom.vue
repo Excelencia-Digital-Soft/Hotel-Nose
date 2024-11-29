@@ -1,218 +1,183 @@
 <template>
-  <Teleport to="body" >
-  <Transition name="modal-outer" appear>
-    <div class="fixed w-full h-full  bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
-      <Transition name="modal-inner">
-        <div
-        :class="selectedRoom.Disponible ? 'w-2/4 h-3/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900':' w-3/4 h-5/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900'">
-          <i class="fa-thin fa-circle-xmark"></i>
-          <!-- Modal Content -->
-          <h1 class="self-center text-2xl text-white lexend-exa font-bold mt-5 mb-5">
-            {{ selectedRoom.nombreHabitacion }}
-          </h1>
+  <Teleport to="body">
+    <Transition name="modal-outer" appear>
+      <div
+        class="fixed w-full h-full  bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
+        <Transition name="modal-inner">
+          <div
+            :class="selectedRoom.Disponible ? 'w-2/4 h-3/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900' : ' w-3/4 h-[90%] flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900'">
+            <i class="fa-thin fa-circle-xmark"></i>
+            <!-- Modal Content -->
+            <h1 class="absolute  self-center text-2xl lexend-exa font-bold mt-5 mb-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
+              {{ selectedRoom.nombreHabitacion }}
+            </h1>
 
-          <form :class="!selectedRoom.Disponible ? 'grid grid-cols-3 gap-3 mb-2' : 'grid-cols-1'">
-            <section v-if="!selectedRoom.Disponible" class="p-10">
-              <div>
-  <h1 class="text-xl text-white font-bold mb-4">Consumos</h1>
-  <div class="bg-gray-800 rounded-lg p-4 max-h-64 overflow-y-auto">
-    <!-- Header row -->
-    <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 text-white font-semibold mb-2">
-      <span>Producto</span>
-      <span>Cantidad</span>
-      <span>Precio</span>
-      <span>Origen</span>
-      <span>Total</span>
-    </div>
-    
-    <!-- Ordered list for the consumos -->
-    <ol class="space-y-2">
-      <li 
-        v-for="consumo in consumos" 
-        :key="consumo.consumoId" 
-        class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 bg-gray-700 p-3 rounded-md text-white"
-      >
-        <span class="font-semibold">{{ consumo.articleName }}</span>
-        <span class="text-sm text-gray-400">{{ consumo.cantidad }}</span>
-        <span class="text-sm text-gray-400">${{ consumo.precioUnitario }}</span>
-        <span class="text-sm text-gray-400">
-          {{ consumo.esHabitacion ? 'Habitacion' : 'Inv. General' }}
-        </span>
-        <span class="text-sm font-bold text-green-400">${{ consumo.total }}</span>
-      </li>
-    </ol>
-  </div>
-</div>
-  
+            <form :class="!selectedRoom.Disponible ? 'grid grid-cols-3 gap-3 mb-2' : 'grid-cols-1'">
+              <section v-if="!selectedRoom.Disponible" class="flex flex-col justify-start p-2">
+                <div>
+                  <h1 class="text-xl text-white font-bold mb-2">Consumos</h1>
+                  <div class="bg-gray-800 rounded-lg p-4 h-56 overflow-y-auto">
+                    <!-- Header row -->
+                    <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 text-white font-semibold mb-2">
+                      <span>Producto</span>
+                      <span>Cantidad</span>
+                      <span>Precio</span>
+                      <span>Origen</span>
+                      <span>Total</span>
+                    </div>
 
-  <button type="button" 
-          @click="toggleModalConfirm()"
-          class="btn-primary w-full h-12 text-base font-semibold tracking-wider rounded-3xl mt-4">
-    Consumo general
-  </button>
-  <button type="button" 
-          @click="toggleModalConfirmHabitacion()"
-          class="btn-primary w-full h-12 text-base font-semibold tracking-wider rounded-3xl mt-4">
-    Consumo habitación
-  </button>
-  
-</section>
-        
-<section class="timer-container flex flex-col items-start space-y-4">
-    <div class="timer">
-    <p class="label">Tiempo restante:</p>
-    <p class="time">{{ formattedTime }}</p>
-  </div>
-  <button 
-  @click="ignorarTiempoExtra()"
-  type="button"
-  :class="[ 
-    'w-full', 
-    'mt-4', 
-    'rounded-lg', 
-    'text-white',
-    { 
-      'bg-gray-600': ignorarTiempo,  // Darken background when pressed
-      'transform translate-y-1': ignorarTiempo,  // Add pressed effect
-      'box-shadow inset 0 2px 5px rgba(0, 0, 0, 0.2)': ignorarTiempo  // Inner shadow effect
-    }
-  ]"
-  :style="{
-    border:'4px solid transparent',
+                    <!-- Ordered list for the consumos -->
+                    <ol class="space-y-2">
+                      <li v-for="consumo in consumos" :key="consumo.consumoId"
+                        class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 bg-gray-700 p-3 rounded-md text-white">
+                        <span class="font-semibold">{{ consumo.articleName }}</span>
+                        <span class="text-sm text-gray-400">{{ consumo.cantidad }}</span>
+                        <span class="text-sm text-gray-400">${{ consumo.precioUnitario }}</span>
+                        <span class="text-sm text-gray-400">
+                          {{ consumo.esHabitacion ? 'Habitacion' : 'Inv. General' }}
+                        </span>
+                        <span class="text-sm font-bold text-green-400">${{ consumo.total }}</span>
+                      </li>
+                    </ol>
+                  </div>
+                </div>
+
+                <div class="flex">                <button type="button" @click="toggleModalConfirm()"
+                  class="btn-primary w-full h-8 mr-2 p-1 text-sm  rounded-3xl mt-4">
+                  Consumo general
+                </button>
+                <button type="button" @click="toggleModalConfirmHabitacion()"
+                  class="btn-primary w-full h-8 text-sm p-2   rounded-3xl mt-4">
+                  Consumo habitación
+                </button></div>
+
+
+              </section>
+
+              <section class="timer-container flex flex-col items-start space-y-4">
+                <div class="timer">
+                  <p class="label">Tiempo restante:</p>
+                  <p class="time">{{ formattedTime }}</p>
+                </div>
+                <button @click="ignorarTiempoExtra()" type="button" :class="[
+                  'w-full',
+                  'mt-4',
+                  'rounded-lg',
+                  'text-white',
+                  {
+                    'bg-gray-600': ignorarTiempo,  // Darken background when pressed
+                    'transform translate-y-1': ignorarTiempo,  // Add pressed effect
+                    'box-shadow inset 0 2px 5px rgba(0, 0, 0, 0.2)': ignorarTiempo  // Inner shadow effect
+                  }
+                ]" :style="{
+    border: '4px solid transparent',
     borderImage: 'linear-gradient(to right, #667eea, #764ba2, #ff7e5f) 1',
     borderRadius: '9999px', // Ensure rounded corners
-  }"
->
-  Ignorar tiempo extra
-</button>
-</section>
-<section class="grid grid-cols-2 gap-3 mb-2">
-              <div class="grid col-span-2 relative mb-3">
-                <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
-                <input type="text"
-                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                  v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
-              </div>
-              <div class="grid relative mb-3">
-                <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
-                <input type="text"
-                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                  maxlength="11" v-model="selectedRoom.NumeroTelefono" placeholder="Ingresa Marca y modelo de vehiculo">
-              </div>
-              <div class="grid relative mb-3">
-                <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
-                <input type="text"
-                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                  maxlength="11" v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
-              </div>
-            </section>
-            <section v-if="!selectedRoom.Disponible">
-              <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
-                <table class="w-full text-left">
-                  <tbody>
-                    <tr class="border-b border-gray-700">
-  <td class="p-4">Consumision</td>
-  <td class="p-4 text-right">${{ consumos.reduce((sum, consumo) => sum + consumo.total, 0) }}</td>
-</tr>
-<tr class="border-b border-gray-700">
-  <td class="p-4">Periodo</td>
-  <td class="p-4 text-right">${{ periodoCost }}</td>
-</tr>
-<tr class="border-b border-gray-700">
-        <td class="p-4">Adicional</td>
-        <td class="p-4 text-right">${{ adicional }}</td> <!-- Display calculated Adicional -->
-      </tr>
-                    <tr>
-      <td class="p-4">Total</td>
-      <td class="p-4 text-right">
-        ${{ (Number(consumos.reduce((sum, consumo) => sum + consumo.total, 0)) + Number(periodoCost) + Number(adicional)).toFixed(2) }}
-      </td>
-    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </section>
-            <section/>
-            <section v-if="!selectedRoom.Disponible" class="grid grid-cols-2">
-              <div class="max-w-sm mx-auto mt-4 space-y-4">
-                <!-- Input para la fecha actual -->
-                <div>
-                  <label for="fecha" class="block text-white">Fecha Actual</label>
-                  <input id="fecha" type="date" v-model="currentDate"
-                    class="w-full p-2 border border-gray-700 bg-gray-900 text-white" readonly />
+  }">
+                  Ignorar tiempo extra
+                </button>
+              </section>
+              <section class="flex flex-col items-center justify-center  mb-2">
+                <div class="flex flex-col items-start justify-center w-full mb-3 px-4">
+                  <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
+                  <input type="text"
+                    class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                    v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
                 </div>
+                <div class="flex flex-col items-start justify-center w-full mb-3 px-4">
+                  <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
+                  <input type="text"
+                    class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                    maxlength="11" v-model="selectedRoom.NumeroTelefono"
+                    placeholder="Ingresa Marca y modelo de vehiculo">
+                </div>
+                <div class="flex flex-col items-start justify-center w-full mb-3 px-4">
+                  <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
+                  <input type="text"
+                    class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                     v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
+                </div>
+              </section>
+              <section v-if="!selectedRoom.Disponible">
+                <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
+                  <table class="w-full text-left">
+                    <tbody>
+                      <tr class="border-b border-gray-700">
+                        <td class="p-4">Consumision</td>
+                        <td class="p-4 text-right">${{ consumos.reduce((sum, consumo) => sum + consumo.total, 0) }}</td>
+                      </tr>
+                      <tr class="border-b border-gray-700">
+                        <td class="p-4">Periodo</td>
+                        <td class="p-4 text-right">${{ periodoCost }}</td>
+                      </tr>
+                      <tr class="border-b border-gray-700">
+                        <td class="p-4">Adicional</td>
+                        <td class="p-4 text-right">${{ adicional }}</td> <!-- Display calculated Adicional -->
+                      </tr>
+                      <tr>
+                        <td class="p-4">Total</td>
+                        <td class="p-4 text-right">
+                          ${{ (Number(consumos.reduce((sum, consumo) => sum + consumo.total, 0)) + Number(periodoCost) +
+                            Number(adicional)).toFixed(2) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+              <section></section>
+              <section v-if="!selectedRoom.Disponible" >
 
-                <!-- Input para la hora actual -->
-                <div>
-                  <label for="hora" class="block text-white">Hora Actual</label>
-                  <input id="hora" type="time" v-model="currentTime"
-                    class="w-full p-2 border border-gray-700 bg-gray-900 text-white" readonly />
+                <div class="card flex flex-col ml-4 flex-wrap justify-center gap-4">
+                  <div class="flex items-center">
+                    <Checkbox v-model="pizza" inputId="ingredient1" name="pizza" value="Avisar Hora Salida" />
+                    <label for="ingredient1" class="ml-2 text-white"> Avisar Hora Salida </label>
+                  </div>
+                  <div class="flex items-center">
+                    <Checkbox v-model="pizza" inputId="ingredient2" name="pizza" value="Precio por siesta" />
+                    <label for="ingredient2" class="ml-2 text-white"> Precio por siesta </label>
+                  </div>
+                  <div class="flex items-center">
+                    <Checkbox v-model="pizza" inputId="ingredient3" name="pizza" value="Precio por dormir" />
+                    <label for="ingredient3" class="ml-2 text-white"> Precio por dormir </label>
+                  </div>
+                  <div class="flex items-center">
+                    <Checkbox v-model="pizza" inputId="ingredient4" name="pizza" value="Pareja" />
+                    <label for="ingredient4" class="ml-2 text-white"> Pareja </label>
+                  </div>
                 </div>
+              </section>
+              <div class="col-span-3 flex flex-col justify-center items-center w-full">
+                <button @click="openPaymentModal" type="button" :disabled="selectedRoom.pedidosPendientes"
+                  class="btn-primary w-2/4 h-16 rounded-2xl">
+                  Desocupar Habitación
+                </button>
+
+                <!-- Conditional warning text -->
+                <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-2 text-center">
+                  Hay pedidos pendientes, no se puede desocupar la habitación.
+                </p>
+
+                <ModalPagar v-if="modalPayment" :total="totalAmount" :adicional="Number(adicional)"
+                  :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID"
+                  @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
               </div>
-              <div class="card flex flex-col flex-wrap justify-center gap-4">
-                <div class="flex items-center">
-                  <Checkbox v-model="pizza" inputId="ingredient1" name="pizza" value="Avisar Hora Salida" />
-                  <label for="ingredient1" class="ml-2 text-white"> Avisar Hora Salida </label>
-                </div>
-                <div class="flex items-center">
-                  <Checkbox v-model="pizza" inputId="ingredient2" name="pizza" value="Precio por siesta" />
-                  <label for="ingredient2" class="ml-2 text-white"> Precio por siesta </label>
-                </div>
-                <div class="flex items-center">
-                  <Checkbox v-model="pizza" inputId="ingredient3" name="pizza" value="Precio por dormir" />
-                  <label for="ingredient3" class="ml-2 text-white"> Precio por dormir </label>
-                </div>
-                <div class="flex items-center">
-                  <Checkbox v-model="pizza" inputId="ingredient4" name="pizza" value="Pareja" />
-                  <label for="ingredient4" class="ml-2 text-white"> Pareja </label>
-                </div>
-              </div>
-            </section>
-            <div class="col-span-3 flex flex-col justify-center items-center w-full">
-  <button 
-    @click="openPaymentModal" 
-    type="button" 
-    :disabled="selectedRoom.pedidosPendientes" 
-    class="btn-primary w-2/4 h-16 rounded-2xl"
-  >
-    Desocupar Habitación
-  </button>
+            </form>
+            <button
+              class="absolute text-xl  w-14 h-14 text-white -top-7 right-7 btn-primary rounded-full transition duration-150 ease-out md:ease-in"
+              @click="$emit('close-modal')">X</button>
+            <ModalConfirm v-if="modalConfirm" :name="selectedRoom.Identificador" @confirmaAccion="confirmAndSend"
+              @close="toggleModalConfirm" />
 
-  <!-- Conditional warning text -->
-  <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-2 text-center">
-    Hay pedidos pendientes, no se puede desocupar la habitación.
-  </p>
+            <ModalConfirmHabitacion v-if="modalConfirmHabitacion" :name="selectedRoom.Identificador"
+              :habitacionID="selectedRoom.HabitacionID" @confirmaAccion="confirmAndSendHabitacion"
+              @close="toggleModalConfirmHabitacion" />
+          </div>
 
-  <ModalPagar
-    v-if="modalPayment" 
-    :total="totalAmount" 
-    :adicional="Number(adicional)"
-    :habitacionId="selectedRoom.HabitacionID"
-    :visitaId="selectedRoom.VisitaID"
-    @close="modalPayment = false"
-    @confirm-payment="handlePaymentConfirmation"
-  />
-            </div>
-          </form>
-          <button
-            class="absolute text-xl  w-14 h-14 text-white -top-7 right-7 btn-primary rounded-full transition duration-150 ease-out md:ease-in"
-            @click="$emit('close-modal')">X</button>
-          <ModalConfirm v-if="modalConfirm" 
-          :name="selectedRoom.Identificador" 
-          @confirmaAccion="confirmAndSend"
-          @close="toggleModalConfirm"/>
-
-          <ModalConfirmHabitacion v-if="modalConfirmHabitacion" 
-          :name="selectedRoom.Identificador" 
-          :habitacionID="selectedRoom.HabitacionID"
-          @confirmaAccion="confirmAndSendHabitacion"
-          @close="toggleModalConfirmHabitacion"/> 
-        </div>
-
-      </Transition>
-    </div>
-  </Transition>
-</Teleport>
+        </Transition>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
@@ -253,19 +218,18 @@ onMounted(() => {
   selectedRoom.value.FechaReserva = props.room.reservaActiva.fechaReserva;
   selectedRoom.value.Precio = props.room.precio;
   selectedRoom.value.pedidosPendientes = props.room.pedidosPendientes,
-  selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
+    selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
   selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
   selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono; // Safe access
   selectedRoom.value.PatenteVehiculo = props.room.visita?.patenteVehiculo; // Safe access
   console.log(selectedRoom.value)
-  setCurrentDateTime();
   actualizarConsumos();
   document.body.style.overflow = 'hidden';
 })
 
 let selectedRoom = ref({
   HabitacionID: 0,
-  Disponible:null,
+  Disponible: null,
   nombreHabitacion: '',
   FechaReserva: '',
   FechaFin: '',
@@ -297,8 +261,7 @@ const tableData = ref({
 let modalConfirm = ref(false);
 let modalConfirmHabitacion = ref(false);
 
-const currentDate = ref('');
-const currentTime = ref('');
+
 const pizza = ref();
 const ignorarTiempo = ref(false)
 const products = ref();
@@ -343,13 +306,13 @@ const agregarConsumos = (selectedItems) => {
     `/ConsumoGeneral?habitacionId=${selectedRoom.value.HabitacionID}&visitaId=${selectedRoom.value.VisitaID}`,
     selectedItems // Send selectedItems directly as the body
   )
-  .then(response => {
-    actualizarConsumos();
-    console.log('Consumo agregado exitosamente:', response.data);
-  })
-  .catch(error => {
-    console.error('Error al agregar consumo:', error);
-  });
+    .then(response => {
+      actualizarConsumos();
+      console.log('Consumo agregado exitosamente:', response.data);
+    })
+    .catch(error => {
+      console.error('Error al agregar consumo:', error);
+    });
 };
 
 const agregarConsumosHabitacion = (selectedItems) => {
@@ -358,13 +321,13 @@ const agregarConsumosHabitacion = (selectedItems) => {
     `/ConsumoHabitacion?habitacionId=${selectedRoom.value.HabitacionID}&visitaId=${selectedRoom.value.VisitaID}`,
     selectedItems // Send selectedItems directly as the body
   )
-  .then(response => {
-    actualizarConsumos();
-    console.log('Consumo agregado exitosamente:', response.data);
-  })
-  .catch(error => {
-    console.error('Error al agregar consumo:', error);
-  });
+    .then(response => {
+      actualizarConsumos();
+      console.log('Consumo agregado exitosamente:', response.data);
+    })
+    .catch(error => {
+      console.error('Error al agregar consumo:', error);
+    });
 };
 
 const actualizarConsumos = () => {
@@ -407,19 +370,19 @@ const toggleModalConfirm = () => {
 const toggleModalConfirmHabitacion = () => {
   modalConfirmHabitacion.value = !modalConfirmHabitacion.value;
 }
-const confirmAndSend = (ConfirmedArticles) =>{
-  
-  console.log(JSON.stringify(ConfirmedArticles) +" Llegamos al ReserveROOM");
+const confirmAndSend = (ConfirmedArticles) => {
+
+  console.log(JSON.stringify(ConfirmedArticles) + " Llegamos al ReserveROOM");
   agregarConsumos(ConfirmedArticles)
 }
 
-const confirmAndSendHabitacion = (ConfirmedArticles) =>{
-  
-  console.log(JSON.stringify(ConfirmedArticles) +" Llegamos al ReserveROOM");
+const confirmAndSendHabitacion = (ConfirmedArticles) => {
+
+  console.log(JSON.stringify(ConfirmedArticles) + " Llegamos al ReserveROOM");
   console.log(ConfirmedArticles)
-  if(ConfirmedArticles.length > 0){
-  agregarConsumosHabitacion(ConfirmedArticles)
-}
+  if (ConfirmedArticles.length > 0) {
+    agregarConsumosHabitacion(ConfirmedArticles)
+  }
 }
 const handleCheat = (cheatIds) => {
   //le avisamos al componente DropDownTag que actualice para agregar los nuevos datos
@@ -437,16 +400,7 @@ const handleCheat = (cheatIds) => {
 watch([() => tableData.value.descuento, () => tableData.value.tarjeta, () => tableData.value.recargos], () => {
   tableData.value.total = tableData.value.descuento + tableData.value.tarjeta + tableData.value.recargos;
 });
-// Función para obtener la fecha y la hora actuales
-const setCurrentDateTime = () => {
-  const now = new Date();
 
-  // Formato de la fecha en yyyy-mm-dd
-  currentDate.value = now.toISOString().substr(0, 10);
-
-  // Formato de la hora en hh:mm
-  currentTime.value = now.toTimeString().substr(0, 5);
-};
 
 const validarNumero = (num) => {
   const numero = num;
@@ -466,8 +420,8 @@ const actualizarFechas = () => {
   const localFechaReserva = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, -1);
 
   selectedRoom.value.FechaReserva = localFechaReserva;
- // Sumar una hora más
- const fechaConUnaHoraMas = new Date(now);
+  // Sumar una hora más
+  const fechaConUnaHoraMas = new Date(now);
   fechaConUnaHoraMas.setHours(fechaConUnaHoraMas.getHours() + 1);
 
   // Convertir la nueva fecha con una hora adicional a la zona horaria local
@@ -481,7 +435,7 @@ const actualizarFechas = () => {
 //Reservar Habitacion
 const endRoomReserve = () => {
   axiosClient.put(`/FinalizarReserva?idHabitacion=${selectedRoom.value.HabitacionID}`)
-  .then(res => {
+    .then(res => {
       console.log(res.data);
       alert("Se terminó la reserva exitosamente");
       emits('close-modal');
@@ -491,7 +445,7 @@ const endRoomReserve = () => {
       console.error(error);
     });
 }
- // LOGICA TIMER
+// LOGICA TIMER
 
 // LOGICA TIMER
 const formattedTime = ref('');
@@ -502,12 +456,12 @@ function calculateRemainingTime() {
   const endTime = dayjs(selectedRoom.value.FechaReserva)
     .add(selectedRoom.value.TotalHoras, 'hour')
     .add(selectedRoom.value.TotalMinutos, 'minute');
-  
+
   const now = dayjs();
   const diffInMinutes = endTime.diff(now, 'minute');
   const isOvertime = diffInMinutes < 0;
-  if(isOvertime && ignorarTiempo.value == false){
-    if(diffInMinutes >= -12 * 60){
+  if (isOvertime && ignorarTiempo.value == false) {
+    if (diffInMinutes >= -12 * 60) {
       overtime.value = diffInMinutes * (-1);
       console.log(overtime.value);
     }
@@ -522,11 +476,12 @@ function calculateRemainingTime() {
     formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 
 
-  } else if (isOvertime){
+  } else if (isOvertime) {
     formattedTime.value = `00:00`
     overtime.value = 0
   }
-  else {const hours = Math.floor(Math.abs(diffInMinutes) / 60);
+  else {
+    const hours = Math.floor(Math.abs(diffInMinutes) / 60);
     const minutes = Math.abs(diffInMinutes) % 60;
     formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
@@ -535,7 +490,7 @@ function calculateRemainingTime() {
 
 }
 
-function ignorarTiempoExtra(){
+function ignorarTiempoExtra() {
   ignorarTiempo.value = !ignorarTiempo.value;
   calculateRemainingTime()
 }
@@ -547,7 +502,7 @@ watch(() => selectedRoom.value, (newValue) => {
     timerInterval = setInterval(calculateRemainingTime, 1000); // Update every second
     calculateRemainingTime(); // Initial call to avoid waiting for the first interval
   }
-},{ deep: true });
+}, { deep: true });
 
 // Clean up the interval when the component is unmounted
 onUnmounted(() => {
@@ -565,10 +520,10 @@ const totalAmount = ref(null);
 
 // Methods
 const openPaymentModal = () => {
-  totalAmount.value = 
-    (Number(consumos.value.reduce((sum, consumo) => sum + consumo.total, 0)) + 
-    Number(periodoCost.value))
-    console.log(totalAmount.value);
+  totalAmount.value =
+    (Number(consumos.value.reduce((sum, consumo) => sum + consumo.total, 0)) +
+      Number(periodoCost.value))
+  console.log(totalAmount.value);
   modalPayment.value = true;
 };
 
@@ -596,7 +551,8 @@ const handlePaymentConfirmation = (paymentDetails) => {
 }
 
 .time {
-  font-size: 60px;  /* Large numbers */
+  font-size: 60px;
+  /* Large numbers */
   font-weight: bold;
   color: white;
   display: flex;
@@ -613,6 +569,7 @@ const handlePaymentConfirmation = (paymentDetails) => {
 .time span:active {
   transform: scale(1.2);
 }
+
 .modal-outer-enter-active,
 .modal-outer-leave-active {
   transition: opacity 0.3s cubic-bezier(0.52, 0.02, 0.19, 1.02);

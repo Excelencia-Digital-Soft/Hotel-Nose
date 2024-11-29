@@ -11,40 +11,37 @@
 				<a href="#" class="social"><i class="fab fa-linkedin-in"></i></a>
 			</div>
 			<span>or use your email for registration</span> -->
-					<input
-						class="w-full mt-8 relative  text-sm colors-input-login my-2"
-						type="text" placeholder="UserName" v-model="registerUserName" />	
-					<input
-						class="w-full relative  text-sm colors-input-login my-2"
-						type="text" placeholder="Email" v-model="registerEmail"/>
-					<input
-						class="w-full relative  text-sm colors-input-login my-2"
-						type="text" placeholder="Name" v-model="registerName" />
-					<input
-						class="w-full  relative text-sm colors-input-login my-2"
-						type="password" placeholder="Contraseña" v-model="registerPassword" />
-					<input
-						class="w-full relative text-sm colors-input-login mt-2 mb-6"
-						type="password" placeholder="Repetir constraseña" v-model="registerRepeatPass"/>
-					<button
-						class="btn-login-style w-full flex justify-center items-center text-md h-12 border-2">
+					<input class="w-full mt-8 relative  text-sm colors-input-login my-2" type="text" placeholder="UserName"
+						v-model="registerUserName" />
+					<input class="w-full relative  text-sm colors-input-login my-2" type="text" placeholder="Email"
+						v-model="registerEmail" />
+					<input class="w-full relative  text-sm colors-input-login my-2" type="text" placeholder="Name"
+						v-model="registerName" />
+					<input class="w-full  relative text-sm colors-input-login my-2" type="password" placeholder="Contraseña"
+						v-model="registerPassword" />
+					<input class="w-full relative text-sm colors-input-login mt-2 mb-6" type="password"
+						placeholder="Repetir constraseña" v-model="registerRepeatPass" />
+					<button class="btn-login-style w-full flex justify-center items-center text-md h-12 border-2">
 						Crear nueva cuenta</button>
 				</form>
 			</div>
 			<div class="form-container sign-in-container">
 				<form action="#">
 					<h1 class="text-2xl text-white tracking-wider">¡Bienvenido!</h1>
-					<input
-						class="w-full mt-8 text-sm relative colors-input-login my-2"
-						type="text" placeholder="Ingresa tu Usuario" v-model="username" />
-					<input
-						class="w-full text-sm relative colors-input-login my-2"
-						type="password" placeholder="Ingresa tu contraseña" v-model="password" />
+					<input class="w-full mt-8 text-sm relative colors-input-login my-2" type="text"
+						placeholder="Ingresa tu Usuario" v-model="username" />
+					<input class="w-full text-sm relative colors-input-login my-2" type="password"
+						placeholder="Ingresa tu contraseña" v-model="password" />
 					<a class="text-xs" href="#">¿Olvidaste tu contraseña?</a>
-					<button
-						class="btn-login-style w-full flex justify-center items-center text-md h-12 border-2 "
-						@click.prevent="authUser">
-						Iniciar sesión</button>
+					<button class="relative btn-login-style w-full flex justify-center items-center text-md h-12 border-2"
+						@click.prevent="authUser" :disabled="isLoading">
+						<div class="card absolute top-2 right-8">
+							<ProgressSpinner class="absolute " v-if="isLoading" style="width: 25px; height: 25px" strokeWidth="8" fill="transparent"
+								animationDuration=".5s" aria-label="Custom ProgressSpinner" />
+						</div>
+						
+						Iniciar Sesión
+					</button>
 				</form>
 			</div>
 			<div class="overlay-container">
@@ -52,15 +49,14 @@
 					<div class="overlay-panel text-white overlay-left ">
 						<h1>Bienvenido de vuelta!</h1>
 						<p>Para mantenerse conectado con nosotros, inicie sesión con su información personal</p>
-						<button @click="togglePanel"
-							class="flex items-center cursor-pointer  px-5 h-12 border-2 btn-switch"
+						<button @click="togglePanel" class="flex items-center cursor-pointer  px-5 h-12 border-2 btn-switch"
 							id="signIn">
 							Iniciar sesión</button>
 					</div>
 					<div class="overlay-panel overlay-right">
-						<div  alt="MOTEL X" class="h-1/4 flex text-white lexend text-[50px] font-bold">inROOM<img src="../assets/pin.png" class="h-16 invert" alt=""></div>
-						<button @click="togglePanel"
-							class="btn-switch  flex items-center cursor-pointer  px-5 h-12 border-2 mt-8"
+						<div alt="MOTEL X" class="h-1/4 flex text-white lexend text-[50px] font-bold">inROOM<img
+								src="../assets/pin.png" class="h-16 invert" alt=""></div>
+						<button @click="togglePanel" class="btn-switch  flex items-center cursor-pointer  px-5 h-12 border-2 mt-8"
 							id="signUp">
 							Crear nueva cuenta</button>
 					</div>
@@ -73,8 +69,10 @@
 import { ref } from 'vue';
 import { useAuthStore } from '../store/auth';
 import { useRouter } from 'vue-router';
+import ProgressSpinner from 'primevue/progressspinner';
 const router = useRouter();
 const isSignUp = ref(false);
+let isLoading = ref(false);
 //Login
 let username = ref('');
 let password = ref('');
@@ -87,23 +85,31 @@ let registerPassword = ref('')
 let registerRepeatPass = ref('')
 
 //functions
+
 const authUser = async () => {
-	let credentials = {
-		nombreUsuario: username.value,
-		contraseña: password.value
-	};
-	let success = false;
-	const auth = useAuthStore();
-	console.log(credentials)
-	success = await auth.login(credentials);
+	if (isLoading.value) return; // Evitar múltiples solicitudes
+	isLoading.value = true; // Activar indicador de carga
 
-	if (success) {
-    router.push('/')
-	} else {
-		alert('usuario incorrecto')
+	try {
+		
+		let credentials = {
+			nombreUsuario: username.value,
+			contraseña: password.value,
+		};
+		const auth = useAuthStore();
+		const success = await auth.login(credentials);
+
+		if (success) {
+			router.push('/'); // Redirigir al home
+		} else {
+			alert('Usuario incorrecto');
+		}
+	} catch (error) {
+		console.error('Error al autenticar:', error);
+	} finally {
+		isLoading.value = false; // Desactivar indicador de carga
 	}
-
-}
+};
 
 const togglePanel = () => {
 	isSignUp.value = !isSignUp.value;
@@ -116,11 +122,11 @@ const url = 'https://ejemplo.com/api/endpoint';
 
 // Define los datos que quieres enviar en el cuerpo de la solicitud
 const registerData = {
-  nombre: registerName.value,
-  email: registerEmail.value,
-  username: registerUserName.value,
-  password: registerPassword.value,
-  repeatPass: registerPassword.value
+	nombre: registerName.value,
+	email: registerEmail.value,
+	username: registerUserName.value,
+	password: registerPassword.value,
+	repeatPass: registerPassword.value
 }
 
 // Realiza la solicitud POST utilizando Axios
@@ -155,7 +161,7 @@ body {
 h1 {
 	font-weight: bold;
 	margin: 0;
-	font-size:24px;
+	font-size: 24px;
 }
 
 h2 {
@@ -387,4 +393,5 @@ footer i {
 footer a {
 	color: #01B6BD;
 	text-decoration: none;
-}</style>
+}
+</style>
