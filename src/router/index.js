@@ -26,7 +26,7 @@ const routes = [
         name: "home",
         component: Home,
         meta: {
-          requireAuth: false,
+          requireAuth: true,
         },
       },
       {
@@ -121,7 +121,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/hotel/'),
   routes,
 });
 
