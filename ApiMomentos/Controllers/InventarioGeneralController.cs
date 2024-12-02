@@ -144,6 +144,7 @@ namespace ApiObjetos.Controllers
                 // Step 1: Retrieve all Inventarios for the specified habitacionID
                 var inventario = await _db.InventarioGeneral
                     .Include(i => i.Articulo) // Include related Articulo data
+                    .Where(i => i.Articulo != null && i.Articulo.Anulado == false)
                     .ToListAsync();
 
                 // Step 2: Check if any inventarios were found
@@ -163,6 +164,58 @@ namespace ApiObjetos.Controllers
             {
                 res.Message = $"Error: {ex.Message}";
                 res.Ok = false;
+            }
+
+            return res;
+        }
+
+        [HttpGet]
+        [Route("CoordinarInventarioGeneral")]
+        public async Task<Respuesta> CoordinarInventarioGeneral()
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+                // Step 1: Remove entries in `InventarioGeneral` where the associated `Articulo` has `Anulado = 1`
+                var anuladoInventarios = _db.InventarioGeneral
+                    .Include(i => i.Articulo)
+                    .Where(i => i.Articulo != null && i.Articulo.Anulado == true);
+
+                _db.InventarioGeneral.RemoveRange(anuladoInventarios);
+
+                // Step 2: Identify `Articulos` that are not in `InventarioGeneral`
+                var existingArticuloIds = await _db.InventarioGeneral.Select(i => i.ArticuloId).ToListAsync();
+                var missingArticulos = await _db.Articulos
+                    .Where(a => !existingArticuloIds.Contains(a.ArticuloId) && a.Anulado != true)
+                    .ToListAsync();
+
+                // Step 3: Add missing `Articulos` to `InventarioGeneral` with default values
+                var newInventarios = missingArticulos.Select(a => new InventarioGeneral
+                {
+                    ArticuloId = a.ArticuloId,
+                    Cantidad = 0, // Default quantity
+                    FechaRegistro = DateTime.Now,
+                    Anulado = false
+                }).ToList();
+
+                _db.InventarioGeneral.AddRange(newInventarios);
+
+                // Save changes
+                await _db.SaveChangesAsync();
+
+                res.Ok = true;
+                res.Message = "Inventario General coordinado exitosamente.";
+                res.Data = new
+                {
+                    RemovedItems = anuladoInventarios.Count(),
+                    AddedItems = newInventarios.Count
+                };
+            }
+            catch (Exception ex)
+            {
+                res.Ok = false;
+                res.Message = $"Error al coordinar el inventario general: {ex.Message}";
             }
 
             return res;
