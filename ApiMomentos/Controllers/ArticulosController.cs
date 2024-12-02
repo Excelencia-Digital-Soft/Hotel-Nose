@@ -186,6 +186,84 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpPut]
+        [Route("UpdateArticuloImage")]
+        public async Task<Respuesta> UpdateArticuloImage([FromForm] int articuloID, [FromForm] IFormFile nuevaImagen)
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+                // Find the article by ID
+                var articulo = await _db.Articulos.FindAsync(articuloID);
+
+                if (articulo == null)
+                {
+                    res.Ok = false;
+                    res.Message = $"No se encontró el artículo con ID: {articuloID}.";
+                    return res;
+                }
+
+                if (nuevaImagen == null || nuevaImagen.Length == 0)
+                {
+                    res.Ok = false;
+                    res.Message = "La imagen proporcionada no es válida.";
+                    return res;
+                }
+
+                // Handle the new image
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(nuevaImagen.FileName);
+                var filePath = Path.Combine("wwwroot/uploads", fileName);
+
+                Directory.CreateDirectory("wwwroot/uploads");
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await nuevaImagen.CopyToAsync(stream);
+                }
+
+                // Create a new image record
+                Imagenes nuevaImagenDB = new Imagenes
+                {
+                    Origen = filePath,
+                    NombreArchivo = fileName
+                };
+
+                _db.Imagenes.Add(nuevaImagenDB);
+                await _db.SaveChangesAsync();
+
+                // Optionally, clean up the old image file (if needed)
+                var oldImage = await _db.Imagenes.FindAsync(articulo.imagenID);
+                if (oldImage != null)
+                {
+                    var oldFilePath = oldImage.Origen;
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                    }
+
+                    _db.Imagenes.Remove(oldImage);
+                }
+
+                // Link the new image to the article
+                articulo.imagenID = nuevaImagenDB.ImagenId;
+                _db.Articulos.Update(articulo);
+                await _db.SaveChangesAsync();
+
+                res.Ok = true;
+                res.Message = "Imagen del artículo actualizada correctamente.";
+                res.Data = articulo;
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
+
+
         [HttpPost]
         [Route("CreateArticuloWithImage")]
         public async Task<Respuesta> CreateArticuloWithImage([FromForm] string nombre, [FromForm] decimal precio, [FromForm] IFormFile? imagen)
