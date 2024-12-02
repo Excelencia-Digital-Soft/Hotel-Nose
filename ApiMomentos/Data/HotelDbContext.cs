@@ -58,7 +58,7 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<ServiciosAdicionales> ServiciosAdicionales { get; set; }
 
     public virtual DbSet<Tarifas> Tarifas { get; set; }
-
+    public virtual DbSet<Promociones> Promociones { get; set; }
     public virtual DbSet<TipoMovimiento> TipoMovimiento { get; set; }
 
     public virtual DbSet<TipoTarifa> TipoTarifa { get; set; }
@@ -393,6 +393,21 @@ public partial class HotelDbContext : DbContext
                 .HasForeignKey(d => d.RolId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Personal_Roles");
+        });
+
+        modelBuilder.Entity<Promociones>(entity =>
+        {
+            entity.HasKey(e => e.PromocionID).HasName("PK__Promociones");
+
+            entity.Property(e => e.Tarifa).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.CantidadHoras).HasColumnType("int");
+            entity.Property(e => e.CategoriaID).HasColumnName("CategoriaID");
+
+            entity.HasOne<CategoriasHabitaciones>()
+                  .WithMany() // Assuming no navigation property in CategoriasHabitaciones for Promociones
+                  .HasForeignKey(e => e.CategoriaID)
+                  .OnDelete(DeleteBehavior.Restrict) // Adjust as necessary (e.g., Cascade or SetNull)
+                  .HasConstraintName("FK_Promociones_CategoriasHabitaciones");
         });
 
         modelBuilder.Entity<Reservas>(entity =>
