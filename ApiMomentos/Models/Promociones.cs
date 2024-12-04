@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace ApiObjetos.Models;
 
@@ -13,8 +14,8 @@ public partial class Promociones
 
     public int CategoriaID { get; set; }
     public bool? Anulado { get; set; }
-
-
+    public string Detalle { get; set; }
+    [JsonIgnore]
     public virtual CategoriasHabitaciones? Categoria { get; set; }
 
 

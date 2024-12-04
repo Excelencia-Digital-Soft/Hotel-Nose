@@ -402,11 +402,13 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.Tarifa).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.CantidadHoras).HasColumnType("int");
             entity.Property(e => e.CategoriaID).HasColumnName("CategoriaID");
-
-            entity.HasOne<CategoriasHabitaciones>()
-                  .WithMany() // Assuming no navigation property in CategoriasHabitaciones for Promociones
-                  .HasForeignKey(e => e.CategoriaID)
-                  .OnDelete(DeleteBehavior.Restrict) // Adjust as necessary (e.g., Cascade or SetNull)
+            entity.Property(e => e.Detalle)
+    .HasMaxLength(100)
+    .IsUnicode(false);
+            entity.HasOne(e => e.Categoria)
+                  .WithMany(c => c.Promociones) // Each category has many promociones
+                  .HasForeignKey(e => e.CategoriaID) // Foreign key in Promociones
+                  .OnDelete(DeleteBehavior.Restrict) // Restrict deletion if related records exist
                   .HasConstraintName("FK_Promociones_CategoriasHabitaciones");
         });
 

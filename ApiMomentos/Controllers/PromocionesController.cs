@@ -22,7 +22,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPost]
         [Route("AddPromocion")]
-        public async Task<Respuesta> AddPromocion(double tarifa, int cantidadHoras, int categoriaID)
+        public async Task<Respuesta> AddPromocion(double tarifa, int cantidadHoras, int categoriaID, string Detalle)
         {
             Respuesta res = new Respuesta();
 
@@ -42,7 +42,8 @@ namespace ApiObjetos.Controllers
                 {
                     Tarifa = tarifa,
                     CantidadHoras = cantidadHoras,
-                    CategoriaID = categoriaID
+                    CategoriaID = categoriaID,
+                    Detalle = Detalle
                 };
 
                 // Add to the DbContext
@@ -56,7 +57,7 @@ namespace ApiObjetos.Controllers
             catch (Exception ex)
             {
                 res.Ok = false;
-                res.Message = $"Error: {ex.Message}";
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
             }
 
             return res;
@@ -75,6 +76,35 @@ namespace ApiObjetos.Controllers
                 {
                     res.Ok = false;
                     res.Message = $"No se encontró la promoción con ID: {promocionID}.";
+                    return res;
+                }
+
+                res.Ok = true;
+                res.Message = "Promoción encontrada.";
+                res.Data = promocion;
+            }
+            catch (Exception ex)
+            {
+                res.Ok = false;
+                res.Message = $"Error: {ex.Message}";
+            }
+
+            return res;
+        }
+
+        [HttpGet]
+        [Route("GetPromocionesCategoria")]
+        public async Task<Respuesta> GetPromocionesCategoria(int categoriaID)
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+                var promocion = await _db.Promociones.Where(p => p.CategoriaID == categoriaID).ToListAsync();
+                if (promocion == null)
+                {
+                    res.Ok = false;
+                    res.Message = $"No se encontró la promoción con ID categoria: {categoriaID}.";
                     return res;
                 }
 

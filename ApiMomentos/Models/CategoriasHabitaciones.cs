@@ -22,4 +22,7 @@ public partial class CategoriasHabitaciones
     public virtual ICollection<Habitaciones> Habitaciones { get; } = new List<Habitaciones>();
 
     public virtual ICollection<Tarifas> Tarifas { get; } = new List<Tarifas>();
+
+    public ICollection<Promociones> Promociones { get; set; } // Navigation property
+
 }
