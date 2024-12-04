@@ -140,7 +140,7 @@ namespace ApiObjetos.Controllers
             try
             {
 
-                var Objeto = await _db.CategoriasHabitaciones.ToListAsync();
+                var Objeto = await _db.CategoriasHabitaciones.Where(c => c.Anulado == false).ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto;
                 return res;

@@ -153,7 +153,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPut]
         [Route("UpdatePromocion")]
-        public async Task<Respuesta> UpdatePromocion(int promocionID, double tarifa, int cantidadHoras, int categoriaID)
+        public async Task<Respuesta> UpdatePromocion(int promocionID, double tarifa, int cantidadHoras, string detalle)
         {
             Respuesta res = new Respuesta();
 
@@ -167,20 +167,11 @@ namespace ApiObjetos.Controllers
                     return res;
                 }
 
-                // Validate CategoriaID
-                var categoria = await _db.CategoriasHabitaciones.FindAsync(categoriaID);
-                if (categoria == null)
-                {
-                    res.Ok = false;
-                    res.Message = $"No se encontró la categoría con ID: {categoriaID}.";
-                    return res;
-                }
 
                 // Update fields
                 promocion.Tarifa = tarifa;
                 promocion.CantidadHoras = cantidadHoras;
-                promocion.CategoriaID = categoriaID;
-
+                promocion.Detalle = detalle;
                 await _db.SaveChangesAsync();
 
                 res.Ok = true;
