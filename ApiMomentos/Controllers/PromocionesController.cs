@@ -22,7 +22,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPost]
         [Route("AddPromocion")]
-        public async Task<Respuesta> AddPromocion(double tarifa, int cantidadHoras, int categoriaID, string Detalle)
+        public async Task<Respuesta> AddPromocion(decimal tarifa, int cantidadHoras, int categoriaID, string Detalle)
         {
             Respuesta res = new Respuesta();
 
@@ -153,7 +153,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPut]
         [Route("UpdatePromocion")]
-        public async Task<Respuesta> UpdatePromocion(int promocionID, double tarifa, int cantidadHoras, string detalle)
+        public async Task<Respuesta> UpdatePromocion(int promocionID, decimal tarifa, int cantidadHoras, string detalle)
         {
             Respuesta res = new Respuesta();
 

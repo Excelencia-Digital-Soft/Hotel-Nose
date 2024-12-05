@@ -8,7 +8,7 @@ public partial class Promociones
 {
     public int PromocionID { get; set; }
 
-    public double Tarifa { get; set; }
+    public decimal Tarifa { get; set; }
 
     public int CantidadHoras { get; set; }
 

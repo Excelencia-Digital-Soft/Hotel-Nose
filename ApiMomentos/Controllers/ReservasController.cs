@@ -128,11 +128,27 @@ namespace ApiObjetos.Controllers
                     Anulado = false,
                     Habitacion = habitacion
                 };
-                var prueba = Math.Round((decimal)((int)habitacion.Categoria.PrecioNormal * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2);
 
+                decimal? tarifa = habitacion.Categoria.PrecioNormal; // Default price
+                if (request.PromocionID != null)
+                {
+                    nuevaReserva.PromocionId = request.PromocionID;
+                    // Fetch the promotion from the database
+                    var promocion = await _db.Promociones.FindAsync(request.PromocionID);
+                    if (promocion == null)
+                    {
+                        res.Message = "La promoción no es válida.";
+                        res.Ok = false;
+                        return res;
+                    }
+                    tarifa = promocion.Tarifa; // Use the promotional rate
+                }
+                else nuevaReserva.PromocionId = null;
+                var prueba = Math.Round((decimal)((int)tarifa * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2);
                 _db.Add(nuevaReserva);
-                await _movimiento.CrearMovimientoHabitacion(VisitaID,
-                Math.Round((decimal)((int)habitacion.Categoria.PrecioNormal * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2), request.HabitacionID);
+                var movimientoID = await _movimiento.CrearMovimientoHabitacion(VisitaID,
+                Math.Round((decimal)((int)tarifa * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2), request.HabitacionID);
+                nuevaReserva.MovimientoId = movimientoID;
                 await _db.SaveChangesAsync();
 
                 // Step 5: Update the room's availability and set the current VisitaID
@@ -152,6 +168,92 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpPut]
+        [Route("ActualizarReservaPromocion")]
+        [AllowAnonymous]
+        public async Task<Respuesta> ActualizarReservaPromocion(int reservaId, int? promocionId)
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+                // Step 1: Fetch the reservation from the database
+                var reserva = await _db.Reservas.FindAsync(reservaId);
+                if (reserva == null)
+                {
+                    res.Message = "La reserva no existe.";
+                    res.Ok = false;
+                    return res;
+                }
+
+                // Fetch the associated Movimiento
+                var movimiento = await _db.Movimientos.FindAsync(reserva.MovimientoId);
+                if (movimiento == null)
+                {
+                    res.Message = "El movimiento asociado a la reserva no existe.";
+                    res.Ok = false;
+                    return res;
+                }
+
+                decimal? tarifa;
+                decimal? totalFacturado;
+
+                // Step 2: Validate the provided promotion ID, if any
+                if (promocionId != null)
+                {
+                    var promocion = await _db.Promociones.FindAsync(promocionId);
+                    if (promocion == null)
+                    {
+                        res.Message = "La promoción no es válida.";
+                        res.Ok = false;
+                        return res;
+                    }
+
+                    tarifa = promocion.Tarifa;
+                    reserva.PromocionId = promocionId; // Update the promotion
+
+                    // Calculate the new total facturado using Reserva's TotalHoras and TotalMinutos
+                    var totalHours = reserva.TotalHoras.GetValueOrDefault() + (reserva.TotalMinutos.GetValueOrDefault() / 60m);
+                    totalFacturado = promocion.Tarifa * totalHours;
+                }
+                else
+                {
+                    var habitacion = await _db.Habitaciones
+                        .Include(h => h.Categoria)
+                        .FirstOrDefaultAsync(h => h.HabitacionId == reserva.HabitacionId);
+
+                    if (habitacion == null)
+                    {
+                        res.Message = "La habitación asociada a la reserva no existe.";
+                        res.Ok = false;
+                        return res;
+                    }
+
+                    tarifa = habitacion.Categoria.PrecioNormal;
+                    reserva.PromocionId = null; // Clear the promotion
+
+                    // Calculate the new total facturado using Reserva's TotalHoras and TotalMinutos
+                    var totalHours = reserva.TotalHoras.GetValueOrDefault() + (reserva.TotalMinutos.GetValueOrDefault() / 60m);
+                    totalFacturado = habitacion.Categoria.PrecioNormal * totalHours;
+                }
+
+                // Update the Movimiento
+                movimiento.TotalFacturado = totalFacturado;
+
+                // Step 3: Save the changes to the database
+                await _db.SaveChangesAsync();
+
+                res.Message = "La promoción de la reserva se actualizó correctamente.";
+                res.Ok = true;
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException?.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
 
 
         [HttpGet]
@@ -520,6 +622,7 @@ public class TimeRange
 public class ReservaRequest
 {
     public int HabitacionID { get; set; }
+    public int? PromocionID { get; set; }
     public DateTime FechaReserva { get; set; }
     public DateTime FechaFin { get; set; }
     public int TotalHoras { get; set; }

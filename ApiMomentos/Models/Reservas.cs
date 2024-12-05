@@ -18,7 +18,8 @@ public partial class Reservas
 
     public int? TotalHoras { get; set; }
     public int? TotalMinutos { get; set; }
-
+    public int? MovimientoId { get; set; }
+    public int? PromocionId { get; set; }
     public int? UsuarioId { get; set; }
 
     public DateTime? FechaRegistro { get; set; }
@@ -28,4 +29,6 @@ public partial class Reservas
     public virtual Habitaciones? Habitacion { get; set; }
     [JsonIgnore]
     public virtual Visitas? Visita { get; set; }
+    public virtual Promociones? Promocion { get; set; }
+
 }

@@ -420,6 +420,7 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
             entity.Property(e => e.FechaFin).HasColumnType("datetime");
             entity.Property(e => e.FechaRegistro).HasColumnType("datetime");
+            entity.Property(e => e.MovimientoId).HasColumnType("int");
             entity.Property(e => e.FechaReserva).HasColumnType("datetime");
             entity.Property(e => e.HabitacionId).HasColumnName("HabitacionID");
             entity.Property(e => e.UsuarioId).HasColumnName("UsuarioID");
@@ -432,6 +433,11 @@ public partial class HotelDbContext : DbContext
             entity.HasOne(d => d.Visita).WithMany(p => p.Reservas)
                 .HasForeignKey(d => d.VisitaId)
                 .HasConstraintName("FK__Reservas__Visita__2B0A656D");
+            entity.HasOne(d => d.Promocion)
+                .WithMany()
+                .HasForeignKey(d => d.PromocionId)
+                .IsRequired(false) 
+                .HasConstraintName("FK_Reservas_Promociones");
         });
 
         modelBuilder.Entity<Roles>(entity =>
