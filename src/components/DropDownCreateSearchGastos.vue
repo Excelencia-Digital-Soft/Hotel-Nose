@@ -36,97 +36,64 @@
       </transition>
     </div>
   </Listbox>
-<ModalConfirm v-if="modalConfirmar" :name="keyword" @confirmaAccion="confirmAndSend" @close="toggleModalConfirmar"/>
+<ModalAcept v-if="ModalAceptar" :name="keyword" @confirmaAccion="confirmAndSend" @close="toggleModalAceptar"/>
 </template>
 
 <script setup>
-import {onMounted, ref, watch, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axiosClient from '../axiosClient';
-import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue'
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid'
-import ModalConfirm from '../components/ModalConfirm.vue'
-const props = defineProps({
-  idTipoGasto:0,
-});
+import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue';
+import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid';
+import ModalAcept from '../components/ModalAcept.vue';
+
+const keyword = ref('');
+const tiposCuentaGastos = ref([]);
+const selected = ref(null);
+const ModalAceptar = ref(false);
+const emits = defineEmits(['addGasto']);
+
 const computedListaGastos = computed(() =>
   tiposCuentaGastos.value.filter((i) =>
     i.nombre.toLowerCase().includes(keyword.value.toLowerCase())
   )
 );
-const keyword = ref('');
-const tiposCuentaGastos = ref([]);
-const selected = ref(props.idTipoGasto);
-const emits = defineEmits(['update:selectedId']);
-const modalConfirmar = ref(false)
-const toggleModalConfirmar = () =>{ 
-  modalConfirmar.value = !modalConfirmar.value
-}
-const confirmAndSend = () =>{
+
+const toggleModalAceptar = () => {
+  ModalAceptar.value = !ModalAceptar.value;
+};
+
+const confirmAndSend = () => {
   const nuevoGasto = {
-    idCGasto: 0,
+    id: Date.now(), // Genera un ID único temporal
     nombre: keyword.value,
-    cod: 0,               // Por si alguna vez le quieren poner un codigo especial a cada gasto.. 
-    anulado: false
-  }
-  console.log("this is the spend what we have to send "+nuevoGasto.value)
-  
-  axiosClient.post('/cgasto/NewCGasto', nuevoGasto) 
-  .then(res => {
-    console.log("nuevo Gasto creado idGASTO:"+res.data);
-    let tid = parseInt(res.data);    // Convierte res.data a entero de 32 bits TODO! necesito que la API DEVUELVA
-    nuevoGasto.idCGasto = tid;
-    tiposCuentaGastos.value.push(nuevoGasto)  // el id asi lo mando.. al emits 
-    selected.value = nuevoGasto  
-  })
-  .catch(error => {
-    console.error(error);
-  });
-}
-onMounted(() => {
-  
-  axiosClient.get("/parametro/Params")
-        .then(({data})=>{
-          tiposCuentaGastos.value = data.cuentaGasto;
-          selected.value = tiposCuentaGastos.value.find(tipos => tipos.idCGasto === props.idTipoGasto);
-        });
+  };
 
+  // Agrega el nuevo gasto a la lista y emite el evento al padre
+  tiposCuentaGastos.value.push(nuevoGasto); // Quitar si no necesitas actualizar la lista local
+  emits('addGasto', nuevoGasto); // Emite el gasto validado al componente padre
 
-});
-watch(() => selected.value, (newSelected) => {
-  if (newSelected) {
-    emits('update:selectedId', newSelected); // Emite el evento con el nuevo valor seleccionado
-    console.log("Se seleccionó" + newSelected.nombre + "con id" + newSelected.idCGasto)
-  }
-});
+  toggleModalAceptar(); // Cierra el modal
+  keyword.value = ''; // Limpia el campo de entrada
+};
 
-
-
-const verificaNombreEnLista = computed(() =>
-  tiposCuentaGastos.value.some((i) =>
-    i.nombre.toLowerCase() === keyword.value.toLowerCase()
-  )
-);
-const existeElNombre = () => { 
-  if (verificaNombreEnLista.value){//comprobamos que no exista el nombre del nuevo gasto
-  return true
-  } 
-  else {
-  return false
-  }
-}
 const validarGasto = () => {
-  //VALIDACION
-  if (existeElNombre())  {
-  //No envíes el formulario si hay errores de validación
-  console.log("Ya existe este nombre buscate otro")
-  return;
+  const existe = tiposCuentaGastos.value.some((gasto) =>
+    gasto.nombre.toLowerCase() === keyword.value.toLowerCase()
+  );
+
+  if (existe) {
+    alert('Este gasto ya existe.');
+    return;
   }
-  toggleModalConfirmar()
-}
+
+  toggleModalAceptar();
+};
+
+onMounted(() => {
+  tiposCuentaGastos.value = [
+    { id: 1, nombre: 'Electricidad' },
+    { id: 2, nombre: 'Agua' },
+    { id: 3, nombre: 'Internet' },
+  ];
+});
 </script>
-<!-- {
-  "idCGasto": 0,
-  "nombre": "string",
-  "cod": 0,
-  "anulado": true
-} -->
