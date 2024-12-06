@@ -126,27 +126,25 @@
                 </div>
               </section>
               <section></section>
-              <section v-if="!selectedRoom.Disponible" >
+              <section v-if="!selectedRoom.Disponible">
+  <div class="card flex flex-col ml-4 flex-wrap justify-center gap-4">
+    <div class="mt-4 w-full">
+      <label class="text-xs font-semibold text-white">Seleccionar Promoción</label>
+      <select v-model="selectedPromocion" class="w-full p-2 mt-2 rounded-lg">
+        <!-- Default 'Sin Promoción' option -->
+        <option :value="null">Sin Promoción</option>
 
-                <div class="card flex flex-col ml-4 flex-wrap justify-center gap-4">
-                  <div class="flex items-center">
-                    <Checkbox v-model="pizza" inputId="ingredient1" name="pizza" value="Avisar Hora Salida" />
-                    <label for="ingredient1" class="ml-2 text-white"> Avisar Hora Salida </label>
-                  </div>
-                  <div class="flex items-center">
-                    <Checkbox v-model="pizza" inputId="ingredient2" name="pizza" value="Precio por siesta" />
-                    <label for="ingredient2" class="ml-2 text-white"> Precio por siesta </label>
-                  </div>
-                  <div class="flex items-center">
-                    <Checkbox v-model="pizza" inputId="ingredient3" name="pizza" value="Precio por dormir" />
-                    <label for="ingredient3" class="ml-2 text-white"> Precio por dormir </label>
-                  </div>
-                  <div class="flex items-center">
-                    <Checkbox v-model="pizza" inputId="ingredient4" name="pizza" value="Pareja" />
-                    <label for="ingredient4" class="ml-2 text-white"> Pareja </label>
-                  </div>
-                </div>
-              </section>
+        <!-- Display promotions if available -->
+        <option v-for="promo in promociones" :key="promo.promocionID" :value="promo">
+          {{ promo.detalle }}
+        </option>
+
+        <!-- Show this message if there are no promociones -->
+        <option v-if="promociones.length === 0" disabled>Sin promociones disponibles</option>
+      </select>
+    </div>
+  </div>
+</section>
               <div class="col-span-3 flex flex-col justify-center items-center w-full">
                 <button @click="openPaymentModal" type="button" :disabled="selectedRoom.pedidosPendientes"
                   class="btn-primary w-2/4 h-16 rounded-2xl">
@@ -191,7 +189,7 @@ import ModalConfirm from './ModalConfirm.vue';
 import ModalConfirmHabitacion from './ModalConfirmHabitacion.vue';
 import dayjs from 'dayjs';
 
-const emits = defineEmits(["close-modal"])
+const emits = defineEmits(['close-modal', 'update-room']);
 const props = defineProps({
   room: Object,
 });
@@ -199,17 +197,18 @@ const props = defineProps({
 const periodoCost = computed(() => {
   const totalHours = selectedRoom.value.TotalHoras || 0;
   const totalMinutes = selectedRoom.value.TotalMinutos || 0;
-  const hourlyRate = selectedRoom.value.Precio || 0;
+  const hourlyRate = promocionActiva.value && selectedPromocion.value ? selectedPromocion.value.tarifa : selectedRoom.value.Precio;
   const totalPeriod = totalHours + totalMinutes / 60;
   return (totalPeriod * hourlyRate).toFixed(2);
 });
 
 const adicional = computed(() => {
   console.log(overtime.value)
-  return (overtime.value * (selectedRoom.value.Precio / 60)).toFixed(2); // Calculates overtime charge
+  return (overtime.value * ((promocionActiva.value && selectedPromocion.value ? selectedPromocion.value.tarifa : selectedRoom.value.Precio)/ 60)).toFixed(2); // Calculates overtime charge
 });
 
 onMounted(() => {
+  console.log(props.room);
   selectedRoom.value.nombreHabitacion = props.room.nombreHabitacion;
   selectedRoom.value.HabitacionID = props.room.habitacionId;
   selectedRoom.value.Disponible = props.room.disponible;
@@ -217,7 +216,9 @@ onMounted(() => {
   selectedRoom.value.TotalMinutos = props.room.reservaActiva.totalMinutos;
   selectedRoom.value.FechaReserva = props.room.reservaActiva.fechaReserva;
   selectedRoom.value.Precio = props.room.precio;
+  selectedRoom.value.PromocionID = props.room.visita.reservaActiva.promocionId;
   selectedRoom.value.pedidosPendientes = props.room.pedidosPendientes,
+  selectedRoom.value.ReservaID = props.room.visita.reservaActiva.reservaId;
     selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
   selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
   selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono; // Safe access
@@ -233,6 +234,8 @@ let selectedRoom = ref({
   nombreHabitacion: '',
   FechaReserva: '',
   FechaFin: '',
+  PromocionID: 0,
+  ReservaID: 0,
   pedidosPendientes: false,
   TotalHoras: 0,
   TotalMinutos: 0,
@@ -531,6 +534,73 @@ const handlePaymentConfirmation = (paymentDetails) => {
   console.log('Payment Confirmed:', paymentDetails);
   modalPayment.value = false;
 };
+
+// LOGICA PROMOCIONES
+const selectedPromocion = ref(null);
+const promociones = ref([]);
+const promocionActiva = ref(false);
+
+onMounted(async () => {
+  try {
+    const response = await axiosClient.get(`/api/Promociones/GetPromocionesCategoria?categoriaID=${props.room.categoriaId}`);
+    promociones.value = response.data.data || [];
+    console.log(promociones.value)
+  } catch (error) {
+    console.error('Error fetching promociones:', error);
+  }
+  console.log("Puede no haber nada")
+
+    if(selectedRoom.value.PromocionID != null){
+
+      const matchedPromo = promociones.value.find(
+      (promo) => promo.promocionID === selectedRoom.value.PromocionID
+    );
+
+    if (matchedPromo) {
+      selectedPromocion.value = matchedPromo; // Set the selected promotion
+      promocionActiva.value = true;
+    }
+    }
+    document.body.style.overflow = 'hidden';
+  })
+  
+
+  watch(selectedPromocion, (newVal) => {
+      promocionActiva.value = newVal !== null; // True if a promo is selected
+      actualizarPromocion();
+    });
+
+    const actualizarPromocion = () => {
+  if (!selectedRoom.value || !selectedRoom.value.ReservaID) {
+    console.error("Reserva or HabitacionID is not set.");
+    return;
+  }
+
+  const reservaId = selectedRoom.value.ReservaID; // Example property, replace with the actual one holding reservaId
+  const promocionId = selectedPromocion.value ? selectedPromocion.value.promocionID : null;
+
+  // PUT request to update the promotion for the reservation
+  axiosClient
+  .put('/ActualizarReservaPromocion', null, {
+    params: {
+      reservaId,   // Pass reservaId as a query parameter
+      promocionId, // Pass promocionId as a query parameter (or null if no promo is selected)
+    },
+  })
+    .then((response) => {
+      console.log("Promoción actualizada correctamente:", response.data);
+
+      // Update the room object to reflect the change
+      const updatedRoom = { ...props.room, promocionID: promocionId }; // Use the correct promocionID
+      emits('update-room', updatedRoom); // Emit the updated room to the parent
+
+      // Optionally: You can reset or set some local state here
+      promocionActiva.value = promocionId !== null; // Set the promocionActiva flag accordingly
+    })
+    .catch((error) => {
+      console.error("Error actualizando la promoción:", error);
+    });
+}
 </script>
 <style scoped>
 .timer-container {

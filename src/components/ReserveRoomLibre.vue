@@ -1,66 +1,74 @@
 <template>
-    <Teleport to="body">
-      <Transition name="modal-outer" appear>
-        <div class="fixed w-full h-full bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
-          <Transition name="modal-inner">
-            <div class="w-2/4 h-3/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8 border-secondary-400 rounded-xl bg-neutral-900">
-              <h1 class="self-center text-2xl text-white lexend-exa font-bold mt-5 mb-5">
-                {{ room.nombreHabitacion }}
-              </h1>
-              
-              <form class="grid-cols-1">
-                <section v-if="selectedRoom.Disponible" class="grid place-items-center mb-3">
-    <label class="text-sm font-semibold text-white">Tiempo de Reserva</label>
-  <div class="flex space-x-4">
-    <div>
-      <label class="text-xs font-semibold text-white">Horas</label>
-      <InputNumber v-model="hours" :min="0" :max="99" showButtons/>
-    </div>
-    <div>
-      <label class="text-xs font-semibold text-white">Minutos</label>
-      <InputNumber v-model="minutes" :min="0" :max="59" showButtons/>
-    </div>
-  </div>
-
-  <div class="flex justify-between items-center mt-4">
-  <label class="text-xs font-semibold text-white">Precio de reserva:</label>
-  <span class="text-green-500 font-bold text-sm">{{ periodoCost }}</span>
-</div>
-</section>
-                <section class="grid grid-cols-2 gap-3 mb-2">
-              <div class="grid col-span-2 relative mb-3">
-                <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
-                <input type="text"
-                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                  v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
-              </div>
-              <div class="grid relative mb-3">
-                <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
-                <input type="text"
-                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                  maxlength="11" v-model="selectedRoom.NumeroTelefono" placeholder="Ingresa Marca y modelo de vehiculo">
-              </div>
-              <div class="grid relative mb-3">
-                <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
-                <input type="text"
-                  class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                  maxlength="11" v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
-              </div>
-            </section>
-                <!-- Form content for available room -->
-                <div class="col-span-3 flex justify-center items-center w-full">
-                  <button @click="reserveRoom" type="button" class="btn-primary w-2/4 h-16 rounded-2xl">Reservar Habitación</button>
+  <Teleport to="body">
+    <Transition name="modal-outer" appear>
+      <div class="fixed w-full h-full bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
+        <Transition name="modal-inner">
+          <div class="w-2/4 h-3/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8 border-secondary-400 rounded-xl bg-neutral-900">
+            <h1 class="self-center text-2xl text-white lexend-exa font-bold mt-5 mb-5">
+              {{ room.nombreHabitacion }}
+            </h1>
+            
+            <form class="grid-cols-1">
+              <section v-if="selectedRoom.Disponible" class="grid place-items-center mb-3">
+                <label class="text-sm font-semibold text-white">Tiempo de Reserva</label>
+                <div class="flex space-x-4">
+                  <div>
+                    <label class="text-xs font-semibold text-white">Horas</label>
+                    <InputNumber v-model="hours" :min="0" :max="99" showButtons />
+                  </div>
+                  <div>
+                    <label class="text-xs font-semibold text-white">Minutos</label>
+                    <InputNumber v-model="minutes" :min="0" :max="59" showButtons />
+                  </div>
                 </div>
-              </form>
-              <button
-                class="absolute text-xl w-14 h-14 text-white -top-7 right-7 btn-primary rounded-full"
-                @click="$emit('close-modal')">X</button>
-            </div>
-          </Transition>
-        </div>
-      </Transition>
-    </Teleport>
-  </template>
+                <div class="mt-4 w-full">
+                  <label class="text-xs font-semibold text-white">Seleccionar Promoción</label>
+                  <select v-model="selectedPromocion" class="w-full p-2 mt-2 rounded-lg">
+                    <option :value="null">Sin Promoción</option>
+                    <option v-if="promociones.length > 0" v-for="promo in promociones" :key="promo.promocionID" :value="promo">
+                      {{ promo.detalle }}
+                    </option>
+                  </select>
+                </div>
+                <div class="flex justify-between items-center mt-4">
+                  <label class="text-xs font-semibold text-white">Precio de reserva:</label>
+                  <span class="text-green-500 font-bold text-sm">{{ periodoCost }}</span>
+                </div>
+              </section>
+              <section class="grid grid-cols-2 gap-3 mb-2">
+                <!-- Other inputs like Identificador, Telefono, Patente -->
+                <div class="grid col-span-2 relative mb-3">
+                  <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
+                  <input type="text" v-model="selectedRoom.Identificador" maxlength="40" 
+                         class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                         placeholder="Identificador">
+                </div>
+                <div class="grid relative mb-3">
+                  <label for="telefono" class="text-sm font-semibold leading-6 text-white">Teléfono</label>
+                  <input type="text" v-model="selectedRoom.NumeroTelefono" maxlength="11"
+                         class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                         placeholder="Ingresa número de teléfono">
+                </div>
+                <div class="grid relative mb-3">
+                  <label for="patente" class="text-sm font-semibold leading-6 text-white">Patente</label>
+                  <input type="text" v-model="selectedRoom.PatenteVehiculo" maxlength="11"
+                         class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                         placeholder="Ingrese el número de patente">
+                </div>
+              </section>
+              <div class="col-span-3 flex justify-center items-center w-full">
+                <button @click="reserveRoom" type="button" class="btn-primary w-2/4 h-16 rounded-2xl">Reservar Habitación</button>
+              </div>
+            </form>
+            <button class="absolute text-xl w-14 h-14 text-white -top-7 right-7 btn-primary rounded-full"
+                    @click="$emit('close-modal')">X</button>
+          </div>
+        </Transition>
+      </div>
+    </Transition>
+  </Teleport>
+</template>
+
   
   <script setup>
   import { computed } from 'vue';
@@ -73,21 +81,46 @@
   const hours = ref(0);
   const periodoCost = ref(0);
   const minutes = ref(0);
+  const promociones = ref([]);
+  const selectedPromocion = ref(null);
+
   const emits = defineEmits(["close-modal"])
   const props = defineProps({
     room: Object,
   });
   
   
-  onMounted(() => {
+  onMounted(async () => {
     selectedRoom.value.HabitacionID = props.room.habitacionId
     selectedRoom.value.Disponible = props.room.disponible
     selectedRoom.value.Precio = props.room.precio
-    console.log(selectedRoom.value.Precio)
-    setCurrentDateTime();
+  try {
+    const response = await axiosClient.get(`/api/Promociones/GetPromocionesCategoria?categoriaID=${props.room.categoriaId}`);
+    promociones.value = response.data.data || [];
+    console.log(promociones.value)
+  } catch (error) {
+    console.error('Error fetching promociones:', error);
+  }
+  console.log("Se aplicó");
+  updatePeriodCost(); // Initial calculation    setCurrentDateTime();
     document.body.style.overflow = 'hidden';
   })
-  
+
+  function updatePeriodCost() {
+    selectedRoom.value.PromocionID = selectedPromocion.value.promocionID;
+  if (selectedPromocion.value) {
+    // Use the promotional rate
+    hours.value = selectedPromocion.value.cantidadHoras;
+    periodoCost.value = Math.round(selectedPromocion.value.tarifa * selectedPromocion.value.cantidadHoras);
+  } else {
+    // Use the default room price
+    const totalHours = hours.value + (minutes.value / 60);
+    periodoCost.value = Math.round(selectedRoom.value.Precio * totalHours);
+  }
+}
+
+  watch([hours, minutes, selectedPromocion], updatePeriodCost);
+
   let selectedRoom = ref({
     HabitacionID: 0,
     Disponible:null,
@@ -96,6 +129,7 @@
     TotalHoras: 0,
     TotalMinutos: 0,
     Precio: 0,
+    PromocionID: 0,
     TotalHoras: 0,
     TotalMinutos: 0,
     UsuarioID: 14,
