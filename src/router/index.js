@@ -11,7 +11,7 @@ import ReceptionOrder from "../views/ReceptionOrder.vue";
 import InventoryManager from "../views/InventoryManager.vue";
 import CierresManager from "../views/CierresManager.vue";
 import PromocionesManager from "../views/PromocionesManager.vue";
-
+import Egresos from "../views/Egresos.vue";
 import { useAuthStore } from "../store/auth";
 import EmpeñosManager from "../views/EmpeñosManager.vue";
 const routes = [
@@ -114,6 +114,15 @@ const routes = [
         path: "/PromocionesManager",
         name: "PromocionesManager",
         component: PromocionesManager,
+        meta: {
+          requireAuth: true,
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
+      },
+      {
+        path: "/Egresos",
+        name: "Egresos",
+        component: Egresos,
         meta: {
           requireAuth: true,
           roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)

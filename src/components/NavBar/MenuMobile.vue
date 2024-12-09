@@ -68,13 +68,21 @@ const menuItems = ref([
     submenu: [
       { label: 'Ver Rooms', route: { name: 'Rooms' } , rol:[1,2]},
       { label: 'Crear Room', route: { name: 'RoomCreate' } , rol:[1,2]},
-      { label: 'Crear Categoría', route: { name: 'CategoryCreate' }, rol:[1,2] }
+      { label: 'Crear Categoría', route: { name: 'CategoryCreate' }, rol:[1,2] },
+      { label: 'Empeños', route: { name: 'EmpenosManager' }, rol:[1,2] }
     ]
   },
   {
     label: 'Artículos',
     submenu: [
       { label: 'Agregar Artículo', route: { name: 'ArticleCreate' } , rol:[1,2]}
+    ]
+  },
+  {
+    label: 'Caja',
+    submenu: [
+      { label: 'Cierres', route: { name: 'CierresManager' } , rol:[1,2]},
+      { label: 'Promociones', route: { name: 'PromocionesManager' } , rol:[1,2]}
     ]
   },
   {

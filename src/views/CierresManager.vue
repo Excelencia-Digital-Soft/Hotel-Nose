@@ -5,6 +5,7 @@
       <!-- List of Cierres -->
       <div class="mb-6">
         <h3 class="font-semibold text-lg mb-4">Cierres</h3>
+        <DropDownCreateSearchGastos/>
         <button 
         class="cursor-pointer hover:text-blue-600 border border-white p-4 h-[15vh] flex items-center justify-center w-full"
 
@@ -53,7 +54,7 @@
   import { ref } from 'vue';
   import axiosClient from '../axiosClient'; // Adjust the path to match your project structure
   import ModalCierre from '../components/ModalCierre.vue';
-
+  import DropDownCreateSearchGastos from '../components/DropDownCreateSearchGastos.vue';
   // Data for cierres and pagos
   const cierres = ref([]);
   const showPagosModal = ref(false);
