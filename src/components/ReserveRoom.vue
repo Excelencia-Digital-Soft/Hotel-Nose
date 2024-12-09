@@ -567,6 +567,7 @@ onMounted(async () => {
 
   watch(selectedPromocion, (newVal) => {
       promocionActiva.value = newVal !== null; // True if a promo is selected
+      props.room.visita.reservaActiva.promocionId = selectedPromocion.value.promocionID;
       actualizarPromocion();
     });
 

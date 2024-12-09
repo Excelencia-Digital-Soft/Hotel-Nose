@@ -72,15 +72,7 @@ const fetchHabitaciones = () => {
 }
 
 function updateRoom(updatedRoom) {
-  // Update the room in habitacionesOcupadas (the corresponding occupied room)
-  const roomIndex = habitacionesOcupadas.value.findIndex(h => h.habitacionId === updatedRoom.habitacionId);
-  if (roomIndex !== -1) {
-    // Update the room in the array
-    habitacionesOcupadas.value[roomIndex].reservaActiva = { 
-  ...habitacionesOcupadas.value[roomIndex].reservaActiva, 
-  promocionId: updatedRoom.promocionID 
-};    console.log('Updated room in occupied rooms:', habitacionesOcupadas.value[roomIndex]);
-  }
+
 }
 function toggleModal(Room) {
   show.value = !show.value
