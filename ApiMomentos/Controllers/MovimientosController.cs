@@ -486,6 +486,167 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpGet]
+        [Route("GetEgresosSegunTipo")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetEgresosSegunTipo(int tipoEgresoID)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var egresos = await _db.Egresos
+                    .Where(e => e.TipoEgresoId == tipoEgresoID)
+                    .ToListAsync();
+
+                res.Ok = true;
+                res.Data = egresos;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        // Get a single Egreso by ID
+        [HttpGet]
+        [Route("GetEgreso")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetEgreso(int id)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var egreso = await _db.Egresos.FindAsync(id);
+                if (egreso != null)
+                {
+                    res.Ok = true;
+                    res.Data = egreso;
+                }
+                else
+                {
+                    res.Ok = false;
+                    res.Message = "Egreso not found.";
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        // Get a single Egreso by ID
+        [HttpGet]
+        [Route("GetEgresoMovimiento")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetEgresoMovimiento(int idMovimiento)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var egreso = await _db.Egresos.Where(e => e.Movimiento.MovimientosId == idMovimiento).FirstOrDefaultAsync();
+                if (egreso != null)
+                {
+                    res.Ok = true;
+                    res.Data = egreso;
+                }
+                else
+                {
+                    res.Ok = false;
+                    res.Message = "Egreso not found.";
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+
+        // Get all TipoEgresos
+        [HttpGet]
+        [Route("GetTipoEgresos")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetTipoEgresos()
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var tipoEgresos = await _db.TipoEgreso.ToListAsync();
+                res.Ok = true;
+                res.Data = tipoEgresos;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        // Create a new Egreso
+        [HttpPost]
+        [Route("CreateEgreso")]
+        [AllowAnonymous]
+        public async Task<Respuesta> CreateEgreso([FromBody] Egresos newEgreso)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                if (newEgreso == null || newEgreso.TipoEgresoId == null)
+                {
+                    res.Ok = false;
+                    res.Message = "Invalid Egreso data.";
+                    return res;
+                }
+
+                _db.Egresos.Add(newEgreso);
+                await _db.SaveChangesAsync();
+
+                res.Ok = true;
+                res.Data = newEgreso;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        [HttpPost]
+        [Route("CreateTipoEgreso")]
+        [AllowAnonymous]
+        public async Task<Respuesta> CreateTipoEgreso([FromBody] TipoEgreso newTipoEgreso)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                if (newTipoEgreso == null || newTipoEgreso.Nombre == null)
+                {
+                    res.Ok = false;
+                    res.Message = "Invalid Egreso data.";
+                    return res;
+                }
+
+                _db.TipoEgreso.Add(newTipoEgreso);
+                await _db.SaveChangesAsync();
+
+                res.Ok = true;
+                res.Data = newTipoEgreso;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
     }
     public class ArticuloConsumoDTO
     {

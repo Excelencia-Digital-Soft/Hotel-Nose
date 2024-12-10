@@ -68,8 +68,9 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<Usuarios> Usuarios { get; set; }
 
     public virtual DbSet<Visitas> Visitas { get; set; }
-    public virtual DbSet<Imagenes> Imagenes { get; set; } // Asegúrate de que exista esta línea
-
+    public virtual DbSet<Imagenes> Imagenes { get; set; }
+    public virtual DbSet<TipoEgreso> TipoEgreso { get; set; }
+    public virtual DbSet<Egresos> Egresos { get; set; }
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -609,6 +610,32 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.Origen).HasColumnName("Origen");
             entity.Property(e => e.NombreArchivo).HasColumnName("NombreArchivo");
 
+        });
+
+        modelBuilder.Entity<Egresos>(entity =>
+        {
+            entity.HasKey(e => e.EgresoId);
+
+            entity.Property(e => e.EgresoId).HasColumnName("EgresoID");
+            entity.Property(e => e.TipoEgresoId).HasColumnName("TipoEgresoID");
+            entity.Property(e => e.Cantidad).HasDefaultValue(0);
+            entity.Property(e => e.Precio).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.Fecha).HasColumnType("datetime").HasDefaultValueSql("getdate()");
+
+            entity.HasOne(d => d.TipoEgreso)
+                .WithMany(p => p.Egresos)
+                .HasForeignKey(d => d.TipoEgresoId)
+                .HasConstraintName("FK_Egresos_TipoEgreso");
+        });
+
+        modelBuilder.Entity<TipoEgreso>(entity =>
+        {
+            entity.HasKey(e => e.TipoEgresoId);
+
+            entity.Property(e => e.TipoEgresoId).HasColumnName("TipoEgresoID");
+            entity.Property(e => e.Nombre)
+                .HasMaxLength(100)
+                .IsUnicode(true);
         });
 
         OnModelCreatingPartial(modelBuilder);
