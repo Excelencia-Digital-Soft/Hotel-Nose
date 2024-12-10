@@ -4,7 +4,7 @@
     <div 
       class="fixed w-full h-full overflow-auto z-20 bg-black bg-opacity-30 top-0 left-0 flex justify-center px-8">
           <Transition name="modal-inner">
-          <div class="modalConfirma w-1/4 h-1/3 fixed top-40 flex flex-col justify-evenly items-start p-8 pb-12 rounded-3xl self-start mt-16  border-8 border-purple-300/75 ">
+            <div class="modalConfirma w-1/3 h-1/2 fixed top-40 flex flex-col justify-evenly items-start p-8 pb-12 rounded-3xl self-start mt-16 border-8 border-purple-300/75">
               <h2 class="text-lg text-stone-800 font-bold">Esta por crear el siguiente gasto para esta factura</h2>
               <h3 class="text-md text-stone-800 font-semibold">"{{ props.name }}"</h3>
               <h3 class="text-md text-stone-800 font-semibold">¿Seguro que desea confirmar?</h3>
@@ -38,6 +38,7 @@
   </template>
   
   <script setup>
+  import axiosClient from '../axiosClient';
   import { ref } from 'vue';
   const props = defineProps({
     name:String
@@ -46,12 +47,18 @@
   let isLoading = ref(false)
   
   //EDITAR PROVEEDOR 
-  const confirmarAccion = () => {
-    
-    isLoading.value=true;
-    emits("confirmaAccion")
-    emits("close")
+  const confirmarAccion = async () => {
+  isLoading.value = true;
+  try {
+    await axiosClient.post('/CreateTipoEgreso', { nombre: props.name });
+    emits('confirmaAccion');
+  } catch (error) {
+    console.error('Error creating Tipo Egreso:', error);
+  } finally {
+    isLoading.value = false;
+    emits('close');
   }
+};
   </script>
   
   <style scoped>
