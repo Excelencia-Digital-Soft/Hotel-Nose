@@ -78,6 +78,15 @@ const fetchTipoEgresos = async () => {
 
 onMounted(fetchTipoEgresos);
 
+watch(() => selected.value, (newValue) => {
+  console.log(newValue);
+  const nuevoGasto = {
+    TipoId: newValue.tipoEgresoId, // Generate a temporary unique ID
+    nombre: newValue.nombre,
+  };
+  emits('addGasto', nuevoGasto); // Emit the new gasto to the parent
+}, { deep: true });
+
 const computedListaGastos = computed(() =>
   tiposCuentaGastos.value.filter((i) =>
     i.nombre.toLowerCase().includes(keyword.value.toLowerCase())
@@ -91,7 +100,7 @@ const toggleModalAceptar = () => {
 const confirmAndSend = () => {
   fetchTipoEgresos();
   const nuevoGasto = {
-    id: Date.now(), // Generate a temporary unique ID
+    TipoId: Date.now(), // Generate a temporary unique ID
     nombre: keyword.value,
   };
 

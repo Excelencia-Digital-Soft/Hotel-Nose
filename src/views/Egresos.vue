@@ -7,7 +7,7 @@
     </div>
 
     <!-- Tabla para listar los gastos -->
-    <div v-if="gastos.length > 0" class="overflow-x-auto">
+    <div v-if="gastos.length > 0" class="overflow-x-auto mb-4">
       <table class="table-auto w-full border-collapse border border-black">
         <thead class="bg-purple-300 text-white">
           <tr>
@@ -19,7 +19,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(gasto, index) in gastos" :key="gasto.id">
+          <tr v-for="(gasto, index) in gastos" :key="gasto.TipoId">
             <td class="border border-black px-4 py-2">{{ gasto.nombre }}</td>
             <td class="border border-black px-4 py-2">
               <input
@@ -54,27 +54,43 @@
         </tfoot>
       </table>
     </div>
+
+    <!-- Confirmar Button -->
+    <div v-if="gastos.length > 0" class="flex justify-end">
+      <button
+        @click="abrirModal"
+        class="btn-primary bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded"
+      >
+        Confirmar
+      </button>
+    </div>
+
+    <!-- ConfirmarEgreso Modal -->
+    <ConfirmarEgreso v-if="mostrarModal" :egresos="gastos" @close="cerrarModal" @success="handleSuccess" />
   </div>
 </template>
+
 
 <script setup>
 import { ref, computed } from 'vue';
 import DropDownCreateSearchGastos from '../components/DropDownCreateSearchGastos.vue';
+import ConfirmarEgreso from '../components/ConfirmarEgreso.vue'; // Import the modal component
 
 const gastos = ref([]);
+const mostrarModal = ref(false);
 
 // Agregar un gasto a la tabla
 const agregarAGastos = (nuevoGasto) => {
   if (!nuevoGasto) return;
-
-  const existente = gastos.value.find(gasto => gasto.id === nuevoGasto.id);
+  console.log(gastos);
+  const existente = gastos.value.find(gasto => gasto.TipoId === nuevoGasto.TipoId);
   if (existente) {
     alert('El gasto ya fue agregado.');
     return;
   }
 
   gastos.value.push({
-    id: nuevoGasto.id,
+    TipoId: nuevoGasto.TipoId,
     nombre: nuevoGasto.nombre,
     cantidad: 1,
     importeUnitario: 0,
@@ -90,4 +106,17 @@ const eliminarGasto = (index) => {
 const totalGastos = computed(() =>
   gastos.value.reduce((total, gasto) => total + gasto.cantidad * gasto.importeUnitario, 0)
 );
+
+// Modal control methods
+const abrirModal = () => {
+  mostrarModal.value = true;
+};
+
+const cerrarModal = () => {
+  mostrarModal.value = false;
+};
+const handleSuccess = () => {
+  alert('Egresos confirmados exitosamente.');
+  gastos.value = []; // Optionally clear the list after confirmation
+}
 </script>
