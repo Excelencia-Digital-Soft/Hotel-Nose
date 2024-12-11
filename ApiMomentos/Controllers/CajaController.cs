@@ -157,7 +157,7 @@ namespace ApiObjetos.Controllers
                                 p.MontoDescuento,
                                 p.fechaHora,
                                 p.MedioPagoId,
-                                p.CierreId
+                                p.CierreId,
                             })
                             .ToList()
                     })
@@ -174,6 +174,7 @@ namespace ApiObjetos.Controllers
                         p.MontoBillVirt,
                         p.MontoDescuento,
                         p.MedioPagoId,
+                        p.fechaHora,
                         CierreId = (int?)null
                     })
                     .ToListAsync();

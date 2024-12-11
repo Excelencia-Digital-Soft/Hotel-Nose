@@ -605,6 +605,23 @@ namespace ApiObjetos.Controllers
                     return res;
                 }
 
+                // Calculate the total facturado as a negative amount for an egreso
+                decimal totalFacturado = -Math.Abs(newEgreso.Precio * newEgreso.Cantidad); // Ensure it's negative
+
+                // Create the new Movimiento
+                Movimientos nuevoMovimiento = new Movimientos
+                {
+                    TotalFacturado = totalFacturado,
+                    FechaRegistro = DateTime.Now // Assuming you have a Fecha field
+                };
+
+                // Add the Movimiento to the database
+                newEgreso.MovimientoId = nuevoMovimiento.MovimientosId;
+                _db.Movimientos.Add(nuevoMovimiento);
+                await _db.SaveChangesAsync();
+
+                // Link the Movimiento to the Egreso via MovimientoId
+                newEgreso.MovimientoId = nuevoMovimiento.MovimientosId;
                 _db.Egresos.Add(newEgreso);
                 await _db.SaveChangesAsync();
 
