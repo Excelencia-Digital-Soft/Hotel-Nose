@@ -12,21 +12,30 @@
       </button>
 
       <!-- Grid Layout for Pagos -->
-      <div class="grid grid-cols-5 gap-0 border-t border-l border-gray-300">
+      <div class="grid grid-cols-9 gap-0 border-t border-l border-gray-300">
         <!-- Headers -->
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Pago</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Hora Ingreso</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Hora Salida</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Tipo Habitacion</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Efectivo</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Tarjeta</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Billetera Virtual</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Descuento</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Observacion</div>
+
 
         <!-- Iterate over Pagos -->
         <div v-for="(pago, index) in selectedPagos" :key="pago.pagoId" class="contents">
           <!-- Pago Info -->
           <div @click="openInfoModal(pago)" class="cursor-pointer text-blue-600 hover:underline p-2 border-b border-r border-gray-300">
             Pago {{ pago.pagoId }}
-            <div class="text-gray-500 text-sm">{{ formatFechaHora(pago.fechaHora) }}</div>
+            <div class="text-gray-500 text-sm">{{ formatFechaHora(pago.fecha) }}</div>
           </div>
+          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ formatFechaHora(pago.horaIngreso) }}</div>
+          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ formatFechaHora(pago.horaSalida) }}</div>
+          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.tipoHabitacion}}</div>
+
           <!-- Efectivo -->
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoEfectivo }}</div>
           <!-- Tarjeta -->
@@ -35,6 +44,8 @@
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoBillVirt }}</div>
           <!-- Descuento -->
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoDescuento }}</div>
+          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
+
         </div>
       </div>
 

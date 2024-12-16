@@ -54,7 +54,6 @@
   import { ref } from 'vue';
   import axiosClient from '../axiosClient'; // Adjust the path to match your project structure
   import ModalCierre from '../components/ModalCierre.vue';
-  import DropDownCreateSearchGastos from '../components/DropDownCreateSearchGastos.vue';
   // Data for cierres and pagos
   const cierres = ref([]);
   const showPagosModal = ref(false);
