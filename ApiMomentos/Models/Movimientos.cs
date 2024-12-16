@@ -25,6 +25,7 @@ public partial class Movimientos
     public int? UsuarioId { get; set; }
 
     public DateTime? FechaRegistro { get; set; }
+    public string? Descripcion { get; set; }
     public Egresos? Egreso { get; set; }
 
     public bool? Anulado { get; set; }

@@ -57,6 +57,11 @@ namespace ApiObjetos.Controllers
 
                 // Step 4: Calculate the total amount to be paid (sum of all movimientos' totalFacturado)
                 decimal totalFacturado = movimientos.Sum(m => m.TotalFacturado ?? 0);
+                var empeño = await _db.Empeño
+                .FirstOrDefaultAsync(e => e.VisitaID == visitaId && e.PagoID == null);
+                string observacion = empeño != null
+          ? $"Pago de visita {visitaId} con empeño de {empeño.Detalle} por un valor de {empeño.Monto}"
+          : $"Pago de visita {visitaId}";
 
                 // Calculate total payment from all sources (efectivo, tarjeta, billetera virtual)
                 /* decimal totalPagado = montoEfectivo + montoTarjeta + montoBillVirt;
@@ -77,6 +82,7 @@ namespace ApiObjetos.Controllers
                     MontoBillVirt = montoBillVirt,
                     MedioPagoId = medioPagoId,
                     fechaHora = DateTime.Now,
+                    Observacion = observacion,
                 }; 
 
                 _db.Pagos.Add(nuevoPago);

@@ -134,6 +134,7 @@ namespace ApiObjetos.Controllers
                     MontoBillVirt = montoBillVirt,
                     MedioPagoId = 1, // assuming the MedioPagoId = 1 for now
                     fechaHora = DateTime.Now, // current time as payment time
+                    Observacion = "Pago de empeño correspondiente a la visita " + empeño.VisitaID,
                 };
 
                 // Add the new Pago to the context

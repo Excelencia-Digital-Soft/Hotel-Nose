@@ -278,6 +278,7 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.FechaRegistro).HasColumnType("datetime");
             entity.Property(e => e.HabitacionId).HasColumnName("HabitacionID");
             entity.Property(e => e.PagoId).HasColumnName("PagoID");
+            entity.Property(e => e.Descripcion).HasMaxLength(50);
             entity.Property(e => e.TotalFacturado).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.UsuarioId).HasColumnName("UsuarioID");
             entity.Property(e => e.VisitaId).HasColumnName("VisitaID");
@@ -370,6 +371,7 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.MontoBillVirt).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.MontoEfectivo).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.MontoTarjeta).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.Observacion).HasMaxLength(200);
 
             entity.HasOne(d => d.Cierre).WithMany(p => p.Pagos)
                 .HasForeignKey(d => d.CierreId)
