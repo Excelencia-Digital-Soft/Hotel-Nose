@@ -48,6 +48,7 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<MovimientosUsuarios> MovimientosUsuarios { get; set; }
 
     public virtual DbSet<Pagos> Pagos { get; set; }
+    public virtual DbSet<Recargos> Recargos { get; set; }
 
     public virtual DbSet<Personal> Personal { get; set; }
 
@@ -382,6 +383,33 @@ public partial class HotelDbContext : DbContext
                 .HasConstraintName("FK_Pagos_MediosPago");
         });
 
+        modelBuilder.Entity<Recargos>(entity =>
+        {
+            // Primary key
+            entity.HasKey(e => e.RecargoID);
+
+            // Properties
+            entity.Property(e => e.RecargoID)
+                .HasColumnName("RecargoID")
+                .ValueGeneratedOnAdd(); // Identity column
+
+            entity.Property(e => e.Descripcion)
+                .HasColumnName("Descripcion")
+                .HasMaxLength(200)
+                .IsUnicode(true);
+
+            entity.Property(e => e.Valor) 
+                .HasColumnName("Valor")
+                .HasColumnType("decimal(10, 2)");
+
+
+            // Foreign key relationship with Pagos table
+            entity.HasOne(e => e.Pago)
+                   .WithOne(p => p.Recargo) // One-to-one relationship
+                   .HasForeignKey<Recargos>(e => e.PagoID) // Foreign key in Recargos table
+                   .HasConstraintName("FK_Recargos_Pagos")
+                   .OnDelete(DeleteBehavior.Cascade); // Cascade delete behavior
+        });
         modelBuilder.Entity<Personal>(entity =>
         {
             entity.HasKey(e => e.PersonalId).HasName("PK__Personal__283437138A5F91D4");

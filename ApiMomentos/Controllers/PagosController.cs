@@ -20,7 +20,7 @@ namespace ApiObjetos.Controllers
         #region Create Pago
         [HttpPost]
         [Route("PagarVisita")] // Paga todos los movimientos de una visita
-        public async Task<Respuesta> PagarVisita(int visitaId, decimal montoDescuento, decimal montoEfectivo, decimal montoTarjeta, decimal montoBillVirt, int medioPagoId)
+        public async Task<Respuesta> PagarVisita(int visitaId, decimal montoDescuento, decimal montoEfectivo, decimal montoTarjeta, decimal montoBillVirt, int medioPagoId, string? comentario, decimal? montoRecargo, string? descripcionRecargo)
         {
             Respuesta res = new Respuesta();
             try
@@ -57,22 +57,9 @@ namespace ApiObjetos.Controllers
 
                 // Step 4: Calculate the total amount to be paid (sum of all movimientos' totalFacturado)
                 decimal totalFacturado = movimientos.Sum(m => m.TotalFacturado ?? 0);
-                var empeño = await _db.Empeño
-                .FirstOrDefaultAsync(e => e.VisitaID == visitaId && e.PagoID == null);
-                string observacion = empeño != null
-          ? $"Pago de visita {visitaId} con empeño de {empeño.Detalle} por un valor de {empeño.Monto}"
-          : $"Pago de visita {visitaId}";
+                string observacion = "-";
+                if (comentario != null) observacion = comentario;
 
-                // Calculate total payment from all sources (efectivo, tarjeta, billetera virtual)
-                /* decimal totalPagado = montoEfectivo + montoTarjeta + montoBillVirt;
-
-                 if (totalPagado != totalFacturado)
-                 {
-                     res.Ok = false;
-                     res.Message = $"El monto total pagado ({totalPagado}) es diferente que el total a pagar ({totalFacturado}).";
-                     return res;
-                 }
-                */
                 // Step 5: Create a new Pago for the Visita with the respective payment methods
                 Pagos nuevoPago = new Pagos
                 {
@@ -83,9 +70,21 @@ namespace ApiObjetos.Controllers
                     MedioPagoId = medioPagoId,
                     fechaHora = DateTime.Now,
                     Observacion = observacion,
-                }; 
-
+                };
                 _db.Pagos.Add(nuevoPago);
+                await _db.SaveChangesAsync();
+
+                if (montoRecargo != null)
+                {
+                    Recargos nuevoRecargo = new Recargos
+                    {
+                        Valor = montoRecargo,
+                        Descripcion = descripcionRecargo,
+                        PagoID = nuevoPago.PagoId,
+                    };
+                    _db.Recargos.Add(nuevoRecargo);
+
+                }
                 await _db.SaveChangesAsync();
 
                 // Step 6: Update all Movimientos related to the Visita to include the PagoId
