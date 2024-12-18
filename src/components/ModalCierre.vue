@@ -12,7 +12,7 @@
       </button>
 
       <!-- Grid Layout for Pagos -->
-      <div class="grid grid-cols-9 gap-0 border-t border-l border-gray-300">
+      <div class="grid grid-cols-10 gap-0 border-t border-l border-gray-300">
         <!-- Headers -->
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Pago</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Hora Ingreso</div>
@@ -22,6 +22,7 @@
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Tarjeta</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Billetera Virtual</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Descuento</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Total</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Observacion</div>
 
 
@@ -43,7 +44,8 @@
           <!-- Billetera Virtual -->
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoBillVirt }}</div>
           <!-- Descuento -->
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoDescuento }}</div>
+          <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoDescuento }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta }}</div>
           <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
 
         </div>
@@ -51,9 +53,17 @@
 
       <!-- Total Section -->
       <div class="mt-4 font-semibold">
-        <label class="text-black">Total:</label>
+
+        <label class="text-black">      Total Efectivo:</label>
+        <span class="text-green-600">${{ calculateEfectivo() }}</span>
+        <label class="text-black">      Total Tarjeta:</label>
+        <span class="text-green-600">${{ calculateTarjeta() }}</span>
+        <label class="text-black">      Total MercadoPago:</label>
+        <span class="text-green-600">${{ calculateMP() }}</span>
+        <label class="text-black">      Total:</label>
         <span class="text-green-600">${{ calculateTotal() }}</span>
       </div>
+
 
       <!-- "Cerrar Caja" Button (only shown if esAbierto is true) -->
   <!-- "Cerrar Caja" Button -->
@@ -127,6 +137,21 @@ const formatFechaHora = (fechaHora) => {
 const calculateTotal = () => {
   return props.selectedPagos.reduce((total, pago) => {
     return total + pago.montoEfectivo + pago.montoTarjeta + pago.montoBillVirt;
+  }, 0);
+};
+const calculateEfectivo = () => {
+  return props.selectedPagos.reduce((total, pago) => {
+    return total + pago.montoEfectivo;
+  }, 0);
+};
+const calculateTarjeta = () => {
+  return props.selectedPagos.reduce((total, pago) => {
+    return total + pago.montoTarjeta;
+  }, 0);
+};
+const calculateMP = () => {
+  return props.selectedPagos.reduce((total, pago) => {
+    return total + pago.montoBillVirt;
   }, 0);
 };
 
