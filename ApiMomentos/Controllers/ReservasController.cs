@@ -130,7 +130,7 @@ namespace ApiObjetos.Controllers
                 };
 
                 decimal? tarifa = habitacion.Categoria.PrecioNormal; // Default price
-                if (request.PromocionID != null)
+                if (request.PromocionID != null && request.PromocionID != 0)
                 {
                     nuevaReserva.PromocionId = request.PromocionID;
                     // Fetch the promotion from the database

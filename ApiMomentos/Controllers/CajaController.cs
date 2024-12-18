@@ -140,9 +140,9 @@ namespace ApiObjetos.Controllers
                     .Include(c => c.Pagos)
                     .ToListAsync();
 
-                var pagosSinCierre = await _db.Pagos
-                    .Where(p => p.CierreId == null)
-                    .ToListAsync();
+                List<Pagos>? pagosSinCierre = _db.Pagos != null
+                    ? await _db.Pagos.Where(p => p.CierreId == null).ToListAsync()
+                    : new List<Pagos>();
 
                 var movimientos = await _db.Movimientos
                     .Include(m => m.Visita)
@@ -273,12 +273,13 @@ namespace ApiObjetos.Controllers
                     }
 
                 }
+                var reversedCierres = CierresReturn.AsEnumerable().Reverse().ToList();
 
                 // Set the response
                 res.Ok = true;
                 res.Data = new
                 {
-                    Cierres = CierresReturn,
+                    Cierres = reversedCierres,
                     PagosSinCierre = PagosSinCierreReturn
                 };
             }

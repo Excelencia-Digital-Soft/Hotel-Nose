@@ -6,7 +6,7 @@ namespace ApiObjetos.Models;
 
 public partial class Pagos
 {
-    public int PagoId { get; set; }
+    public int? PagoId { get; set; }
 
     public decimal? MontoEfectivo { get; set; }
 
@@ -20,7 +20,7 @@ public partial class Pagos
 
     public int? CierreId { get; set; }
     public DateTime? fechaHora { get; set; }    
-    public string Observacion { get; set; }
+    public string? Observacion { get; set; }
     public virtual Cierre? Cierre { get; set; }
     [JsonIgnore]
     public virtual MediosPago? MedioPago { get; set; }
