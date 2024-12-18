@@ -20,7 +20,12 @@ public partial class Pagos
 
     public int? CierreId { get; set; }
     public DateTime? fechaHora { get; set; }    
+<<<<<<< HEAD
     public string? Observacion { get; set; }
+=======
+    public string Observacion { get; set; }
+    public Recargos Recargo { get; set; }
+>>>>>>> 5176191ba218d0c4695e0c984b64ffbe642bdc32
     public virtual Cierre? Cierre { get; set; }
     [JsonIgnore]
     public virtual MediosPago? MedioPago { get; set; }
