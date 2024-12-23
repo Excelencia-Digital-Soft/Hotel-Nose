@@ -9,23 +9,30 @@
         <div class="container mx-auto">
           <!-- Contenedor con overflow-hidden y altura de 500px -->
           <div style="max-height: 65vh; overflow-y: auto;">
-            <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 m-2">
-              <!-- Iteramos sobre los productos -->
-              <div v-for="producto in computedProductos" :key="producto.articuloId" @click="toggleSeleccion(producto)"
-                :class="{
-          'relative  hover:bg-surface-700 cursor-pointer text-white rounded-lg p-4 flex flex-col items-center justify-between': true,
-          'ring-4 bg-secondary-900 ring-primary-500': seleccionados.includes(producto)
-        }">
-                <!-- Imagen del producto, en este caso un placeholder -->
-                <div class="w-20 h-20 bg-gray-500 flex items-center justify-center rounded-md mb-2">
-                  <img :src="producto.imageUrl || '/assets/image59.svg'" alt="Imagen del producto" class="w-full h-full object-cover" />
-                </div>
-                <!-- Nombre del producto -->
-                <p>{{ producto.nombreArticulo }}</p>
-                <p class="text-sm text-green-600">${{ producto.precio }}</p>
-              </div>
-            </div>
-          </div>
+  <div v-if="isLoading" class="text-center text-gray-500 py-4">
+    Loading...
+  </div>
+  <div v-else class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 m-2">
+    <div
+      v-for="producto in computedProductos"
+      :key="producto.articuloId"
+      @click="toggleSeleccion(producto)"
+      :class="{
+        'relative hover:bg-surface-700 cursor-pointer text-white rounded-lg p-4 flex flex-col items-center justify-between': true,
+        'ring-4 bg-secondary-900 ring-primary-500': seleccionados.includes(producto),
+      }"
+    >
+      <!-- Product Image -->
+      <div class="w-20 h-20 bg-gray-500 flex items-center justify-center rounded-md mb-2">
+        <img :src="producto.imageUrl || '/assets/image59.svg'" alt="Product Image" class="w-full h-full object-cover" />
+      </div>
+      <!-- Product Details -->
+      <p>{{ producto.nombreArticulo }}</p>
+      <p class="text-sm text-green-600">${{ producto.precio }}</p>
+    </div>
+  </div>
+</div>
+
         </div>
 
         <!-- TABLE CONTENT -->
@@ -43,7 +50,8 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
+import { fetchArticulos } from '../services/imageService.js';
 import axiosClient from '../axiosClient';
 import TableRowModal from '../components/TableRowModal.vue';
 import { useRoute } from 'vue-router';
@@ -58,10 +66,17 @@ const productos = ref([])
 const computedProductos = computed(() => productos.value.filter(i => i.nombreArticulo.toLowerCase().includes(keyword.value.toLowerCase())))
 const show = ref(false)
 
-onMounted(() => {
+watch(productos, (newVal, oldVal) => {
+  if (newVal !== oldVal) {
+    console.log("Productos array updated:", newVal);
+  }
+});
+
+onMounted(async () => {
   fetchVisitaId();
-  fetchArticulos();
-  console.log(productos);
+  productos.value = await fetchArticulos();
+    console.log('Productos in component:', productos.value);
+
   seleccionados = ref([])// le asignamos como variable reactiva en el montado para luego 
 })
 let seleccionados = null;
@@ -108,48 +123,6 @@ const fetchVisitaId = () => {
   }else{
     alert('Esta habitacion no tiene permitido hacer pedidos')
     router.push({ name: 'home' });
-  }
-};
-
-const fetchImage = async (articuloId) => {
-  try {
-    const response = await axiosClient.get(`api/Articulos/GetImage/${articuloId}`, {
-      responseType: 'blob', // Specify response type as blob to handle binary data
-    });
-
-    // Convert blob to a usable object URL
-    const imageUrl = URL.createObjectURL(response.data);
-    return imageUrl; // Return the object URL for the image
-  } catch (error) {
-    console.error(`Error al obtener imagen para articuloId ${articuloId}:`, error);
-    return null; // Return default placeholder if error occurs
-  }
-};
-const fetchArticulos = async () => {
-  try {
-    const response = await axiosClient.get("/GetInventarioGeneral");
-    if (response.data && response.data.data) {
-      // Filter out items with cantidad = 0
-      const validItems = response.data.data.filter(item => item.cantidad > 0);
-
-      // Fetch images and construct the products array
-      productos.value = await Promise.all(
-        validItems.map(async (item) => {
-          const imageUrl = await fetchImage(item.articulo.articuloId); // Fetch image
-          return {
-            ...item.articulo, // Spread properties of 'articulo'
-            cantidad: item.cantidad, // Add 'cantidad'
-            imageUrl, // Add fetched image URL
-          };
-        })
-      );
-
-      console.log("Productos with Images (cantidad > 0):", productos.value); // Verify the structure
-    } else {
-      console.error("Datos de la API no válidos:", response.data);
-    }
-  } catch (error) {
-    console.error("Error al obtener los productos:", error);
   }
 };
 

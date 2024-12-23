@@ -8,23 +8,39 @@
               <div class="container mx-auto">
                 <!-- Contenedor con overflow-hidden y altura de 50vh para hacer la lista scrollable -->
                 <div style="max-height: 50vh; overflow-y: auto;">
-                  <div v-if="!isLoading && inventario.length" class="grid grid-cols-3 gap-4 mx-2">
-                    <!-- Iterar sobre los artículos del inventario -->
-                    <div v-for="item in inventario" :key="item.inventarioId" class="bg-surface-700 text-white rounded-lg p-4 flex flex-col items-center justify-center">
-                      <div class="w-20 h-20 bg-gray-500 flex items-center justify-center rounded-md mb-2">
-                        <img src="../assets/image59.svg" alt="Imagen del producto" class="w-full h-full object-cover" />
-                      </div>
-                      <p>{{ item.articulo.nombreArticulo }}</p>
-                      <p class="text-sm text-gray-300">Cantidad: {{ item.cantidad }}</p>
-                    </div>
-                  </div>
-                  <div v-if="isLoading" class="flex justify-center items-center h-32">
-                    <p class="text-white">Cargando inventario...</p>
-                  </div>
-                  <div v-if="!isLoading && !inventario.length" class="flex justify-center items-center h-32">
-                    <p class="text-white">No hay artículos en el inventario.</p>
-                  </div>
-                </div>
+  <div v-if="!isLoading && inventario.length" class="grid grid-cols-3 gap-4 mx-2">
+    <!-- Iterar sobre los artículos del inventario -->
+    <div
+      v-for="item in inventario"
+      :key="item.inventarioId"
+      class="bg-surface-700 text-white rounded-lg p-4 flex flex-col items-center justify-center"
+    >
+      <!-- Image container -->
+      <div class="w-20 h-20 bg-gray-500 flex items-center justify-center rounded-md mb-2">
+        <!-- Display fetched image or fallback -->
+        <img
+          :src="item.articulo.imageUrl || '../assets/image59.svg'"
+          alt="Imagen del producto"
+          class="w-full h-full object-cover"
+        />
+      </div>
+      <!-- Article details -->
+      <p>{{ item.articulo.nombreArticulo }}</p>
+      <p class="text-sm text-gray-300">Cantidad: {{ item.cantidad }}</p>
+    </div>
+  </div>
+
+  <!-- Loading state -->
+  <div v-if="isLoading" class="flex justify-center items-center h-32">
+    <p class="text-white">Cargando inventario...</p>
+  </div>
+
+  <!-- No items state -->
+  <div v-if="!isLoading && !inventario.length" class="flex justify-center items-center h-32">
+    <p class="text-white">No hay artículos en el inventario.</p>
+  </div>
+</div>
+
                 <div>
     <!-- Button to show Add Item Modal -->
     <button
@@ -60,6 +76,7 @@
   import { onMounted, ref } from 'vue';
   import axiosClient from '../axiosClient';
   import ModalAddInventory from '../components/ModalAddInventory.vue'
+import { fetchImage } from '../services/imageService';
 
   const emits = defineEmits(["close"]);
   const props = defineProps({
@@ -72,27 +89,34 @@
   const inventario = ref([]);
   const showAddModal = ref(false)
   
-  // Function to fetch inventory data
-  const fetchInventario = () => {
-    isLoading.value = true;
-    console.log("A");
-    axiosClient.get(`/api/Inventario/GetInventario?habitacionID=${habitacionID.value}`)
-      .then(({ data }) => {
-        if (data && data.data) {
-          inventario.value = data.data;
-          console.log(inventario.value)
-        } else {
-          console.error('Datos de la API no válidos:', data);
-        }
-      })
-      .catch(error => {
-        console.error('Error al obtener el inventario:', error);
-      })
-      .finally(() => {
-        isLoading.value = false;
-      });
-  };
-  
+const fetchInventario = async () => {
+  isLoading.value = true;
+  try {
+    const response = await axiosClient.get(`/api/Inventario/GetInventario?habitacionID=${habitacionID.value}`);
+    if (response.data && response.data.data) {
+      // Map over inventory data and fetch images for each articulo
+      inventario.value = await Promise.all(
+        response.data.data.map(async (item) => {
+          const imageUrl = await fetchImage(item.articulo.articuloId); // Fetch the image URL
+          return {
+            ...item,
+            articulo: {
+              ...item.articulo,
+              imageUrl, // Include the image URL
+            },
+          };
+        })
+      );
+      console.log(inventario.value);
+    } else {
+      console.error("Datos de la API no válidos:", response.data);
+    }
+  } catch (error) {
+    console.error("Error al obtener el inventario:", error);
+  } finally {
+    isLoading.value = false;
+  }
+};
   const toggleAddItemModal = () => {
   showAddModal.value = !showAddModal.value;
 

@@ -12,19 +12,18 @@
                 <div class="grid grid-cols-3 gap-4 mx-2">
                   <!-- Iteramos sobre los productos -->
                   <div v-for="producto in productos" :key="producto.articuloId" @click="toggleSeleccion(producto)"
-                    :class="{
-                    'relative  hover:bg-surface-700 cursor-pointer text-white rounded-lg p-4 flex flex-col items-center justify-center': true,
-                    'ring-4 bg-secondary-900 ring-primary-500': seleccionados.includes(producto)
-                  }">
-                    <!-- Imagen del producto, en este caso un placeholder -->
-                    <div class="w-20 h-20 bg-gray-500 flex items-center justify-center rounded-md mb-2">
-                      <img src="../assets/image59.svg" alt="Imagen del producto" class="w-full h-full object-cover" />
-                    </div>
-                    <!-- Nombre del producto -->
-                    <p>{{ producto.nombreArticulo }}</p>
-                    <p>En stock: {{ producto.cantidad }}</p>
-
-                  </div>
+  :class="{
+    'relative hover:bg-surface-700 cursor-pointer text-white rounded-lg p-4 flex flex-col items-center justify-center': true,
+    'ring-4 bg-secondary-900 ring-primary-500': seleccionados.includes(producto)
+  }">
+  <!-- Imagen del producto -->
+  <div class="w-20 h-20 bg-gray-500 flex items-center justify-center rounded-md mb-2">
+    <img :src="producto.imageUrl || '../assets/image59.svg'" alt="Imagen del producto" class="w-full h-full object-cover" />
+  </div>
+  <!-- Nombre del producto -->
+  <p>{{ producto.nombreArticulo }}</p>
+  <p>En stock: {{ producto.cantidad }}</p>
+</div>
                 </div>
               </div>
             </div>
@@ -66,6 +65,7 @@
 <script setup>
 import { onMounted, ref } from 'vue';
 import axiosClient from '../axiosClient';
+import { fetchImage } from '../services/imageService';
 import TableRow from './TableRow.vue';
 const props = defineProps({
   name: String,
@@ -109,25 +109,30 @@ const actualizarSeleccionados = (nuevaLista) => {
   seleccionados.value = nuevaLista;
 };
 
-const fetchArticulos = () => {
-  axiosClient.get(`api/Inventario/GetInventario?habitacionID=${props.habitacionID}`)
-    .then(({ data }) => {
-      if (data && data.data) {
-        productos.value = data.data.filter(a => a.cantidad > 0).map(articulo => {
-          return {
-            ...articulo.articulo,
-            cantidad: articulo.cantidad  
-          };
-        });
-
-      } else {
-        console.error('Datos de la API no válidos:', data);
-      }
-    })
-    .catch(error => {
-      console.error('Error al obtener las habitaciones:', error);
-    });
-}
+const fetchArticulos = async () => {
+  try {
+    const response = await axiosClient.get(`api/Inventario/GetInventario?habitacionID=${props.habitacionID}`);
+    if (response.data && response.data.data) {
+      // Filter and map articles, fetch images asynchronously
+      productos.value = await Promise.all(
+        response.data.data
+          .filter(a => a.cantidad > 0)
+          .map(async (articulo) => {
+            const imageUrl = await fetchImage(articulo.articulo.articuloId); // Fetch the image URL
+            return {
+              ...articulo.articulo,
+              cantidad: articulo.cantidad,
+              imageUrl, // Add the image URL to the object
+            };
+          })
+      );
+    } else {
+      console.error('Datos de la API no válidos:', response.data);
+    }
+  } catch (error) {
+    console.error('Error al obtener las habitaciones:', error);
+  }
+};
 </script>
 
 <style scoped>
