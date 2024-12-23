@@ -65,6 +65,8 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<TipoTarifa> TipoTarifa { get; set; }
 
     public virtual DbSet<Empeño> Empeño{ get; set; }
+    public virtual DbSet<CategoriasArticulos> CategoriasArticulos { get; set; }
+
 
     public virtual DbSet<Usuarios> Usuarios { get; set; }
 
@@ -128,6 +130,22 @@ public partial class HotelDbContext : DbContext
                 .HasForeignKey(d => d.UsuarioId)
                 .HasConstraintName("FK_Usuario");
         });
+
+        modelBuilder.Entity<CategoriasArticulos>(entity =>
+        {
+            entity.HasKey(e => e.CategoriaId).HasName("PK_CategoriaArticulo");
+            entity.Property(e => e.CategoriaId)
+                .ValueGeneratedOnAdd() // Auto-incrementing primary key
+                .HasColumnName("CategoriaID");
+
+            entity.Property(e => e.NombreCategoria)
+                .IsRequired() // Mark as required
+                .HasMaxLength(50) // Set maximum length to 50
+                .HasColumnName("NombreCategoria");
+            entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
+
+        });
+
 
 
         modelBuilder.Entity<Consumo>(entity =>
