@@ -23,18 +23,28 @@ namespace ApiObjetos.Controllers
         // Method to get all articulos
         [HttpGet]
         [Route("GetArticulos")]
-        public async Task<Respuesta> GetArticulos()
+        public async Task<Respuesta> GetArticulos(int? categoriaID)
         {
             Respuesta res = new Respuesta();
 
             try
             {
+                List<Articulos> articulos;
                 // Step 1: Retrieve all articulos from the database
-                var articulos = await _db.Articulos.
-                    Where(a => a.Anulado != true)
-                    .
-                    ToListAsync();
-
+                if (categoriaID == null)
+                {
+                    articulos = await _db.Articulos.
+                        Where(a => a.Anulado != true)
+                        .
+                        ToListAsync();
+                }
+                else
+                {
+                    articulos = await _db.Articulos.
+                        Where(a => a.Anulado != true && a.CategoriaID == categoriaID)
+                        .
+                        ToListAsync();
+                }
                 // Step 2: Check if any articulos were found
                 if (articulos == null || articulos.Count == 0)
                 {
@@ -90,9 +100,9 @@ namespace ApiObjetos.Controllers
         }
 
 
-        [HttpPut]   
+        [HttpPut]
         [Route("UpdateArticulo")]
-        public async Task<Respuesta> UpdateArticulo(int id, string? nombre, decimal? precio)
+        public async Task<Respuesta> UpdateArticulo(int id, string? nombre, decimal? precio, int? categoriaID)
         {
             Respuesta res = new Respuesta();
 
@@ -117,7 +127,24 @@ namespace ApiObjetos.Controllers
                 {
                     articulo.Precio = precio.Value;
                 }
+
+                if (categoriaID.HasValue)
+                {
+                    // Optionally validate the provided CategoriaID exists
+                    if (await _db.CategoriasArticulos.AnyAsync(c => c.CategoriaId == categoriaID.Value))
+                    {
+                        articulo.CategoriaID = categoriaID.Value;
+                    }
+                    else
+                    {
+                        res.Ok = false;
+                        res.Message = $"La categoría con ID: {categoriaID.Value} no existe.";
+                        return res;
+                    }
+                }
+
                 articulo.FechaRegistro = DateTime.Now;
+
                 // Step 3: Save changes to the database
                 _db.Articulos.Update(articulo);
                 await _db.SaveChangesAsync();
@@ -138,7 +165,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPost]
         [Route("CreateArticulo")]
-        public async Task<Respuesta> CreateArticulo(string nombre, decimal precio)
+        public async Task<Respuesta> CreateArticulo(string nombre, decimal precio, int? categoriaID)
         {
             Respuesta res = new Respuesta();
 
@@ -159,16 +186,26 @@ namespace ApiObjetos.Controllers
                     return res;
                 }
 
-                // Step 2: Create a new Articulo object
+                // Step 2: Validate or set CategoriaID
+                int categoriaToUse = categoriaID ?? 1; // Default to CategoriaID = 1
+                if (!await _db.CategoriasArticulos.AnyAsync(c => c.CategoriaId == categoriaToUse))
+                {
+                    res.Ok = false;
+                    res.Message = $"La categoría con ID: {categoriaToUse} no existe.";
+                    return res;
+                }
+
+                // Step 3: Create a new Articulo object
                 Articulos nuevoArticulo = new Articulos
                 {
                     NombreArticulo = nombre,
                     Precio = precio,
+                    CategoriaID = categoriaToUse,
                     Anulado = false, // By default, the article is not annulled
                     FechaRegistro = DateTime.Now,
                 };
 
-                // Step 3: Add the new articulo to the database
+                // Step 4: Add the new articulo to the database
                 _db.Articulos.Add(nuevoArticulo);
                 await _db.SaveChangesAsync();
 
@@ -185,6 +222,7 @@ namespace ApiObjetos.Controllers
 
             return res;
         }
+
 
         [HttpPut]
         [Route("UpdateArticuloImage")]
@@ -266,7 +304,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPost]
         [Route("CreateArticuloWithImage")]
-        public async Task<Respuesta> CreateArticuloWithImage([FromForm] string nombre, [FromForm] decimal precio, [FromForm] IFormFile? imagen)
+        public async Task<Respuesta> CreateArticuloWithImage([FromForm] string nombre, [FromForm] decimal precio, [FromForm] IFormFile? imagen, [FromForm] int categoriaID)
         {
             Respuesta res = new Respuesta();
 
@@ -287,13 +325,23 @@ namespace ApiObjetos.Controllers
                     return res;
                 }
 
+                // Validar que la categoría existe
+                var categoria = await _db.CategoriasArticulos.FindAsync(categoriaID);
+                if (categoria == null)
+                {
+                    res.Ok = false;
+                    res.Message = "La categoría especificada no existe.";
+                    return res;
+                }
+
                 // Crear un nuevo objeto Articulo
                 Articulos nuevoArticulo = new Articulos
                 {
                     NombreArticulo = nombre,
                     Precio = precio,
                     Anulado = false, // Por defecto, el artículo no está anulado
-                    FechaRegistro = DateTime.Now
+                    FechaRegistro = DateTime.Now,
+                    CategoriaID = categoriaID // Asignar la categoría al artículo
                 };
 
                 // Agregar el artículo a la base de datos
@@ -322,19 +370,18 @@ namespace ApiObjetos.Controllers
                     };
 
                     // Agregar la imagen a la base de datos
-                    // Agregar la imagen a la base de datos
                     _db.Imagenes.Add(nuevaImagen);
                     await _db.SaveChangesAsync();
 
+                    // Asociar la imagen con el artículo
                     nuevoArticulo.imagenID = nuevaImagen.ImagenId;
                     _db.Articulos.Update(nuevoArticulo);
                     await _db.SaveChangesAsync();
-                    
                 }
 
                 // Responder con éxito
                 res.Ok = true;
-                res.Message = "Artículo creado con imagen correctamente.";
+                res.Message = "Artículo creado con imagen y categoría correctamente.";
                 res.Data = nuevoArticulo;
             }
             catch (Exception ex)
@@ -345,6 +392,7 @@ namespace ApiObjetos.Controllers
 
             return res;
         }
+
         private string GetContentType(string path)
         {
             var extension = Path.GetExtension(path).ToLowerInvariant();
@@ -359,6 +407,7 @@ namespace ApiObjetos.Controllers
                 _ => "application/octet-stream", // Default content type for unknown extensions
             };
         }
+
 
 
         [HttpGet("GetImage/{idArticulo}")]

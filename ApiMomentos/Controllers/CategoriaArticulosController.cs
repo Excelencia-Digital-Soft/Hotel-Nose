@@ -22,31 +22,52 @@ namespace ApiObjetos.Controllers
 
         [HttpPost]
         [Route("CrearCategoria")]
-        public async Task<Respuesta> CrearCategoria([FromBody] CategoriasArticulos categoria)
+        public async Task<Respuesta> CrearCategoria([FromBody] CrearCategoriaDTO categoriaCreada)
         {
             Respuesta res = new Respuesta();
 
             try
             {
-                // Step 1: Check if the category name is already taken
-                if (await _db.CategoriasArticulos.AnyAsync(c => c.NombreCategoria == categoria.NombreCategoria))
+                // Step 1: Validate input
+                if (string.IsNullOrWhiteSpace(categoriaCreada.NombreCategoria))
+                {
+                    res.Ok = false;
+                    res.Message = "El nombre de la categoría no puede estar vacío.";
+                    return res;
+                }
+
+                // Step 2: Check if the category name is already taken (case-insensitive)
+                if (await _db.CategoriasArticulos
+                    .AnyAsync(c => c.NombreCategoria.ToLower() == categoriaCreada.NombreCategoria.ToLower()))
                 {
                     res.Ok = false;
                     res.Message = "Ya existe una categoría con este nombre.";
                     return res;
                 }
 
-                // Step 2: Add the new category to the database
+                // Step 3: Add the new category to the database
+                CategoriasArticulos categoria = new CategoriasArticulos
+                {
+                    NombreCategoria = categoriaCreada.NombreCategoria.Trim(),
+                    Anulado = false
+                };
                 _db.CategoriasArticulos.Add(categoria);
                 await _db.SaveChangesAsync();
 
-                // Step 3: Return success response with the created category
+                // Step 4: Return success response with the created category
                 res.Ok = true;
                 res.Message = "Categoría creada correctamente.";
-                res.Data = categoria;
+                res.Data = new
+                {
+                    categoria.CategoriaId,
+                    categoria.NombreCategoria
+                };
             }
             catch (Exception ex)
             {
+                // Log exception (optional)
+                // _logger.LogError(ex, "Error creating category");
+
                 res.Message = $"Error: {ex.Message}";
                 res.Ok = false;
             }
@@ -93,6 +114,41 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpGet]
+        [Route("GetCategorias")]
+        public async Task<Respuesta> GetCategorias()
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+
+                    var categorias = await _db.CategoriasArticulos.
+                        Where(a => a.Anulado != true)
+                        .
+                        ToListAsync();
+   
+                // Step 2: Check if any articulos were found
+                if (categorias == null || categorias.Count == 0)
+                {
+                    res.Ok = false;
+                    res.Message = "No se encontraron categorias.";
+                }
+                else
+                {
+                    res.Ok = true;
+                    res.Message = "Categorías obtenidos correctamente.";
+                    res.Data = categorias; // Return the list of articulos
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
 
         [HttpDelete]
         [Route("AnularCategoria")]
@@ -130,6 +186,11 @@ namespace ApiObjetos.Controllers
             }
 
             return res;
+        }
+
+        public class CrearCategoriaDTO
+        {
+            public string NombreCategoria { get; set; }
         }
     }
 }
