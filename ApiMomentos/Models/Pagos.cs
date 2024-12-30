@@ -22,6 +22,7 @@ public partial class Pagos
     public DateTime? fechaHora { get; set; }    
     public string? Observacion { get; set; }
     public Recargos? Recargo { get; set; }
+    public int InstitucionID { get; set; }
     public virtual Cierre? Cierre { get; set; }
     [JsonIgnore]
     public virtual MediosPago? MedioPago { get; set; }

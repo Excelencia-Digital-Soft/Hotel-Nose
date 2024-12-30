@@ -10,4 +10,5 @@ public partial class CategoriasArticulos
     public string? NombreCategoria { get; set; }
 
     public bool? Anulado { get; set; }
+    public int InstitucionID { get; set; }
 }

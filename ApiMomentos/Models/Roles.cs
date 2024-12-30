@@ -8,6 +8,7 @@ public partial class Roles
     public int RolId { get; set; }
 
     public string NombreRol { get; set; } = null!;
+    public int InstitucionID { get; set; }
 
     public virtual ICollection<Personal> Personal { get; } = new List<Personal>();
 

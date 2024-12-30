@@ -23,6 +23,7 @@ public partial class Habitaciones
     public bool? Anulado { get; set; }
 
     public int? VisitaID { get; set; }
+    public int InstitucionID { get; set; }
     [JsonIgnore]
     public virtual CategoriasHabitaciones? Categoria { get; set; }
     public virtual Visitas? Visita { get; set; }
