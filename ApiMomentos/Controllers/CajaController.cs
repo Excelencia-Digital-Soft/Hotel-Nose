@@ -17,7 +17,7 @@ namespace ApiObjetos.Controllers
             _db = db;
         }
 
-        private async Task<bool> CrearCaja(int montoInicial, string? observacion)
+        private async Task<bool> CrearCaja(int montoInicial, int institucionID, string? observacion)
         {
             Cierre nuevoCierre = new Cierre
             {
@@ -27,6 +27,7 @@ namespace ApiObjetos.Controllers
                 TotalIngresosEfectivo = 0,
                 TotalIngresosTarjeta = 0,
                 EstadoCierre = false,
+                InstitucionID = institucionID,
 
             };
             _db.Cierre.Add(nuevoCierre);
@@ -36,13 +37,13 @@ namespace ApiObjetos.Controllers
         #region Cerrar caja
         [HttpPost]
         [Route("CierreCaja")] // Paga todos los movimientos de una visita
-        public async Task<Respuesta> CierreCaja(int montoInicial, string? observacion)
+        public async Task<Respuesta> CierreCaja(int montoInicial, int institucionID, string? observacion)
         {
             Respuesta res = new Respuesta();
             try
             {
                 decimal? totalUltimoCierre = 0;
-                var ultimoCierre = await _db.Cierre.OrderBy(c => c.CierreId).LastOrDefaultAsync();
+                var ultimoCierre = await _db.Cierre.Where(c => c.InstitucionID == institucionID).OrderBy(c => c.CierreId).LastOrDefaultAsync();
                 if (ultimoCierre == null)
                 {
                     ultimoCierre = new Cierre()
@@ -80,7 +81,7 @@ namespace ApiObjetos.Controllers
 
                     }
                 await _db.SaveChangesAsync();
-                await CrearCaja(montoInicial, observacion);
+                await CrearCaja(montoInicial,institucionID, observacion);
 
 
 
@@ -127,7 +128,7 @@ namespace ApiObjetos.Controllers
         #endregion
         [HttpGet]
         [Route("GetCierresConPagos")]
-        public async Task<Respuesta> GetCierresConPagos()
+        public async Task<Respuesta> GetCierresConPagos(int institucionID)
         {
             Respuesta res = new Respuesta();
 
@@ -137,14 +138,16 @@ namespace ApiObjetos.Controllers
                 var empeños = await _db.Empeño.ToListAsync();
 
                 var cierres = await _db.Cierre
+                    .Where(c => c.InstitucionID == institucionID)
                     .Include(c => c.Pagos)
                     .ToListAsync();
 
                 List<Pagos>? pagosSinCierre = _db.Pagos != null
-                    ? await _db.Pagos.Where(p => p.CierreId == null).ToListAsync()
+                    ? await _db.Pagos.Where(p => p.CierreId == null && p.InstitucionID == institucionID).ToListAsync()
                     : new List<Pagos>();
 
                 var movimientos = await _db.Movimientos
+                    .Where(c => c.InstitucionID == institucionID)
                     .Include(m => m.Visita)
                     .ThenInclude(v => v.Reservas)
                     .ToListAsync();

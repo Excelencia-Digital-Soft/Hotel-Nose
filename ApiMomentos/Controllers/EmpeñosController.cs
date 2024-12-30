@@ -22,7 +22,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPost]
         [Route("AddEmpeno")]
-        public async Task<Respuesta> AddEmpeno(int visitaID, string detalle, double monto)
+        public async Task<Respuesta> AddEmpeno(int institucionID, int visitaID, string detalle, double monto)
         {
             Respuesta res = new Respuesta();
 
@@ -34,6 +34,7 @@ namespace ApiObjetos.Controllers
                     Detalle = detalle,
                     Monto = monto,
                     FechaRegistro = DateTime.Now, 
+                    InstitucionID = institucionID,
                     Anulado = false 
                 };
 
@@ -167,14 +168,14 @@ namespace ApiObjetos.Controllers
 
         [HttpGet]
         [Route("GetAllEmpenos")]
-        public async Task<Respuesta> GetAllEmpeno()
+        public async Task<Respuesta> GetAllEmpeno(int institucionId)
         {
             Respuesta res = new Respuesta();
 
             try
             {
                 // Get all Encargos (orders)
-                var empeños = await _db.Empeño.Where(e => (e.Anulado == false || e.Anulado == null) && e.PagoID == null).ToListAsync();
+                var empeños = await _db.Empeño.Where(e => (e.Anulado == false || e.Anulado == null) && e.PagoID == null && e.InstitucionID == institucionId).ToListAsync();
 
                 // Check if any encargos were found
                 if (empeños == null || empeños.Count == 0)

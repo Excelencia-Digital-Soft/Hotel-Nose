@@ -21,7 +21,7 @@ namespace ApiObjetos.Controllers
             [Route("CrearHabitacion")] // Crea un nuevo paciente
             [AllowAnonymous]
 
-            public async Task<Respuesta> CrearHabitacion(string nombreHabitacion, int categoriaID)
+            public async Task<Respuesta> CrearHabitacion(int institucionID, string nombreHabitacion, int categoriaID)
             {
                 Respuesta res = new Respuesta();
                 try
@@ -30,6 +30,7 @@ namespace ApiObjetos.Controllers
                     {
 
                         NombreHabitacion = nombreHabitacion,
+                        InstitucionID = institucionID,
                         CategoriaId = categoriaID,
                     };
 
@@ -86,7 +87,7 @@ namespace ApiObjetos.Controllers
         [HttpGet]
         [Route("GetHabitaciones")]
         [AllowAnonymous]
-        public async Task<Respuesta> GetHabitaciones()
+        public async Task<Respuesta> GetHabitaciones(int institucionID)
         {
             Respuesta res = new Respuesta();
             try
@@ -96,7 +97,7 @@ namespace ApiObjetos.Controllers
                     .Include(h => h.Visita)
                         .ThenInclude(v => v.Reservas) // Include all Reservas
                     .Include(h => h.Categoria)  // Include Categoria to access PrecioNormal
-                    .Where(h => h.Anulado == false)
+                    .Where(h => h.Anulado == false && h.InstitucionID == institucionID)
                     .Select(h => new
                     {
                         h.HabitacionId,
@@ -134,13 +135,13 @@ namespace ApiObjetos.Controllers
         [Route("GetCategorias")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
 
-        public async Task<Respuesta> GetCategorias()
+        public async Task<Respuesta> GetCategorias(int institucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
 
-                var Objeto = await _db.CategoriasHabitaciones.Where(c => c.Anulado == false).ToListAsync();
+                var Objeto = await _db.CategoriasHabitaciones.Where(c => c.Anulado == false && c.InstitucionID == institucionID).ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto;
                 return res;

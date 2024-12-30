@@ -49,6 +49,7 @@ namespace ApiObjetos.Controllers
                 CategoriasArticulos categoria = new CategoriasArticulos
                 {
                     NombreCategoria = categoriaCreada.NombreCategoria.Trim(),
+                    InstitucionID = categoriaCreada.InstitucionID
                     Anulado = false
                 };
                 _db.CategoriasArticulos.Add(categoria);
@@ -60,6 +61,7 @@ namespace ApiObjetos.Controllers
                 res.Data = new
                 {
                     categoria.CategoriaId,
+                    categoria.InstitucionID,
                     categoria.NombreCategoria
                 };
             }
@@ -191,6 +193,7 @@ namespace ApiObjetos.Controllers
         public class CrearCategoriaDTO
         {
             public string NombreCategoria { get; set; }
+            public int InstitucionID { get; set; }
         }
     }
 }
