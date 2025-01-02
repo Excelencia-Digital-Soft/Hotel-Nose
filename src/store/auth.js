@@ -4,7 +4,8 @@ import axiosClient from '../axiosClient';
 export const useAuthStore = defineStore('auth',{
   state:() => {
     return{
-      auth:null
+      auth:null,
+      institucionID: null,
     }
   },
   persist:true,
@@ -15,7 +16,6 @@ export const useAuthStore = defineStore('auth',{
      try{
       const res = await axiosClient.post('/api/Usuarios/Login', credentials)  
       this.auth = res.data;
-      console.log(res.data);
       return true;
      }catch(error) {
         console.error(error)

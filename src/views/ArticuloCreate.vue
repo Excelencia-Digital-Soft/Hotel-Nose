@@ -168,6 +168,10 @@
 </template>
 
 <script setup>
+import { useAuthStore } from '../store/auth';
+
+const authStore = useAuthStore();
+const institucionID = authStore.auth.institucionID;
 import { ref, onMounted, watch } from 'vue'
 import CrearCategoriaModal from '../components/CrearCategoriaModal.vue'; // Import the modal component
 import axiosClient from '../axiosClient'; // Adjust the path according to your project structure
@@ -221,8 +225,8 @@ const fetchArticulos = () => {
   console.log(selectedCategory?.value);
   const categoriaID = selectedCategory?.value || null; // Use the selected category ID if available
   const url = categoriaID
-    ? `/api/Articulos/GetArticulos?categoriaID=${categoriaID}`
-    : "/api/Articulos/GetArticulos";
+    ? `/api/Articulos/GetArticulos?institucionID=${institucionID}?categoriaID=${categoriaID}`
+    : `/api/Articulos/GetArticulos?institucionID=${institucionID}`;
 
   articulos.value = []; // Clear the articles list before fetching
 
@@ -249,7 +253,7 @@ const createArticulo = async () => {
       formData.append("precio", newArticuloPrice.value);
       formData.append("categoriaID", newArticuloCategoriaId.value);
       formData.append("imagen", newArticuloImage.value); // Agregamos la imagen al FormData
-
+      formData.append("institucionID", institucionID);
       const response = await axiosClient.post(`/api/Articulos/CreateArticuloWithImage`, formData, {
         headers: {
           "Content-Type": "multipart/form-data", // Indicar al servidor que enviamos un archivo
