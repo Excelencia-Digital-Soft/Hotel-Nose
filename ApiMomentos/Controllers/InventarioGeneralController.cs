@@ -135,7 +135,7 @@ namespace ApiObjetos.Controllers
 
         [HttpGet]
         [Route("GetInventarioGeneral")]
-        public async Task<Respuesta> GetInventarioGeneral()
+        public async Task<Respuesta> GetInventarioGeneral(int institucionID)
         {
             Respuesta res = new Respuesta();
 
@@ -143,6 +143,7 @@ namespace ApiObjetos.Controllers
             {
                 // Step 1: Retrieve all Inventarios for the specified habitacionID
                 var inventario = await _db.InventarioGeneral
+                    .Where(i => i.InstitucionID == institucionID)
                     .Include(i => i.Articulo) // Include related Articulo data
                     .Where(i => i.Articulo != null && i.Articulo.Anulado == false)
                     .ToListAsync();
@@ -171,7 +172,7 @@ namespace ApiObjetos.Controllers
 
         [HttpGet]
         [Route("CoordinarInventarioGeneral")]
-        public async Task<Respuesta> CoordinarInventarioGeneral()
+        public async Task<Respuesta> CoordinarInventarioGeneral(int institucionID)
         {
             Respuesta res = new Respuesta();
 
@@ -179,15 +180,16 @@ namespace ApiObjetos.Controllers
             {
                 // Step 1: Remove entries in `InventarioGeneral` where the associated `Articulo` has `Anulado = 1`
                 var anuladoInventarios = _db.InventarioGeneral
+                    .Where(i => i.InstitucionID == institucionID)
                     .Include(i => i.Articulo)
                     .Where(i => i.Articulo != null && i.Articulo.Anulado == true);
 
                 _db.InventarioGeneral.RemoveRange(anuladoInventarios);
 
                 // Step 2: Identify `Articulos` that are not in `InventarioGeneral`
-                var existingArticuloIds = await _db.InventarioGeneral.Select(i => i.ArticuloId).ToListAsync();
+                var existingArticuloIds = await _db.InventarioGeneral.Where(i => i.InstitucionID == institucionID).Select(i => i.ArticuloId).ToListAsync();
                 var missingArticulos = await _db.Articulos
-                    .Where(a => !existingArticuloIds.Contains(a.ArticuloId) && a.Anulado != true)
+                    .Where(a => !existingArticuloIds.Contains(a.ArticuloId) && a.Anulado != true && a.InstitucionID == institucionID)
                     .ToListAsync();
 
                 // Step 3: Add missing `Articulos` to `InventarioGeneral` with default values
