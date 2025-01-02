@@ -17,6 +17,9 @@ public partial class Egresos
 
     public int? MovimientoId { get; set; }
 
+    public int InstitucionID { get; set; }
+
+
     [JsonIgnore]
     public virtual TipoEgreso TipoEgreso { get; set; }
 

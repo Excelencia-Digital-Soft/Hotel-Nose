@@ -10,6 +10,8 @@ public partial class TipoEgreso
 
     public string Nombre { get; set; }
 
+    public int InstitucionID { get; set; }
+
     [JsonIgnore]
     public virtual ICollection<Egresos> Egresos { get; } = new List<Egresos>();
 }

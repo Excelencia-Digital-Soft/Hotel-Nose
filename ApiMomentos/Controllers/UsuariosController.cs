@@ -41,6 +41,18 @@ namespace ApiObjetos.Controllers
             return usuario;
         }
 
+        [HttpGet("institucionUsuario")]
+        public async Task<ActionResult<int>> GetInstitucionUsuario(int usuarioID, int institucionID)
+        {
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.UsuarioId == usuarioID);
+
+            if (usuario == null)
+            {
+                return NotFound();
+            }
+
+            return usuario.InstitucionID;
+        }
         [HttpPost]
         public async Task<ActionResult<Usuarios>> PostUsuario(UsuarioCreateDto usuarioDto)
         {
@@ -121,7 +133,8 @@ namespace ApiObjetos.Controllers
             var token = _jwtService.GenerateToken(usuario.UsuarioId.ToString(), usuario.Rol.NombreRol);
             return Ok(new { 
                 Token = token,
-                Rol = usuario.Rol.RolId
+                Rol = usuario.Rol.RolId,
+                InstitucionID = usuario.InstitucionID
             });
         }
 

@@ -21,6 +21,7 @@ public partial class Visitas
     public DateTime? FechaRegistro { get; set; }
 
     public bool Anulado { get; set; }
+    public int InstitucionID { get; set; }
 
     public virtual ICollection<Movimientos> Movimientos { get; } = new List<Movimientos>();
     [JsonIgnore]

@@ -342,7 +342,7 @@ namespace ApiObjetos.Controllers
                     Precio = precio,
                     Anulado = false, // Por defecto, el artículo no está anulado
                     FechaRegistro = DateTime.Now,
-                    CategoriaID = categoriaID // Asignar la categoría al artículo
+                    CategoriaID = categoriaID, // Asignar la categoría al artículo
                     InstitucionID = institucionID,
                 };
 

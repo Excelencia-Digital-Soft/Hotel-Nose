@@ -21,6 +21,7 @@ public partial class Reservas
     public int? MovimientoId { get; set; }
     public int? PromocionId { get; set; }
     public int? UsuarioId { get; set; }
+    public int InstitucionID { get; set; }
 
     public DateTime? FechaRegistro { get; set; }
 

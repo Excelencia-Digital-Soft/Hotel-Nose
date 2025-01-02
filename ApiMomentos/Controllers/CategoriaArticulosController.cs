@@ -49,7 +49,7 @@ namespace ApiObjetos.Controllers
                 CategoriasArticulos categoria = new CategoriasArticulos
                 {
                     NombreCategoria = categoriaCreada.NombreCategoria.Trim(),
-                    InstitucionID = categoriaCreada.InstitucionID
+                    InstitucionID = categoriaCreada.InstitucionID,
                     Anulado = false
                 };
                 _db.CategoriasArticulos.Add(categoria);
