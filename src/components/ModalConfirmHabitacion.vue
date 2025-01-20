@@ -6,7 +6,9 @@
           <div
             class="w-4/6 bg-surface-900 fixed top-6 flex flex-col justify-evenly items-start p-8 pb-12 rounded-3xl self-start mt-0 border-8 border-purple-300/75">
             <h2 class="text-lg font-bold text-white">Lista de Productos</h2>
-
+            <input type="text" v-model="keyword"
+          class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors mb-4 "
+          placeholder="Buscar productos" />
             <!-- Categoría de productos -->
             <div class="flex justify-between items-center mb-4">
               <label for="categoryFilter" class="text-white">Filtrar por categoría:</label>
@@ -98,6 +100,7 @@ const productos = ref([]);
 const categorias = ref([]); // Store categories with ID-to-name mapping
 let seleccionados = ref([]);
 const selectedCategory = ref(null); // Reactive variable for selected category
+const keyword = ref("");
 
 onMounted(() => {
   fetchCategorias(); // Fetch categories when the component mounts
@@ -105,14 +108,16 @@ onMounted(() => {
   console.log(props.habitacionID);
 });
 
-// Computed property to filter products by category
 const filteredProductos = computed(() => {
-  console.log(selectedCategory.value)
-  if (!selectedCategory.value) return productos.value;
-  return productos.value.filter(
-    producto => producto.categoriaID === selectedCategory.value.categoriaId
-  );
+  return productos.value.filter(producto => {
+    const matchesCategory =
+      !selectedCategory.value || producto.categoriaID === selectedCategory.value.categoriaId;
+    const matchesKeyword =
+      !keyword.value || producto.nombreArticulo.toLowerCase().includes(keyword.value.toLowerCase());
+    return matchesCategory && matchesKeyword;
+  });
 });
+
 
 
 // Dropdown options for categories
