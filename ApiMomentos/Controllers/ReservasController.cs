@@ -174,9 +174,16 @@ namespace ApiObjetos.Controllers
         public async Task<Respuesta> AnularOcupacion(int reservaId, string motivo)
         {
             Respuesta res = new Respuesta();
+            if (motivo.Length > 150)
+            {
+                res.Message = "Motivo muy largo.";
+                res.Ok = false;
+                return res;
+            }
             try
             {
                 var reserva = await _db.Reservas.FindAsync(reservaId);
+                var habitacion = await _db.Habitaciones.FirstAsync(h => h.VisitaID == reserva.VisitaId);
                 if (reserva != null && reserva.Anulado != true)
                 {
                     var Movimientos = await _db.Movimientos.Where(m => m.VisitaId == reserva.VisitaId).ToListAsync();
@@ -197,11 +204,14 @@ namespace ApiObjetos.Controllers
                         movimiento.Anulado = true;
                     }
                     reserva.Anulado = true;
-                    var habitacion = await _db.Habitaciones.FirstAsync(h => h.VisitaID == reserva.VisitaId);
                     habitacion.Disponible = true;
                     habitacion.VisitaID = null;
                     var visita = await _db.Visitas.FirstAsync(v => v.VisitaId == reserva.VisitaId);
                     visita.Anulado = true;
+                    string formattedDate = DateTime.Now.ToString("d/M/yyyy HH:mm");
+                    Registros registro = new Registros();
+                    registro.Contenido = "Se anuló la visita a la habitación " + habitacion.NombreHabitacion + " a las " + formattedDate + " por el motivo de: " + motivo;
+                    _db.Registros.Add(registro);
                     await _db.SaveChangesAsync();
                 }
                 else{

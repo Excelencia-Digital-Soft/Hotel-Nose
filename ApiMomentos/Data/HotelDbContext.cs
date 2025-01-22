@@ -74,7 +74,7 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<Imagenes> Imagenes { get; set; }
     public virtual DbSet<TipoEgreso> TipoEgreso { get; set; }
     public virtual DbSet<Egresos> Egresos { get; set; }
-
+    public virtual DbSet<Registros> Registros { get; set; }
 
 
 
@@ -681,6 +681,16 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.TipoEgresoId).HasColumnName("TipoEgresoID");
             entity.Property(e => e.Nombre)
                 .HasMaxLength(100)
+                .IsUnicode(true);
+        });
+
+        modelBuilder.Entity<Registros>(entity =>
+        {
+            entity.HasKey(e => e.RegistroID);
+
+            entity.Property(e => e.RegistroID).HasColumnName("RegistroID");
+            entity.Property(e => e.Contenido)
+                .HasMaxLength(250)
                 .IsUnicode(true);
         });
 

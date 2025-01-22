@@ -280,6 +280,49 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpDelete]
+        [Route("AnularConsumo")]
+        [AllowAnonymous]
+
+        public async Task<Respuesta> AnularConsumo(int idConsumo)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var consumo = await _db.Consumo.FirstAsync(c => c.ConsumoId == idConsumo);
+                var movimiento = await _db.Movimientos.FirstAsync(m => m.MovimientosId == consumo.MovimientosId);
+
+                if (consumo != null)
+                {
+                    movimiento.Anulado = true;
+                    consumo.Anulado = true;
+                    if (consumo.EsHabitacion == true)
+                    {
+                        var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == movimiento.HabitacionId);
+                        inventario.Cantidad += consumo.Cantidad;
+                    }
+                    else
+                    {
+                        var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i => i.ArticuloId == consumo.ArticuloId);
+                        inventarioGeneral.Cantidad += consumo.Cantidad;
+                    }
+                    await _db.SaveChangesAsync();
+                }
+                else {
+                    res.Message = "Consumo no encontrada.";
+                    res.Ok = false;
+                    return res;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                res.Ok = false;
+            }
+            res.Message = "Consumo anulado";
+            res.Ok = true;
+            return res;
+        }
 
         [HttpGet]
         [Route("GetConsumosVisita")]
