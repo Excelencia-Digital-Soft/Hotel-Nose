@@ -163,12 +163,15 @@ const confirmoEmpeno = ({ monto, detalle }) => {
   empenoMonto.value = monto;
   empenoDetalle.value = detalle;
   comentario.value = `Empeño de ${detalle} por un valor de $${monto.toFixed(2)}. ` + comentario.value;
+  showEmpenoModal.value = false;
 };
 
 const confirmoRecargo = (recargo) => {
   recargoMonto.value = recargo.monto;
   recargoDetalle.value = recargo.detalle;
   comentario.value += `Recargo por ${recargo.detalle} con un valor de $${recargo.monto.toFixed(2)}. `;
+  showRecargoModal.value = false;
+
 };
 
 const crearMovimientoAdicional = async () => {

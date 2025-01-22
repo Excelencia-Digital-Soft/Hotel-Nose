@@ -145,11 +145,21 @@
     </div>
   </div>
 </section>
-              <div class="col-span-3 flex flex-col justify-center items-center w-full">
-                <button @click="openPaymentModal" type="button" :disabled="selectedRoom.pedidosPendientes"
-                  class="btn-primary w-2/4 h-16 rounded-2xl">
-                  Desocupar Habitación
-                </button>
+<div class="col-span-3 flex justify-center items-center w-full space-x-4">
+  <button 
+    @click="toggleAnularOcupacionModal" 
+    type="button" 
+    class="btn-danger w-1/6 h-16 rounded-2xl border-l-2 border-gray-300">
+    Anular Ocupación
+  </button>
+
+  <button 
+    @click="openPaymentModal" 
+    type="button" 
+    :disabled="selectedRoom.pedidosPendientes" 
+    class="btn-primary w-2/4 h-16 rounded-2xl">
+    Desocupar Habitación
+  </button>
 
                 <!-- Conditional warning text -->
                 <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-2 text-center">
@@ -159,6 +169,9 @@
                 <ModalPagar v-if="modalPayment" :total="totalAmount" :adicional="Number(adicional)"
                   :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID"
                   @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
+
+                  <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID" 
+                  @close="modalAnular = false" />
               </div>
             </form>
             <button
@@ -180,13 +193,15 @@
 
 <script setup>
 
-import { computed } from 'vue';
+import { computed, toRaw } from 'vue';
 import { onMounted, ref, watch, onUnmounted } from 'vue';
 import axiosClient from '../axiosClient';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
 import ModalConfirm from './ModalConfirm.vue';
 import ModalConfirmHabitacion from './ModalConfirmHabitacion.vue';
+import AnularOcupacionModal from './AnularOcupacionModal.vue';
+
 import dayjs from 'dayjs';
 
 const emits = defineEmits(['close-modal', 'update-room']);
@@ -277,31 +292,6 @@ let editTagRel = {}
 let cheatRefresh = ref(false);
 let idNewTag = ref(0);
 let numeroError = ref('');
-/* const addToConsumos = (selectedItems) => {
-  // Add the selected items to the consumos list
-  selectedItems.forEach(item => {
-    const total = item.cantidad * item.precio; // Use 'precio' for total calculation
-
-    // Check if the item already exists in the consumos list
-    const existingItem = consumos.value.find(consumo => consumo.articuloId === item.articuloId);
-
-    if (existingItem) {
-      // If the item exists, update its quantity and total
-      existingItem.cantidad += item.cantidad;
-      existingItem.total += total;
-    } else {
-      // If the item does not exist, add it as a new entry
-      consumos.value.push({
-        consumoId: Date.now(), // Generate a unique ID for the consumption item
-        articuloId: item.articuloId,
-        articleName: item.nombreArticulo,
-        cantidad: item.cantidad,
-        precioUnitario: item.precio,
-        total
-      });
-    }
-  });
-}; */
 
 const agregarConsumos = (selectedItems) => {
   console.log(selectedItems);
@@ -369,6 +359,10 @@ const actualizarConsumos = () => {
 };
 const toggleModalConfirm = () => {
   modalConfirm.value = !modalConfirm.value;
+}
+
+const toggleAnularOcupacionModal= () => {
+  modalAnular.value = !modalAnular.value;
 }
 const toggleModalConfirmHabitacion = () => {
   modalConfirmHabitacion.value = !modalConfirmHabitacion.value;
@@ -456,6 +450,7 @@ let timerInterval = null;
 
 // Timer calculation logic, kept separate
 function calculateRemainingTime() {
+  if(!modalPayment.value){
   const endTime = dayjs(selectedRoom.value.FechaReserva)
     .add(selectedRoom.value.TotalHoras, 'hour')
     .add(selectedRoom.value.TotalMinutos, 'minute');
@@ -490,7 +485,7 @@ function calculateRemainingTime() {
   }
 
 
-
+  }
 }
 
 function ignorarTiempoExtra() {
@@ -519,17 +514,23 @@ import ModalPagar from './ModalPagar.vue';
 // States
 const modalPayment = ref(false);
 const totalAmount = ref(null);
+const modalAnular = ref(false);
 // Props from your existing data, for example:
 
 // Methods
 const openPaymentModal = () => {
-  totalAmount.value =
-    (Number(consumos.value.reduce((sum, consumo) => sum + consumo.total, 0)) +
-      Number(periodoCost.value))
-  console.log(totalAmount.value);
-  modalPayment.value = true;
-};
+  console.log("Se abrió");
+  if (!modalPayment.value) {
+    // Take snapshots of the current values
+    const consumosSnapshot = consumos.value.map(consumo => ({ ...consumo })); // Shallow copy
+    const periodoCostSnapshot = Number(periodoCost.value);
 
+    totalAmount.value = consumosSnapshot.reduce((sum, consumo) => sum + consumo.total, 0) + periodoCostSnapshot;
+
+    console.log("Total Amount:", totalAmount.value);
+    modalPayment.value = true; // Open the modal
+  }
+};
 const handlePaymentConfirmation = (paymentDetails) => {
   console.log('Payment Confirmed:', paymentDetails);
   modalPayment.value = false;

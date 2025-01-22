@@ -107,8 +107,8 @@
   })
 
   function updatePeriodCost() {
-    selectedRoom.value.PromocionID = selectedPromocion.value.promocionID;
   if (selectedPromocion.value) {
+    selectedRoom.value.PromocionID = selectedPromocion.value.promocionID;
     // Use the promotional rate
     hours.value = selectedPromocion.value.cantidadHoras;
     periodoCost.value = Math.round(selectedPromocion.value.tarifa * selectedPromocion.value.cantidadHoras);
