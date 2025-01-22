@@ -18,27 +18,40 @@
                   <h1 class="text-xl text-white font-bold mb-2">Consumos</h1>
                   <div class="bg-gray-800 rounded-lg p-4 h-56 overflow-y-auto">
                     <!-- Header row -->
-                    <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 text-white font-semibold mb-2">
+                    <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_auto] gap-4 text-white font-semibold mb-2">
                       <span>Producto</span>
-                      <span>Cantidad</span>
+                      <span>Cant</span>
                       <span>Precio</span>
                       <span>Origen</span>
                       <span>Total</span>
+                      <span>Borrar</span>
                     </div>
 
                     <!-- Ordered list for the consumos -->
                     <ol class="space-y-2">
-                      <li v-for="consumo in consumos" :key="consumo.consumoId"
-                        class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 bg-gray-700 p-3 rounded-md text-white">
-                        <span class="font-semibold">{{ consumo.articleName }}</span>
-                        <span class="text-sm text-gray-400">{{ consumo.cantidad }}</span>
-                        <span class="text-sm text-gray-400">${{ consumo.precioUnitario }}</span>
-                        <span class="text-sm text-gray-400">
-                          {{ consumo.esHabitacion ? 'Habitacion' : 'Inv. General' }}
-                        </span>
-                        <span class="text-sm font-bold text-green-400">${{ consumo.total }}</span>
-                      </li>
-                    </ol>
+    <li
+          v-for="consumo in consumos"
+          :key="consumo.consumoId"
+          class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 bg-gray-700 p-3 rounded-md text-white items-center"
+        >
+    <span class="font-semibold">{{ consumo.articleName }}</span>
+    <span class="text-sm text-gray-400">{{ consumo.cantidad }}</span>
+    <span class="text-sm text-gray-400">${{ consumo.precioUnitario }}</span>
+    <span class="text-sm text-gray-400">
+      {{ consumo.esHabitacion ? 'Habitacion' : 'Inv. General' }}
+    </span>
+    <span class="text-sm font-bold text-green-400">${{ consumo.total }}</span>
+
+    <!-- Cancel button with trashcan icon -->
+    <button
+      type="button"
+      class="btn-danger rounded-xl text-xl h-12 w-12 text-white flex justify-center items-center material-symbols-outlined"
+      @click="anularConsumo(consumo.consumoId)"
+    >
+      delete
+    </button>
+  </li>
+</ol>
                   </div>
                 </div>
 
@@ -308,6 +321,18 @@ const agregarConsumos = (selectedItems) => {
     });
 };
 
+const anularConsumo = (consumoId) => {
+  axiosClient.delete(
+    `/AnularConsumo?idConsumo=${consumoId}`,
+  )
+    .then(response => {
+      actualizarConsumos();
+      console.log('Consumo anulado exitosamente');
+    })
+    .catch(error => {
+      console.error('Error al agregar consumo:', error);
+    });
+};
 const agregarConsumosHabitacion = (selectedItems) => {
   console.log(selectedItems);
   axiosClient.post(
