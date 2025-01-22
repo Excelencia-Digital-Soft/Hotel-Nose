@@ -168,6 +168,58 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpDelete]
+        [Route("AnularOcupacion")]
+        [AllowAnonymous]
+        public async Task<Respuesta> AnularOcupacion(int reservaId, string motivo)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var reserva = await _db.Reservas.FindAsync(reservaId);
+                if (reserva != null && reserva.Anulado != true)
+                {
+                    var Movimientos = await _db.Movimientos.Where(m => m.VisitaId == reserva.VisitaId).ToListAsync();
+                    foreach (var movimiento in Movimientos)
+                    {
+                        var Consumos = await _db.Consumo.Where(c => c.MovimientosId == movimiento.MovimientosId).ToListAsync();
+                        foreach(var consumo in Consumos)
+                        {
+                            consumo.Anulado = true;
+                            if (consumo.EsHabitacion == true) { 
+                                var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == reserva.HabitacionId);
+                                inventario.Cantidad += consumo.Cantidad;
+                            }
+                            else { var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i => i.ArticuloId == consumo.ArticuloId);
+                                inventarioGeneral.Cantidad += consumo.Cantidad;
+                            }
+                        }
+                        movimiento.Anulado = true;
+                    }
+                    reserva.Anulado = true;
+                    var habitacion = await _db.Habitaciones.FirstAsync(h => h.VisitaID == reserva.VisitaId);
+                    habitacion.Disponible = true;
+                    habitacion.VisitaID = null;
+                    var visita = await _db.Visitas.FirstAsync(v => v.VisitaId == reserva.VisitaId);
+                    visita.Anulado = true;
+                    await _db.SaveChangesAsync();
+                }
+                else{
+                    res.Message = "Reserva no encontrada.";
+                    res.Ok = false;
+                    return res;
+                }
+            }
+            catch(Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                res.Ok = false;
+            }
+            res.Message = "Reserva anulada";
+            res.Ok = true;
+            return res;
+        }
+
         [HttpPut]
         [Route("ActualizarReservaPromocion")]
         [AllowAnonymous]
@@ -417,14 +469,16 @@ namespace ApiObjetos.Controllers
             {
                 // Find the Reserva by idReserva
                 var habitacion = await _db.Habitaciones.FindAsync(idHabitacion);
-
+                var reserva = await _db.Reservas.FirstOrDefaultAsync(r => r.VisitaId == habitacion.VisitaID);
                 // Check if the reservation exists
+
                 if (habitacion != null)
                 {
-
+                        
                         // Update the room's availability to true
                         habitacion.Disponible = true;
                         habitacion.VisitaID = null;
+                        reserva.FechaFin = DateTime.Now;
 
                     // Save the changes to the database
                     await _db.SaveChangesAsync();
