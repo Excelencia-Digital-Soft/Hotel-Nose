@@ -231,6 +231,56 @@ namespace ApiObjetos.Controllers
         }
 
         [HttpPut]
+        [Route("PausarOcupacion")]
+        [AllowAnonymous]
+        public async Task<Respuesta> PausarOcupacion(int visitaId)
+        {
+            Respuesta res = new Respuesta();
+            var reserva = await _db.Reservas.FirstAsync(r => r.VisitaId == visitaId);
+            try
+            {
+                DateTime fechaReserva = (DateTime)reserva.FechaReserva;
+                var fechaActual = (DateTime.Now - TimeSpan.FromHours((double)reserva.TotalHoras) - TimeSpan.FromMinutes((double)reserva.TotalMinutos));
+                TimeSpan timer = fechaReserva - fechaActual;
+                reserva.PausaHoras = timer.Hours;
+                reserva.PausaMinutos = timer.Minutes;
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                res.Message = "Error a la hora de pausar el timer " + ex.InnerException;
+                res.Ok = false;
+                return res;
+            }
+            res.Message = "El timer se pausó a las " + reserva.PausaHoras + ":" + reserva.PausaMinutos;
+            res.Ok = true;
+            return res;
+        }
+
+        [HttpPut]
+        [Route("RecalcularOcupacion")]
+        [AllowAnonymous]
+        public async Task<Respuesta> RecalcularOcupacion(int visitaId)
+        {
+            Respuesta res = new Respuesta();
+            var reserva = await _db.Reservas.FirstAsync(r => r.VisitaId == visitaId);
+            try
+            {
+                reserva.PausaHoras = null;
+                reserva.PausaMinutos = null;
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                res.Message = "Error a la hora de pausar el timer " + ex.InnerException;
+                res.Ok = false;
+                return res;
+            }
+            res.Message = "El timer se reanudo";
+            res.Ok = true;
+            return res;
+        }
+        [HttpPut]
         [Route("ActualizarReservaPromocion")]
         [AllowAnonymous]
         public async Task<Respuesta> ActualizarReservaPromocion(int reservaId, int? promocionId)
