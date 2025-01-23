@@ -184,7 +184,7 @@
                   @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
 
                   <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID" 
-                  @close="modalAnular = false" />
+                  @close-modal="modalAnular = false" />
               </div>
             </form>
             <button
