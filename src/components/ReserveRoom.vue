@@ -180,7 +180,7 @@
                 </p>
 
                 <ModalPagar v-if="modalPayment" :total="totalAmount" :adicional="Number(adicional)"
-                  :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID"
+                  :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID" :pausa="Pausa"
                   @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
 
                   <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID" 
@@ -251,6 +251,9 @@ onMounted(() => {
   selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
   selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono; // Safe access
   selectedRoom.value.PatenteVehiculo = props.room.visita?.patenteVehiculo; // Safe access
+  selectedRoom.value.PausaHoras = props.room.reservaActiva.pausaHoras ?? 0;
+  selectedRoom.value.PausaMinutos = props.room.reservaActiva.pausaMinutos ?? 0;
+
   console.log(selectedRoom.value)
   actualizarConsumos();
   document.body.style.overflow = 'hidden';
@@ -301,6 +304,7 @@ const hours = ref(0);
 const minutes = ref(0);
 const selectedTags = ref([]);
 const consumos = ref([]);
+const Pausa = ref(false)
 let editTagRel = {}
 let cheatRefresh = ref(false);
 let idNewTag = ref(0);
@@ -467,7 +471,6 @@ const endRoomReserve = () => {
       console.error(error);
     });
 }
-// LOGICA TIMER
 
 // LOGICA TIMER
 const formattedTime = ref('');
@@ -476,6 +479,7 @@ let timerInterval = null;
 // Timer calculation logic, kept separate
 function calculateRemainingTime() {
   if(!modalPayment.value){
+  if(selectedRoom.value.PausaHoras == 0 && selectedRoom.value.PausaMinutos == 0){
   const endTime = dayjs(selectedRoom.value.FechaReserva)
     .add(selectedRoom.value.TotalHoras, 'hour')
     .add(selectedRoom.value.TotalMinutos, 'minute');
@@ -494,9 +498,10 @@ function calculateRemainingTime() {
       formattedTime.value = `-12:00`;
       return;
     }
-    const hours = Math.floor(Math.abs(diffInMinutes) / 60) * (isOvertime ? -1 : 1);
+    const hours = Math.floor(Math.abs(diffInMinutes) / 60);
     const minutes = Math.abs(diffInMinutes) % 60;
-    formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    if(isOvertime) formattedTime.value = `-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    else formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 
 
   } else if (isOvertime) {
@@ -509,8 +514,30 @@ function calculateRemainingTime() {
     formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   }
 
+  }
+  else{
+    const absolutePausaHoras = Math.abs(selectedRoom.value.PausaHoras);
+    const absolutePausaMinutos = Math.abs(selectedRoom.value.PausaMinutos);
+
+    if (selectedRoom.value.PausaHoras < 0 || selectedRoom.value.PausaMinutos < 0)
+  {
+    Pausa.value = true;
+    if (ignorarTiempo.value == false) {
+      overtime.value = absolutePausaHoras * 60 + absolutePausaMinutos;
+      formattedTime.value = `-${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`
+  }
+  else{
+    formattedTime.value = `00:00`
+    overtime.value = 0
+  }
+  }
+  else if(selectedRoom.value.PausaHoras > 0 || selectedRoom.value.PausaMinutos > 0){
+    Pausa.value = true;
+    formattedTime.value = `${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`
 
   }
+  }
+}
 }
 
 function ignorarTiempoExtra() {
