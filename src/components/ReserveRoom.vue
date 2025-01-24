@@ -8,7 +8,8 @@
             :class="selectedRoom.Disponible ? 'w-2/4 h-3/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900' : ' w-3/4 h-[90%] flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900'">
             <i class="fa-thin fa-circle-xmark"></i>
             <!-- Modal Content -->
-            <h1 class="absolute self-center text-2xl w-1/3 text-center lexend-exa font-bold mt-5 mb-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
+            <h1
+              class="absolute self-center text-2xl w-1/3 text-center lexend-exa font-bold mt-5 mb-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
               {{ selectedRoom.nombreHabitacion }}
             </h1>
 
@@ -18,51 +19,47 @@
                   <h1 class="text-xl text-white font-bold mb-2">Consumos</h1>
                   <div class="bg-gray-800 rounded-lg p-4 h-56 overflow-y-auto">
                     <!-- Header row -->
-                    <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_auto] gap-4 text-white font-semibold mb-2">
+                    <div class="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_auto] gap-3  text-white text-xs font-semibold mb-2">
                       <span>Producto</span>
                       <span>Cant</span>
                       <span>Precio</span>
-                      <span>Origen</span>
+                      <span>Orig</span>
                       <span>Total</span>
                       <span>Borrar</span>
                     </div>
 
                     <!-- Ordered list for the consumos -->
-                    <ol class="space-y-2">
-    <li
-          v-for="consumo in consumos"
-          :key="consumo.consumoId"
-          class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 bg-gray-700 p-3 rounded-md text-white items-center"
-        >
-    <span class="font-semibold">{{ consumo.articleName }}</span>
-    <span class="text-sm text-gray-400">{{ consumo.cantidad }}</span>
-    <span class="text-sm text-gray-400">${{ consumo.precioUnitario }}</span>
-    <span class="text-sm text-gray-400">
-      {{ consumo.esHabitacion ? 'Habitacion' : 'Inv. General' }}
-    </span>
-    <span class="text-sm font-bold text-green-400">${{ consumo.total }}</span>
+                    <ul class="space-y-2">
+                      <li v-for="consumo in consumos" :key="consumo.consumoId" class="grid grid-cols-6  bg-gray-700 p-2 rounded-md text-white items-center">
+                        <span class="text-xs w-16 break-words font-semibold">{{ consumo.articleName }}</span>
+                        <span class="text-xs text-center text-gray-400">{{ consumo.cantidad }}</span>
+                        <span class="text-xs text-center text-gray-400">${{ consumo.precioUnitario }}</span>
+                        <span class="text-xs text-center text-gray-400">
+                          {{ consumo.esHabitacion ? 'Hab' : 'Inv' }}
+                        </span>
+                        <span class="text-xs font-bold text-green-400">${{ consumo.total }}</span>
 
-    <!-- Cancel button with trashcan icon -->
-    <button
-      type="button"
-      class="btn-danger rounded-xl text-xl h-12 w-12 text-white flex justify-center items-center material-symbols-outlined"
-      @click="anularConsumo(consumo.consumoId)"
-    >
-      delete
-    </button>
-  </li>
-</ol>
+                        <!-- Cancel button with trashcan icon -->
+                        <button type="button"
+                          class="btn-danger rounded-xl text-xl h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
+                          @click="anularConsumo(consumo.consumoId)">
+                          delete
+                        </button>
+                      </li>
+                    </ul>
                   </div>
                 </div>
 
-                <div class="flex">                <button type="button" @click="toggleModalConfirm()"
-                  class="btn-primary w-full h-8 mr-2 p-1 text-sm  rounded-3xl mt-4">
-                  Consumo general
-                </button>
-                <button type="button" @click="toggleModalConfirmHabitacion()"
-                  class="btn-primary w-full h-8 text-sm p-2   rounded-3xl mt-4">
-                  Consumo habitación
-                </button></div>
+                <div class="flex">
+                  <button type="button" @click="toggleModalConfirm()"
+                    class="btn-primary w-full h-8 mr-2 p-1 text-sm  rounded-3xl mt-4">
+                    Consumo general
+                  </button>
+                  <button type="button" @click="toggleModalConfirmHabitacion()"
+                    class="btn-primary w-full h-8 text-sm p-2   rounded-3xl mt-4">
+                    Consumo habitación
+                  </button>
+                </div>
 
 
               </section>
@@ -83,10 +80,10 @@
                     'box-shadow inset 0 2px 5px rgba(0, 0, 0, 0.2)': ignorarTiempo  // Inner shadow effect
                   }
                 ]" :style="{
-    border: '4px solid transparent',
-    borderImage: 'linear-gradient(to right, #667eea, #764ba2, #ff7e5f) 1',
-    borderRadius: '9999px', // Ensure rounded corners
-  }">
+                  border: '4px solid transparent',
+                  borderImage: 'linear-gradient(to right, #667eea, #764ba2, #ff7e5f) 1',
+                  borderRadius: '9999px', // Ensure rounded corners
+                }">
                   Ignorar tiempo extra
                 </button>
               </section>
@@ -108,7 +105,7 @@
                   <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
                   <input type="text"
                     class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                     v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
+                    v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
                 </div>
               </section>
               <section v-if="!selectedRoom.Disponible">
@@ -140,39 +137,34 @@
               </section>
               <section></section>
               <section v-if="!selectedRoom.Disponible">
-  <div class="card flex flex-col ml-4 flex-wrap justify-center gap-4">
-    <div class="mt-4 w-full">
-      <label class="text-xs font-semibold text-white">Seleccionar Promoción</label>
-      <select v-model="selectedPromocion" class="w-full p-2 mt-2 rounded-lg">
-        <!-- Default 'Sin Promoción' option -->
-        <option :value="null">Sin Promoción</option>
+                <div class="card flex flex-col ml-4 flex-wrap justify-center gap-4">
+                  <div class="mt-4 w-full">
+                    <label class="text-xs font-semibold text-white">Seleccionar Promoción</label>
+                    <select v-model="selectedPromocion" class="w-full p-2 mt-2 rounded-lg">
+                      <!-- Default 'Sin Promoción' option -->
+                      <option :value="null">Sin Promoción</option>
 
-        <!-- Display promotions if available -->
-        <option v-for="promo in promociones" :key="promo.promocionID" :value="promo">
-          {{ promo.detalle }}
-        </option>
+                      <!-- Display promotions if available -->
+                      <option v-for="promo in promociones" :key="promo.promocionID" :value="promo">
+                        {{ promo.detalle }}
+                      </option>
 
-        <!-- Show this message if there are no promociones -->
-        <option v-if="promociones.length === 0" disabled>Sin promociones disponibles</option>
-      </select>
-    </div>
-  </div>
-</section>
-<div class="col-span-3 flex justify-center items-center w-full space-x-4">
-  <button 
-    @click="toggleAnularOcupacionModal" 
-    type="button" 
-    class="btn-danger w-1/6 h-16 rounded-2xl border-l-2 border-gray-300">
-    Anular Ocupación
-  </button>
+                      <!-- Show this message if there are no promociones -->
+                      <option v-if="promociones.length === 0" disabled>Sin promociones disponibles</option>
+                    </select>
+                  </div>
+                </div>
+              </section>
+              <div class="col-span-3 flex justify-center items-center w-full space-x-4">
+                <button @click="toggleAnularOcupacionModal" type="button"
+                  class="btn-danger w-1/6 h-16 rounded-2xl border-l-2 border-gray-300">
+                  Anular Ocupación
+                </button>
 
-  <button 
-    @click="openPaymentModal" 
-    type="button" 
-    :disabled="selectedRoom.pedidosPendientes" 
-    class="btn-primary w-2/4 h-16 rounded-2xl">
-    Desocupar Habitación
-  </button>
+                <button @click="openPaymentModal" type="button" :disabled="selectedRoom.pedidosPendientes"
+                  class="btn-primary w-2/4 h-16 rounded-2xl">
+                  Desocupar Habitación
+                </button>
 
                 <!-- Conditional warning text -->
                 <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-2 text-center">
@@ -183,7 +175,7 @@
                   :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID" :pausa="Pausa"
                   @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
 
-                  <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID" 
+                <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID"
                   @close-modal="modalAnular = false" />
               </div>
             </form>
@@ -232,7 +224,7 @@ const periodoCost = computed(() => {
 
 const adicional = computed(() => {
   console.log(overtime.value)
-  return (overtime.value * ((promocionActiva.value && selectedPromocion.value ? selectedPromocion.value.tarifa : selectedRoom.value.Precio)/ 60)).toFixed(2); // Calculates overtime charge
+  return (overtime.value * ((promocionActiva.value && selectedPromocion.value ? selectedPromocion.value.tarifa : selectedRoom.value.Precio) / 60)).toFixed(2); // Calculates overtime charge
 });
 
 onMounted(() => {
@@ -246,8 +238,8 @@ onMounted(() => {
   selectedRoom.value.Precio = props.room.precio;
   selectedRoom.value.PromocionID = props.room.visita.reservaActiva.promocionId;
   selectedRoom.value.pedidosPendientes = props.room.pedidosPendientes,
-  selectedRoom.value.ReservaID = props.room.visita.reservaActiva.reservaId;
-    selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
+    selectedRoom.value.ReservaID = props.room.visita.reservaActiva.reservaId;
+  selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
   selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
   selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono; // Safe access
   selectedRoom.value.PatenteVehiculo = props.room.visita?.patenteVehiculo; // Safe access
@@ -390,7 +382,7 @@ const toggleModalConfirm = () => {
   modalConfirm.value = !modalConfirm.value;
 }
 
-const toggleAnularOcupacionModal= () => {
+const toggleAnularOcupacionModal = () => {
   modalAnular.value = !modalAnular.value;
 }
 const toggleModalConfirmHabitacion = () => {
@@ -478,66 +470,65 @@ let timerInterval = null;
 
 // Timer calculation logic, kept separate
 function calculateRemainingTime() {
-  if(!modalPayment.value){
-  if(selectedRoom.value.PausaHoras == 0 && selectedRoom.value.PausaMinutos == 0){
-  const endTime = dayjs(selectedRoom.value.FechaReserva)
-    .add(selectedRoom.value.TotalHoras, 'hour')
-    .add(selectedRoom.value.TotalMinutos, 'minute');
+  if (!modalPayment.value) {
+    if (selectedRoom.value.PausaHoras == 0 && selectedRoom.value.PausaMinutos == 0) {
+      const endTime = dayjs(selectedRoom.value.FechaReserva)
+        .add(selectedRoom.value.TotalHoras, 'hour')
+        .add(selectedRoom.value.TotalMinutos, 'minute');
 
-  const now = dayjs();
-  const diffInMinutes = endTime.diff(now, 'minute');
-  const isOvertime = diffInMinutes < 0;
-  if (isOvertime && ignorarTiempo.value == false) {
-    if (diffInMinutes >= -12 * 60) {
-      overtime.value = diffInMinutes * (-1);
-      console.log(overtime.value);
+      const now = dayjs();
+      const diffInMinutes = endTime.diff(now, 'minute');
+      const isOvertime = diffInMinutes < 0;
+      if (isOvertime && ignorarTiempo.value == false) {
+        if (diffInMinutes >= -12 * 60) {
+          overtime.value = diffInMinutes * (-1);
+          console.log(overtime.value);
+        }
+        if (diffInMinutes < -12 * 60) {
+          overtime.value = 720;
+          clearInterval(timerInterval);
+          formattedTime.value = `-12:00`;
+          return;
+        }
+        const hours = Math.floor(Math.abs(diffInMinutes) / 60);
+        const minutes = Math.abs(diffInMinutes) % 60;
+        if (isOvertime) formattedTime.value = `-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        else formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+
+
+      } else if (isOvertime) {
+        formattedTime.value = `00:00`
+        overtime.value = 0
+      }
+      else {
+        const hours = Math.floor(Math.abs(diffInMinutes) / 60);
+        const minutes = Math.abs(diffInMinutes) % 60;
+        formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      }
+
     }
-    if (diffInMinutes < -12 * 60) {
-      overtime.value = 720;
-      clearInterval(timerInterval);
-      formattedTime.value = `-12:00`;
-      return;
+    else {
+      const absolutePausaHoras = Math.abs(selectedRoom.value.PausaHoras);
+      const absolutePausaMinutos = Math.abs(selectedRoom.value.PausaMinutos);
+
+      if (selectedRoom.value.PausaHoras < 0 || selectedRoom.value.PausaMinutos < 0) {
+        Pausa.value = true;
+        if (ignorarTiempo.value == false) {
+          overtime.value = absolutePausaHoras * 60 + absolutePausaMinutos;
+          formattedTime.value = `-${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`
+        }
+        else {
+          formattedTime.value = `00:00`
+          overtime.value = 0
+        }
+      }
+      else if (selectedRoom.value.PausaHoras > 0 || selectedRoom.value.PausaMinutos > 0) {
+        Pausa.value = true;
+        formattedTime.value = `${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`
+
+      }
     }
-    const hours = Math.floor(Math.abs(diffInMinutes) / 60);
-    const minutes = Math.abs(diffInMinutes) % 60;
-    if(isOvertime) formattedTime.value = `-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-    else formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-
-
-  } else if (isOvertime) {
-    formattedTime.value = `00:00`
-    overtime.value = 0
   }
-  else {
-    const hours = Math.floor(Math.abs(diffInMinutes) / 60);
-    const minutes = Math.abs(diffInMinutes) % 60;
-    formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-  }
-
-  }
-  else{
-    const absolutePausaHoras = Math.abs(selectedRoom.value.PausaHoras);
-    const absolutePausaMinutos = Math.abs(selectedRoom.value.PausaMinutos);
-
-    if (selectedRoom.value.PausaHoras < 0 || selectedRoom.value.PausaMinutos < 0)
-  {
-    Pausa.value = true;
-    if (ignorarTiempo.value == false) {
-      overtime.value = absolutePausaHoras * 60 + absolutePausaMinutos;
-      formattedTime.value = `-${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`
-  }
-  else{
-    formattedTime.value = `00:00`
-    overtime.value = 0
-  }
-  }
-  else if(selectedRoom.value.PausaHoras > 0 || selectedRoom.value.PausaMinutos > 0){
-    Pausa.value = true;
-    formattedTime.value = `${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`
-
-  }
-  }
-}
 }
 
 function ignorarTiempoExtra() {
@@ -603,9 +594,9 @@ onMounted(async () => {
   }
   console.log("Puede no haber nada")
 
-    if(selectedRoom.value.PromocionID != null){
+  if (selectedRoom.value.PromocionID != null) {
 
-      const matchedPromo = promociones.value.find(
+    const matchedPromo = promociones.value.find(
       (promo) => promo.promocionID === selectedRoom.value.PromocionID
     );
 
@@ -613,18 +604,18 @@ onMounted(async () => {
       selectedPromocion.value = matchedPromo; // Set the selected promotion
       promocionActiva.value = true;
     }
-    }
-    document.body.style.overflow = 'hidden';
-  })
-  
+  }
+  document.body.style.overflow = 'hidden';
+})
 
-  watch(selectedPromocion, (newVal) => {
-      promocionActiva.value = newVal !== null; // True if a promo is selected
-      props.room.visita.reservaActiva.promocionId = selectedPromocion.value.promocionID;
-      actualizarPromocion();
-    });
 
-    const actualizarPromocion = () => {
+watch(selectedPromocion, (newVal) => {
+  promocionActiva.value = newVal !== null; // True if a promo is selected
+  props.room.visita.reservaActiva.promocionId = selectedPromocion.value.promocionID;
+  actualizarPromocion();
+});
+
+const actualizarPromocion = () => {
   if (!selectedRoom.value || !selectedRoom.value.ReservaID) {
     console.error("Reserva or HabitacionID is not set.");
     return;
@@ -635,12 +626,12 @@ onMounted(async () => {
 
   // PUT request to update the promotion for the reservation
   axiosClient
-  .put('/ActualizarReservaPromocion', null, {
-    params: {
-      reservaId,   // Pass reservaId as a query parameter
-      promocionId, // Pass promocionId as a query parameter (or null if no promo is selected)
-    },
-  })
+    .put('/ActualizarReservaPromocion', null, {
+      params: {
+        reservaId,   // Pass reservaId as a query parameter
+        promocionId, // Pass promocionId as a query parameter (or null if no promo is selected)
+      },
+    })
     .then((response) => {
       console.log("Promoción actualizada correctamente:", response.data);
 
