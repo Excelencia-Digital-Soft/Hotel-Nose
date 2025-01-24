@@ -4,12 +4,12 @@
     <div class="flex space-x-4 mb-6">
       <!-- Render categories -->
       <button 
-        v-for="category in categories" 
-        :key="category.categoriaId" 
-        @click="filterByCategory(category.categoriaId)"
-        :class="['py-2 px-4 rounded', selectedCategory === category.categoriaId ? 'bg-blue-500 text-white' : 'bg-gray-300']">
-        {{ category.nombreCategoria }}
-      </button>
+    v-for="category in categories" 
+    :key="category.categoriaId" 
+    @click="selectedCategory === category.categoriaId ? toggleEditarCategoriaModal(category.categoriaId) : filterByCategory(category.categoriaId)"
+    :class="['py-2 px-4 rounded', selectedCategory === category.categoriaId ? 'bg-blue-500 text-white' : 'bg-gray-300']">
+    {{ category.nombreCategoria }}
+  </button>
 
       <!-- Add Category Button -->
       <button 
@@ -19,7 +19,16 @@
       </button>
     </div>
 
-    
+    <div 
+  v-if="showEditarCategoriaModal" 
+  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
+>
+  <EditarCategoriaModal 
+    :categoria="selectedCategory" 
+    @close-modal="toggleEditarCategoriaModal(null)" 
+    @category-updated="fetchCategories"
+  />
+    </div>    
     
     <!-- Form to Create a New Room -->
     <div class="mb-6">
@@ -170,9 +179,11 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import CrearCategoriaModal from '../components/CrearCategoriaModal.vue'; // Import the modal component
+import EditarCategoriaModal from '../components/EditarCategoriaModal.vue'; 
 import axiosClient from '../axiosClient'; // Adjust the path according to your project structure
 const updateArticuloImage = ref(null);
 const showCreateCategoryModal = ref(false);
+const showEditarCategoriaModal = ref(false);
 const articulos = ref([]);
 const newArticuloCategoriaId = ref(1);  // Store the selected category ID
 const categories = ref([{ categoriaId: null, nombreCategoria: "Todos" }]); // Add "Todos" as default
@@ -362,6 +373,11 @@ const fetchCategories = () => {
 const toggleCreateCategoryModal = () => {
   showCreateCategoryModal.value = !showCreateCategoryModal.value;
 };
+
+const toggleEditarCategoriaModal = () => {
+  showEditarCategoriaModal.value = !showEditarCategoriaModal.value;
+};
+
 
 watch(selectedCategory, (newCategory) => {
   const categoriaId = newCategory === "Todos" ? null : categories.value.find(c => c.nombreCategoria === newCategory)?.categoriaId;
