@@ -1,10 +1,13 @@
 <template>
-  <div class="inventory-container p-8">
-    <h2 class="text-lg font-bold text-gray-800">Inventory Management</h2>
+  <div class="inventory-container p-4">
+    <h2 class="text-lg font-bold text-white text-center mb-4">Inventory Management</h2>
+    <input type="text" v-model="keyword"
+          class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors mb-4 "
+          placeholder="Buscar productos" />
     <div v-if="isLoading" class="text-gray-600">Loading inventory...</div>
     <div v-else class="inventory-list grid grid-cols-1 md:grid-cols-2 gap-4">
       <div
-        v-for="item in inventory"
+        v-for="item in computedinventory"
         :key="item.articuloId"
         class="inventory-item bg-white p-4 shadow rounded-lg flex justify-between items-center"
       >
@@ -42,11 +45,15 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref,computed } from 'vue';
 import axiosClient from '../axiosClient';
 
 const inventory = ref([]);
 const isLoading = ref(true);
+
+const keyword = ref("");
+
+const computedinventory = computed(() => inventory.value.filter(i => i.articulo.nombreArticulo.toLowerCase().includes(keyword.value.toLowerCase())))
 
 // Fetch all inventory items
 const fetchInventory = async () => {

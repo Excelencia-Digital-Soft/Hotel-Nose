@@ -1,93 +1,81 @@
 <template>
-  <div class="p-4">
+  <div class="px-12 py-6">
     <!-- Categories Tab -->
-    <div class="flex space-x-4 mb-6">
-      <!-- Render categories -->
-      <button 
-    v-for="category in categories" 
-    :key="category.categoriaId" 
-    @click="selectedCategory === category.categoriaId ? toggleEditarCategoriaModal(category.categoriaId) : filterByCategory(category.categoriaId)"
-    :class="['py-2 px-4 rounded', selectedCategory === category.categoriaId ? 'bg-blue-500 text-white' : 'bg-gray-300']">
-    {{ category.nombreCategoria }}
-  </button>
 
-      <!-- Add Category Button -->
-      <button 
-        @click="toggleCreateCategoryModal" 
-        class="py-2 px-4 rounded bg-green-500 text-white flex items-center justify-center">
-        <span class="text-xl font-bold">+</span>
-      </button>
+    <div v-if="showEditarCategoriaModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      <EditarCategoriaModal :categoria="selectedCategory" @close-modal="toggleEditarCategoriaModal(null)"
+        @category-updated="fetchCategories" />
     </div>
 
-    <div 
-  v-if="showEditarCategoriaModal" 
-  class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
->
-  <EditarCategoriaModal 
-    :categoria="selectedCategory" 
-    @close-modal="toggleEditarCategoriaModal(null)" 
-    @category-updated="fetchCategories"
-  />
-    </div>    
-    
-    <!-- Form to Create a New Room -->
     <div class="mb-6">
-      <h2 class="text-xl text-white lexend-exa font-bold mb-4">Crear artículo</h2>
-      <form @submit.prevent="createArticulo">
-        <div class="mb-4">
-          <label class="block text-white text-sm font-bold mb-2" for="articuloName">Nombre:</label>
-          <input 
-            v-model="newArticuloName"
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="articuloName" 
-            type="text" 
-            placeholder="Nombre del artículo" 
-            required>
+      
+      <form @submit.prevent="createArticulo" class="relative pt-16 w-full grid grid-cols-1 sm:grid-cols-2 place-items-center gap-1 border-2 p-8 rounded-3xl border-secondary-600 ">
+        <h2 class="absolute top-2 text-xl text-white lexend-exa text-center font-bold mb-4">CREAR ARTICULOS</h2>
+        <div class="flex flex-col w-full justify-center">
+          <div class="mb-4">
+            <label class="block text-white text-sm font-bold mb-2" for="articuloName">Nombre:</label>
+            <input v-model="newArticuloName"
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="articuloName" type="text" placeholder="Nombre del artículo" required>
+          </div>
+          <div class="mb-4">
+            <label class="block text-white text-sm font-bold mb-2">Precio:</label>
+            <input v-model="newArticuloPrice"
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="articuloPrice" type="text" placeholder="0" required>
+          </div>
+          <div class="mb-4">
+            <label class="block text-white text-sm font-bold mb-2" for="categoriaSelect">Categoría:</label>
+            <select v-model="newArticuloCategoriaId"
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="categoriaSelect" required>
+              <option v-for="category in categories" :key="category.categoriaId" :value="category.categoriaId">
+                {{ category.nombreCategoria }}
+              </option>
+            </select>
+          </div>
+
         </div>
-        <div class="mb-4">
-          <label class="block text-white text-sm font-bold mb-2">Precio:</label>
-          <input 
-            v-model="newArticuloPrice"
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="articuloPrice" 
-            type="text" 
-            placeholder="0" 
-            required>
-        </div>
-        <div class="mb-4">
-          <label class="block text-white text-sm font-bold mb-2" for="categoriaSelect">Categoría:</label>
-          <select 
-            v-model="newArticuloCategoriaId"
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-            id="categoriaSelect" 
-            required>
-            <option v-for="category in categories" :key="category.categoriaId" :value="category.categoriaId">
-              {{ category.nombreCategoria }}
-            </option>
-          </select>
-        </div>
-        <div class="mb-4">
-          <label class="block text-white text-sm font-bold mb-2">Imagen:</label>
-          <input 
-            @change="onImageChange"
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="articuloImage" 
-            type="file" 
-            accept="image/*">
-        </div>
-        <!-- Preview Section -->
-        <div v-if="previewImage" class="mb-4">
-          <label class="block text-white text-sm font-bold mb-2">Vista previa:</label>
-          <img :src="previewImage" alt="Preview" class="w-32 h-32 object-cover border rounded shadow" />
-        </div>
-        <button 
-          class="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-700" 
-          type="submit">
+        <section class="grid place-items-start rounded-xl mb-6 px-24">
+          <!-- Input de archivo -->
+          <div class="mb-4 grid ">
+            <label class="block text-white text-sm font-bold mb-2">Imagen:</label>
+            <input @change="onImageChange"
+              class=" shadow flex rounded w-56 sm:w-72 h-full file:p-4 file:bg-accent-300 file:text-white file:hover:bg-accent-200 file:hover:cursor-pointer file:rounded-xl text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="articuloImage" type="file" accept="image/*" />
+          </div>
+
+          <!-- Vista previa de la imagen -->
+          <div class="mb-4">
+            <label class="block text-white text-sm font-bold mb-2">Vista previa:</label>
+            <img :src="previewImage" alt="Preview" class="w-80 md:w-96 h-44 object-cover rounded" />
+          </div>
+        </section>
+        <button class="w-full sm:col-span-2 sm:w-2/5 bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-700" type="submit">
           Crear
         </button>
       </form>
-    </div>
 
+    </div>
+    <section class="flex mb-4">
+      <div class="flex space-x-4 bg-surface-700 rounded-l-xl h-24 p-4 overflow-x-auto snap-x snap-center">
+        <!-- Render categories -->
+        <button v-for="category in categories" :key="category.categoriaId"
+          @click="selectedCategory === category.categoriaId ? toggleEditarCategoriaModal(category.categoriaId) : filterByCategory(category.categoriaId)"
+          :class="['py-2 px-2 snap-start rounded hover:bg-secondary-100 flex items-center', selectedCategory === category.categoriaId ? 'bg-secondary-500 text-white' : 'bg-gray-300']">
+          {{ category.nombreCategoria }}
+          <span v-if="selectedCategory === category.categoriaId" class="material-symbols-outlined ml-2">edit
+          </span>
+        </button>
+
+        <!-- Add Category Button -->
+
+      </div>
+      <button @click="toggleCreateCategoryModal"
+        class="btn-third py-2 px-4 rounded-r-xl bg-primary-500 shadow-lg hover:shadow-primary-500 text-white flex items-center justify-center ">
+        <span class="text-xl font-bold">+</span>
+      </button>
+    </section>
     <!-- List of Articulos -->
     <div>
       <h2 class="text-xl text-white lexend-exa font-bold mb-4">Articulos</h2>
@@ -124,54 +112,51 @@
         </div>
       </div>
       <div v-if="showUpdateModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-  <div class="bg-white p-6 rounded-lg shadow-lg text-center">
-    <h2 class="text-xl text-black lexend-exa font-bold mb-4">Actualizar artículo</h2>
-    <form @submit.prevent="updateArticulo(articuloToUpdate?.articuloId)">
-      <div class="mb-4">
-        <label class="block text-black text-sm font-bold mb-2" for="articuloName">Nombre:</label>
-        <input v-model="updateArticuloName"
-          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          id="articuloName" type="text" placeholder="Nombre del articulo" required>
-      </div>
-      <div class="mb-4">
-        <label class="block text-black text-sm font-bold mb-2">Precio:</label>
-        <input v-model="updateArticuloPrice"
-          class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          id="articuloPrice" type="text" placeholder="0" required>
+        <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+          <h2 class="text-xl text-black lexend-exa font-bold mb-4">Actualizar artículo</h2>
+          <form @submit.prevent="updateArticulo(articuloToUpdate?.articuloId)">
+            <div class="mb-4">
+              <label class="block text-black text-sm font-bold mb-2" for="articuloName">Nombre:</label>
+              <input v-model="updateArticuloName"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="articuloName" type="text" placeholder="Nombre del articulo" required>
+            </div>
+            <div class="mb-4">
+              <label class="block text-black text-sm font-bold mb-2">Precio:</label>
+              <input v-model="updateArticuloPrice"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                id="articuloPrice" type="text" placeholder="0" required>
+            </div>
+
+            <!-- Category Dropdown -->
+            <div class="mb-4">
+              <label class="block text-black text-sm font-bold mb-2" for="categoria">Categoría:</label>
+              <select v-model="updateArticuloCategoriaId"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                <option v-for="categoria in categories" :key="categoria.categoriaId" :value="categoria.categoriaId">{{
+                  categoria.nombreCategoria }}</option>
+              </select>
+            </div>
+
+            <div class="mb-4">
+              <label class="block text-black text-sm font-bold mb-2">Imagen (opcional):</label>
+              <input ref="updateArticuloImage" class="block w-full text-sm text-gray-500" type="file" accept="image/*">
+            </div>
+
+            <div class="mt-6">
+              <button type="submit"
+                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                Actualizar
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
-      <!-- Category Dropdown -->
-      <div class="mb-4">
-  <label class="block text-black text-sm font-bold mb-2" for="categoria">Categoría:</label>
-  <select v-model="updateArticuloCategoriaId" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-    <option v-for="categoria in categories" :key="categoria.categoriaId" :value="categoria.categoriaId">{{ categoria.nombreCategoria }}</option>
-  </select>
-</div>
-
-      <div class="mb-4">
-        <label class="block text-black text-sm font-bold mb-2">Imagen (opcional):</label>
-        <input ref="updateArticuloImage" class="block w-full text-sm text-gray-500" type="file" accept="image/*">
+      <!-- Create Category Modal -->
+      <div v-if="showCreateCategoryModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+        <CrearCategoriaModal @close-modal="toggleCreateCategoryModal" @category-created="fetchCategories" />
       </div>
-
-      <div class="mt-6">
-        <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-          Actualizar
-        </button>
-      </div>
-    </form>
-  </div>
-</div>
-
-          <!-- Create Category Modal -->
-    <div 
-      v-if="showCreateCategoryModal"
-      class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50"
-    >
-      <CrearCategoriaModal 
-        @close-modal="toggleCreateCategoryModal"
-        @category-created="fetchCategories"
-      />
-    </div>
     </div>
   </div>
 </template>
@@ -179,7 +164,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import CrearCategoriaModal from '../components/CrearCategoriaModal.vue'; // Import the modal component
-import EditarCategoriaModal from '../components/EditarCategoriaModal.vue'; 
+import EditarCategoriaModal from '../components/EditarCategoriaModal.vue';
 import axiosClient from '../axiosClient'; // Adjust the path according to your project structure
 const updateArticuloImage = ref(null);
 const showCreateCategoryModal = ref(false);
@@ -197,11 +182,18 @@ const showDeleteModal = ref(false);
 const showUpdateModal = ref(null);
 const articuloToDelete = ref(null);
 const articuloToUpdate = ref(null);
+const defaultImage = "https://placehold.co/400"; // URL de la imagen por defecto
+const previewImage = ref(defaultImage); // Inicia con la imagen por defecto
 const newArticuloImage = ref(null);
 
+// Manejar el cambio de imagen
 const onImageChange = (event) => {
-  if (event.target.files && event.target.files[0]) {
-    newArticuloImage.value = event.target.files[0];
+  const file = event.target.files[0]; // Obtener el archivo
+  if (file) {
+    newArticuloImage.value = file; // Guardar el archivo en la variable
+    previewImage.value = URL.createObjectURL(file); // Generar la URL para la vista previa
+  } else {
+    previewImage.value = defaultImage; // Restaurar la imagen por defecto
   }
 };
 function confirmDeleteArticulo(articulo) {
