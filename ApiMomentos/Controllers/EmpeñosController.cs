@@ -55,6 +55,49 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpPost]
+        [Route("ActualizarEmpeño")]
+        public async Task<Respuesta> ActualizarEmpeño(int empeñoID, double nuevoMonto)
+        {
+            Respuesta res = new Respuesta();
+
+            try
+            {
+                // Find the existing Empeño record by its ID
+                var empeñoExistente = await _db.Empeño.FindAsync(empeñoID);
+
+                if (empeñoExistente == null)
+                {
+                    // If the Empeño record is not found, return an error response
+                    res.Ok = false;
+                    res.Message = "Empeño not found.";
+                    return res;
+                }
+
+                // Update the Monto field
+                empeñoExistente.Monto = nuevoMonto;
+
+                // Optionally, update the FechaRegistro to reflect the modification date
+                empeñoExistente.FechaRegistro = DateTime.Now;
+
+                // Mark the entity as modified and save changes
+                _db.Empeño.Update(empeñoExistente);
+                await _db.SaveChangesAsync();
+
+                // Set response on success
+                res.Ok = true;
+                res.Message = "Empeño updated successfully.";
+                res.Data = empeñoExistente; // Optionally return the updated Empeño
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
         [HttpGet]
         [Route("GetEmpeno")]
         public async Task<Respuesta> GetEmpeno(int empeñoID)
@@ -86,7 +129,7 @@ namespace ApiObjetos.Controllers
         }
         [HttpPost]
         [Route("PagarEmpeno")]
-        public async Task<Respuesta> PagarEmpeno(int empeñoID, decimal montoEfectivo = 0, decimal montoTarjeta = 0, decimal montoBillVirt = 0)
+        public async Task<Respuesta> PagarEmpeno(int empeñoID, string observacion, decimal montoEfectivo = 0, decimal montoTarjeta = 0, decimal montoBillVirt = 0)
         {
             Respuesta res = new Respuesta();
 
@@ -134,7 +177,7 @@ namespace ApiObjetos.Controllers
                     MontoBillVirt = montoBillVirt,
                     MedioPagoId = 1, // assuming the MedioPagoId = 1 for now
                     fechaHora = DateTime.Now, // current time as payment time
-                    Observacion = "Pago de empeño correspondiente a la visita " + empeño.VisitaID,
+                    Observacion = observacion,
                 };
 
                 // Add the new Pago to the context
