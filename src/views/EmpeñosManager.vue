@@ -33,6 +33,7 @@
   <ModalPagarEmpeño
     :empenoId="selectedEmpeño.empeñoID"
     :total="selectedEmpeño.monto"
+    :visitaId="selectedEmpeño.visitaID"
     @close-modal="toggleModal">
   </ModalPagarEmpeño>
   </div>
