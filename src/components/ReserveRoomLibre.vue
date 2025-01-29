@@ -102,24 +102,19 @@
     console.error('Error fetching promociones:', error);
   }
   console.log("Se aplicó");
-  updatePeriodCost(); // Initial calculation    setCurrentDateTime();
+  updatePeriodoCost(); // Initial calculation    setCurrentDateTime();
     document.body.style.overflow = 'hidden';
   })
 
-  function updatePeriodCost() {
-  if (selectedPromocion.value) {
-    selectedRoom.value.PromocionID = selectedPromocion.value.promocionID;
-    // Use the promotional rate
+
+
+  watch([selectedPromocion], () => {
+    if(selectedPromocion.value != null){
     hours.value = selectedPromocion.value.cantidadHoras;
     periodoCost.value = Math.round(selectedPromocion.value.tarifa * selectedPromocion.value.cantidadHoras);
-  } else {
-    // Use the default room price
-    const totalHours = hours.value + (minutes.value / 60);
-    periodoCost.value = Math.round(selectedRoom.value.Precio * totalHours);
-  }
-}
-
-  watch([hours, minutes, selectedPromocion], updatePeriodCost);
+    }
+    else updatePeriodoCost();
+  });
 
   let selectedRoom = ref({
     HabitacionID: 0,
@@ -194,11 +189,17 @@
   const updatePeriodoCost = () => {
       const totalHours = hours || 0;
       const totalMinutes = minutes || 0;
+      console.log(selectedPromocion.value);
+      if(selectedPromocion.value == null){
       const hourlyRate = selectedRoom.value.Precio || 0;
       const totalPeriod = totalHours.value + totalMinutes.value / 60;
       periodoCost.value = (totalPeriod * hourlyRate).toFixed(2);
       console.log(totalPeriod)
       console.log(totalHours.value, totalMinutes.value, hourlyRate)
+      }
+      else{
+        periodoCost.value = Math.round(selectedPromocion.value.tarifa * totalHours.value + selectedPromocion.value.tarifa * totalMinutes.value / 60 );
+      console.log(periodoCost)}
     };
 
     watch([hours, minutes], updatePeriodoCost);

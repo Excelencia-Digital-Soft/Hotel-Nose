@@ -11,7 +11,7 @@
   @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-lime-200 via-lime-300 to-lime-200  text-white hover:shadow-lg hover:shadow-lime-500/50 hover:from-lime-400 hover:via-lime-400 hover:to-lime-400 transition duration-150 ease-in-out md:ease-in border-lime-100;
 }
 .btn-third {
-  @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-blue-300 via-blue-400 to-blue-300  text-white hover:shadow-lg hover:shadow-blue-500/50 hover:from-blue-400 hover:via-blue-400 hover:to-blue-400 transition duration-150 ease-in-out md:ease-in border-blue-100;
+  @apply flex justify-center items-center shadow-lg bg-gradient-to-r from-primary-300 via-primary-400 to-primary-300  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-400 hover:via-primary-400 hover:to-primary-400 transition duration-150 ease-in-out md:ease-in ;
 }
 
 .btn-big {

@@ -90,6 +90,18 @@
         </tbody>
       </table>
       <div class="flex justify-end space-x-4">
+        <button 
+          v-if="!props.pausa" 
+          @click.prevent="PausarTimer" 
+          class="btn-danger">
+          Pausar
+        </button>
+        <button 
+          v-if="props.pausa" 
+          @click.prevent="RecalcularTimer" 
+          class="btn-danger">
+          Recalcular
+        </button>
         <button @click="$emit('close')" class="btn-danger">Cancelar</button>
         <button @click.prevent="toggleEmpenoModal" class="btn-third">Empeño</button>
         <button @click.prevent="toggleRecargoModal" class="btn-third">Recargo</button>
@@ -126,6 +138,7 @@ const props = defineProps({
   adicional: { type: Number, required: true },
   visitaId: { type: Number, required: true },
   habitacionId: { type: Number, required: true },
+  pausa: {type: Boolean, required: true},
 });
 
 const descuento = ref(0);
@@ -235,6 +248,25 @@ const finalizarReserva = async (idHabitacion) => {
     window.location.reload();
   } catch (error) {
     console.error('Error al finalizar reserva:', error);
+  }
+}
+
+
+const PausarTimer = async () => {
+  try {
+    await axiosClient.put(`/PausarOcupacion?visitaId=${props.visitaId}`);
+    window.location.reload();
+  } catch (error) {
+    console.error('Error al pausar la reserva:', error);
+  }
+}
+
+const RecalcularTimer = async () => {
+  try {
+    await axiosClient.put(`/RecalcularOcupacion?visitaId=${props.visitaId}`);
+    window.location.reload();
+  } catch (error) {
+    console.error('Error al reanudar la reserva:', error);
   }
 };
 </script>
