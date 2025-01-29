@@ -166,14 +166,13 @@ namespace ApiObjetos.Controllers
                         {
                             var movimiento = movimientos.FirstOrDefault(m => m.PagoId == pago.PagoId);
                             var visita = movimiento?.Visita;
-                            var horaIngreso = visita?.FechaPrimerIngreso;
                             var horaSalida = pago.fechaHora;
-                            var reservaActiva = visita?.Reservas?.FirstOrDefault(r => r.FechaFin == null);
-                            var habitacionNombre = reservaActiva != null
-                                ? habitaciones.FirstOrDefault(h => h.HabitacionId == reservaActiva.HabitacionId)?.NombreHabitacion
+                            var ultimaReserva = visita?.Reservas?.FirstOrDefault();
+                            var habitacionNombre = ultimaReserva != null
+                                ? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)?.NombreHabitacion
                                 : null;
-                            var horaEntrada = reservaActiva != null
-                            ? reservaActiva.FechaReserva
+                            var horaEntrada = ultimaReserva != null
+                            ? ultimaReserva.FechaReserva
                             : null;
                             pagosConDetalle.Add(new
                             {
@@ -224,7 +223,8 @@ namespace ApiObjetos.Controllers
                 // Handle Pagos without associated Cierres
                 var PagosSinCierreReturn = new List<object>();
 
-
+            
+            
                 // Handle Pagos without associated Cierres
                 foreach (var pago in pagosSinCierre)
                 {
@@ -233,13 +233,12 @@ namespace ApiObjetos.Controllers
                     if (empeño == null) {
                         var movimiento = movimientos.FirstOrDefault(m => m.PagoId == pago.PagoId);
                         var visita = movimiento?.Visita;
-                    var hora = visita?.FechaPrimerIngreso;
-                    var reservaActiva = visita?.Reservas?.FirstOrDefault(r => r.FechaFin == null);
-                    var habitacionNombre = reservaActiva != null
-                        ? habitaciones.FirstOrDefault(h => h.HabitacionId == reservaActiva.HabitacionId)?.NombreHabitacion
-                        : null;
-                        var horaEntrada = reservaActiva != null
-                        ? reservaActiva.FechaReserva
+                        var ultimaReserva = visita?.Reservas?.FirstOrDefault();
+                        var habitacionNombre = ultimaReserva != null
+                            ? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)?.NombreHabitacion
+                            : null;
+                        var horaEntrada = ultimaReserva != null
+                        ? ultimaReserva.FechaReserva
                         : null;
                         PagosSinCierreReturn.Add(new
                         {
