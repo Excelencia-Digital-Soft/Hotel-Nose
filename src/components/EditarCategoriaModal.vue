@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white p-6 rounded-lg shadow-lg text-center w-96">
+  <div class="bg-white p-6 rounded-lg shadow-lg text-center w-96 z-20">
     <h3 class="text-xl font-bold mb-4">Editar categoría</h3>
     <form @submit.prevent="editCategory">
       <div class="mb-4">

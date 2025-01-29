@@ -1,168 +1,195 @@
 <template>
   <div class="px-12 py-6">
-    <!-- Categories Tab -->
 
-    <div v-if="showEditarCategoriaModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <EditarCategoriaModal :categoria="selectedCategory" @close-modal="toggleEditarCategoriaModal(null)"
-        @category-updated="fetchCategories" />
-    </div>
+    <div class="flex flex-col items-center ">
 
-    <div class="mb-6">
-      
-      <form @submit.prevent="createArticulo" class="relative pt-16 w-full grid grid-cols-1 sm:grid-cols-2 place-items-center gap-1 border-2 p-8 rounded-3xl border-secondary-600 ">
-        <h2 class="absolute top-2 text-xl text-white lexend-exa text-center font-bold mb-4">CREAR ARTICULOS</h2>
-        <div class="flex flex-col w-full justify-center">
-          <div class="mb-4">
-            <label class="block text-white text-sm font-bold mb-2" for="articuloName">Nombre:</label>
-            <input v-model="newArticuloName"
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="articuloName" type="text" placeholder="Nombre del artículo" required>
-          </div>
-          <div class="mb-4">
-            <label class="block text-white text-sm font-bold mb-2">Precio:</label>
-            <input v-model="newArticuloPrice"
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="articuloPrice" type="text" placeholder="0" required>
-          </div>
-          <div class="mb-4">
-            <label class="block text-white text-sm font-bold mb-2" for="categoriaSelect">Categoría:</label>
-            <select v-model="newArticuloCategoriaId"
-              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="categoriaSelect" required>
-              <option v-for="category in categories" :key="category.categoriaId" :value="category.categoriaId">
-                {{ category.nombreCategoria }}
-              </option>
-            </select>
-          </div>
-
-        </div>
-        <section class="grid place-items-start rounded-xl mb-6 px-24">
-          <!-- Input de archivo -->
-          <div class="mb-4 grid ">
-            <label class="block text-white text-sm font-bold mb-2">Imagen:</label>
-            <input @change="onImageChange"
-              class=" shadow flex rounded w-56 sm:w-72 h-full file:p-4 file:bg-accent-300 file:text-white file:hover:bg-accent-200 file:hover:cursor-pointer file:rounded-xl text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-              id="articuloImage" type="file" accept="image/*" />
-          </div>
-
-          <!-- Vista previa de la imagen -->
-          <div class="mb-4">
-            <label class="block text-white text-sm font-bold mb-2">Vista previa:</label>
-            <img :src="previewImage" alt="Preview" class="w-80 md:w-96 h-44 object-cover rounded" />
-          </div>
-        </section>
-        <button class="w-full sm:col-span-2 sm:w-2/5 bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-700" type="submit">
-          Crear
-        </button>
-      </form>
-
-    </div>
-    <section class="flex mb-4">
-      <div class="flex space-x-4 bg-surface-700 rounded-l-xl h-24 p-4 overflow-x-auto snap-x snap-center">
-        <!-- Render categories -->
-        <button v-for="category in categories" :key="category.categoriaId"
-          @click="selectedCategory === category.categoriaId ? toggleEditarCategoriaModal(category.categoriaId) : filterByCategory(category.categoriaId)"
-          :class="['py-2 px-2 snap-start rounded hover:bg-secondary-100 flex items-center', selectedCategory === category.categoriaId ? 'bg-secondary-500 text-white' : 'bg-gray-300']">
-          {{ category.nombreCategoria }}
-          <span v-if="selectedCategory === category.categoriaId" class="material-symbols-outlined ml-2">edit
+      <!-- Botón o contenedor inicial -->
+      <div
+        class="flex justify-center  items-center border-2 border-primary-500 rounded-3xl cursor-pointer overflow-hidden mb-6"
+        :class="{
+          'w-full sm:w-2/4 h-12': !isFormOpen,
+          'w-full h-lvh sm:h-screen': isFormOpen,
+        }" @click="toggleForm" :style="animationStyle">
+        <!-- Botón texto -->
+        <span v-if="!isFormOpen"
+          class=" whitespace-nowrap flex text-white lexend-exa font-bold sm:text-xl items-center "> CREAR NUEVO
+          ARTICULO<span class="material-symbols-outlined text-3xl">
+            keyboard_arrow_down
           </span>
-        </button>
+        </span>
 
-        <!-- Add Category Button -->
+        <!-- Formulario con animación -->
+        <transition name="fade">
+          <form v-if="isFormOpen" @submit.prevent="createArticulo"
+            class=" inset-0  flex flex-col items-center justify-center   bg-neutral-900 text-white p-8 rounded-3xl">
+            <h2 class="text-2xl font-bold mb-4">CREAR ARTICULOS</h2>
+            <div class="w-full grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div class="mb-4">
+                <label class="block text-white text-sm font-bold mb-2" for="articuloName">Nombre:</label>
+                <input v-model="newArticuloName"
+                  class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="articuloName" type="text" placeholder="Nombre del artículo" required />
+              </div>
+              <div class="mb-4">
+                <label class="block text-white text-sm font-bold mb-2">Precio:</label>
+                <input v-model="newArticuloPrice"
+                  class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="articuloPrice" type="text" placeholder="0" required />
+              </div>
+              <div class="mb-4">
+                <label class="block text-white text-sm font-bold mb-2" for="categoriaSelect">Categoría:</label>
+                <select v-model="newArticuloCategoriaId"
+                  class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="categoriaSelect" required>
+                  <option v-for="category in categories" :key="category.categoriaId" :value="category.categoriaId">
+                    {{ category.nombreCategoria }}
+                  </option>
+                </select>
+              </div>
+            </div>
 
-      </div>
-      <button @click="toggleCreateCategoryModal"
-        class="btn-third py-2 px-4 rounded-r-xl bg-primary-500 shadow-lg hover:shadow-primary-500 text-white flex items-center justify-center ">
-        <span class="text-xl font-bold">+</span>
-      </button>
-    </section>
-    <!-- List of Articulos -->
-    <div>
-      <h2 class="text-xl text-white lexend-exa font-bold mb-4">Articulos</h2>
-      <div class="grid grid-cols-3 gap-4">
-        <div v-for="articulo in articulos" :key="articulo.articuloId"
-          class="p-4 border-4 bg-surface-800 rounded-md text-lg font-semibold shadow-sm text-white text-center">
-          {{ articulo.nombreArticulo }}
-          <button @click="confirmDeleteArticulo(articulo)"
-            class="bg-red-500 text-white px-2 py-1 mt-2 rounded hover:bg-red-700">
-            Borrar
-          </button>
-
-          <button @click="confirmUpdateArticulo(articulo)"
-            class="bg-blue-500 text-white px-2 py-1 mt-2 rounded hover:bg-blue-700">
-            Actualizar
-          </button>
-        </div>
-      </div>
-      <div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-
-        <div class="bg-white p-6 rounded-lg shadow-lg text-center">
-          <h3 class="text-xl font-bold mb-4">
-            ¿Estás seguro de eliminar el articulo {{ articuloToDelete?.nombreArticulo }}?
-          </h3>
-          <div class="flex justify-center space-x-4">
-            <button @click="deleteArticulo(articuloToDelete?.articuloId)"
-              class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
-              Eliminar
+            <section class="flex flex-col justify-start rounded-xl mb-6 sm:px-16">
+              <img class="w-full h-72 mb-3 object-cover rounded-3xl shadow-neutral-900 shadow-lg" :src="imagePreview"
+                alt="SET IMAGE" />
+              <label class="text-white text-sm font-bold mb-2" for="ImageFile">Imagen:</label>
+              <input
+                class="w-full text-white file:flex file:justify-center file:cursor-pointer file:w-full  file:py-2 mb-4 file:border-2 file:font-semibold file:bg-neutral-900  file:border-primary-500 file:text-white file:hover:bg-primary-600     file:hover:text-white file:hover:shadow-lg  file:hover:border-violet-200 file:rounded-3xl file:transition file:duration-150 file:ease-out file:md:ease-in custom-file-input"
+                type="file" @change="handleFileUpload($event, 'ImageFile')" />
+            </section>
+            <button type="submit"
+              class="w-full sm:w-3/5 text-white flex justify-center cursor-pointer py-2 mb-4 border-2 font-semibold bg-neutral-900 border-primary-500 hover:bg-primary-600 hover:text-white hover:shadow-lg hover:border-violet-200 rounded-3xl transition duration-150 ease-out md:ease-in">
+              CREAR NUEVO ARTICULO
             </button>
-            <button @click="cancelDeleteArticulo" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">
-              Cancelar
+
+          </form>
+        </transition>
+      </div>
+      <span v-if="isFormOpen" @click="toggleclose()"
+        class="absolute cursor-pointer h-12 w-12 rounded-full right-4 btn-danger flex text-white lexend-exa  font-bold text-xl items-center ">
+        X
+      </span>
+    </div>
+    <div class="border-4 flex flex-col items-center border-primary-500 p-4 rounded-3xl">
+      <h2 class="text-xl text-white lexend-exa font-bold mb-4">Articulos</h2>
+      
+      <section class="flex mb-4 max-w-full">
+        <div class="flex space-x-4 bg-surface-700 rounded-l-xl h-24 p-4 overflow-x-auto snap-x snap-center">
+          <!-- Render categories --><div class="text-white">filtrar por:</div> 
+          <button v-for="category in categories" :key="category.categoriaId"
+            @click="selectedCategory === category.categoriaId ? toggleEditarCategoriaModal(category.categoriaId) : filterByCategory(category.categoriaId)"
+            :class="['py-2 px-2 snap-start rounded hover:bg-secondary-100 flex items-center', selectedCategory === category.categoriaId ? 'bg-secondary-500 text-white' : 'bg-gray-300']">
+            {{ category.nombreCategoria }}
+            <span v-if="selectedCategory === category.categoriaId && category.categoriaId!=null && category.categoriaId!=1" class="material-symbols-outlined ml-2">edit
+            </span>
+          </button>
+
+          <!-- Add Category Button -->
+
+        </div>
+        <button @click="toggleCreateCategoryModal"
+          class="btn-third py-2 px-4 rounded-r-xl bg-primary-500 shadow-lg hover:shadow-primary-500 text-white flex items-center justify-center ">
+          <span class="text-xl font-bold">+</span>
+        </button>
+      </section>
+      
+      <input type="text" v-model="keyword"
+        class="bg-primary-500 focus:ring-white border-2 sm:w-3/5 focus hover:shadow-lg hover:shadow-pink-500/50 border-purple-200 rounded-xl transition-colors mb-4 placeholder:text-white"
+        placeholder="Buscar Articulos" />
+      <!-- List of Articulos -->
+      <div>
+        <h2 class="text-xl text-white lexend-exa font-bold mb-4">Listado de articulos</h2>
+        <div class="grid sm:grid-cols-3 gap-4">
+          <div v-for="articulo in computedArticulos" :key="articulo.articuloId"
+            class="p-4 border-4 bg-neutral-800 rounded-md grid text-lg font-semibold shadow-sm text-white text-center">
+            {{ articulo.nombreArticulo }}
+
+
+            <button @click="confirmUpdateArticulo(articulo)"
+              class="bg-blue-500 text-white px-2 py-1 mt-2 rounded hover:bg-blue-700">
+              Actualizar
+            </button>
+            <button @click="confirmDeleteArticulo(articulo)"
+              class="bg-red-500 text-white px-2 py-1 mt-2 rounded hover:bg-red-700">
+              Borrar
             </button>
           </div>
         </div>
-      </div>
-      <div v-if="showUpdateModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-        <div class="bg-white p-6 rounded-lg shadow-lg text-center">
-          <h2 class="text-xl text-black lexend-exa font-bold mb-4">Actualizar artículo</h2>
-          <form @submit.prevent="updateArticulo(articuloToUpdate?.articuloId)">
-            <div class="mb-4">
-              <label class="block text-black text-sm font-bold mb-2" for="articuloName">Nombre:</label>
-              <input v-model="updateArticuloName"
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="articuloName" type="text" placeholder="Nombre del articulo" required>
-            </div>
-            <div class="mb-4">
-              <label class="block text-black text-sm font-bold mb-2">Precio:</label>
-              <input v-model="updateArticuloPrice"
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                id="articuloPrice" type="text" placeholder="0" required>
-            </div>
+        <div v-if="showDeleteModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
 
-            <!-- Category Dropdown -->
-            <div class="mb-4">
-              <label class="block text-black text-sm font-bold mb-2" for="categoria">Categoría:</label>
-              <select v-model="updateArticuloCategoriaId"
-                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                <option v-for="categoria in categories" :key="categoria.categoriaId" :value="categoria.categoriaId">{{
-                  categoria.nombreCategoria }}</option>
-              </select>
-            </div>
-
-            <div class="mb-4">
-              <label class="block text-black text-sm font-bold mb-2">Imagen (opcional):</label>
-              <input ref="updateArticuloImage" class="block w-full text-sm text-gray-500" type="file" accept="image/*">
-            </div>
-
-            <div class="mt-6">
-              <button type="submit"
-                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                Actualizar
+          <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+            <h3 class="text-xl font-bold mb-4">
+              ¿Estás seguro de eliminar el articulo {{ articuloToDelete?.nombreArticulo }}?
+            </h3>
+            <div class="flex justify-center space-x-4">
+              <button @click="deleteArticulo(articuloToDelete?.articuloId)"
+                class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
+                Eliminar
+              </button>
+              <button @click="cancelDeleteArticulo" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">
+                Cancelar
               </button>
             </div>
-          </form>
+          </div>
+        </div>
+        <div v-if="showUpdateModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+            <h2 class="text-xl text-black lexend-exa font-bold mb-4">Actualizar artículo</h2>
+            <form @submit.prevent="updateArticulo(articuloToUpdate?.articuloId)">
+              <div class="mb-4">
+                <label class="block text-black text-sm font-bold mb-2" for="articuloName">Nombre:</label>
+                <input v-model="updateArticuloName"
+                  class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="articuloName" type="text" placeholder="Nombre del articulo" required>
+              </div>
+              <div class="mb-4">
+                <label class="block text-black text-sm font-bold mb-2">Precio:</label>
+                <input v-model="updateArticuloPrice"
+                  class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                  id="articuloPrice" type="text" placeholder="0" required>
+              </div>
+
+              <!-- Category Dropdown -->
+              <div class="mb-4">
+                <label class="block text-black text-sm font-bold mb-2" for="categoria">Categoría:</label>
+                <select v-model="updateArticuloCategoriaId"
+                  class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                  <option v-for="categoria in categories" :key="categoria.categoriaId" :value="categoria.categoriaId">{{
+                    categoria.nombreCategoria }}</option>
+                </select>
+              </div>
+
+              <div class="mb-4">
+                <label class="block text-black text-sm font-bold mb-2">Imagen (opcional):</label>
+                <input ref="updateArticuloImage" class="block w-full text-sm text-gray-500" type="file"
+                  accept="image/*">
+              </div>
+
+              <div class="mt-6">
+                <button type="submit"
+                  class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                  Actualizar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Create Category Modal -->
+        <div v-if="showCreateCategoryModal"
+          class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <CrearCategoriaModal @close-modal="toggleCreateCategoryModal" @category-created="fetchCategories" />
         </div>
       </div>
-
-      <!-- Create Category Modal -->
-      <div v-if="showCreateCategoryModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-        <CrearCategoriaModal @close-modal="toggleCreateCategoryModal" @category-created="fetchCategories" />
-      </div>
+    </div>
+    <div v-if="showEditarCategoriaModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+      <EditarCategoriaModal :categoria="selectedCategory" @close-modal="toggleEditarCategoriaModal('close')"
+        @category-updated="fetchCategories" />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import CrearCategoriaModal from '../components/CrearCategoriaModal.vue'; // Import the modal component
 import EditarCategoriaModal from '../components/EditarCategoriaModal.vue';
 import axiosClient from '../axiosClient'; // Adjust the path according to your project structure
@@ -185,17 +212,46 @@ const articuloToUpdate = ref(null);
 const defaultImage = "https://placehold.co/400"; // URL de la imagen por defecto
 const previewImage = ref(defaultImage); // Inicia con la imagen por defecto
 const newArticuloImage = ref(null);
+const keyword = ref("");
 
-// Manejar el cambio de imagen
-const onImageChange = (event) => {
-  const file = event.target.files[0]; // Obtener el archivo
+const computedArticulos = computed(() => articulos.value.filter(i => i.nombreArticulo.toLowerCase().includes(keyword.value.toLowerCase())))
+
+const imagePreview = ref('https://static.vecteezy.com/system/resources/previews/004/141/669/original/no-photo-or-blank-image-icon-loading-images-or-missing-image-mark-image-not-available-or-image-coming-soon-sign-simple-nature-silhouette-in-frame-isolated-illustration-vector.jpg');
+
+// const imprimeOBJECTSET = () => {
+//   console.log(nuevoSet.value)
+// }
+// Estado para abrir y cerrar el formulario
+const isFormOpen = ref(false);
+const animationStyle = computed(() => ({
+  transition: "all 0.5s ease-in-out",
+}));
+
+// Funciones
+const toggleForm = () => {
+  if (isFormOpen.value == false) { isFormOpen.value = true };
+};
+const toggleclose = () => {
+  isFormOpen.value = false;
+};
+const handleFileUpload = (event) => {
+  const file = event.target.files[0];
   if (file) {
-    newArticuloImage.value = file; // Guardar el archivo en la variable
-    previewImage.value = URL.createObjectURL(file); // Generar la URL para la vista previa
-  } else {
-    previewImage.value = defaultImage; // Restaurar la imagen por defecto
+    newArticuloImage.value = file;
+    imagePreview.value = URL.createObjectURL(file);
   }
 };
+
+// // Manejar el cambio de imagen
+// const onImageChange = (event) => {
+//   const file = event.target.files[0]; // Obtener el archivo
+//   if (file) {
+//     newArticuloImage.value = file; // Guardar el archivo en la variable
+//     previewImage.value = URL.createObjectURL(file); // Generar la URL para la vista previa
+//   } else {
+//     previewImage.value = defaultImage; // Restaurar la imagen por defecto
+//   }
+// };
 function confirmDeleteArticulo(articulo) {
   articuloToDelete.value = articulo;
   showDeleteModal.value = true;
@@ -233,6 +289,7 @@ const fetchArticulos = () => {
     .then(({ data }) => {
       if (data && data.ok) {
         articulos.value = data.data;
+        console.log(articulos.value)
       } else {
         console.error("Failed to fetch articulos:", data.message);
       }
@@ -366,7 +423,8 @@ const toggleCreateCategoryModal = () => {
   showCreateCategoryModal.value = !showCreateCategoryModal.value;
 };
 
-const toggleEditarCategoriaModal = () => {
+const toggleEditarCategoriaModal = (id) => {
+  if (id == null || id == 1) return;
   showEditarCategoriaModal.value = !showEditarCategoriaModal.value;
 };
 
@@ -384,5 +442,14 @@ const filterByCategory = (categoriaID) => {
 </script>
 
 <style scoped>
-/* Add custom styles if needed */
+/* Animación de fade */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
 </style>
