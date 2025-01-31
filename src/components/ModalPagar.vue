@@ -1,8 +1,10 @@
 <template>
   <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center">
-    <div class="bg-white rounded-lg p-8 w-1/3">
+    <div class="relative bg-white rounded-lg p-8 w-1/3">
+      <button @click="$emit('close')" class="absolute top-2 right-2 btn-danger p-4 rounded-md">X</button>
+
       <h2 class="text-xl font-bold mb-4">Detalles de Pago</h2>
-      <table class="w-full mb-4 text-left">
+      <table class=" w-full mb-4 text-left">
         <tbody>
           <tr>
             <td class="p-2 font-semibold">Total</td>
@@ -93,25 +95,31 @@
         <button 
           v-if="!props.pausa" 
           @click.prevent="PausarTimer" 
-          class="btn-danger">
+          class="btn-secondary p-2 rounded-md"><span class="material-symbols-outlined">
+pause
+</span>
           Pausar
         </button>
         <button 
           v-if="props.pausa" 
           @click.prevent="RecalcularTimer" 
-          class="btn-danger">
-          Recalcular
+          class="btn-secondary p-2 rounded-md">
+          Recalcular<span class="material-symbols-outlined">
+play_arrow
+</span>
         </button>
-        <button @click="$emit('close')" class="btn-danger">Cancelar</button>
-        <button @click.prevent="toggleEmpenoModal" class="btn-third">Empeño</button>
-        <button @click.prevent="toggleRecargoModal" class="btn-third">Recargo</button>
-        <button 
+        
+        <button @click.prevent="toggleEmpenoModal" class="btn-third p-2 rounded-md">Empeño</button>
+        <button @click.prevent="toggleRecargoModal" class="btn-third p-2 rounded-md">Recargo</button>
+
+      </div>
+      <button 
           :disabled="faltaPorPagar !== 0"
           @click.prevent="crearMovimientoAdicional"
-          class="btn-primary">
+          class="w-full mt-4 rounded-xl p-2"
+          :class="!isButtonDisabled ? ' btn-primary' : 'btn-disabled'">
           Confirmar
         </button>
-      </div>
     </div>
 
     <RecargoModal

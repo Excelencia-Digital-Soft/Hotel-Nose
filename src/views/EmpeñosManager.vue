@@ -34,7 +34,7 @@
     :empenoId="selectedEmpeño.empeñoID"
     :total="selectedEmpeño.monto"
     :visitaId="selectedEmpeño.visitaID"
-    @close-modal="toggleModal">
+    @close="toggleModal">
   </ModalPagarEmpeño>
   </div>
     </div>

@@ -61,7 +61,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import axiosClient from '../axiosClient';
-
+const emit = defineEmits(["close"])
 const props = defineProps({
   total: { type: Number, required: true },
   empenoId: { type: Number, required: true },

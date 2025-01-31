@@ -40,7 +40,7 @@
 
       <!-- Add New Promotion Box -->
       <div 
-        class="border border-white rounded p-6 flex items-center justify-center bg-neutral-700 hover:bg-neutral-600 cursor-pointer"
+        class="border btn-primary border-white rounded p-6 flex items-center justify-center bg-neutral-700 hover:bg-neutral-600 cursor-pointer"
         @click="openCreateModal"
       >
         <span class="text-3xl font-bold">+</span>

@@ -8,12 +8,12 @@
     </section>
     <ul v-show="showResults" id="optionsSelect" class="menu-column absolute w-40 z-20 text-sm right-2 mt-2">
       <li>
-        <router-link :to="{ name: 'CierresManager' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
+        <router-link v-if="authStore.auth && (authStore.auth.rol === 1 || authStore.auth.rol === 2 || authStore.auth.rol === 3 )" :to="{ name: 'CierresManager' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
           Cierres
         </router-link>
       </li>
       <li>
-        <router-link :to="{ name: 'PromocionesManager' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
+        <router-link v-if="authStore.auth && (authStore.auth.rol === 1 || authStore.auth.rol === 2)" :to="{ name: 'PromocionesManager' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
           Promociones
         </router-link>
       </li>
@@ -25,6 +25,9 @@
 <script setup>
 import { ref, onUnmounted } from 'vue';
 import { UserCircleIcon } from '@heroicons/vue/20/solid';
+import { useAuthStore } from "../../store/auth.js";
+
+const authStore = useAuthStore();
 
 const showResults = ref(false);
 const toggleResults4 = () => {
