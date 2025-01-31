@@ -9,7 +9,7 @@
             <i class="fa-thin fa-circle-xmark"></i>
             <!-- Modal Content -->
             <button
-              class=" text-xl  w-14 h-14 text-white items-end btn-primary rounded-full transition duration-150 ease-out md:ease-in"
+              class="absolute top-2 right-2 text-xl  w-14 h-14 text-white items-end btn-danger rounded-full transition duration-150 ease-out md:ease-in"
               @click="$emit('close-modal')">X</button>
             <h1
               class="absolute self-center text-2xl w-1/3 text-center lexend-exa font-bold mt-5 mb-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
