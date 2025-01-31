@@ -76,7 +76,6 @@
       if (response.data.ok) {
         cierres.value = response.data.data.cierres;
         pagosSinCierres.value = response.data.data.pagosSinCierre
-        console.log(pagosSinCierres.value);
       } else {
         console.error('Error fetching cierres:', response.data.message);
       }

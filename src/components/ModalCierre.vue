@@ -12,19 +12,22 @@
       </button>
 
       <!-- Grid Layout for Pagos -->
-      <div class="grid grid-cols-10 gap-0 border-t border-l border-gray-300">
+      <div class="grid grid-cols-[repeat(13,minmax(0,1fr))] gap-0 border-t border-l border-gray-300">
         <!-- Headers -->
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Pago</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Periodo</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Adicional</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Consumo</div>
+
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Hora Ingreso</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Hora Salida</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Tipo Habitacion</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Efectivo</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Tarjeta</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Billetera Virtual</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Descuento</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Total</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Efectivo</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Tarjeta</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Billetera Virtual</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Descuento</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Total</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Observacion</div>
-
 
         <!-- Iterate over Pagos -->
         <div v-for="(pago, index) in selectedPagos" :key="pago.pagoId" class="contents">
@@ -33,41 +36,41 @@
             Pago {{ pago.pagoId }}
             <div class="text-gray-500 text-sm">{{ formatFechaHora(pago.fecha) }}</div>
           </div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta - pago.montoAdicional - pago.totalConsumo || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoAdicional || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.totalConsumo|| '' }}</div>
           <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ formatFechaHora(pago.horaIngreso) }}</div>
           <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ formatFechaHora(pago.horaSalida) }}</div>
           <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.tipoHabitacion}}</div>
 
-          <!-- Efectivo -->
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoEfectivo }}</div>
-          <!-- Tarjeta -->
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoTarjeta }}</div>
-          <!-- Billetera Virtual -->
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoBillVirt }}</div>
-          <!-- Descuento -->
-          <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoDescuento }}</div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta }}</div>
+          <!-- Money values with right alignment and hiding zeros -->
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoEfectivo || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoTarjeta || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoBillVirt || '' }}</div>
+          <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoDescuento || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ (pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta) || '' }}</div>
+
           <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
-
         </div>
+
+        <!-- Total values per column -->
+        <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center border-t border-r border-gray-300">Periodo Total</div>{{ calculatePeriodo() }}</div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center border-t border-r border-gray-300">Adicional Total</div>{{ calculateAdicional() }}</div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center border-t border-r border-gray-300">Consumo Total</div>{{ calculateConsumo() }}</div>
+        <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
+        <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
+          <div class="font-bold text-black p-2 border-t border-r border-gray-300"><div class="font-bold text-black p-2 text-center border-t border-r border-gray-300">Habitaciones</div>{{ formatCategorias() }}</div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center border-t border-r border-gray-300">Efectivo Total</div>{{ calculateEfectivo() }}</div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center border-t border-r border-gray-300">Tarjeta Total</div>{{ calculateTarjeta() }}</div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center border-t border-r border-gray-300">MP Total</div>{{ calculateMP() }}</div>
+        <div class="font-bold text-red-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center border-t border-r border-gray-300">Desc.</div>{{ calculateDescuento() }}</div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center border-t border-r border-gray-300">Total</div>{{ calculateTotal() }}</div>
+        <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
       </div>
-
-      <!-- Total Section -->
-      <div class="mt-4 font-semibold">
-
-        <label class="text-black">      Total Efectivo:</label>
-        <span class="text-green-600">${{ calculateEfectivo() }}</span>
-        <label class="text-black">      Total Tarjeta:</label>
-        <span class="text-green-600">${{ calculateTarjeta() }}</span>
-        <label class="text-black">      Total MercadoPago:</label>
-        <span class="text-green-600">${{ calculateMP() }}</span>
-        <label class="text-black">      Total:</label>
-        <span class="text-green-600">${{ calculateTotal() }}</span>
-      </div>
-
 
       <!-- "Cerrar Caja" Button (only shown if esAbierto is true) -->
-  <!-- "Cerrar Caja" Button -->
-  <div v-if="esAbierto" class="mt-4">
+      <div v-if="esAbierto" class="mt-4">
         <button @click="showCerrarCajaModal = true" class="w-full bg-red-600 text-black p-3 rounded-xl font-semibold hover:bg-red-700">
           Cerrar Caja
         </button>
@@ -79,7 +82,6 @@
 
     <!-- CerrarCaja Modal -->
     <CerrarCajaModal v-if="showCerrarCajaModal" @close="closeCerrarCajaModal" @refresh="refreshPage" />
-
   </div>
 </template>
 
@@ -129,6 +131,7 @@ const refreshPage = () => {
 
 // Format fechaHora (assuming it's in ISO format)
 const formatFechaHora = (fechaHora) => {
+  if (!fechaHora) return ''; // Return blank if null or undefined
   const date = new Date(fechaHora);
   return date.toLocaleString();
 };
@@ -144,9 +147,45 @@ const calculateEfectivo = () => {
     return total + pago.montoEfectivo;
   }, 0);
 };
+const calculateDescuento = () => {
+  return props.selectedPagos.reduce((total, pago) => {
+    return total + pago.montoDescuento;
+  }, 0);
+};
 const calculateTarjeta = () => {
   return props.selectedPagos.reduce((total, pago) => {
     return total + pago.montoTarjeta;
+  }, 0);
+};
+const calculateConsumo = () => {
+  return props.selectedPagos.reduce((total, pago) => {
+    return total + (pago.totalConsumo || 0);
+  }, 0);
+};
+const calculatePeriodo = () => {
+  return props.selectedPagos.reduce((total, pago) => {
+    return total + ( pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta - pago.montoAdicional - pago.totalConsumo );
+  }, 0);
+};
+const countCategorias = () => {
+  return props.selectedPagos.reduce((counts, pago) => {
+    if (pago.categoriaNombre) {
+      counts[pago.categoriaNombre] = (counts[pago.categoriaNombre] || 0) + 1;
+    }
+    return counts;
+  }, {});
+};
+
+const formatCategorias = () => {
+  const categorias = countCategorias();
+  return Object.entries(categorias)
+    .map(([categoria, count]) => `${categoria}:${count}`)
+    .join(' ');
+};
+
+const calculateAdicional = () => {
+  return props.selectedPagos.reduce((total, pago) => {
+    return total + (pago.montoAdicional || 0);
   }, 0);
 };
 const calculateMP = () => {
