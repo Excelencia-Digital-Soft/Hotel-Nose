@@ -4,13 +4,11 @@
       id="header" 
       class="relative flex justify-center font-bold h-full w-full  items-center text-white hover:shadow-lg hover:shadow-cyan-500/50 rounded-full transition-colors py-2"
     >
-      Cargas
+      Pedidos
     </section>
     <ul v-show="showResults" id="optionsSelect" class="menu-column absolute w-40 z-20 text-sm right-2 mt-2">
       <li>
-        <router-link :to="{ name: 'SubmitOrder' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
-          Hacer Pedido 
-        </router-link>
+
         <router-link :to="{ name: 'ReceptionOrder' }" class="w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
           Recibir Pedido 
         </router-link>

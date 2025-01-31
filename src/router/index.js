@@ -36,7 +36,7 @@ const routes = [
         component: Rooms,
         meta: {
           requireAuth: true,
-          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
       {
@@ -80,7 +80,7 @@ const routes = [
         component: ReceptionOrder,
         meta: {
           requireAuth: true,
-          roles: [3,4], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [2,3,4],
         },
       },
       {
@@ -98,7 +98,7 @@ const routes = [
         component: CierresManager,
         meta: {
           requireAuth: true,
-          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
       {
@@ -107,7 +107,7 @@ const routes = [
         component: EmpeñosManager,
         meta: {
           requireAuth: true,
-          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
       {
@@ -125,7 +125,7 @@ const routes = [
         component: Egresos,
         meta: {
           requireAuth: true,
-          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
     ],

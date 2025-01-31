@@ -5,7 +5,7 @@
       <!-- List of Cierres -->
       <div class="mb-6">
         <h3 class="font-semibold text-lg mb-4">Cierres</h3>
-        <DropDownCreateSearchGastos/>
+        
         <button 
         class="cursor-pointer hover:text-blue-600 border border-white p-4 h-[15vh] flex items-center justify-center w-full"
 
@@ -14,7 +14,7 @@
         >
           Cierre Actual
         </button>
-        <ul class="space-y-2">
+        <ul v-if="authStore.auth && (authStore.auth.rol === 1 || authStore.auth.rol === 2)" class="space-y-2">
           <li 
             v-for="cierre in cierres" 
             :key="cierre.cierreId" 
@@ -54,6 +54,9 @@
   import { ref } from 'vue';
   import axiosClient from '../axiosClient'; // Adjust the path to match your project structure
   import ModalCierre from '../components/ModalCierre.vue';
+  import { useAuthStore } from "../store/auth";
+
+const authStore = useAuthStore();
   // Data for cierres and pagos
   const cierres = ref([]);
   const showPagosModal = ref(false);
