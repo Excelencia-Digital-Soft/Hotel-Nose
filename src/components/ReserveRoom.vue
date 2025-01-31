@@ -8,6 +8,9 @@
             :class="selectedRoom.Disponible ? 'w-2/4 h-3/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900' : ' w-3/4 h-[90%] flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900'">
             <i class="fa-thin fa-circle-xmark"></i>
             <!-- Modal Content -->
+            <button
+              class=" text-xl  w-14 h-14 text-white items-end btn-primary rounded-full transition duration-150 ease-out md:ease-in"
+              @click="$emit('close-modal')">X</button>
             <h1
               class="absolute self-center text-2xl w-1/3 text-center lexend-exa font-bold mt-5 mb-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
               {{ selectedRoom.nombreHabitacion }}
@@ -178,10 +181,9 @@
                 <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID"
                   @close-modal="modalAnular = false" />
               </div>
+
             </form>
-            <button
-              class="absolute text-xl  w-14 h-14 text-white -top-7 right-7 btn-primary rounded-full transition duration-150 ease-out md:ease-in"
-              @click="$emit('close-modal')">X</button>
+
             <ModalConfirm v-if="modalConfirm" :name="selectedRoom.Identificador" @confirmaAccion="confirmAndSend"
               @close="toggleModalConfirm" />
 

@@ -93,25 +93,31 @@
         <button 
           v-if="!props.pausa" 
           @click.prevent="PausarTimer" 
-          class="btn-danger">
+          class="btn-secondary p-2 rounded-md"><span class="material-symbols-outlined">
+pause
+</span>
           Pausar
         </button>
         <button 
           v-if="props.pausa" 
           @click.prevent="RecalcularTimer" 
-          class="btn-danger">
-          Recalcular
+          class="btn-secondary p-2 rounded-md">
+          Recalcular<span class="material-symbols-outlined">
+play_arrow
+</span>
         </button>
-        <button @click="$emit('close')" class="btn-danger">Cancelar</button>
-        <button @click.prevent="toggleEmpenoModal" class="btn-third">Empeño</button>
-        <button @click.prevent="toggleRecargoModal" class="btn-third">Recargo</button>
-        <button 
+        <button @click="$emit('close')" class="btn-danger p-2 rounded-md">Cancelar</button>
+        <button @click.prevent="toggleEmpenoModal" class="btn-third p-2 rounded-md">Empeño</button>
+        <button @click.prevent="toggleRecargoModal" class="btn-third p-2 rounded-md">Recargo</button>
+
+      </div>
+      <button 
           :disabled="faltaPorPagar !== 0"
           @click.prevent="crearMovimientoAdicional"
-          class="btn-primary">
+          class="w-full m-4 rounded-xl p-2"
+          :class="!isButtonDisabled ? ' btn-primary' : 'btn-disabled'">
           Confirmar
         </button>
-      </div>
     </div>
 
     <RecargoModal
