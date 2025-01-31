@@ -137,6 +137,7 @@ namespace ApiObjetos.Controllers
                 var empeños = await _db.Empeño.ToListAsync();
 
                 var cierres = await _db.Cierre
+                    .Where(c => c.FechaHoraCierre != null)
                     .Include(c => c.Pagos)
                     .ToListAsync();
 
