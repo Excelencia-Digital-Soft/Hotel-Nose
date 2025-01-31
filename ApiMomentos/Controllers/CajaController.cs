@@ -149,8 +149,10 @@ namespace ApiObjetos.Controllers
                     .ThenInclude(v => v.Reservas)
                     .ToListAsync();
 
-                var habitaciones = await _db.Habitaciones.ToListAsync();
-
+                var habitaciones = await _db.Habitaciones
+                    .Include(h => h.Categoria)
+                    .ToListAsync();
+                var consumos = await _db.Consumo.ToListAsync();
                 // List to store the mapped Cierres with Pagos
                 var CierresReturn = new List<object>();
 
@@ -168,18 +170,29 @@ namespace ApiObjetos.Controllers
                             var visita = movimiento?.Visita;
                             var horaSalida = pago.fechaHora;
                             var ultimaReserva = visita?.Reservas?.FirstOrDefault();
+                            var movimientosPago = movimientos.Where(m => m.PagoId == pago.PagoId).ToList(); // realmente debería haberse hecho pensando en multiples movimientos desde un principio, si es posible arreglar a futuro.
+                            decimal? totalConsumo = consumos
+    .Where(c => movimientosPago.Any(m => m.MovimientosId == c.MovimientosId))
+    .Sum(c => c.PrecioUnitario);
+
                             var habitacionNombre = ultimaReserva != null
                                 ? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)?.NombreHabitacion
                                 : null;
                             var horaEntrada = ultimaReserva != null
                             ? ultimaReserva.FechaReserva
                             : null;
+                            var categoriaNombre = ultimaReserva != null
+                                ? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)?.Categoria.NombreCategoria
+                                : null;
                             pagosConDetalle.Add(new
                             {
                                 pago.PagoId,
+                                categoriaNombre,
                                 Fecha = pago.fechaHora,
                                 HoraIngreso = horaEntrada,
                                 HoraSalida = horaSalida,
+                                totalConsumo,
+                                MontoAdicional = pago.Adicional ?? 0, 
                                 pago.MontoEfectivo,
                                 pago.MontoTarjeta,
                                 pago.MontoBillVirt,
@@ -196,6 +209,9 @@ namespace ApiObjetos.Controllers
                                 Fecha = pago.fechaHora,
                                 HoraIngreso = (DateTime?)null,
                                 HoraSalida = (DateTime?)null,
+                                totalConsumo = 0,
+                                MontoAdicional = 0,
+                                pago.Adicional,
                                 pago.MontoEfectivo,
                                 pago.MontoTarjeta,
                                 pago.MontoBillVirt,
@@ -232,6 +248,10 @@ namespace ApiObjetos.Controllers
 
                     if (empeño == null) {
                         var movimiento = movimientos.FirstOrDefault(m => m.PagoId == pago.PagoId);
+                        var movimientosPago = movimientos.Where(m => m.PagoId == pago.PagoId).ToList(); // realmente debería haberse hecho pensando en multiples movimientos desde un principio, si es posible arreglar a futuro.
+                        decimal? totalConsumo = consumos
+.Where(c => movimientosPago.Any(m => m.MovimientosId == c.MovimientosId))
+.Sum(c => c.PrecioUnitario);
                         var visita = movimiento?.Visita;
                         var ultimaReserva = visita?.Reservas?.FirstOrDefault();
                         var habitacionNombre = ultimaReserva != null
@@ -240,12 +260,19 @@ namespace ApiObjetos.Controllers
                         var horaEntrada = ultimaReserva != null
                         ? ultimaReserva.FechaReserva
                         : null;
+                        var categoriaNombre = ultimaReserva != null
+    ? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)?.Categoria.NombreCategoria
+    : null;
                         PagosSinCierreReturn.Add(new
                         {
                             pago.PagoId,
+                            HabitacionID = ultimaReserva.HabitacionId ?? null,
+                            categoriaNombre,
                             Fecha = pago.fechaHora,
                             HoraIngreso = horaEntrada,
                             HoraSalida = pago.fechaHora,
+                            MontoAdicional = pago.Adicional ?? 0,
+                            totalConsumo,
                             pago.MontoEfectivo,
                             pago.MontoTarjeta,
                             pago.MontoBillVirt,
@@ -262,6 +289,8 @@ namespace ApiObjetos.Controllers
                             Fecha = pago.fechaHora,
                             HoraIngreso = (DateTime?)null,
                             HoraSalida = (DateTime?)null,
+                            totalConsumo = 0,
+                            MontoAdicional = 0,
                             pago.MontoEfectivo,
                             pago.MontoTarjeta,
                             pago.MontoBillVirt,

@@ -14,6 +14,8 @@ public partial class Pagos
 
     public decimal? MontoTarjeta { get; set; }
 
+    public decimal? Adicional { get; set; }
+
     public decimal? MontoDescuento { get; set; }
 
     public int? MedioPagoId { get; set; }
