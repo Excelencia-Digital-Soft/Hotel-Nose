@@ -175,7 +175,6 @@ namespace ApiObjetos.Controllers
                             decimal? totalConsumo = consumos
     .Where(c => movimientosPago.Any(m => m.MovimientosId == c.MovimientosId))
     .Sum(c => c.PrecioUnitario);
-
                             var habitacionNombre = ultimaReserva != null
                                 ? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)?.NombreHabitacion
                                 : null;
@@ -185,10 +184,13 @@ namespace ApiObjetos.Controllers
                             var categoriaNombre = ultimaReserva != null
                                 ? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)?.Categoria.NombreCategoria
                                 : null;
+                            decimal? Periodo = 0;
+                            if (movimiento != null) Periodo = movimiento.TotalFacturado;
                             pagosConDetalle.Add(new
                             {
                                 pago.PagoId,
                                 categoriaNombre,
+                                Periodo,
                                 Fecha = pago.fechaHora,
                                 HoraIngreso = horaEntrada,
                                 HoraSalida = horaSalida,
@@ -208,6 +210,7 @@ namespace ApiObjetos.Controllers
                             {
                                 pago.PagoId,
                                 Fecha = pago.fechaHora,
+                                Periodo = 0,
                                 HoraIngreso = (DateTime?)null,
                                 HoraSalida = (DateTime?)null,
                                 totalConsumo = 0,
@@ -264,10 +267,13 @@ namespace ApiObjetos.Controllers
                         var categoriaNombre = ultimaReserva != null
     ? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)?.Categoria.NombreCategoria
     : null;
+                        decimal? Periodo = 0;
+                        if (movimiento != null) Periodo = movimiento.TotalFacturado;
                         PagosSinCierreReturn.Add(new
                         {
                             pago.PagoId,
                             HabitacionID = ultimaReserva.HabitacionId ?? null,
+                            Periodo,
                             categoriaNombre,
                             Fecha = pago.fechaHora,
                             HoraIngreso = horaEntrada,
@@ -288,6 +294,7 @@ namespace ApiObjetos.Controllers
                         {
                             pago.PagoId,
                             Fecha = pago.fechaHora,
+                            Periodo = 0,
                             HoraIngreso = (DateTime?)null,
                             HoraSalida = (DateTime?)null,
                             totalConsumo = 0,
