@@ -70,13 +70,13 @@
           </tr>
           
           <tr>
-            <td class="p-2 font-semibold">Descuento por Efectivo</td>
-            <td class="p-2 text-right">-${{ descuentoEfectivo.toFixed(2) }}</td>
+            <td class="p-2 font-semibold">A COBRAR Efectivo:</td>
+            <td class="p-2 text-right">${{ ACobrarEfectivo.toFixed(2) }}</td>
           </tr>
           
           <tr>
-            <td class="p-2 font-semibold">Recargo por Tarjeta</td>
-            <td class="p-2 text-right">${{ mostrarRecargoMonto.toFixed(2) }}</td>
+            <td class="p-2 font-semibold">A COBRAR Tarjeta</td>
+            <td class="p-2 text-right">${{ ACobrarTarjeta.toFixed(2) }}</td>
           </tr>
           <tr v-if="empenoMonto > 0">
             <td class="p-2 font-semibold">Empeño</td>
@@ -174,7 +174,8 @@ const empenoDetalle = ref('');
 const recargoMonto = ref(0);
 const recargoDetalle = ref('');
 const comentario = ref('');
-const recargoTarjetaMonto = ref(0);
+const ACobrarEfectivo = ref(0);
+const ACobrarTarjeta = ref(0);
 const descuentoEfectivo = ref(0);
 const porcentajeEfectivo = ref(0);
 const mostrarRecargoMonto = ref(0);
@@ -187,7 +188,7 @@ const faltaPorPagar = computed(() => {
   return (
     props.total +
     props.adicional -
-    (descuento.value + efectivo.value + tarjeta.value + mercadoPago.value + empenoMonto.value + descuentoEfectivo.value - recargoTarjetaMonto.value) +
+    (descuento.value + efectivo.value + tarjeta.value + mercadoPago.value + empenoMonto.value) +
     recargoMonto.value 
   );
 });
@@ -196,7 +197,7 @@ const fetchTarjetas = async () => {
   try {
     const response = await axiosClient.get('/GetTarjetas');
     const responseEfectivo = await axiosClient.get(`/GetDescuentoEfectivo?institucionID=0`);
-    descuentoEfectivo.value = responseEfectivo.data.data.montoPorcentual;
+    porcentajeEfectivo.value = responseEfectivo.data.data.montoPorcentual;
     tarjetas.value = response.data.data;
   } catch (error) {
     console.error('Error fetching tarjetas:', error);
@@ -207,7 +208,8 @@ const updateFalta = async () => {
   if (efectivo.value > 0) {
     try {
       const porcentajeDescuento = porcentajeEfectivo.value;
-      descuentoEfectivo.value = (efectivo.value * porcentajeDescuento) / (100 - porcentajeDescuento); 
+      descuentoEfectivo.value = (efectivo.value * (porcentajeDescuento / 100)); 
+      ACobrarEfectivo.value = (efectivo.value - descuentoEfectivo.value)
     } catch (error) {
       console.error('Error fetching descuento:', error);
     }
@@ -222,9 +224,8 @@ onMounted(fetchTarjetas);
 const updateRecargo = () => {
   if (selectedTarjeta.value) {
     const porcentajeRecargo = selectedTarjeta.value.montoPorcentual;
-    recargoTarjetaMonto.value = (tarjeta.value * porcentajeRecargo) / (100 + porcentajeRecargo);
     mostrarRecargoMonto.value = (tarjeta.value * (porcentajeRecargo / 100))
-    console.log(mostrarRecargoMonto.value)
+    ACobrarTarjeta.value = (tarjeta.value + mostrarRecargoMonto.value)
   }
 };
 
@@ -286,8 +287,8 @@ const pagarVisita = async () => {
     const data = {
       visitaId: props.visitaId,
       montoDescuento: descuento.value,
-      montoEfectivo: efectivo.value,
-      montoTarjeta: tarjeta.value,
+      montoEfectivo: ACobrarEfectivo.value,
+      montoTarjeta: ACobrarTarjeta.value,
       montoBillVirt: mercadoPago.value,
       medioPagoId: 1,
       comentario: comentario.value,

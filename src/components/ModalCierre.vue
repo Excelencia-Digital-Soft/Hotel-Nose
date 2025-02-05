@@ -38,7 +38,7 @@
             Pago {{ pago.pagoId }}
             <div class="text-gray-500 text-sm">{{ formatFechaHora(pago.fecha) }}</div>
           </div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta - pago.montoAdicional - pago.totalConsumo || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.periodo }}</div>
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoAdicional || '' }}</div>
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.totalConsumo|| '' }}</div>
           <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ formatFechaHora(pago.horaIngreso) }}</div>
@@ -172,7 +172,7 @@ const calculateConsumo = () => {
 };
 const calculatePeriodo = () => {
   return props.selectedPagos.reduce((total, pago) => {
-    return total + ( pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta - pago.montoAdicional - pago.totalConsumo );
+    return total + (pago.periodo || 0);
   }, 0);
 };
 const countCategorias = () => {
