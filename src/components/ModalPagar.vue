@@ -21,7 +21,6 @@
                 type="number"
                 class="border rounded p-1 w-full"
                 v-model.number="descuento"
-                @input="updateFalta"
                 placeholder="0.00"
               />
             </td>
@@ -45,7 +44,7 @@
                 type="number"
                 class="border rounded p-1 w-full"
                 v-model.number="tarjeta"
-                @input="updateFalta"
+                @input="updateRecargo"
                 placeholder="0.00"
               />
             </td>
@@ -57,10 +56,27 @@
                 type="number"
                 class="border rounded p-1 w-full"
                 v-model.number="mercadoPago"
-                @input="updateFalta"
                 placeholder="0.00"
               />
             </td>
+          </tr>
+          <tr>
+            <td class="p-2 font-semibold">Seleccionar Tarjeta</td>
+            <td class="p-2 text-right">
+              <select v-model="selectedTarjeta" class="border rounded p-1 w-full" @change="updateRecargo">
+                <option v-for="tarjeta in tarjetas" :key="tarjeta.tarjetaID" :value="tarjeta">{{ tarjeta.nombre }}</option>
+              </select>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="p-2 font-semibold">Descuento por Efectivo</td>
+            <td class="p-2 text-right">-${{ descuentoEfectivo.toFixed(2) }}</td>
+          </tr>
+          
+          <tr>
+            <td class="p-2 font-semibold">Recargo por Tarjeta</td>
+            <td class="p-2 text-right">${{ mostrarRecargoMonto.toFixed(2) }}</td>
           </tr>
           <tr v-if="empenoMonto > 0">
             <td class="p-2 font-semibold">Empeño</td>
@@ -136,7 +152,7 @@ play_arrow
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axiosClient from '../axiosClient';
 import EmpenoModal from './EmpenoModal.vue';
 import RecargoModal from './RecargoModal.vue';
@@ -158,6 +174,12 @@ const empenoDetalle = ref('');
 const recargoMonto = ref(0);
 const recargoDetalle = ref('');
 const comentario = ref('');
+const recargoTarjetaMonto = ref(0);
+const descuentoEfectivo = ref(0);
+const porcentajeEfectivo = ref(0);
+const mostrarRecargoMonto = ref(0);
+const tarjetas = ref([]);
+const selectedTarjeta = ref(null);
 const showEmpenoModal = ref(false);
 const showRecargoModal = ref(false);
 const isButtonDisabled = ref(false);
@@ -165,12 +187,46 @@ const faltaPorPagar = computed(() => {
   return (
     props.total +
     props.adicional -
-    (descuento.value + efectivo.value + tarjeta.value + mercadoPago.value + empenoMonto.value) +
-    recargoMonto.value
+    (descuento.value + efectivo.value + tarjeta.value + mercadoPago.value + empenoMonto.value + descuentoEfectivo.value - recargoTarjetaMonto.value) +
+    recargoMonto.value 
   );
 });
 
-const updateFalta = () => {};
+const fetchTarjetas = async () => {
+  try {
+    const response = await axiosClient.get('/GetTarjetas');
+    const responseEfectivo = await axiosClient.get(`/GetDescuentoEfectivo?institucionID=0`);
+    descuentoEfectivo.value = responseEfectivo.data.data.montoPorcentual;
+    tarjetas.value = response.data.data;
+  } catch (error) {
+    console.error('Error fetching tarjetas:', error);
+  }
+};
+
+const updateFalta = async () => {
+  if (efectivo.value > 0) {
+    try {
+      const porcentajeDescuento = porcentajeEfectivo.value;
+      descuentoEfectivo.value = (efectivo.value * porcentajeDescuento) / (100 - porcentajeDescuento); 
+    } catch (error) {
+      console.error('Error fetching descuento:', error);
+    }
+  }
+};
+
+onMounted(fetchTarjetas);
+
+
+
+
+const updateRecargo = () => {
+  if (selectedTarjeta.value) {
+    const porcentajeRecargo = selectedTarjeta.value.montoPorcentual;
+    recargoTarjetaMonto.value = (tarjeta.value * porcentajeRecargo) / (100 + porcentajeRecargo);
+    mostrarRecargoMonto.value = (tarjeta.value * (porcentajeRecargo / 100))
+    console.log(mostrarRecargoMonto.value)
+  }
+};
 
 const toggleEmpenoModal = () => {
   showEmpenoModal.value = !showEmpenoModal.value;
