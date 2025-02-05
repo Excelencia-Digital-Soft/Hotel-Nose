@@ -74,6 +74,8 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<Imagenes> Imagenes { get; set; }
     public virtual DbSet<TipoEgreso> TipoEgreso { get; set; }
     public virtual DbSet<Egresos> Egresos { get; set; }
+    public virtual DbSet<DescuentoEfectivo> DescuentoEfectivo { get; set; }
+    public virtual DbSet<Tarjetas> Tarjetas { get; set; }
     public virtual DbSet<Registros> Registros { get; set; }
 
 
@@ -682,6 +684,28 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.Nombre)
                 .HasMaxLength(100)
                 .IsUnicode(true);
+        });
+
+        modelBuilder.Entity<Tarjetas>(entity =>
+        {
+            entity.HasKey(e => e.TarjetaID);
+
+            entity.Property(e => e.TarjetaID).HasColumnName("TarjetaID");
+            entity.Property(e => e.MontoPorcentual).HasColumnName("MontoPorcentual");
+            entity.Property(e => e.Nombre)
+                .HasMaxLength(100)
+                .IsUnicode(true);
+        });
+
+
+        modelBuilder.Entity<DescuentoEfectivo>(entity =>
+        {
+            entity.HasKey(e => e.DescuentoID);
+
+            entity.Property(e => e.DescuentoID).HasColumnName("DescuentoID");
+            entity.Property(e => e.MontoPorcentual).HasColumnName("MontoPorcentual");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
+
         });
 
         modelBuilder.Entity<Registros>(entity =>
