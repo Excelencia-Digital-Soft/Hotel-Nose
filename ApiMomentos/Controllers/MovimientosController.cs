@@ -294,8 +294,9 @@ namespace ApiObjetos.Controllers
 
                 if (consumo != null)
                 {
-                    movimiento.Anulado = true;
+                    //movimiento.Anulado = true;
                     consumo.Anulado = true;
+                    movimiento.TotalFacturado -= consumo.PrecioUnitario*consumo.Cantidad;
                     if (consumo.EsHabitacion == true)
                     {
                         var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == movimiento.HabitacionId);
