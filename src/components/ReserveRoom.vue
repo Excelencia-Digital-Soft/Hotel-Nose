@@ -108,11 +108,11 @@
                   </ul>
                   <div
                     class="absolute -bottom-16 z-[-1] left-12 flex self-center w-10/12 border-x-2 border-b-2 rounded-b-2xl p-4 shadow-neutral-900 shadow-lg">
-                    <button type="button" @click="toggleModalConfirm()"
+                    <button type="button" @click="toggleModalConfirm(false)"
                       class="btn-third w-full  h-8 mr-2 p-1 text-sm  rounded-3xl mt-4">
                       Consumo general
                     </button>
-                    <button type="button" @click="toggleModalConfirmHabitacion()"
+                    <button type="button" @click="toggleModalConfirm(true)"
                       class="btn-third w-full h-8 text-sm p-2 mr-2  rounded-3xl mt-4">
                       Consumo habitación
                     </button>
@@ -235,12 +235,12 @@
 
             <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID"
               @close-modal="modalAnular = false" />
-            <ModalConfirm v-if="modalConfirm" :name="selectedRoom.Identificador" @confirmaAccion="confirmAndSend"
+            <ModalConfirm v-if="modalConfirm" :name="selectedRoom.Identificador" :habitacionID="selectedRoom.HabitacionID" :consumoHabitacion="esConsumoHabitacion" @confirmaAccion="confirmAndSend"
               @close="toggleModalConfirm" />
 
-            <ModalConfirmHabitacion v-if="modalConfirmHabitacion" :name="selectedRoom.Identificador"
+            <!-- <ModalConfirmHabitacion v-if="modalConfirmHabitacion" :name="selectedRoom.Identificador"
               :habitacionID="selectedRoom.HabitacionID" @confirmaAccion="confirmAndSendHabitacion"
-              @close="toggleModalConfirmHabitacion" />
+              @close="toggleModalConfirmHabitacion" /> -->
           </div>
 
         </Transition>
@@ -354,7 +354,7 @@ let editTagRel = {}
 let cheatRefresh = ref(false);
 let idNewTag = ref(0);
 let numeroError = ref('');
-
+const esConsumoHabitacion = ref(false)
 const verconsumo = () => {
   console.log(selectedRoom.value.VisitaID)
   console.log("Consumos", consumos.value)
@@ -436,7 +436,8 @@ const actualizarConsumos = () => {
       console.error('Error al obtener los consumos:', error);
     });
 };
-const toggleModalConfirm = () => {
+const toggleModalConfirm = (esHabitacion) => {
+  esConsumoHabitacion.value = esHabitacion
   modalConfirm.value = !modalConfirm.value;
 }
 

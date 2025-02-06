@@ -91,6 +91,7 @@ import TableRow from './TableRow.vue';
 const props = defineProps({
   name: String,
   habitacionID: Number,
+  consumoHabitacion:Boolean
 });
 
 const emits = defineEmits(["close", "confirmaAccion"]);
@@ -101,8 +102,14 @@ const categorias = ref([]); // Store categories with ID-to-name mapping
 let seleccionados = ref([]);
 const selectedCategory = ref(null); // Reactive variable for selected category
 const keyword = ref("");
-
+let getInv = ref("");
 onMounted(() => {
+  if (!props.consumoHabitacion){
+    getInv.value = "/GetInventarioGeneral"
+  }
+  else{
+     getInv.value = `api/Inventario/GetInventario?habitacionID=${props.habitacionID}`
+  }
   fetchCategorias(); // Fetch categories when the component mounts
   fetchArticulos();
   console.log(props.habitacionID);
@@ -124,7 +131,7 @@ const uniqueCategories = computed(() => categorias.value.map(c => c.nombreCatego
 
 const fetchArticulos = async () => {
   try {
-    const response = await axiosClient.get("/GetInventarioGeneral");
+    const response = await axiosClient.get(getInv.value);
     if (response.data && response.data.data) {
       // Filter articles with stock > 0 and fetch their images
       productos.value = await Promise.all(
