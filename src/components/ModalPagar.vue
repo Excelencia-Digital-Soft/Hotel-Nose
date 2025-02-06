@@ -16,10 +16,14 @@
             <td class="p-1 text-right">${{ adicional.toFixed(2) }}</td>
           </tr>
           <tr>
-            <td class="p-1 font-semibold">Descuento</td>
-            <td class="p-1 text-right">
-              <input type="number" class="border rounded p-1 w-full" v-model.number="descuento" @input="updateFalta"
-                placeholder="0.00" />
+            <td class="p-2 font-semibold">Descuento</td>
+            <td class="p-2 text-right">
+              <input
+                type="number"
+                class="border rounded p-1 w-full"
+                v-model.number="descuento"
+                placeholder="0.00"
+              />
             </td>
           </tr>
           <tr>
@@ -30,18 +34,45 @@
             </td>
           </tr>
           <tr>
-            <td class="p-1 font-semibold">Tarjeta</td>
-            <td class="p-1 text-right">
-              <input type="number" class="border rounded p-1 w-full" v-model.number="tarjeta" @input="updateFalta"
-                placeholder="0.00" />
+            <td class="p-2 font-semibold">Tarjeta</td>
+            <td class="p-2 text-right">
+              <input
+                type="number"
+                class="border rounded p-1 w-full"
+                v-model.number="tarjeta"
+                @input="updateRecargo"
+                placeholder="0.00"
+              />
             </td>
           </tr>
           <tr>
-            <td class="p-1 font-semibold">MercadoPago</td>
-            <td class="p-1 text-right">
-              <input type="number" class="border rounded p-1 w-full" v-model.number="mercadoPago" @input="updateFalta"
-                placeholder="0.00" />
+            <td class="p-2 font-semibold">MercadoPago</td>
+            <td class="p-2 text-right">
+              <input
+                type="number"
+                class="border rounded p-1 w-full"
+                v-model.number="mercadoPago"
+                placeholder="0.00"
+              />
             </td>
+          </tr>
+          <tr>
+            <td class="p-2 font-semibold">Seleccionar Tarjeta</td>
+            <td class="p-2 text-right">
+              <select v-model="selectedTarjeta" class="border rounded p-1 w-full" @change="updateRecargo">
+                <option v-for="tarjeta in tarjetas" :key="tarjeta.tarjetaID" :value="tarjeta">{{ tarjeta.nombre }}</option>
+              </select>
+            </td>
+          </tr>
+          
+          <tr>
+            <td class="p-2 font-semibold">A COBRAR Efectivo:</td>
+            <td class="p-2 text-right">${{ ACobrarEfectivo.toFixed(2) }}</td>
+          </tr>
+          
+          <tr>
+            <td class="p-2 font-semibold">A COBRAR Tarjeta</td>
+            <td class="p-2 text-right">${{ ACobrarTarjeta.toFixed(2) }}</td>
           </tr>
           <tr v-if="empenoMonto > 0">
             <td class="p-1 font-semibold">Empeño</td>
@@ -98,7 +129,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import axiosClient from '../axiosClient';
 import EmpenoModal from './EmpenoModal.vue';
 import RecargoModal from './RecargoModal.vue';
@@ -120,6 +151,13 @@ const empenoDetalle = ref('');
 const recargoMonto = ref(0);
 const recargoDetalle = ref('');
 const comentario = ref('');
+const ACobrarEfectivo = ref(0);
+const ACobrarTarjeta = ref(0);
+const descuentoEfectivo = ref(0);
+const porcentajeEfectivo = ref(0);
+const mostrarRecargoMonto = ref(0);
+const tarjetas = ref([]);
+const selectedTarjeta = ref(null);
 const showEmpenoModal = ref(false);
 const showRecargoModal = ref(false);
 const isButtonDisabled = ref(false);
@@ -128,11 +166,45 @@ const faltaPorPagar = computed(() => {
     props.total +
     props.adicional -
     (descuento.value + efectivo.value + tarjeta.value + mercadoPago.value + empenoMonto.value) +
-    recargoMonto.value
+    recargoMonto.value 
   );
 });
 
-const updateFalta = () => { };
+const fetchTarjetas = async () => {
+  try {
+    const response = await axiosClient.get('/GetTarjetas');
+    const responseEfectivo = await axiosClient.get(`/GetDescuentoEfectivo?institucionID=0`);
+    porcentajeEfectivo.value = responseEfectivo.data.data.montoPorcentual;
+    tarjetas.value = response.data.data;
+  } catch (error) {
+    console.error('Error fetching tarjetas:', error);
+  }
+};
+
+const updateFalta = async () => {
+  if (efectivo.value > 0) {
+    try {
+      const porcentajeDescuento = porcentajeEfectivo.value;
+      descuentoEfectivo.value = (efectivo.value * (porcentajeDescuento / 100)); 
+      ACobrarEfectivo.value = (efectivo.value - descuentoEfectivo.value)
+    } catch (error) {
+      console.error('Error fetching descuento:', error);
+    }
+  }
+};
+
+onMounted(fetchTarjetas);
+
+
+
+
+const updateRecargo = () => {
+  if (selectedTarjeta.value) {
+    const porcentajeRecargo = selectedTarjeta.value.montoPorcentual;
+    mostrarRecargoMonto.value = (tarjeta.value * (porcentajeRecargo / 100))
+    ACobrarTarjeta.value = (tarjeta.value + mostrarRecargoMonto.value)
+  }
+};
 
 const toggleEmpenoModal = () => {
   showEmpenoModal.value = !showEmpenoModal.value;
@@ -192,8 +264,8 @@ const pagarVisita = async () => {
     const data = {
       visitaId: props.visitaId,
       montoDescuento: descuento.value,
-      montoEfectivo: efectivo.value,
-      montoTarjeta: tarjeta.value,
+      montoEfectivo: ACobrarEfectivo.value,
+      montoTarjeta: ACobrarTarjeta.value,
       montoBillVirt: mercadoPago.value,
       medioPagoId: 1,
       comentario: comentario.value,

@@ -11,6 +11,8 @@ import ReceptionOrder from "../views/ReceptionOrder.vue";
 import InventoryManager from "../views/InventoryManager.vue";
 import CierresManager from "../views/CierresManager.vue";
 import PromocionesManager from "../views/PromocionesManager.vue";
+import MediosPagoManager from "../views/MediosPagoManager.vue";
+
 import Egresos from "../views/Egresos.vue";
 import { useAuthStore } from "../store/auth";
 import EmpeñosManager from "../views/EmpeñosManager.vue";
@@ -123,6 +125,15 @@ const routes = [
         path: "/Egresos",
         name: "Egresos",
         component: Egresos,
+        meta: {
+          requireAuth: true,
+          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
+      },
+      {
+        path: "/MediosPago",
+        name: "MediosPago",
+        component: MediosPagoManager,
         meta: {
           requireAuth: true,
           roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
