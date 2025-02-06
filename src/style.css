@@ -2,7 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 .principal-convination-color {
-  @apply bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500
+  @apply bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400
+}
+.secondary-convination-color {
+  @apply bg-gradient-to-r from-accent-200 via-accent-300 to-accent-200
+}
+.primary-convination-color {
+  @apply bg-gradient-to-r from-primary-200 via-primary-400 to-primary-600
+}
+.other-convination-color {
+  @apply bg-gradient-to-r from-secondary-400 via-secondary-500 to-secondary-600
 }
 .btn-primary {
   @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-800 hover:via-secondary-700 hover:to-accent-800 transition duration-150 ease-in-out md:ease-in border-purple-200;

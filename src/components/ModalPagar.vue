@@ -1,138 +1,100 @@
 <template>
+  <Teleport to="body" class="overflow-hidden">
   <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center">
-    <div class="relative bg-white rounded-lg p-8 w-1/3">
+    <div class="relative bg-white rounded-lg p-8 w-1/3 h-auto">
       <button @click="$emit('close')" class="absolute top-2 right-2 btn-danger p-4 rounded-md">X</button>
 
-      <h2 class="text-xl font-bold mb-4">Detalles de Pago</h2>
-      <table class=" w-full mb-4 text-left">
+      <h2 class="text-xl font-bold ">Detalles de Pago</h2>
+      <table class=" w-full  text-left">
         <tbody>
           <tr>
-            <td class="p-2 font-semibold">Total</td>
-            <td class="p-2 text-right">${{ total.toFixed(2) }}</td>
+            <td class="p-1 font-semibold">Total</td>
+            <td class="p-1 text-right">${{ total.toFixed(2) }}</td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">Adicional</td>
-            <td class="p-2 text-right">${{ adicional.toFixed(2) }}</td>
+            <td class="p-1 font-semibold">Adicional</td>
+            <td class="p-1 text-right">${{ adicional.toFixed(2) }}</td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">Descuento</td>
-            <td class="p-2 text-right">
-              <input
-                type="number"
-                class="border rounded p-1 w-full"
-                v-model.number="descuento"
-                @input="updateFalta"
-                placeholder="0.00"
-              />
+            <td class="p-1 font-semibold">Descuento</td>
+            <td class="p-1 text-right">
+              <input type="number" class="border rounded p-1 w-full" v-model.number="descuento" @input="updateFalta"
+                placeholder="0.00" />
             </td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">Efectivo</td>
-            <td class="p-2 text-right">
-              <input
-                type="number"
-                class="border rounded p-1 w-full"
-                v-model.number="efectivo"
-                @input="updateFalta"
-                placeholder="0.00"
-              />
+            <td class="p-1 font-semibold">Efectivo</td>
+            <td class="p-1 text-right">
+              <input type="number" class="border rounded p-1 w-full" v-model.number="efectivo" @input="updateFalta"
+                placeholder="0.00" />
             </td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">Tarjeta</td>
-            <td class="p-2 text-right">
-              <input
-                type="number"
-                class="border rounded p-1 w-full"
-                v-model.number="tarjeta"
-                @input="updateFalta"
-                placeholder="0.00"
-              />
+            <td class="p-1 font-semibold">Tarjeta</td>
+            <td class="p-1 text-right">
+              <input type="number" class="border rounded p-1 w-full" v-model.number="tarjeta" @input="updateFalta"
+                placeholder="0.00" />
             </td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">MercadoPago</td>
-            <td class="p-2 text-right">
-              <input
-                type="number"
-                class="border rounded p-1 w-full"
-                v-model.number="mercadoPago"
-                @input="updateFalta"
-                placeholder="0.00"
-              />
+            <td class="p-1 font-semibold">MercadoPago</td>
+            <td class="p-1 text-right">
+              <input type="number" class="border rounded p-1 w-full" v-model.number="mercadoPago" @input="updateFalta"
+                placeholder="0.00" />
             </td>
           </tr>
           <tr v-if="empenoMonto > 0">
-            <td class="p-2 font-semibold">Empeño</td>
-            <td class="p-2 text-right text-green-500">-${{ empenoMonto.toFixed(2) }}</td>
+            <td class="p-1 font-semibold">Empeño</td>
+            <td class="p-1 text-right text-green-500">-${{ empenoMonto.toFixed(2) }}</td>
           </tr>
           <tr v-if="recargoMonto > 0">
-            <td class="p-2 font-semibold">Recargo</td>
-            <td class="p-2 text-right text-red-500">${{ recargoMonto.toFixed(2) }}</td>
+            <td class="p-1 font-semibold">Recargo</td>
+            <td class="p-1 text-right text-red-500">${{ recargoMonto.toFixed(2) }}</td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">Total</td>
-            <td class="p-2 text-right text-red-500">${{ (total + adicional).toFixed(2) }}</td>
+            <td class="p-1 font-semibold">Total</td>
+            <td class="p-1 text-right text-red-500">${{ (total + adicional).toFixed(2) }}</td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">Falta por pagar</td>
-            <td class="p-2 text-right text-red-500">${{ faltaPorPagar.toFixed(2) }}</td>
+            <td class="p-1 font-semibold">Falta por pagar</td>
+            <td class="p-1 text-right text-red-500">${{ faltaPorPagar.toFixed(2) }}</td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">Comentario</td>
-            <td class="p-2 text-right">
-              <textarea
-                class="border rounded p-1 w-full"
-                :class="{'border-red-500': descuento > 0 && !comentario}"
-                v-model="comentario"
-                placeholder="Escribe un comentario..."
-              ></textarea>
+            <td class="p-1 font-semibold">Comentario</td>
+            <td class="p-1 text-right">
+              <textarea class="border rounded p-1 w-full" :class="{ 'border-red-500': descuento > 0 && !comentario }"
+                v-model="comentario" placeholder="Escribe un comentario..."></textarea>
             </td>
           </tr>
         </tbody>
       </table>
       <div class="flex justify-end space-x-4">
-        <button 
-          v-if="!props.pausa" 
-          @click.prevent="PausarTimer" 
-          class="btn-secondary p-2 rounded-md"><span class="material-symbols-outlined">
-pause
-</span>
+        <button v-if="!props.pausa" @click.prevent="PausarTimer" class="btn-secondary p-2 rounded-md"><span
+            class="material-symbols-outlined">
+            pause
+          </span>
           Pausar
         </button>
-        <button 
-          v-if="props.pausa" 
-          @click.prevent="RecalcularTimer" 
-          class="btn-secondary p-2 rounded-md">
+        <button v-if="props.pausa" @click.prevent="RecalcularTimer" class="btn-secondary p-2 rounded-md">
           Recalcular<span class="material-symbols-outlined">
-play_arrow
-</span>
+            play_arrow
+          </span>
         </button>
-        
+
         <button @click.prevent="toggleEmpenoModal" class="btn-third p-2 rounded-md">Empeño</button>
         <button @click.prevent="toggleRecargoModal" class="btn-third p-2 rounded-md">Recargo</button>
 
       </div>
-      <button 
-          :disabled="faltaPorPagar !== 0"
-          @click.prevent="crearMovimientoAdicional"
-          class="w-full mt-4 rounded-xl p-2"
-          :class="!isButtonDisabled ? ' btn-primary' : 'btn-disabled'">
-          Confirmar
-        </button>
+      <button :disabled="faltaPorPagar !== 0" @click.prevent="crearMovimientoAdicional"
+        class="w-full mt-4 rounded-xl p-2" :class="!isButtonDisabled ? ' btn-primary' : 'btn-disabled'">
+        Confirmar
+      </button>
     </div>
 
-    <RecargoModal
-      v-if="showRecargoModal"
-      @close="showRecargoModal = false"
-      @confirm-recargo="confirmoRecargo"
-    />
-    <EmpenoModal
-      v-if="showEmpenoModal"
-      @close="showEmpenoModal = false"
-      @confirm-empeno="confirmoEmpeno"
-    />
+    <RecargoModal v-if="showRecargoModal" @close="showRecargoModal = false" @confirm-recargo="confirmoRecargo" />
+    <EmpenoModal v-if="showEmpenoModal" @close="showEmpenoModal = false" @confirm-empeno="confirmoEmpeno" />
   </div>
+</Teleport>
 </template>
 
 <script setup>
@@ -146,7 +108,7 @@ const props = defineProps({
   adicional: { type: Number, required: true },
   visitaId: { type: Number, required: true },
   habitacionId: { type: Number, required: true },
-  pausa: {type: Boolean, required: true},
+  pausa: { type: Boolean, required: true },
 });
 
 const descuento = ref(0);
@@ -170,7 +132,7 @@ const faltaPorPagar = computed(() => {
   );
 });
 
-const updateFalta = () => {};
+const updateFalta = () => { };
 
 const toggleEmpenoModal = () => {
   showEmpenoModal.value = !showEmpenoModal.value;
@@ -278,8 +240,7 @@ const RecalcularTimer = async () => {
   }
 };
 </script>
-  
-  <style>
-  /* Add your styles here */
-  </style>
-  
+
+<style>
+/* Add your styles here */
+</style>

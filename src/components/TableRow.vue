@@ -1,5 +1,5 @@
 <template>
-  <div class="table-body mt-4" style="max-height: 150px; overflow-y: auto;">
+  <div class="table-body mt-4 h-32" style="max-height: 20vh; overflow-y: auto;">
     <table class="w-full text-white">
       <thead >
         <tr>

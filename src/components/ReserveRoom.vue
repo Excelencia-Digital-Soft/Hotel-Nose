@@ -5,145 +5,57 @@
         class="fixed w-full h-full  bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
         <Transition name="modal-inner">
           <div
-            :class="selectedRoom.Disponible ? 'w-2/4 h-3/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900' : ' w-3/4 h-[90%] flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900'">
+            class=" w-11/12 h-[95%] flex flex-col justify-center fixed mt-4 px-8 py-2 border-x-8  border-secondary-400 rounded-xl bg-neutral-800">
             <i class="fa-thin fa-circle-xmark"></i>
             <!-- Modal Content -->
             <button
-              class="absolute top-2 right-2 text-xl  w-14 h-14 text-white items-end btn-danger rounded-full transition duration-150 ease-out md:ease-in"
+              class="absolute top-2 right-2 text-xl   w-14 h-14 text-white items-end btn-danger rounded-full transition duration-150 ease-out md:ease-in"
               @click="$emit('close-modal')">X</button>
             <h1
-              class="absolute self-center text-2xl w-1/3 text-center lexend-exa font-bold mt-5 mb-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
+              class="absolute top-0 right-24 col-span-3    text-2xl lexend-exa font-bold mt-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
               {{ selectedRoom.nombreHabitacion }}
             </h1>
+            <form class="grid grid-cols-3 gap-4">
 
-            <form :class="!selectedRoom.Disponible ? 'grid grid-cols-3 gap-3 mb-2' : 'grid-cols-1'">
-              <section v-if="!selectedRoom.Disponible" class="flex flex-col justify-start p-2">
-                <div>
-                  <h1 class="text-xl text-white font-bold mb-2">Consumos</h1>
-                  <div class="bg-gray-800 rounded-lg p-4 h-56 overflow-y-auto">
-                    <!-- Header row -->
-                    <div class="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_auto] gap-3  text-white text-xs font-semibold mb-2">
-                      <span>Producto</span>
-                      <span>Cant</span>
-                      <span>Precio</span>
-                      <span>Orig</span>
-                      <span>Total</span>
-                      <span>Borrar</span>
+              <div class="grid shadow-lg w-full rounded-2xl border-2  border-primary-500  ">
+                
+                <section class="relative  drop-shadow-xl w-full h-44 overflow-hidden rounded-2xl bg-[#691660]">
+                  <div
+                    class=" grid absolute items-center justify-center text-white z-[1] opacity-90 rounded-2xl inset-0.5 bg-[#323132]  px-4">
+
+                    <div class="flex flex-col items-start justify-center w-full  ">
+                      <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
+                      <input type="text"
+                        class="focus:ring-purple-500 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                        v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
                     </div>
 
-                    <!-- Ordered list for the consumos -->
-                    <ul class="space-y-2">
-                      <li v-for="consumo in consumos" :key="consumo.consumoId" class="grid grid-cols-6  bg-gray-700 p-2 rounded-md text-white items-center">
-                        <span class="text-xs w-16 break-words font-semibold">{{ consumo.articleName }}</span>
-                        <span class="text-xs text-center text-gray-400">{{ consumo.cantidad }}</span>
-                        <span class="text-xs text-center text-gray-400">${{ consumo.precioUnitario }}</span>
-                        <span class="text-xs text-center text-gray-400">
-                          {{ consumo.esHabitacion ? 'Hab' : 'Inv' }}
-                        </span>
-                        <span class="text-xs font-bold text-green-400">${{ consumo.total }}</span>
+                    <div class="flex  justify-start w-full  ">
+                      <div class="flex flex-col items-start justify-center w-full mb-2 mr-2 ">
+                        <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
+                        <input type="text"
+                          class="focus:ring-purple-500 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                          v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
+                      </div>
+                      <div class="flex flex-col items-start justify-center w-full mb-2 ">
+                        <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
+                        <input type="text"
+                          class="focus:ring-purple-500 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                          maxlength="11" v-model="selectedRoom.NumeroTelefono"
+                          placeholder="Ingresa Marca y modelo de vehiculo">
+                      </div>
 
-                        <!-- Cancel button with trashcan icon -->
-                        <button type="button"
-                          class="btn-danger rounded-xl text-xl h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
-                          @click="anularConsumo(consumo.consumoId)">
-                          delete
-                        </button>
-                      </li>
-                    </ul>
+
+                    </div>
                   </div>
-                </div>
+                  <div class="absolute w-full h-36 bg-white blur-[50px] -left-1/2 -top-1/2"></div>
 
-                <div class="flex">
-                  <button type="button" @click="toggleModalConfirm()"
-                    class="btn-primary w-full h-8 mr-2 p-1 text-sm  rounded-3xl mt-4">
-                    Consumo general
-                  </button>
-                  <button type="button" @click="toggleModalConfirmHabitacion()"
-                    class="btn-primary w-full h-8 text-sm p-2   rounded-3xl mt-4">
-                    Consumo habitación
-                  </button>
-                </div>
+                </section>
+                <div class="w-full flex justify-center items-center px-4 ">
 
-
-              </section>
-
-              <section class="timer-container flex flex-col items-start space-y-4">
-                <div class="timer">
-                  <p class="label">Tiempo restante:</p>
-                  <p class="time">{{ formattedTime }}</p>
-                </div>
-                <button @click="ignorarTiempoExtra()" type="button" :class="[
-                  'w-full',
-                  'mt-4',
-                  'rounded-lg',
-                  'text-white',
-                  {
-                    'bg-gray-600': ignorarTiempo,  // Darken background when pressed
-                    'transform translate-y-1': ignorarTiempo,  // Add pressed effect
-                    'box-shadow inset 0 2px 5px rgba(0, 0, 0, 0.2)': ignorarTiempo  // Inner shadow effect
-                  }
-                ]" :style="{
-                  border: '4px solid transparent',
-                  borderImage: 'linear-gradient(to right, #667eea, #764ba2, #ff7e5f) 1',
-                  borderRadius: '9999px', // Ensure rounded corners
-                }">
-                  Ignorar tiempo extra
-                </button>
-              </section>
-              <section class="flex flex-col items-center justify-center  mb-2">
-                <div class="flex flex-col items-start justify-center w-full mb-3 px-4">
-                  <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
-                  <input type="text"
-                    class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                    v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
-                </div>
-                <div class="flex flex-col items-start justify-center w-full mb-3 px-4">
-                  <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
-                  <input type="text"
-                    class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                    maxlength="11" v-model="selectedRoom.NumeroTelefono"
-                    placeholder="Ingresa Marca y modelo de vehiculo">
-                </div>
-                <div class="flex flex-col items-start justify-center w-full mb-3 px-4">
-                  <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
-                  <input type="text"
-                    class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                    v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
-                </div>
-              </section>
-              <section v-if="!selectedRoom.Disponible">
-                <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
-                  <table class="w-full text-left">
-                    <tbody>
-                      <tr class="border-b border-gray-700">
-                        <td class="p-4">Consumision</td>
-                        <td class="p-4 text-right">${{ consumos.reduce((sum, consumo) => sum + consumo.total, 0) }}</td>
-                      </tr>
-                      <tr class="border-b border-gray-700">
-                        <td class="p-4">Periodo</td>
-                        <td class="p-4 text-right">${{ periodoCost }}</td>
-                      </tr>
-                      <tr class="border-b border-gray-700">
-                        <td class="p-4">Adicional</td>
-                        <td class="p-4 text-right">${{ adicional }}</td> <!-- Display calculated Adicional -->
-                      </tr>
-                      <tr>
-                        <td class="p-4">Total</td>
-                        <td class="p-4 text-right">
-                          ${{ (Number(consumos.reduce((sum, consumo) => sum + consumo.total, 0)) + Number(periodoCost) +
-                            Number(adicional)).toFixed(2) }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-              <section></section>
-              <section v-if="!selectedRoom.Disponible">
-                <div class="card flex flex-col ml-4 flex-wrap justify-center gap-4">
-                  <div class="mt-4 w-full">
+                  <div class="m-4 w-full">
                     <label class="text-xs font-semibold text-white">Seleccionar Promoción</label>
-                    <select v-model="selectedPromocion" class="w-full p-2 mt-2 rounded-lg">
+                    <select v-model="selectedPromocion" class="w-full text-sm p-2 mt-2 rounded-lg">
                       <!-- Default 'Sin Promoción' option -->
                       <option :value="null">Sin Promoción</option>
 
@@ -157,33 +69,172 @@
                     </select>
                   </div>
                 </div>
-              </section>
-              <div class="col-span-3 flex justify-center items-center w-full space-x-4">
-                <button @click="toggleAnularOcupacionModal" type="button"
-                  class="btn-danger w-1/6 h-16 rounded-2xl border-l-2 border-gray-300">
-                  Anular Ocupación
-                </button>
 
-                <button @click="openPaymentModal" type="button" :disabled="selectedRoom.pedidosPendientes"
-                  class="btn-primary w-2/4 h-16 rounded-2xl">
-                  Desocupar Habitación
-                </button>
 
-                <!-- Conditional warning text -->
-                <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-2 text-center">
-                  Hay pedidos pendientes, no se puede desocupar la habitación.
-                </p>
-
-                <ModalPagar v-if="modalPayment" :total="totalAmount" :adicional="Number(adicional)"
-                  :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID" :pausa="Pausa"
-                  @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
-
-                <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID"
-                  @close-modal="modalAnular = false" />
               </div>
+              <section class="relative z-10 flex col-span-2 flex-col  justify-start ">
+
+                <div class="bg-neutral-700  h-72  rounded-l-3xl p-4 overflow-y-auto shadow-neutral-900 shadow-lg">
+                  <!-- Header row -->
+                  <div
+                    class="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_auto] gap-3  text-white text-xs font-semibold mb-2">
+                    <span>Producto</span>
+                    <span>Cant</span>
+                    <span>Precio</span>
+                    <span>Orig</span>
+                    <span>Total</span>
+                    <span>Borrar</span>
+                  </div>
+
+                  <!-- Ordered list for the consumos -->
+                  <ul class="space-y-2">
+                    <li v-for="consumo in consumos" :key="consumo.consumoId"
+                      class="grid grid-cols-6  bg-neutral-600 p-2 rounded-md text-white items-center">
+                      <span class="text-xs w-16 break-words font-semibold">{{ consumo.articleName }}</span>
+                      <span class="text-xs text-center text-neutral-200">{{ consumo.cantidad }}</span>
+                      <span class="text-xs text-center text-neutral-200">${{ consumo.precioUnitario }}</span>
+                      <span class="text-xs text-center text-neutral-200">
+                        {{ consumo.esHabitacion ? 'Hab' : 'Inv' }}
+                      </span>
+                      <span class="text-xs font-bold text-green-400">${{ consumo.total }}</span>
+
+                      <!-- Cancel button with trashcan icon -->
+                      <button type="button"
+                        class="btn-danger rounded-xl text-xl h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
+                        @click="anularConsumo(consumo.consumoId)">
+                        delete
+                      </button>
+                    </li>
+                  </ul>
+                  <div
+                    class="absolute -bottom-16 z-[-1] left-12 flex self-center w-10/12 border-x-2 border-b-2 rounded-b-2xl p-4 shadow-neutral-900 shadow-lg">
+                    <button type="button" @click="toggleModalConfirm()"
+                      class="btn-third w-full  h-8 mr-2 p-1 text-sm  rounded-3xl mt-4">
+                      Consumo general
+                    </button>
+                    <button type="button" @click="toggleModalConfirmHabitacion()"
+                      class="btn-third w-full h-8 text-sm p-2 mr-2  rounded-3xl mt-4">
+                      Consumo habitación
+                    </button>
+                    <button type="button" @click="verconsumo()"
+                      class="btn-secondary w-full h-8 text-sm p-2   rounded-3xl mt-4">
+                      Editar <span class="material-symbols-outlined">edit</span>
+                    </button>
+                  </div>
+                </div>
+
+
+
+
+
+              </section>
+
+
+
+
+              <section class="relative  drop-shadow-xl w-full h-56 overflow-hidden rounded-xl bg-[#691660]">
+
+                <div
+                  class="absolute flex items-center justify-center text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] space-x-4 px-4">
+
+                  <table class="w-full text-left ">
+                    <tbody>
+                      <tr
+                        class="border-b border-neutral-700 hover:scale-110 hover:bg-primary-500 transition duration-100 ease-out md:ease-in">
+                        <td class="p-2">Consumision</td>
+                        <td class="p-4 text-right">${{ consumos.reduce((sum, consumo) => sum + consumo.total, 0) }}</td>
+                      </tr>
+                      <tr
+                        class="border-b border-neutral-700 hover:scale-110 hover:bg-primary-500 transition duration-100 ease-out md:ease-in">
+                        <td class="p-2">Periodo</td>
+                        <td class="p-2 text-right">${{ periodoCost }}</td>
+                      </tr>
+                      <tr
+                        class="border-b border-neutral-700  hover:scale-110 hover:bg-primary-500  transition duration-100 ease-out md:ease-in ">
+                        <td class="p-2">Adicional</td>
+                        <td class="p-2 text-right">${{ adicional }}</td> <!-- Display calculated Adicional -->
+                      </tr>
+                      <tr class="  hover:bg-primary-500 hover:scale-110 transition duration-100 ease-out md:ease-in">
+                        <td class="p-2">Total</td>
+                        <td class="p-2 text-right">
+                          ${{ (Number(consumos.reduce((sum, consumo) => sum + consumo.total, 0)) + Number(periodoCost) +
+                            Number(adicional)).toFixed(2) }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="absolute w-full h-full bg-white blur-[50px] -left-1/2 -top-1/2"></div>
+              </section>
+              <div
+                class="absolute top-4 left-8 timer-container flex items-center bg-black bg-clip-padding backdrop-filter backdrop-blur-md bg-opacity-40 rounded-xl  shadow-neutral-900 shadow-lg">
+                <!-- Contenedor del reloj -->
+                <div class="timer flex items-center    border-4 border-primary-500 rounded-xl  shadow-lg">
+                  <p class="w-contain text-primary-400 text-xs font-semibold">Tiempo restante:</p>
+                  <p class="time mr-2">
+                    <span v-for="(char, index) in formattedTime" :key="index" class="digit">
+                      {{ char }}
+                    </span>
+                  </p>
+                  <!-- Botón para ignorar tiempo extra -->
+                  <button @click="ignorarTiempoExtra" type="button" :class="[
+                    'timerbutton',
+                    'w-2/4',
+                    'font-semibold',
+                    'text-white',
+                    'grid',
+                    'transition-all',
+                    {
+                      'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400': ignorarTiempo,
+                      'transform scale-80': ignorarTiempo,
+                      'shadow-inner': ignorarTiempo
+                    }
+                  ]" :style="{
+                    border: '4px solid transparent',
+                    borderImage: 'linear-gradient(to right, #ff49d1, #a78bfa, #3b5cff) 1',
+
+                  }">
+                    <span class="material-symbols-outlined">
+                      block
+                    </span>
+                  </button>
+                </div>
+
+
+              </div>
+              <section class=" flex col-span-2 justify-center items-end">
+                <div class="relative  drop-shadow-xl w-3/4 h-24 overflow-hidden rounded-xl bg-[#691660]">
+                  <div
+                    class="absolute flex items-center justify-center text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] space-x-4 px-4">
+                    <button @click="toggleAnularOcupacionModal" type="button"
+                      class="btn-danger w-2/4 h-12 rounded-2xl border-l-2 border-neutral-300">
+                      Anular Ocupación
+                    </button>
+                    <button @click="openPaymentModal" type="button" :disabled="selectedRoom.pedidosPendientes"
+                      class="btn-primary w-2/4 h-12 rounded-2xl">
+                      Desocupar Habitación<span class="material-symbols-outlined">
+                        door_open
+                      </span>
+                    </button>
+                  </div>
+                  <div class="absolute w-3/4 h-24 bg-white blur-[50px] -left-1/2 -top-1/2"></div>
+                </div>
+              </section>
+
+
 
             </form>
+            <!-- Conditional warning text -->
+            <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-2 text-center">
+              Hay pedidos pendientes, no se puede desocupar la habitación.
+            </p>
 
+            <ModalPagar v-if="modalPayment" :total="totalAmount" :adicional="Number(adicional)"
+              :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID" :pausa="Pausa"
+              @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
+
+            <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID"
+              @close-modal="modalAnular = false" />
             <ModalConfirm v-if="modalConfirm" :name="selectedRoom.Identificador" @confirmaAccion="confirmAndSend"
               @close="toggleModalConfirm" />
 
@@ -208,7 +259,7 @@ import Checkbox from 'primevue/checkbox';
 import ModalConfirm from './ModalConfirm.vue';
 import ModalConfirmHabitacion from './ModalConfirmHabitacion.vue';
 import AnularOcupacionModal from './AnularOcupacionModal.vue';
-
+import ModalPagar from './ModalPagar.vue';
 import dayjs from 'dayjs';
 
 const emits = defineEmits(['close-modal', 'update-room']);
@@ -304,6 +355,10 @@ let cheatRefresh = ref(false);
 let idNewTag = ref(0);
 let numeroError = ref('');
 
+const verconsumo = () => {
+  console.log(selectedRoom.value.VisitaID)
+  console.log("Consumos", consumos.value)
+}
 const agregarConsumos = (selectedItems) => {
   console.log(selectedItems);
   axiosClient.post(
@@ -320,6 +375,7 @@ const agregarConsumos = (selectedItems) => {
 };
 
 const anularConsumo = (consumoId) => {
+  console.log("elimino", consumoId)
   axiosClient.delete(
     `/AnularConsumo?idConsumo=${consumoId}`,
   )
@@ -332,7 +388,7 @@ const anularConsumo = (consumoId) => {
     });
 };
 const agregarConsumosHabitacion = (selectedItems) => {
-  console.log(selectedItems);
+  console.log("itemsselec", selectedItems);
   axiosClient.post(
     `/ConsumoHabitacion?habitacionId=${selectedRoom.value.HabitacionID}&visitaId=${selectedRoom.value.VisitaID}`,
     selectedItems // Send selectedItems directly as the body
@@ -397,7 +453,6 @@ const confirmAndSend = (ConfirmedArticles) => {
 }
 
 const confirmAndSendHabitacion = (ConfirmedArticles) => {
-
   console.log(JSON.stringify(ConfirmedArticles) + " Llegamos al ReserveROOM");
   console.log(ConfirmedArticles)
   if (ConfirmedArticles.length > 0) {
@@ -553,8 +608,7 @@ onUnmounted(() => {
 });
 
 
-// Logica botón para pagar
-import ModalPagar from './ModalPagar.vue';
+
 
 // States
 const modalPayment = ref(false);
@@ -650,25 +704,12 @@ const actualizarPromocion = () => {
 }
 </script>
 <style scoped>
-.timer-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .timer {
   text-align: center;
 }
 
-.label {
-  font-size: 24px;
-  font-weight: bold;
-  color: white;
-  margin-bottom: 10px;
-}
-
 .time {
-  font-size: 60px;
+  font-size: 24px;
   /* Large numbers */
   font-weight: bold;
   color: white;
@@ -712,5 +753,41 @@ const actualizarPromocion = () => {
 
 .modal-inner-leave-to {
   transform: scale(0.8);
+}
+
+.timer {
+  font-family: 'Courier New', monospace;
+  text-align: center;
+
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.time {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ff1cc3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  letter-spacing: -10px;
+}
+
+
+.digit {
+  display: inline-block;
+  min-width: 10px;
+  text-align: center;
+  animation: glow 1.5s infinite alternate;
+}
+
+@keyframes glow {
+  0% {
+    text-shadow: 0 0 5px #ff1cc3, 0 0 10px #ff1cc3;
+  }
+
+  100% {
+    text-shadow: 0 0 10px #ff1cc3, 0 0 20px #ff1cc3;
+  }
 }
 </style>
