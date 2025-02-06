@@ -5,7 +5,7 @@
         class="fixed w-full h-full  bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
         <Transition name="modal-inner">
           <div
-            class=" w-11/12 h-[95%] flex flex-col justify-center fixed mt-4 px-8 py-2 border-x-8  border-secondary-400 rounded-xl bg-neutral-800">
+            class=" w-11/12 h-full md:h-[92%] flex flex-col justify-center fixed mt-4 px-8 py-2 border-x-8  border-secondary-400 rounded-xl bg-neutral-800">
             <i class="fa-thin fa-circle-xmark"></i>
             <!-- Modal Content -->
             <button
@@ -15,7 +15,7 @@
               class="absolute top-0 right-24 col-span-3    text-2xl lexend-exa font-bold mt-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
               {{ selectedRoom.nombreHabitacion }}
             </h1>
-            <form class="grid grid-cols-3 gap-4">
+            <form class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
               <div class="grid shadow-lg w-full rounded-2xl border-2  border-primary-500  ">
                 
@@ -211,7 +211,7 @@
                       Anular Ocupación
                     </button>
                     <button @click="openPaymentModal" type="button" :disabled="selectedRoom.pedidosPendientes"
-                      class="btn-primary w-2/4 h-12 rounded-2xl">
+                      class="btn-secondary w-2/4 h-12 rounded-2xl">
                       Desocupar Habitación<span class="material-symbols-outlined">
                         door_open
                       </span>

@@ -16,8 +16,8 @@
             <td class="p-1 text-right">${{ adicional.toFixed(2) }}</td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">Descuento</td>
-            <td class="p-2 text-right">
+            <td class="p-1 font-semibold">Descuento</td>
+            <td class="p-1 text-right">
               <input
                 type="number"
                 class="border rounded p-1 w-full"
@@ -34,8 +34,8 @@
             </td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">Tarjeta</td>
-            <td class="p-2 text-right">
+            <td class="p-1 font-semibold">Tarjeta</td>
+            <td class="p-1 text-right">
               <input
                 type="number"
                 class="border rounded p-1 w-full"
@@ -46,8 +46,8 @@
             </td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">MercadoPago</td>
-            <td class="p-2 text-right">
+            <td class="p-1 font-semibold">MercadoPago</td>
+            <td class="p-1 text-right">
               <input
                 type="number"
                 class="border rounded p-1 w-full"
@@ -57,8 +57,8 @@
             </td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold">Seleccionar Tarjeta</td>
-            <td class="p-2 text-right">
+            <td class="p-1 font-semibold">Seleccionar Tarjeta</td>
+            <td class="p-1 text-right">
               <select v-model="selectedTarjeta" class="border rounded p-1 w-full" @change="updateRecargo">
                 <option v-for="tarjeta in tarjetas" :key="tarjeta.tarjetaID" :value="tarjeta">{{ tarjeta.nombre }}</option>
               </select>
@@ -66,13 +66,13 @@
           </tr>
           
           <tr>
-            <td class="p-2 font-semibold">A COBRAR Efectivo:</td>
-            <td class="p-2 text-right">${{ ACobrarEfectivo.toFixed(2) }}</td>
+            <td class="p-1 font-semibold">A COBRAR Efectivo:</td>
+            <td class="p-1 text-right">${{ ACobrarEfectivo.toFixed(2) }}</td>
           </tr>
           
           <tr>
-            <td class="p-2 font-semibold">A COBRAR Tarjeta</td>
-            <td class="p-2 text-right">${{ ACobrarTarjeta.toFixed(2) }}</td>
+            <td class="p-1 font-semibold">A COBRAR Tarjeta</td>
+            <td class="p-1 text-right">${{ ACobrarTarjeta.toFixed(2) }}</td>
           </tr>
           <tr v-if="empenoMonto > 0">
             <td class="p-1 font-semibold">Empeño</td>
