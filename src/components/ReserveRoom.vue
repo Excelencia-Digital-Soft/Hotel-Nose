@@ -116,35 +116,59 @@
                   class="bg-neutral-700  h-72 border-l-4 border-accent-400  rounded-l-3xl p-4 overflow-y-auto shadow-neutral-900 shadow-lg">
                   <!-- Header row -->
                   <div
-                    class="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_auto] gap-3  text-white text-xs font-semibold mb-2">
+                    class="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] gap-3  text-white text-xs font-semibold mb-2">
                     <span>Producto</span>
                     <span>Cant</span>
                     <span>Precio</span>
                     <span>Orig</span>
                     <span>Total</span>
+                    <span>Editar</span>
                     <span>Borrar</span>
                   </div>
 
-                  <!-- Ordered list for the consumos -->
                   <ul class="space-y-2">
-                    <li v-for="consumo in consumos" :key="consumo.consumoId"
-                      class="grid grid-cols-6  bg-neutral-600 p-2 rounded-md text-white items-center">
-                      <span class="text-xs w-16 break-words font-semibold">{{ consumo.articleName }}</span>
-                      <span class="text-xs text-center text-neutral-200">{{ consumo.cantidad }}</span>
-                      <span class="text-xs text-center text-neutral-200">${{ consumo.precioUnitario }}</span>
-                      <span class="text-xs text-center text-neutral-200">
-                        {{ consumo.esHabitacion ? 'Hab' : 'Inv' }}
-                      </span>
-                      <span class="text-xs font-bold text-green-400">${{ consumo.total }}</span>
+    <li v-for="consumo in consumos" :key="consumo.consumoId"
+      class="grid grid-cols-7  bg-neutral-600 p-2 rounded-md text-white items-center">
+      <span class="text-xs w-16 break-words font-semibold">{{ consumo.articleName }}</span>
 
-                      <!-- Cancel button with trashcan icon -->
-                      <button type="button"
-                        class="btn-danger rounded-xl text-xl h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
-                        @click="anularConsumo(consumo.consumoId)">
-                        delete
-                      </button>
-                    </li>
-                  </ul>
+      <!-- Quantity Display/Edit -->
+      <template v-if="editingConsumoId !== consumo.consumoId">
+        <span class="text-xs text-center text-neutral-200">{{ consumo.cantidad }}</span>
+      </template>
+      <template v-else>
+        <input type="number" v-model.number="editedCantidad" @blur="saveConsumo(consumo.consumoId)"
+          class="text-xs text-center w-16 rounded-md bg-neutral-700 text-white" />
+      </template>
+
+      <span class="text-xs text-center text-neutral-200">${{ consumo.precioUnitario }}</span>
+      <span class="text-xs text-center text-neutral-200">
+        {{ consumo.esHabitacion ? 'Hab' : 'Inv' }}
+      </span>
+      <span class="text-xs font-bold text-green-400">${{ consumo.total }}</span>
+
+      <!-- Edit/Cancel/Delete Buttons -->
+      <template v-if="editingConsumoId !== consumo.consumoId">
+        <button type="button" class="btn-secondary rounded-xl text-xs h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
+          @click="startEditConsumo(consumo.consumoId)">
+          edit
+        </button>
+      </template>
+      <template v-else>
+        <button type="button" class="btn-danger rounded-xl text-xs h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
+          @click="cancelEditConsumo()">
+          cancel
+        </button>
+      </template>
+
+      <!-- Cancel button with trashcan icon -->
+      <button type="button"
+        class="btn-danger rounded-xl text-xl h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
+        @click="anularConsumo(consumo.consumoId)">
+        delete
+      </button>
+    </li>
+  </ul>
+
                   <div
                     class="absolute -bottom-16 z-[-1] left-12 flex self-center w-10/12 border-x-2 border-b-2 rounded-b-2xl p-4 shadow-neutral-900 shadow-lg">
                     <button type="button" @click="toggleModalConsumo(false)"
@@ -154,10 +178,6 @@
                     <button type="button" @click="toggleModalConsumo(true)"
                       class="btn-third w-full h-8 text-sm p-2 mr-2  rounded-3xl mt-4">
                       Consumo habitación
-                    </button>
-                    <button type="button" @click="verconsumo()"
-                      class="btn-secondary w-full h-8 text-sm p-2   rounded-3xl mt-4">
-                      Editar <span class="material-symbols-outlined">edit</span>
                     </button>
                   </div>
                 </div>
@@ -703,6 +723,43 @@ const actualizarPromocion = () => {
       console.error("Error actualizando la promoción:", error);
     });
 }
+
+// SECCION CONSUMOS
+
+const editingConsumoId = ref(null);
+const editedCantidad = ref(0);
+
+const startEditConsumo = (consumoId) => {
+  editingConsumoId.value = consumoId;
+  const consumo = consumos.value.find(c => c.consumoId === consumoId);
+  if (consumo) {
+    editedCantidad.value = consumo.cantidad;
+  }
+};
+
+const cancelEditConsumo = () => {
+  editingConsumoId.value = null;
+};
+
+const saveConsumo = (consumoId) => {
+  if (editingConsumoId.value === consumoId) {
+    axiosClient.put(`/UpdateConsumo?idConsumo=${consumoId}&Cantidad=${editedCantidad.value}`)
+      .then(response => {
+        console.log('Consumo updated successfully:', response.data);
+        // Update the consumos array with the new quantity
+        const consumo = consumos.value.find(c => c.consumoId === consumoId);
+        if (consumo) {
+          consumo.cantidad = editedCantidad.value;
+          consumo.total = consumo.cantidad * consumo.precioUnitario; // Recalculate total
+        }
+        editingConsumoId.value = null; // Exit edit mode
+      })
+      .catch(error => {
+        console.error('Error updating consumo:', error);
+        alert('Failed to update consumo. See console for details.');
+      });
+  }
+};
 </script>
 <style scoped>
 .timer {

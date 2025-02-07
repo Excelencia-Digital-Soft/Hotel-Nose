@@ -37,6 +37,17 @@
               required
             >
           </div>
+          <div class="mb-4">
+            <label class="block text-white text-sm font-bold mb-2">Porcentaje por persona:</label>
+            <input
+              v-model="newCategoryPercentaje"
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="categoryPercentaje"
+              type="text"
+              placeholder="0"
+              required
+            >
+          </div>
           <button
             class="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-700"
             type="submit"
@@ -137,6 +148,17 @@
               required
             >
           </div>
+          <div class="mb-4">
+            <label class="block text-black text-sm font-bold mb-2">Porcentaje por persona:</label>
+            <input
+              v-model="updateCategoryPercentaje"
+              class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              id="categoryPercentaje"
+              type="text"
+              placeholder="0"
+              required
+            >
+          </div>
           <button
             class="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700"
             type="submit"
@@ -167,9 +189,11 @@
   const newCategoryCapacity = ref('');
   const newCategoryName = ref('');
   const newCategoryPrice = ref('');
+  const newCategoryPercentaje = ref('');
   const updateCategoryCapacity = ref('');
   const updateCategoryName = ref('');
   const updateCategoryPrice = ref('');
+  const updateCategoryPercentaje = ref('');
   const showDeleteModal = ref(false);
   const showUpdateModal= ref(null);
   const categoryToDelete = ref(null);
@@ -190,6 +214,7 @@
     updateCategoryName.value = category.nombreCategoria;
     updateCategoryCapacity.value = category.capacidadMaxima;
     updateCategoryPrice.value = category.precioNormal;
+    updateCategoryPercentaje.value = category.porcentajeXPersona;
     showUpdateModal.value = true;
   }
   
@@ -219,7 +244,7 @@
       try {
         // Make sure to format the URL correctly
         const response = await axiosClient.post(
-          `/api/Objetos/CrearCategoria?nombreCategoria=${encodeURIComponent(newCategoryName.value)}&precio=${newCategoryPrice.value}&capacidadmaxima=${newCategoryCapacity.value}`
+          `/api/Objetos/CrearCategoria?nombreCategoria=${encodeURIComponent(newCategoryName.value)}&precio=${newCategoryPrice.value}&capacidadmaxima=${newCategoryCapacity.value}&Porcentaje=${newCategoryPercentaje.value}`
         );
         alert(response.data.message);
         fetchCategorias(); // Refresh the list of rooms
@@ -227,6 +252,7 @@
         newCategoryName.value = '';
         newCategoryPrice.value = null;
         newCategoryCapacity.value = null;
+        newCategoryPercentaje.value = null;
       } catch (error) {
         console.error('Error creating category:', error);
         alert('Error creating category');
@@ -241,13 +267,14 @@
       try {
         // Make sure to format the URL correctly
         const response = await axiosClient.put(
-          `/api/Objetos/ActualizarCategoria?id=${categoriaID}&nuevoNombre=${encodeURIComponent(updateCategoryName.value)}&nuevaCapacidad=${updateCategoryCapacity.value}&Precio=${updateCategoryPrice.value}`
+          `/api/Objetos/ActualizarCategoria?id=${categoriaID}&nuevoNombre=${encodeURIComponent(updateCategoryName.value)}&nuevaCapacidad=${updateCategoryCapacity.value}&Precio=${updateCategoryPrice.value}&Porcentaje=${updateCategoryPercentaje.value}`
         );
         alert(response.data.message);
         fetchCategorias(); // Refrescar categorias
         updateCategoryName.value = '';
         updateCategoryPrice.value = null;
         updateCategoryCapacity.value = null;
+        updateCategoryPercentaje.value = null;
         cancelUpdateCategory();
       } catch (error) {
         console.error('Error updating category:', error);
