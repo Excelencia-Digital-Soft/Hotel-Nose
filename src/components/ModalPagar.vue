@@ -1,131 +1,127 @@
 <template>
   <Teleport to="body" class="overflow-hidden">
-  <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center">
-    <div class="relative bg-white rounded-lg p-8 w-1/3 h-auto">
-      <button @click="$emit('close')" class="absolute top-2 right-2 btn-danger p-4 rounded-md">X</button>
+    <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center">
+      <div class="relative bg-white rounded-lg p-8 w-1/3 h-auto">
+        <button @click="$emit('close')" class="absolute top-2 right-2 btn-danger p-4 rounded-md">X</button>
 
-      <h2 class="text-xl font-bold ">Detalles de Pago</h2>
-      <table class=" w-full  text-left">
-        <tbody>
-          <tr>
-            <td class="p-1 font-semibold">Total</td>
-            <td class="p-1 text-right">${{ total.toFixed(2) }}</td>
-          </tr>
-          <tr>
-            <td class="p-1 font-semibold">Adicional</td>
-            <td class="p-1 text-right">${{ adicional.toFixed(2) }}</td>
-          </tr>
-          <tr>
-            <td class="p-1 font-semibold">Descuento</td>
-            <td class="p-1 text-right">
-              <input
-                type="number"
-                class="border rounded p-1 w-full"
-                v-model.number="descuento"
-                placeholder="0.00"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td class="p-1 font-semibold">Efectivo</td>
-            <td class="p-1 text-right">
-              <input type="number" class="border rounded p-1 w-full" v-model.number="efectivo" @input="updateFalta"
-                placeholder="0.00" />
-            </td>
-          </tr>
-          <tr>
-            <td class="p-1 font-semibold">Tarjeta</td>
-            <td class="p-1 text-right">
-              <input
-                type="number"
-                class="border rounded p-1 w-full"
-                v-model.number="tarjeta"
-                @input="updateRecargo"
-                placeholder="0.00"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td class="p-1 font-semibold">MercadoPago</td>
-            <td class="p-1 text-right">
-              <input
-                type="number"
-                class="border rounded p-1 w-full"
-                v-model.number="mercadoPago"
-                placeholder="0.00"
-              />
-            </td>
-          </tr>
-          <tr>
-            <td class="p-1 font-semibold">Seleccionar Tarjeta</td>
-            <td class="p-1 text-right">
-              <select v-model="selectedTarjeta" class="border rounded p-1 w-full" @change="updateRecargo">
-                <option v-for="tarjeta in tarjetas" :key="tarjeta.tarjetaID" :value="tarjeta">{{ tarjeta.nombre }}</option>
-              </select>
-            </td>
-          </tr>
-          
-          <tr>
-            <td class="p-1 font-semibold">A COBRAR Efectivo:</td>
-            <td class="p-1 text-right">${{ ACobrarEfectivo.toFixed(2) }}</td>
-          </tr>
-          
-          <tr>
-            <td class="p-1 font-semibold">A COBRAR Tarjeta</td>
-            <td class="p-1 text-right">${{ ACobrarTarjeta.toFixed(2) }}</td>
-          </tr>
-          <tr v-if="empenoMonto > 0">
-            <td class="p-1 font-semibold">Empeño</td>
-            <td class="p-1 text-right text-green-500">-${{ empenoMonto.toFixed(2) }}</td>
-          </tr>
-          <tr v-if="recargoMonto > 0">
-            <td class="p-1 font-semibold">Recargo</td>
-            <td class="p-1 text-right text-red-500">${{ recargoMonto.toFixed(2) }}</td>
-          </tr>
-          <tr>
-            <td class="p-1 font-semibold">Total</td>
-            <td class="p-1 text-right text-red-500">${{ (total + adicional).toFixed(2) }}</td>
-          </tr>
-          <tr>
-            <td class="p-1 font-semibold">Falta por pagar</td>
-            <td class="p-1 text-right text-red-500">${{ faltaPorPagar.toFixed(2) }}</td>
-          </tr>
-          <tr>
-            <td class="p-1 font-semibold">Comentario</td>
-            <td class="p-1 text-right">
-              <textarea class="border rounded p-1 w-full" :class="{ 'border-red-500': descuento > 0 && !comentario }"
-                v-model="comentario" placeholder="Escribe un comentario..."></textarea>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="flex justify-end space-x-4">
-        <button v-if="!props.pausa" @click.prevent="PausarTimer" class="btn-secondary p-2 rounded-md"><span
-            class="material-symbols-outlined">
-            pause
-          </span>
-          Pausar
+        <h2 class="text-xl font-bold ">Detalles de Pago</h2>
+        <table class=" w-full  text-left">
+          <tbody>
+            <tr>
+              <td class="p-1 font-semibold">Total</td>
+              <td class="p-1 text-right">${{ total.toFixed(2) }}</td>
+            </tr>
+            <tr>
+              <td class="p-1 font-semibold">Adicional</td>
+              <td class="p-1 text-right">${{ adicional.toFixed(2) }}</td>
+            </tr>
+            <tr>
+              <td class="p-1 font-semibold">Descuento</td>
+              <td class="p-1 text-right">
+                <input
+                  type="number"
+                  class="border rounded p-1 w-full"
+                  v-model.number="descuento"
+                  placeholder="0.00"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td class="p-1 font-semibold">Efectivo</td>
+              <td class="p-1 text-right">
+                <input type="number" class="border rounded p-1 w-full" v-model.number="efectivo" @input="updateFalta"
+                  placeholder="0.00" />
+              </td>
+            </tr>
+            <tr>
+              <td class="p-1 font-semibold">Tarjeta</td>
+              <td class="p-1 text-right">
+                <input
+                  type="number"
+                  class="border rounded p-1 w-full"
+                  v-model.number="tarjeta"
+                  placeholder="0.00"
+                  :disabled="selectedTarjeta !== null"
+                  :class="{ 'bg-gray-300': selectedTarjeta !== null }"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td class="p-1 font-semibold">MercadoPago</td>
+              <td class="p-1 text-right">
+                <input
+                  type="number"
+                  class="border rounded p-1 w-full"
+                  v-model.number="mercadoPago"
+                  placeholder="0.00"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td class="p-1 font-semibold">Seleccionar Tarjeta</td>
+              <td class="p-1 text-right">
+                <select v-model="selectedTarjeta" class="border rounded p-1 w-full" @change="updateRecargo">
+                  <option :value="null">Sin tarjeta seleccionada</option>
+                  <option v-for="tarjeta in tarjetas" :key="tarjeta.tarjetaID" :value="tarjeta" 
+                  >
+                    {{ tarjeta.nombre }}
+                  </option>
+                </select>
+              </td>
+            </tr>
+
+            <tr v-if="empenoMonto > 0">
+              <td class="p-1 font-semibold">Empeño</td>
+              <td class="p-1 text-right text-green-500">-${{ empenoMonto.toFixed(2) }}</td>
+            </tr>
+            <tr v-if="recargoMonto > 0">
+              <td class="p-1 font-semibold">Recargo</td>
+              <td class="p-1 text-right text-red-500">${{ recargoMonto.toFixed(2) }}</td>
+            </tr>
+            <tr>
+              <td class="p-1 font-semibold">Total</td>
+              <td class="p-1 text-right text-red-500">${{ (total + adicional + extraTarjeta).toFixed(2)}}</td>
+            </tr>
+            <tr>
+              <td class="p-1 font-semibold">Falta por pagar</td>
+              <td class="p-1 text-right text-red-500">${{ faltaPorPagar.toFixed(2) }}</td>
+            </tr>
+            <tr>
+              <td class="p-1 font-semibold">Comentario</td>
+              <td class="p-1 text-right">
+                <textarea class="border rounded p-1 w-full" :class="{ 'border-red-500': descuento > 0 && !comentario }"
+                  v-model="comentario" placeholder="Escribe un comentario..."></textarea>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="flex justify-end space-x-4">
+          <button v-if="!props.pausa" @click.prevent="PausarTimer" class="btn-secondary p-2 rounded-md"><span
+              class="material-symbols-outlined">
+              pause
+            </span>
+            Pausar
+          </button>
+          <button v-if="props.pausa" @click.prevent="RecalcularTimer" class="btn-secondary p-2 rounded-md">
+            Recalcular<span class="material-symbols-outlined">
+              play_arrow
+            </span>
+          </button>
+
+          <button @click.prevent="toggleEmpenoModal" class="btn-third p-2 rounded-md">Empeño</button>
+          <button @click.prevent="toggleRecargoModal" class="btn-third p-2 rounded-md">Recargo</button>
+
+        </div>
+        <button :disabled="faltaPorPagar !== 0" @click.prevent="crearMovimientoAdicional"
+          class="w-full mt-4 rounded-xl p-2" :class="!isButtonDisabled ? ' btn-primary' : 'btn-disabled'">
+          Confirmar
         </button>
-        <button v-if="props.pausa" @click.prevent="RecalcularTimer" class="btn-secondary p-2 rounded-md">
-          Recalcular<span class="material-symbols-outlined">
-            play_arrow
-          </span>
-        </button>
-
-        <button @click.prevent="toggleEmpenoModal" class="btn-third p-2 rounded-md">Empeño</button>
-        <button @click.prevent="toggleRecargoModal" class="btn-third p-2 rounded-md">Recargo</button>
-
       </div>
-      <button :disabled="faltaPorPagar !== 0" @click.prevent="crearMovimientoAdicional"
-        class="w-full mt-4 rounded-xl p-2" :class="!isButtonDisabled ? ' btn-primary' : 'btn-disabled'">
-        Confirmar
-      </button>
-    </div>
 
-    <RecargoModal v-if="showRecargoModal" @close="showRecargoModal = false" @confirm-recargo="confirmoRecargo" />
-    <EmpenoModal v-if="showEmpenoModal" @close="showEmpenoModal = false" @confirm-empeno="confirmoEmpeno" />
-  </div>
-</Teleport>
+      <RecargoModal v-if="showRecargoModal" @close="showRecargoModal = false" @confirm-recargo="confirmoRecargo" />
+      <EmpenoModal v-if="showEmpenoModal" @close="showEmpenoModal = false" @confirm-empeno="confirmoEmpeno" />
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -151,58 +147,46 @@ const empenoDetalle = ref('');
 const recargoMonto = ref(0);
 const recargoDetalle = ref('');
 const comentario = ref('');
-const ACobrarEfectivo = ref(0);
-const ACobrarTarjeta = ref(0);
-const descuentoEfectivo = ref(0);
-const porcentajeEfectivo = ref(0);
-const mostrarRecargoMonto = ref(0);
 const tarjetas = ref([]);
 const selectedTarjeta = ref(null);
 const showEmpenoModal = ref(false);
 const showRecargoModal = ref(false);
 const isButtonDisabled = ref(false);
+const extraTarjeta = ref(0);
+const porcentajeRecargo = ref(0);
+
 const faltaPorPagar = computed(() => {
   return (
     props.total +
     props.adicional -
-    (descuento.value + efectivo.value + tarjeta.value + mercadoPago.value + empenoMonto.value) +
-    recargoMonto.value 
+    (descuento.value + efectivo.value + tarjeta.value + mercadoPago.value + empenoMonto.value - extraTarjeta.value) +
+    recargoMonto.value
   );
 });
 
 const fetchTarjetas = async () => {
   try {
     const response = await axiosClient.get('/GetTarjetas');
-    const responseEfectivo = await axiosClient.get(`/GetDescuentoEfectivo?institucionID=0`);
-    porcentajeEfectivo.value = responseEfectivo.data.data.montoPorcentual;
-    tarjetas.value = response.data.data;
+    tarjetas.value = [...response.data.data];
   } catch (error) {
     console.error('Error fetching tarjetas:', error);
   }
 };
 
 const updateFalta = async () => {
-  if (efectivo.value > 0) {
-    try {
-      const porcentajeDescuento = porcentajeEfectivo.value;
-      descuentoEfectivo.value = (efectivo.value * (porcentajeDescuento / 100)); 
-      ACobrarEfectivo.value = (efectivo.value - descuentoEfectivo.value)
-    } catch (error) {
-      console.error('Error fetching descuento:', error);
-    }
-  }
 };
 
 onMounted(fetchTarjetas);
 
-
-
-
 const updateRecargo = () => {
   if (selectedTarjeta.value) {
-    const porcentajeRecargo = selectedTarjeta.value.montoPorcentual;
-    mostrarRecargoMonto.value = (tarjeta.value * (porcentajeRecargo / 100))
-    ACobrarTarjeta.value = (tarjeta.value + mostrarRecargoMonto.value)
+
+    porcentajeRecargo.value = selectedTarjeta.value.montoPorcentual;
+    extraTarjeta.value = (tarjeta.value * (selectedTarjeta.value.montoPorcentual / 100)).toFixed(0);
+    tarjeta.value = (tarjeta.value * (1 + (selectedTarjeta.value.montoPorcentual / 100))).toFixed(0);
+  } else {
+    tarjeta.value = (tarjeta.value / (1 + (porcentajeRecargo.value / 100))).toFixed(0);
+    extraTarjeta.value = 0;
   }
 };
 
@@ -264,8 +248,8 @@ const pagarVisita = async () => {
     const data = {
       visitaId: props.visitaId,
       montoDescuento: descuento.value,
-      montoEfectivo: ACobrarEfectivo.value,
-      montoTarjeta: ACobrarTarjeta.value,
+      montoEfectivo: tarjeta.value,
+      montoTarjeta: efectivo.value,
       montoBillVirt: mercadoPago.value,
       medioPagoId: 1,
       comentario: comentario.value,
