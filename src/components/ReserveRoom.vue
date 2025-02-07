@@ -5,20 +5,58 @@
         class="fixed w-full h-full  bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
         <Transition name="modal-inner">
           <div
-            class=" w-11/12 h-full md:h-[92%] flex flex-col justify-center fixed mt-4 px-8 py-2 border-x-8  border-secondary-400 rounded-xl bg-neutral-800">
-            <i class="fa-thin fa-circle-xmark"></i>
+            class="relative w-11/12 md:h-auto flex flex-col justify-center  mt-4 px-8 py-6 border-x-4  border-accent-400 rounded-3xl bg-neutral-800">
+
             <!-- Modal Content -->
             <button
-              class="absolute top-2 right-2 text-xl   w-14 h-14 text-white items-end btn-danger rounded-full transition duration-150 ease-out md:ease-in"
+              class="absolute top-2 right-2 text-xl w-14 h-14 text-white items-end btn-danger rounded-full transition duration-150 ease-out md:ease-in"
               @click="$emit('close-modal')">X</button>
-            <h1
-              class="absolute top-0 right-24 col-span-3    text-2xl lexend-exa font-bold mt-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
-              {{ selectedRoom.nombreHabitacion }}
-            </h1>
-            <form class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
+            <form class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="flex justify-between col-span-1 md:col-span-3  pr-16">
+                <div
+                  class="timer-container flex items-center bg-black bg-clip-padding backdrop-filter backdrop-blur-md bg-opacity-40 rounded-xl  shadow-neutral-900 shadow-lg">
+                  <!-- Contenedor del reloj -->
+                  <div class="timer flex items-center    border-x-2 border-primary-500 rounded-xl  shadow-lg">
+                    <p class="w-contain text-primary-400 text-xs font-semibold">Tiempo restante:</p>
+                    <p class="time mr-2">
+                      <span v-for="(char, index) in formattedTime" :key="index" class="digit">
+                        {{ char }}
+                      </span>
+                    </p>
+                    <!-- Botón para ignorar tiempo extra -->
+                    <button @click="ignorarTiempoExtra" type="button" :class="[
+                      'timerbutton',
+                      'w-2/4',
+                      'font-semibold',
+                      'text-white',
+                      'grid',
+                      'transition-all',
+                      {
+                        'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400': ignorarTiempo,
+                        'transform scale-80': ignorarTiempo,
+                        'shadow-inner': ignorarTiempo
+                      }
+                    ]" :style="{
+                    border: '4px solid transparent',
+                    borderImage: 'linear-gradient(to right, #ff49d1, #a78bfa, #3b5cff) 1',
+
+                  }">
+                      <span class="material-symbols-outlined">
+                        block
+                      </span>
+                    </button>
+                  </div>
+    
+
+                </div>
+                <h1
+                    class="   text-2xl lexend-exa font-bold mt-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
+                    {{ selectedRoom.nombreHabitacion }}
+                  </h1>
+              </div>
               <div class="grid shadow-lg w-full rounded-2xl border-2  border-primary-500  ">
-                
+
                 <section class="relative  drop-shadow-xl w-full h-44 overflow-hidden rounded-2xl bg-[#691660]">
                   <div
                     class=" grid absolute items-center justify-center text-white z-[1] opacity-90 rounded-2xl inset-0.5 bg-[#323132]  px-4">
@@ -72,9 +110,10 @@
 
 
               </div>
-              <section class="relative z-10 flex col-span-2 flex-col  justify-start ">
+              <section class="relative z-10 flex col-span-1 md:col-span-2 flex-col  justify-start ">
 
-                <div class="bg-neutral-700  h-72  rounded-l-3xl p-4 overflow-y-auto shadow-neutral-900 shadow-lg">
+                <div
+                  class="bg-neutral-700  h-72 border-l-4 border-accent-400  rounded-l-3xl p-4 overflow-y-auto shadow-neutral-900 shadow-lg">
                   <!-- Header row -->
                   <div
                     class="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_auto] gap-3  text-white text-xs font-semibold mb-2">
@@ -108,11 +147,11 @@
                   </ul>
                   <div
                     class="absolute -bottom-16 z-[-1] left-12 flex self-center w-10/12 border-x-2 border-b-2 rounded-b-2xl p-4 shadow-neutral-900 shadow-lg">
-                    <button type="button" @click="toggleModalConfirm(false)"
+                    <button type="button" @click="toggleModalConsumo(false)"
                       class="btn-third w-full  h-8 mr-2 p-1 text-sm  rounded-3xl mt-4">
                       Consumo general
                     </button>
-                    <button type="button" @click="toggleModalConfirm(true)"
+                    <button type="button" @click="toggleModalConsumo(true)"
                       class="btn-third w-full h-8 text-sm p-2 mr-2  rounded-3xl mt-4">
                       Consumo habitación
                     </button>
@@ -166,43 +205,8 @@
                 </div>
                 <div class="absolute w-full h-full bg-white blur-[50px] -left-1/2 -top-1/2"></div>
               </section>
-              <div
-                class="absolute top-4 left-8 timer-container flex items-center bg-black bg-clip-padding backdrop-filter backdrop-blur-md bg-opacity-40 rounded-xl  shadow-neutral-900 shadow-lg">
-                <!-- Contenedor del reloj -->
-                <div class="timer flex items-center    border-4 border-primary-500 rounded-xl  shadow-lg">
-                  <p class="w-contain text-primary-400 text-xs font-semibold">Tiempo restante:</p>
-                  <p class="time mr-2">
-                    <span v-for="(char, index) in formattedTime" :key="index" class="digit">
-                      {{ char }}
-                    </span>
-                  </p>
-                  <!-- Botón para ignorar tiempo extra -->
-                  <button @click="ignorarTiempoExtra" type="button" :class="[
-                    'timerbutton',
-                    'w-2/4',
-                    'font-semibold',
-                    'text-white',
-                    'grid',
-                    'transition-all',
-                    {
-                      'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400': ignorarTiempo,
-                      'transform scale-80': ignorarTiempo,
-                      'shadow-inner': ignorarTiempo
-                    }
-                  ]" :style="{
-                    border: '4px solid transparent',
-                    borderImage: 'linear-gradient(to right, #ff49d1, #a78bfa, #3b5cff) 1',
 
-                  }">
-                    <span class="material-symbols-outlined">
-                      block
-                    </span>
-                  </button>
-                </div>
-
-
-              </div>
-              <section class=" flex col-span-2 justify-center items-end">
+              <section class=" flex col-span-1 md:col-span-2 justify-center items-end">
                 <div class="relative  drop-shadow-xl w-3/4 h-24 overflow-hidden rounded-xl bg-[#691660]">
                   <div
                     class="absolute flex items-center justify-center text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] space-x-4 px-4">
@@ -235,12 +239,11 @@
 
             <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID"
               @close-modal="modalAnular = false" />
-            <ModalConfirm v-if="modalConfirm" :name="selectedRoom.Identificador" :habitacionID="selectedRoom.HabitacionID" :consumoHabitacion="esConsumoHabitacion" @confirmaAccion="confirmAndSend"
-              @close="toggleModalConfirm" />
+            <ModalConsumo v-if="modalConsumo" :name="selectedRoom.Identificador"
+              :habitacionID="selectedRoom.HabitacionID" :consumoHabitacion="esConsumoHabitacion"
+              @confirmaAccion="confirmAndSend" @close="toggleModalConsumo" />
 
-            <!-- <ModalConfirmHabitacion v-if="modalConfirmHabitacion" :name="selectedRoom.Identificador"
-              :habitacionID="selectedRoom.HabitacionID" @confirmaAccion="confirmAndSendHabitacion"
-              @close="toggleModalConfirmHabitacion" /> -->
+
           </div>
 
         </Transition>
@@ -256,8 +259,7 @@ import { onMounted, ref, watch, onUnmounted } from 'vue';
 import axiosClient from '../axiosClient';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
-import ModalConfirm from './ModalConfirm.vue';
-import ModalConfirmHabitacion from './ModalConfirmHabitacion.vue';
+import ModalConsumo from './ModalConsumo.vue';
 import AnularOcupacionModal from './AnularOcupacionModal.vue';
 import ModalPagar from './ModalPagar.vue';
 import dayjs from 'dayjs';
@@ -301,7 +303,7 @@ onMounted(() => {
 
   console.log(selectedRoom.value)
   actualizarConsumos();
-  document.body.style.overflow = 'hidden';
+
 })
 
 let selectedRoom = ref({
@@ -337,8 +339,8 @@ const tableData = ref({
   total: 0,
 });
 
-let modalConfirm = ref(false);
-let modalConfirmHabitacion = ref(false);
+let modalConsumo = ref(false);
+
 
 
 const pizza = ref();
@@ -436,17 +438,15 @@ const actualizarConsumos = () => {
       console.error('Error al obtener los consumos:', error);
     });
 };
-const toggleModalConfirm = (esHabitacion) => {
+const toggleModalConsumo = (esHabitacion) => {
   esConsumoHabitacion.value = esHabitacion
-  modalConfirm.value = !modalConfirm.value;
+  modalConsumo.value = !modalConsumo.value;
 }
 
 const toggleAnularOcupacionModal = () => {
   modalAnular.value = !modalAnular.value;
 }
-const toggleModalConfirmHabitacion = () => {
-  modalConfirmHabitacion.value = !modalConfirmHabitacion.value;
-}
+
 const confirmAndSend = (ConfirmedArticles) => {
 
   console.log(JSON.stringify(ConfirmedArticles) + " Llegamos al ReserveROOM");
@@ -662,7 +662,7 @@ onMounted(async () => {
       promocionActiva.value = true;
     }
   }
-  document.body.style.overflow = 'hidden';
+
 })
 
 

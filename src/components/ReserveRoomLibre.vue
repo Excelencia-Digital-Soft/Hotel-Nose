@@ -76,7 +76,7 @@
   import axiosClient from '../axiosClient';
   import InputNumber from 'primevue/inputnumber';
   import Checkbox from 'primevue/checkbox';
-  import ModalConfirm from './ModalConfirm.vue';
+
   
   const hours = ref(0);
   const periodoCost = ref(0);
@@ -151,7 +151,7 @@
     total: 0,
   });
   
-  let modalConfirm = ref(false);
+
   const currentDate = ref('');
   const currentTime = ref('');
   let editTagRel = {}
@@ -159,9 +159,7 @@
   let idNewTag = ref(0);
   let numeroError = ref('');
   
-  const toggleModalConfirm = () => {
-    modalConfirm.value = !modalConfirm.value;
-  }
+
   
   console.log("tagselected : " + editTagRel.value)
   

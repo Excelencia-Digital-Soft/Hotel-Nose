@@ -4,11 +4,11 @@
       <div
         class="fixed w-full h-full overflow-auto z-20 bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center px-8">
         <Transition name="modal-inner">
-          <div class="w-4/6 bg-neutral-900 fixed top-4 flex flex-col bg-opacity-60 backdrop-blur-lg justify-evenly items-start p-8 pb-12 rounded-3xl self-start mt-0 border-8 border-purple-300/75">
+          <div class="w-11/12 md:w-4/6 h-[90%] bg-neutral-800 fixed top-6 flex flex-col bg-opacity-60 backdrop-blur-lg justify-evenly items-start p-8 pb-12 rounded-3xl self-start mt-0 border-y-4 border-accent-400">
             
             <section class="flex space-x-1 mb-4 ">
               <div class="pr-4">
-              <label class="text-lg font-bold text-white">Lista de Productos</label> 
+              <label class="text-lg font-bold text-white whitespace-nowrap">Lista de Productos</label> 
               <input type="text" v-model="keyword"
                 class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors  "
                 placeholder="Buscar productos" />
@@ -16,7 +16,7 @@
               <!-- Categoría de productos -->
               <div class="flex flex-col items-center">
                 <label for="categoryFilter" class="text-white font-semibold whitespace-nowrap">Filtrar por categoría:</label>
-                <select id="categoryFilter" v-model="selectedCategory" class="focus:ring-purple-500 border-2 w-full h-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors  ">
+                <select id="categoryFilter" v-model="selectedCategory" class="focus:ring-purple-500 border-2 w-full  focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors  ">
                   <option :value="null">Todas</option>
                   <option v-for="category in categorias" :key="category.categoriaId" :value="category">
                     {{ category.nombreCategoria }}
@@ -29,15 +29,15 @@
             <div class="container mx-auto">
               <!-- Contenedor con overflow-hidden y altura de 500px -->
               <div class="h-80" style="max-height: 40vh; overflow-y: auto;">
-                <div class="grid grid-cols-4 gap-2 mx-2">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mx-2">
                   <!-- Iteramos sobre los productos filtrados -->
                   <div v-for="producto in filteredProductos" :key="producto.articuloId"
                     @click="toggleSeleccion(producto)" :class="{
-                      'relative hover:bg-surface-700 cursor-pointer text-white text-center rounded-lg p-4 flex flex-col items-center justify-center': true,
-                      'ring-4 bg-secondary-900 ring-primary-500': seleccionados.includes(producto)
+                      'relative hover:bg-accent-900 hover:bg-opacity-50 cursor-pointer text-white text-center rounded-lg p-4 flex flex-col items-center justify-center transition-colors duration-50 ease-out md:ease-in': true,
+                      ' bg-accent-800 border-primary-400 border-x-2':seleccionados.some(p => p.articuloId === producto.articuloId)
                     }">
                     <!-- Imagen del producto -->
-                    <div class="w-16 h-16 bg-gray-500 flex items-center justify-center rounded-md mb-2">
+                    <div class="w-16 h-16 flex items-center justify-center rounded-md mb-2">
                       <img :src="producto.imageUrl || '../assets/image59.svg'" alt="Imagen del producto"
                         class="w-full h-full object-cover" />
                     </div>
@@ -55,7 +55,7 @@
             <h3 class="text-md text-white font-semibold">¿Seguro que desea confirmar?</h3>
             <div class="flex">
               <button type="button"
-                class="btn-light absolute -bottom-8 left-8 text-md w-1/3 h-16 rounded-3xl border-2 border-purple-200"
+                class="btn-secondary absolute -bottom-8 left-6 md:left-16 text-md w-1/3 h-16 rounded-3xl"
                 @click="confirmarAccion">
                 <span v-if="!isLoading">Confirmar</span>
                 <span v-else>
@@ -71,7 +71,7 @@
                 </span>
               </button>
               <button type="button"
-                class="btn-danger absolute -bottom-8 right-8 text-md w-1/3 h-16 rounded-3xl transition-colors border-2 border-purple-200"
+                class="btn-danger absolute -bottom-8 right-6 md:right-16 text-md w-1/3 h-16 rounded-3xl transition-colors border-2 border-purple-200"
                 @click="emits('close')">cancelar</button>
             </div>
             <button class="btn-danger absolute text-md w-12 h-12 -top-6 right-0 rounded-full border-2 border-purple-200"

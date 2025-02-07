@@ -136,7 +136,7 @@ const routes = [
         component: MediosPagoManager,
         meta: {
           requireAuth: true,
-          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
     ],

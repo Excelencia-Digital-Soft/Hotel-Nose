@@ -1,5 +1,5 @@
 <template>
-  <div class="flex">
+  <div class="flex overflow-auto">
     <!-- Panel Izquierdo: Habitaciones Libres -->
     <div class="w-1/2 p-4 flex flex-col items-center">
       <h2 class="text-xl text-white lexend-exa font-bold mb-4">HABITACIONES LIBRES</h2>
@@ -77,13 +77,14 @@ function updateRoom(updatedRoom) {
 function toggleModal(Room) {
   show.value = !show.value
   room.value = Room
-  document.body.style.overflow = 'auto';
+  
+  document.body.style.overflow = !show.value ? 'auto' : 'hidden';
   console.log(room.value)
 }
 function toggleModalLibre(Room) {
   showFree.value = !showFree.value
   room.value = Room
-  document.body.style.overflow = 'auto';
+  document.body.style.overflow = 'hidden';
 }
 // Llamar a la API al montar el componente
 onMounted(fetchHabitaciones)

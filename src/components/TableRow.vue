@@ -3,15 +3,15 @@
     <table class="w-full text-white">
       <thead >
         <tr>
-          <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Item</th>
-          <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Producto</th>
-          <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Precio</th>
-          <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Cantidad</th>
-          <th class=" bg-secondary-800 rounded-sm text-sm shadow-sm">Total</th>
+          <th class=" bg-accent-600 rounded-sm text-sm shadow-sm">Item</th>
+          <th class=" bg-accent-600 rounded-sm text-sm shadow-sm">Producto</th>
+          <th class=" bg-accent-600 rounded-sm text-sm shadow-sm">Precio</th>
+          <th class=" bg-accent-600 rounded-sm text-sm shadow-sm">Cantidad</th>
+          <th class=" bg-accent-600 rounded-sm text-sm shadow-sm">Total</th>
         </tr>
       </thead>
       <tbody>
-        <tr class="hover:shadow-md text-white" v-for="(detalle, index) in props.selectedList" :key="detalle.articuloId">
+        <tr class="hover:shadow-md text-white text-sm" v-for="(detalle, index) in props.selectedList" :key="detalle.articuloId">
           <td class="rounded-md text-center shadow-sm">
             {{ index + 1 }}
           </td>
