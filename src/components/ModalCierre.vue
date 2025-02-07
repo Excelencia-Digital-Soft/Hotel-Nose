@@ -1,4 +1,4 @@
-<template id="modal">
+<template>
   <!-- Modal container -->
   <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center" @click.self="closeModal">
     <!-- Modal content -->
@@ -279,24 +279,32 @@ const cerrarCaja = () => {
 };
 
 const printCierreCaja = () => {
-  const modal = document.getElementById(this); // Replace with your modal's actual ID
-  if (!modal) {
-    console.error('Modal not found');
-    return;
+  const hiddenContent = document.getElementById('hidden-print-content');
+
+  if (hiddenContent) {
+    // Create a copy of the hidden content
+    const clonedContent = hiddenContent.cloneNode(true);
+
+    // Create a temporary container for printing
+    const printContainer = document.createElement('div');
+    printContainer.style.position = 'absolute';
+    printContainer.style.top = '0';
+    printContainer.style.left = '0';
+    printContainer.style.zIndex = '-1';
+    printContainer.style.visibility = 'visible'; // Make it visible for printing
+    printContainer.appendChild(clonedContent);
+
+    // Append to body temporarily
+    document.body.appendChild(printContainer);
+
+    // Trigger print
+    window.print();
+
+    // Remove the temporary container after printing
+    document.body.removeChild(printContainer);
+  } else {
+    console.error('The hidden content was not found.');
   }
-
-  // Clone the modal content
-  const printWindow = window.open('', '', 'width=800,height=600');
-  printWindow.document.write('<html><head><title>Print</title>');
-  printWindow.document.write('<link rel="stylesheet" href="your-styles.css">'); // Optional: Include styles
-  printWindow.document.write('</head><body>');
-  printWindow.document.write(modal.innerHTML);
-  printWindow.document.write('</body></html>');
-
-  printWindow.document.close();
-  printWindow.focus();
-  printWindow.print();
-  printWindow.close();
 };
 </script>
 
