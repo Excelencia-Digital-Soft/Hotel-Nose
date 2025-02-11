@@ -5,7 +5,7 @@
         class="fixed w-full h-full  bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
         <Transition name="modal-inner">
           <div
-            class="relative w-11/12 md:h-auto flex flex-col justify-center  mt-4 px-8 py-6 border-x-4  border-accent-400 rounded-3xl bg-neutral-800">
+            class="relative w-11/12 md:h-auto flex flex-col justify-center  mt-4 px-8 py-6 border-x-4  border-fuchsia-900 rounded-3xl bg-neutral-800">
 
             <!-- Modal Content -->
             <button
