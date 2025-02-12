@@ -155,6 +155,7 @@ namespace ApiObjetos.Controllers
                     .Include(h => h.Categoria)
                     .ToListAsync();
                 var consumos = await _db.Consumo.ToListAsync();
+                var tarjetas = await _db.Tarjetas.ToListAsync();
                 // List to store the mapped Cierres with Pagos
                 var CierresReturn = new List<object>();
 
@@ -165,6 +166,7 @@ namespace ApiObjetos.Controllers
 
                     foreach (var pago in cierre.Pagos)
                     {
+                        var tarjeta = tarjetas.FirstOrDefault(t => pago.TarjetaId == t.TarjetaID);
                         var empeño = empeños.FirstOrDefault(e => e.PagoID == pago.PagoId);
                         if (empeño == null)
                         {
@@ -193,6 +195,7 @@ namespace ApiObjetos.Controllers
                                 categoriaNombre,
                                 Periodo,
                                 Fecha = pago.fechaHora,
+                                TarjetaNombre = tarjeta?.Nombre ?? null,
                                 HoraIngreso = horaEntrada,
                                 HoraSalida = horaSalida,
                                 totalConsumo,
@@ -213,6 +216,7 @@ namespace ApiObjetos.Controllers
                                 Fecha = pago.fechaHora,
                                 Periodo = 0,
                                 HoraIngreso = (DateTime?)null,
+                                TarjetaNombre = tarjeta?.Nombre ?? null,
                                 HoraSalida = (DateTime?)null,
                                 totalConsumo = 0,
                                 MontoAdicional = 0,
@@ -250,6 +254,7 @@ namespace ApiObjetos.Controllers
                 foreach (var pago in pagosSinCierre)
                 {
                     var empeño = empeños.FirstOrDefault(e => e.PagoID == pago.PagoId);
+                    var tarjeta = tarjetas.FirstOrDefault(t => pago.TarjetaId == t.TarjetaID);
 
                     if (empeño == null) {
                         var movimiento = movimientos.FirstOrDefault(m => m.PagoId == pago.PagoId);
@@ -276,6 +281,7 @@ namespace ApiObjetos.Controllers
                             HabitacionID = ultimaReserva.HabitacionId ?? null,
                             Periodo,
                             categoriaNombre,
+                            TarjetaNombre = tarjeta?.Nombre ?? null,
                             Fecha = pago.fechaHora,
                             HoraIngreso = horaEntrada,
                             HoraSalida = pago.fechaHora,
@@ -296,6 +302,7 @@ namespace ApiObjetos.Controllers
                             pago.PagoId,
                             Fecha = pago.fechaHora,
                             Periodo = 0,
+                            TarjetaNombre = tarjeta?.Nombre ?? null,
                             HoraIngreso = (DateTime?)null,
                             HoraSalida = (DateTime?)null,
                             totalConsumo = 0,
