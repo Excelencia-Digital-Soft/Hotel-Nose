@@ -29,7 +29,7 @@
             <tr>
               <td class="p-1 font-semibold">Efectivo</td>
               <td class="p-1 text-right">
-                <input type="number" class="border rounded p-1 w-full" v-model.number="efectivo" @input="updateFalta"
+                <input type="number" class="border rounded p-1 w-full" v-model.number="efectivo"
                   placeholder="0.00" />
               </td>
             </tr>
@@ -46,17 +46,7 @@
                 />
               </td>
             </tr>
-            <tr>
-              <td class="p-1 font-semibold">MercadoPago</td>
-              <td class="p-1 text-right">
-                <input
-                  type="number"
-                  class="border rounded p-1 w-full"
-                  v-model.number="mercadoPago"
-                  placeholder="0.00"
-                />
-              </td>
-            </tr>
+            <!-- REMOVED MERCADOPAGO INPUT -->
             <tr>
               <td class="p-1 font-semibold">Seleccionar Tarjeta</td>
               <td class="p-1 text-right">
@@ -80,7 +70,7 @@
             </tr>
             <tr>
               <td class="p-1 font-semibold">Total</td>
-              <td class="p-1 text-right text-red-500">${{ (total + adicional + extraTarjeta).toFixed(2)}}</td>
+              <td class="p-1 text-right text-red-500">${{ totalPago.toFixed(2) }}</td>
             </tr>
             <tr>
               <td class="p-1 font-semibold">Falta por pagar</td>
@@ -112,7 +102,7 @@
           <button @click.prevent="toggleRecargoModal" class="btn-third p-2 rounded-md">Recargo</button>
 
         </div>
-        <button :disabled="faltaPorPagar !== 0" @click.prevent="crearMovimientoAdicional"
+        <button :disabled="faltaPorPagar !== 0 || (descuento > 0 && !comentario)" @click.prevent="crearMovimientoAdicional"
           class="w-full mt-4 rounded-xl p-2" :class="!isButtonDisabled ? ' btn-primary' : 'btn-disabled'">
           Confirmar
         </button>
@@ -125,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import axiosClient from '../axiosClient';
 import EmpenoModal from './EmpenoModal.vue';
 import RecargoModal from './RecargoModal.vue';
@@ -141,12 +131,13 @@ const props = defineProps({
 const descuento = ref(0);
 const efectivo = ref(0);
 const tarjeta = ref(0);
-const mercadoPago = ref(0);
+//const mercadoPago = ref(0); REMOVED
 const empenoMonto = ref(0);
 const empenoDetalle = ref('');
 const recargoMonto = ref(0);
 const recargoDetalle = ref('');
 const comentario = ref('');
+const totalPago = ref(0);
 const tarjetas = ref([]);
 const selectedTarjeta = ref(null);
 const showEmpenoModal = ref(false);
@@ -155,11 +146,22 @@ const isButtonDisabled = ref(false);
 const extraTarjeta = ref(0);
 const porcentajeRecargo = ref(0);
 
+// Computed property to calculate the total
+const calculatedTotal = computed(() => {
+  return props.total + props.adicional + extraTarjeta.value;
+});
+
+// Watch the calculated total and update totalPago
+watch(calculatedTotal, (newTotal) => {
+  totalPago.value = Number(newTotal || 0);
+});
+
+
 const faltaPorPagar = computed(() => {
   return (
     props.total +
     props.adicional -
-    (descuento.value + efectivo.value + tarjeta.value + mercadoPago.value + empenoMonto.value - extraTarjeta.value) +
+    (descuento.value + efectivo.value + tarjeta.value + empenoMonto.value - extraTarjeta.value) +
     recargoMonto.value
   );
 });
@@ -173,22 +175,38 @@ const fetchTarjetas = async () => {
   }
 };
 
-const updateFalta = async () => {
+
+const calculoInicial = async () => {
+  totalPago.value = props.total + props.adicional;
 };
 
 onMounted(fetchTarjetas);
+onMounted(calculoInicial);
 
 const updateRecargo = () => {
-  if (selectedTarjeta.value) {
+  const subtotal = props.total + props.adicional - descuento.value - efectivo.value - empenoMonto.value;
 
+  if (selectedTarjeta.value) {
     porcentajeRecargo.value = selectedTarjeta.value.montoPorcentual;
-    extraTarjeta.value = (tarjeta.value * (selectedTarjeta.value.montoPorcentual / 100)).toFixed(0);
-    tarjeta.value = (tarjeta.value * (1 + (selectedTarjeta.value.montoPorcentual / 100))).toFixed(0);
+    const newTarjetaValue = Number((subtotal * (1 + (selectedTarjeta.value.montoPorcentual / 100))).toFixed(2));
+    extraTarjeta.value = Number((newTarjetaValue - subtotal).toFixed(2));
+    tarjeta.value = newTarjetaValue;
   } else {
-    tarjeta.value = (tarjeta.value / (1 + (porcentajeRecargo.value / 100))).toFixed(0);
+    tarjeta.value = 0;
     extraTarjeta.value = 0;
+    porcentajeRecargo.value = 0;
   }
 };
+
+watch(
+  () => selectedTarjeta.value,
+  (newVal, oldVal) => {
+    if (newVal !== oldVal) {
+      updateRecargo();
+    }
+  },
+  { immediate: true } // This is important to run the watcher on component mount
+);
 
 const toggleEmpenoModal = () => {
   showEmpenoModal.value = !showEmpenoModal.value;
@@ -214,13 +232,15 @@ const confirmoRecargo = (recargo) => {
 };
 
 const crearMovimientoAdicional = async () => {
+  if (descuento.value > 0 && !comentario.value) {
+    console.log("Test");
+    alert('El comentario es obligatorio cuando se aplica un descuento.');
+    isButtonDisabled.value = false;
+    return;
+  }
   if (isButtonDisabled.value) return;
 
   isButtonDisabled.value = true; // Deshabilitar el botón
-  if (descuento.value > 0 && !comentario.value) {
-    alert('El comentario es obligatorio cuando se aplica un descuento.');
-    return;
-  }
 
   if (empenoMonto.value > 0) {
     try {
@@ -229,6 +249,7 @@ const crearMovimientoAdicional = async () => {
       );
     } catch (error) {
       console.error('Error al crear el empeño:', error);
+      isButtonDisabled.value = false;
       return;
     }
   }
@@ -240,6 +261,7 @@ const crearMovimientoAdicional = async () => {
     pagarVisita();
   } catch (error) {
     console.error('Error al agregar movimiento:', error);
+    isButtonDisabled.value = false;
   }
 };
 
@@ -248,9 +270,9 @@ const pagarVisita = async () => {
     const data = {
       visitaId: props.visitaId,
       montoDescuento: descuento.value,
-      montoEfectivo: tarjeta.value,
-      montoTarjeta: efectivo.value,
-      montoBillVirt: mercadoPago.value,
+      montoEfectivo: efectivo.value,
+      montoTarjeta: tarjeta.value,
+      montoBillVirt: 0, //Hardcoded to 0
       medioPagoId: 1,
       comentario: comentario.value,
       montoRecargo: recargoMonto.value,
@@ -265,6 +287,7 @@ const pagarVisita = async () => {
     finalizarReserva(props.habitacionId);
   } catch (error) {
     console.error('Error al realizar el pago:', error);
+    isButtonDisabled.value = false;
   }
 };
 
@@ -274,6 +297,7 @@ const finalizarReserva = async (idHabitacion) => {
     window.location.reload();
   } catch (error) {
     console.error('Error al finalizar reserva:', error);
+    isButtonDisabled.value = false;
   }
 }
 
@@ -295,6 +319,13 @@ const RecalcularTimer = async () => {
     console.error('Error al reanudar la reserva:', error);
   }
 };
+
+watch(
+  () => [descuento.value, comentario.value],
+  () => {
+    isButtonDisabled.value = false;
+  }
+);
 </script>
 
 <style>

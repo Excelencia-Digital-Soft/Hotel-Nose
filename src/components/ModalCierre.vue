@@ -85,7 +85,7 @@
       </div>
       <div>
         <!-- Imprimir Button -->
-        <button @click="printCierreCaja" class="w-full mt-2 btn-secondary text-black p-3 rounded-xl font-semibold hover:bg-gray-200">
+        <button @click="imprimirModal" class="w-full mt-2 btn-secondary text-black p-3 rounded-xl font-semibold hover:bg-gray-200">
           Imprimir
         </button>
       </div>
@@ -178,11 +178,17 @@ const props = defineProps({
   esAbierto: Boolean,
 });
 
-const emit = defineEmits(['close-modal']);
+const emit = defineEmits(['close-modal'], ['imprimir-modal']);
 
 const closeModal = () => {
   emit('close-modal');
 };
+
+const imprimirModal = () => {
+  if(cierreCajaRef.value){
+  emit('imprimir-modal', cierreCajaRef.value);
+  }
+}
 const cierreCajaRef = ref(null);
 const showInfoModal = ref(false);
 const selectedPago = ref(null);
