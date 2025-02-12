@@ -113,13 +113,13 @@ namespace ApiObjetos.Controllers
         [Route("GetVisitas")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
 
-        public async Task<Respuesta> GetVisitas()
+        public async Task<Respuesta> GetVisitas(int institucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
 
-                var Objeto = await _db.Visitas.ToListAsync();
+                var Objeto = await _db.Visitas.Where(v => v.InstitucionID == institucionID).ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto;
                 return res;

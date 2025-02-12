@@ -405,13 +405,13 @@ namespace ApiObjetos.Controllers
         [HttpGet]
         [Route("GetReservas")]
         [AllowAnonymous]
-        public async Task<Respuesta> GetReservas()
+        public async Task<Respuesta> GetReservas(int institucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
                 // Retrieve all reservations
-                var reservas = await _db.Reservas.ToListAsync();
+                var reservas = await _db.Reservas.Where(r => r.InstitucionID == institucionID).ToListAsync();
 
                 // Check if any reservations exist
                 if (reservas.Any())

@@ -21,6 +21,7 @@ public partial class Articulos
     public int? imagenID { get; set; }
     public Imagenes Imagen { get; set; }
     public int? CategoriaID { get; set; }
+    public int InstitucionID { get; set; }
 
     [JsonIgnore]
     public virtual ICollection<Consumo> Consumo { get; } = new List<Consumo>();

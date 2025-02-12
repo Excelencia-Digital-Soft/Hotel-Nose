@@ -25,6 +25,7 @@ public partial class Cierre
     public bool? EstadoCierre { get; set; }
 
     public decimal? MontoInicialCaja { get; set; }
+    public int InstitucionID { get; set; }
 
     [JsonIgnore]
     public virtual ICollection<Pagos> Pagos { get; } = new List<Pagos>();

@@ -123,13 +123,13 @@ namespace ApiObjetos.Controllers
 
         [HttpGet]
         [Route("GetAllPromociones")]
-        public async Task<Respuesta> GetAllPromociones()
+        public async Task<Respuesta> GetAllPromociones(int institucionID)
         {
             Respuesta res = new Respuesta();
 
             try
             {
-                var promociones = await _db.Promociones.ToListAsync();
+                var promociones = await _db.Promociones.Where(p => p.InstitucionID == institucionID).ToListAsync();
                 if (promociones == null || promociones.Count == 0)
                 {
                     res.Ok = false;

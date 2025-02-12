@@ -15,6 +15,7 @@ public partial class Promociones
     public int CategoriaID { get; set; }
     public bool? Anulado { get; set; }
     public string Detalle { get; set; }
+    public int InstitucionID { get; set; }
     [JsonIgnore]
     public virtual CategoriasHabitaciones? Categoria { get; set; }
 

@@ -150,13 +150,14 @@ namespace ApiObjetos.Controllers
         #region Get All Pagos
         [HttpGet]
         [Route("GetPagos")] // Obtiene todos los pagos
-        public async Task<Respuesta> GetPagos()
+        public async Task<Respuesta> GetPagos(int institucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
                 // Get all Pagos from the database, including related MedioPago and Movimientos
                 var pagos = await _db.Pagos
+                    .Where(p => p.InstitucionID == institucionID)
                     .Include(p => p.MedioPago)
                     .Include(p => p.Movimientos)
                     .ToListAsync();

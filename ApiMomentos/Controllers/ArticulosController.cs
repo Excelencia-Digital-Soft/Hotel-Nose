@@ -23,7 +23,7 @@ namespace ApiObjetos.Controllers
         // Method to get all articulos
         [HttpGet]
         [Route("GetArticulos")]
-        public async Task<Respuesta> GetArticulos(int? categoriaID)
+        public async Task<Respuesta> GetArticulos(int institucionID, int? categoriaID)
         {
             Respuesta res = new Respuesta();
 
@@ -34,14 +34,14 @@ namespace ApiObjetos.Controllers
                 if (categoriaID == null)
                 {
                     articulos = await _db.Articulos.
-                        Where(a => a.Anulado != true)
+                        Where(a => a.Anulado != true && a.InstitucionID == institucionID)
                         .
                         ToListAsync();
                 }
                 else
                 {
                     articulos = await _db.Articulos.
-                        Where(a => a.Anulado != true && a.CategoriaID == categoriaID)
+                        Where(a => a.Anulado != true && a.CategoriaID == categoriaID && a.InstitucionID == institucionID)
                         .
                         ToListAsync();
                 }
@@ -165,7 +165,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPost]
         [Route("CreateArticulo")]
-        public async Task<Respuesta> CreateArticulo(string nombre, decimal precio, int? categoriaID)
+        public async Task<Respuesta> CreateArticulo(int institucionID, string nombre, decimal precio, int? categoriaID)
         {
             Respuesta res = new Respuesta();
 
@@ -203,6 +203,7 @@ namespace ApiObjetos.Controllers
                     CategoriaID = categoriaToUse,
                     Anulado = false, // By default, the article is not annulled
                     FechaRegistro = DateTime.Now,
+                    InstitucionID = institucionID,
                 };
 
                 // Step 4: Add the new articulo to the database
@@ -304,7 +305,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPost]
         [Route("CreateArticuloWithImage")]
-        public async Task<Respuesta> CreateArticuloWithImage([FromForm] string nombre, [FromForm] decimal precio, [FromForm] IFormFile? imagen, [FromForm] int categoriaID)
+        public async Task<Respuesta> CreateArticuloWithImage([FromForm] int institucionID, [FromForm] string nombre, [FromForm] decimal precio, [FromForm] IFormFile? imagen, [FromForm] int categoriaID)
         {
             Respuesta res = new Respuesta();
 
@@ -341,7 +342,8 @@ namespace ApiObjetos.Controllers
                     Precio = precio,
                     Anulado = false, // Por defecto, el artículo no está anulado
                     FechaRegistro = DateTime.Now,
-                    CategoriaID = categoriaID // Asignar la categoría al artículo
+                    CategoriaID = categoriaID, // Asignar la categoría al artículo
+                    InstitucionID = institucionID,
                 };
 
                 // Agregar el artículo a la base de datos

@@ -18,8 +18,9 @@ public partial class CategoriasHabitaciones
     public bool? Anulado { get; set; }
 
     public decimal? PrecioNormal { get; set; }
-    public int PorcentajeXPersona { get; set; }
+    public int InstitucionID { get; set; }
 
+    public int PorcentajeXPersona { get; set; }
 
     public virtual ICollection<Habitaciones> Habitaciones { get; } = new List<Habitaciones>();
 

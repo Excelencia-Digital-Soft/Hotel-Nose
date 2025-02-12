@@ -471,13 +471,13 @@ namespace ApiObjetos.Controllers
         [Route("GetMovimientos")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
 
-        public async Task<Respuesta> GetMovimientos()
+        public async Task<Respuesta> GetMovimientos(int institucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
 
-                var Objeto = await _db.Movimientos.ToListAsync();
+                var Objeto = await _db.Movimientos.Where(m => m.InstitucionID == institucionID).ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto;
                 return res;
@@ -588,13 +588,13 @@ namespace ApiObjetos.Controllers
         [HttpGet]
         [Route("GetEgresosSegunTipo")]
         [AllowAnonymous]
-        public async Task<Respuesta> GetEgresosSegunTipo(int tipoEgresoID)
+        public async Task<Respuesta> GetEgresosSegunTipo(int institucionID, int tipoEgresoID)
         {
             Respuesta res = new Respuesta();
             try
             {
                 var egresos = await _db.Egresos
-                    .Where(e => e.TipoEgresoId == tipoEgresoID)
+                    .Where(e => e.TipoEgresoId == tipoEgresoID && e.InstitucionID == institucionID)
                     .ToListAsync();
 
                 res.Ok = true;
@@ -671,12 +671,12 @@ namespace ApiObjetos.Controllers
         [HttpGet]
         [Route("GetTipoEgresos")]
         [AllowAnonymous]
-        public async Task<Respuesta> GetTipoEgresos()
+        public async Task<Respuesta> GetTipoEgresos(int institucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
-                var tipoEgresos = await _db.TipoEgreso.ToListAsync();
+                var tipoEgresos = await _db.TipoEgreso.Where(t => t.InstitucionID == institucionID).ToListAsync();
                 res.Ok = true;
                 res.Data = tipoEgresos;
             }
