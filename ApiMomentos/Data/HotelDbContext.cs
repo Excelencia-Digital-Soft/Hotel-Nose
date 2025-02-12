@@ -104,6 +104,7 @@ public partial class HotelDbContext : DbContext
 
             entity.Property(e => e.CategoriaId).HasColumnName("CategoriaID");
             entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
             entity.Property(e => e.FechaRegistro).HasColumnType("datetime");
             entity.Property(e => e.NombreCategoria)
                 .HasMaxLength(50)
@@ -145,6 +146,7 @@ public partial class HotelDbContext : DbContext
                 .IsRequired() // Mark as required
                 .HasMaxLength(50) // Set maximum length to 50
                 .HasColumnName("NombreCategoria");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
             entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
 
         });
@@ -185,6 +187,8 @@ public partial class HotelDbContext : DbContext
             entity.HasKey(e => e.HabitacionId).HasName("PK__Habitaci__11AD4441DE85318D");
 
             entity.Property(e => e.HabitacionId).HasColumnName("HabitacionID");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
+
             entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
             entity.Property(e => e.CategoriaId).HasColumnName("CategoriaID");
             entity.Property(e => e.Disponible).HasDefaultValueSql("((1))");
@@ -468,6 +472,7 @@ public partial class HotelDbContext : DbContext
             entity.HasKey(e => e.ReservaId).HasName("PK__Reservas__C39937031EAE2A3E");
 
             entity.Property(e => e.ReservaId).HasColumnName("ReservaID");
+            entity.Property(e => e.ReservaId).HasColumnName("InstitucionID");
             entity.Property(e => e.FechaAnula).HasColumnType("datetime");
             entity.Property(e => e.FechaFin).HasColumnType("datetime");
             entity.Property(e => e.FechaRegistro).HasColumnType("datetime");
@@ -599,6 +604,7 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.VisitaId).HasColumnName("VisitaID");
             entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
             entity.Property(e => e.FechaPrimerIngreso).HasColumnType("datetime");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
             entity.Property(e => e.FechaRegistro).HasColumnType("datetime");
             entity.Property(e => e.Identificador)
                 .HasMaxLength(50)

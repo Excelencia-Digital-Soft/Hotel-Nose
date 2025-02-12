@@ -92,10 +92,11 @@ namespace ApiObjetos.Controllers
             Respuesta res = new Respuesta();
             try
             {
+
                 // Obtener las habitaciones junto con su visita y verificar pedidos pendientes
                 var habitaciones = await _db.Habitaciones
                     .Include(h => h.Visita)
-                        .ThenInclude(v => v.Reservas) // Include all Reservas
+                       .ThenInclude(v => v.Reservas) // Include all Reservas
                     .Include(h => h.Categoria)  // Include Categoria to access PrecioNormal
                     .Where(h => h.Anulado == false && h.InstitucionID == institucionID)
                     .Select(h => new
@@ -121,7 +122,7 @@ namespace ApiObjetos.Controllers
                 res.Data = habitaciones;
                 return res;
             }
-            catch (Exception ex)
+             catch (Exception ex)
             {
                 res.Message = "Error " + ex.ToString();
                 res.Ok = false;

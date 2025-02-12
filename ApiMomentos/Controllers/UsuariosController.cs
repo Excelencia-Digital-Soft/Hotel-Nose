@@ -42,7 +42,7 @@ namespace ApiObjetos.Controllers
         }
 
         [HttpGet("institucionUsuario")]
-        public async Task<ActionResult<int>> GetInstitucionUsuario(int usuarioID, int institucionID)
+        public async Task<ActionResult<int>> GetInstitucionUsuario(int usuarioID)
         {
             var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.UsuarioId == usuarioID);
 
@@ -134,6 +134,8 @@ namespace ApiObjetos.Controllers
             return Ok(new { 
                 Token = token,
                 Rol = usuario.Rol.RolId,
+                UsuarioID = usuario.UsuarioId,
+                UsuarioName = usuario.NombreUsuario,
                 InstitucionID = usuario.InstitucionID
             });
         }
