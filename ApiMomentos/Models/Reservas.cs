@@ -25,7 +25,7 @@ public partial class Reservas
     public int? PausaMinutos { get; set; }
     public DateTime? FechaRegistro { get; set; }
 
-    public bool? Anulado { get; set; }
+    public DateTime? FechaAnula { get; set; }
     public virtual Habitaciones? Habitacion { get; set; }
     [JsonIgnore]
     public virtual Visitas? Visita { get; set; }

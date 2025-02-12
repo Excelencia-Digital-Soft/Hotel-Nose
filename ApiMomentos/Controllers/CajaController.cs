@@ -124,6 +124,7 @@ namespace ApiObjetos.Controllers
 
             return res;
         }
+
         #endregion
         [HttpGet]
         [Route("GetCierresConPagos")]
@@ -359,7 +360,211 @@ namespace ApiObjetos.Controllers
         }
         #endregion
 
+        [HttpGet]
+        [Route("GetDetalleCierre")]
+        public async Task<Respuesta> GetDetalleCierre(int idCierre)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var cierre = await _db.Cierre
+                    .Where(c => c.CierreId == idCierre)
+                    .Include(c => c.Pagos)
+                    .FirstOrDefaultAsync();
 
+                if (cierre == null)
+                {
+                    res.Ok = false;
+                    res.Message = "No se encontró el cierre.";
+                    return res;
+                }
+
+                var pagosConDetalle = cierre.Pagos.Select(pago => new
+                {
+                    pago.PagoId,
+                    pago.fechaHora,
+                    pago.MontoEfectivo,
+                    pago.MontoTarjeta,
+                    pago.MontoBillVirt,
+                    pago.MontoDescuento,
+                    MontoAdicional = pago.Adicional ?? 0,
+                    pago.Observacion
+                }).ToList();
+
+                res.Ok = true;
+                res.Data = new
+                {
+                    cierre.CierreId,
+                    cierre.FechaHoraCierre,
+                    cierre.EstadoCierre,
+                    cierre.TotalIngresosEfectivo,
+                    cierre.TotalIngresosBillVirt,
+                    cierre.TotalIngresosTarjeta,
+                    cierre.MontoInicialCaja,
+                    cierre.Observaciones,
+                    Pagos = pagosConDetalle
+                };
+            }
+            catch (Exception ex)
+            {
+                res.Ok = false;
+                res.Message = $"Error: {ex.Message}";
+            }
+
+            return res;
+        }
+
+        [HttpGet("GetCierresConPagosSinCierre")]
+        public async Task<Respuesta> GetCierresConPagosSinCierre()
+        {
+            Respuesta res = new Respuesta();
+            try 
+            { 
+                //las hab anuladas deberían aparecer dentro de los pagos sin cierre que sería el cierre actual
+                //ademas para encasillarlas dentro de un cierre anterior deberían tener la fecha anula dentro del marco
+                //de fecha fin y fecha inicio de ese cierre
+            // Fetch all necessary data from the database
+            var empeños = await _db.Empeño.ToListAsync();
+
+            var cierres = await _db.Cierre
+                .Where(c => c.FechaHoraCierre != null)
+                .Include(c => c.Pagos)
+                .ToListAsync();
+
+            List<Pagos>? pagosSinCierre = _db.Pagos != null
+                ? await _db.Pagos.Where(p => p.CierreId == null).ToListAsync()
+                : new List<Pagos>();
+
+                var movimientos = await _db.Movimientos
+                    .Include(m => m.Visita)
+                    .ThenInclude(v => v.Reservas)
+                    .ToListAsync();
+                var ultimocierre = cierres.LastOrDefault();
+
+                var anulados = await _db.Reservas
+                    .Where(r => r.FechaAnula > ultimocierre.FechaHoraCierre)
+                    .ToListAsync();
+                
+
+            var habitaciones = await _db.Habitaciones
+                .Include(h => h.Categoria)
+                .ToListAsync();
+            var consumos = await _db.Consumo.ToListAsync();
+            // List to store the mapped Cierres with Pagos
+            var CierresReturn = new List<object>();
+
+            // Handle Pagos without associated Cierres
+            var PagosSinCierreReturn = new List<object>();
+            //ocupaciones Anuladas
+            var OcupacionesAnuladas = new List<object>();
+
+
+            // Handle Pagos without associated Cierres
+            foreach (var pago in pagosSinCierre)
+            {
+                var empeño = empeños.FirstOrDefault(e => e.PagoID == pago.PagoId);
+
+                if (empeño == null)
+                {
+                    var movimiento = movimientos.FirstOrDefault(m => m.PagoId == pago.PagoId);
+                    var movimientosPago = movimientos.Where(m => m.PagoId == pago.PagoId).ToList(); // realmente debería haberse hecho pensando en multiples movimientos desde un principio, si es posible arreglar a futuro.
+                    decimal? totalConsumo = consumos
+.Where(c => movimientosPago.Any(m => m.MovimientosId == c.MovimientosId))
+.Sum(c => c.PrecioUnitario);
+                    var visita = movimiento?.Visita;
+                    var ultimaReserva = visita?.Reservas?.FirstOrDefault();
+                    var habitacionNombre = ultimaReserva != null
+                        ? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)?.NombreHabitacion
+                        : null;
+                    var horaEntrada = ultimaReserva != null
+                    ? ultimaReserva.FechaReserva
+                    : null;
+                    var categoriaNombre = ultimaReserva != null
+? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)?.Categoria.NombreCategoria
+: null;
+                    decimal? Periodo = 0;
+                    if (movimiento != null) Periodo = movimiento.TotalFacturado;
+                    PagosSinCierreReturn.Add(new
+                    {
+                        pago.PagoId,
+                        HabitacionID = ultimaReserva.HabitacionId ?? null,
+                        Periodo,
+                        categoriaNombre,
+                        Fecha = pago.fechaHora,
+                        HoraIngreso = horaEntrada,
+                        HoraSalida = pago.fechaHora,
+                        MontoAdicional = pago.Adicional ?? 0,
+                        totalConsumo,
+                        pago.MontoEfectivo,
+                        pago.MontoTarjeta,
+                        pago.MontoBillVirt,
+                        pago.MontoDescuento,
+                        pago.Observacion,
+                        TipoHabitacion = habitacionNombre
+                    });
+                }
+                else
+                {
+                    PagosSinCierreReturn.Add(new
+                    {
+                        pago.PagoId,
+                        Fecha = pago.fechaHora,
+                        Periodo = 0,
+                        HoraIngreso = (DateTime?)null,
+                        HoraSalida = (DateTime?)null,
+                        totalConsumo = 0,
+                        MontoAdicional = 0,
+                        pago.MontoEfectivo,
+                        pago.MontoTarjeta,
+                        pago.MontoBillVirt,
+                        pago.MontoDescuento,
+                        pago.Observacion,
+                        TipoHabitacion = (string?)null
+                    });
+                }
+
+                    if (anulados.Count() != 0) {
+                        foreach (var row in anulados) {
+
+                            var reservaAnulada = await _db.Registros.FirstOrDefaultAsync(r => r.ReservaId == row.ReservaId);
+                            PagosSinCierreReturn.Add(new
+                            {
+                                PagoId = 0,
+                                Fecha = pago.fechaHora,
+                                Periodo = 0,
+                                HoraIngreso = row.FechaReserva,
+                                HoraSalida = row.FechaAnula,
+                                totalConsumo = 0,
+                                MontoAdicional = 0,
+                                MontoEfectivo=0,
+                                MontoTarjeta=0,
+                                MontoBillVirt=0,
+                                MontoDescuento=0,
+                                Observacion = reservaAnulada?.Contenido,
+                                TipoHabitacion = (string?)null
+                            });
+                        }
+                    }
+                }
+            
+
+            // Set the response
+            res.Ok = true;
+            res.Data = new
+            {
+                Cierres = cierres,
+                PagosSinCierre = PagosSinCierreReturn
+            };
+            }
+            catch (Exception ex)
+            {
+                // Handle errors
+                res.Ok = false;
+                res.Message = $"Error: {ex.Message}";
+            }
+
+            return res;
+        }
 
     }
 }

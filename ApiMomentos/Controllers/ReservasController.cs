@@ -125,7 +125,7 @@ namespace ApiObjetos.Controllers
                     TotalMinutos = request.TotalMinutos,
                     UsuarioId = request.UsuarioID,
                     FechaRegistro = DateTime.Now,
-                    Anulado = false,
+                    FechaAnula = null,
                     Habitacion = habitacion
                 };
 
@@ -184,7 +184,7 @@ namespace ApiObjetos.Controllers
             {
                 var reserva = await _db.Reservas.FindAsync(reservaId);
                 var habitacion = await _db.Habitaciones.FirstAsync(h => h.VisitaID == reserva.VisitaId);
-                if (reserva != null && reserva.Anulado != true)
+                if (reserva != null && reserva.FechaAnula == null)
                 {
                     var Movimientos = await _db.Movimientos.Where(m => m.VisitaId == reserva.VisitaId).ToListAsync();
                     foreach (var movimiento in Movimientos)
@@ -203,7 +203,7 @@ namespace ApiObjetos.Controllers
                         }
                         movimiento.Anulado = true;
                     }
-                    reserva.Anulado = true;
+                    reserva.FechaAnula = DateTime.Now;
                     habitacion.Disponible = true;
                     habitacion.VisitaID = null;
                     var visita = await _db.Visitas.FirstAsync(v => v.VisitaId == reserva.VisitaId);
@@ -211,6 +211,7 @@ namespace ApiObjetos.Controllers
                     string formattedDate = DateTime.Now.ToString("d/M/yyyy HH:mm");
                     Registros registro = new Registros();
                     registro.Contenido = "Se anuló la visita a la habitación " + habitacion.NombreHabitacion + " a las " + formattedDate + " por el motivo de: " + motivo;
+                    registro.ReservaId = reserva.ReservaId;
                     _db.Registros.Add(registro);
                     await _db.SaveChangesAsync();
                 }

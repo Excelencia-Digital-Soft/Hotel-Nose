@@ -468,7 +468,7 @@ public partial class HotelDbContext : DbContext
             entity.HasKey(e => e.ReservaId).HasName("PK__Reservas__C39937031EAE2A3E");
 
             entity.Property(e => e.ReservaId).HasColumnName("ReservaID");
-            entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
+            entity.Property(e => e.FechaAnula).HasColumnType("datetime");
             entity.Property(e => e.FechaFin).HasColumnType("datetime");
             entity.Property(e => e.FechaRegistro).HasColumnType("datetime");
             entity.Property(e => e.MovimientoId).HasColumnType("int");
@@ -718,6 +718,7 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.Contenido)
                 .HasMaxLength(250)
                 .IsUnicode(true);
+            entity.Property(e => e.ReservaId).HasColumnName("ReservaID");
         });
 
         OnModelCreatingPartial(modelBuilder);
