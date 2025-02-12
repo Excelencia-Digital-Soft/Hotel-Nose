@@ -54,6 +54,7 @@
       .then(res => {
         console.log(res.data);
         alert("Se anuló la reserva exitosamente");
+        window.location.reload();
       })
       .catch(error => {
         console.error(error);
