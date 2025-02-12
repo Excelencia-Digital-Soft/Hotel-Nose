@@ -558,16 +558,9 @@ function calculateRemainingTime() {
       const diffInMinutes = endTime.diff(now, 'minute');
       const isOvertime = diffInMinutes < 0;
       if (isOvertime && ignorarTiempo.value == false) {
-        if (diffInMinutes >= -12 * 60) {
           overtime.value = diffInMinutes * (-1);
           console.log(overtime.value);
-        }
-        if (diffInMinutes < -12 * 60) {
-          overtime.value = 720;
-          clearInterval(timerInterval);
-          formattedTime.value = `-12:00`;
-          return;
-        }
+     
         const hours = Math.floor(Math.abs(diffInMinutes) / 60);
         const minutes = Math.abs(diffInMinutes) % 60;
         if (isOvertime) formattedTime.value = `-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;

@@ -34,6 +34,7 @@
   <ModalCierre
     :selectedPagos="pagos"
     :esAbierto="false"
+    @imprimir-modal="ImprimirModal"
     @close-modal="togglePagosModal">
   </ModalCierre>
   </div>
@@ -44,6 +45,7 @@
   <ModalCierre
     :selectedPagos="pagosSinCierres"
     :esAbierto="true"
+    @imprimir-modal="ImprimirModal"
     @close-modal="togglePagosSinCierreModal">
   </ModalCierre>
   </div>
@@ -100,13 +102,94 @@ const authStore = useAuthStore();
     pagos.value = pagosSinCierres.value
     togglePagosSinCierreModal()
   };
-  
-  
+ 
+  const ImprimirModal = (cierreCajaRef) => {
+
+  // Get the modal content
+  const printContent = cierreCajaRef.innerHTML;
+
+  // Clone styles from document
+  const styles = Array.from(document.styleSheets)
+    .map((styleSheet) => {
+      try {
+        return Array.from(styleSheet.cssRules)
+          .map((rule) => rule.cssText)
+          .join("\n");
+      } catch (error) {
+        return ""; // Ignore cross-origin styles
+      }
+    })
+    .join("\n");
+
+  // Open a new window
+  const printWindow = window.open("", "_blank");
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Imprimir</title>
+        <style>
+          ${styles}  
+        </style>
+      </head>
+      <body>
+        <div id="cierre-caja-content">${printContent}</div>
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() { 
+              window.close(); 
+            };           };
+        <\/script> 
+      </body>
+    </html>
+`);
+
+  printWindow.document.close();
+};
+
   // Call fetchCierres on component mount
   fetchCierres();
   </script>
-  
-  <style scoped>
-  /* Add custom styles if needed */
-  </style>
-  
+<style scoped>
+/* Ensure the modal content is not truncated */
+#cierre-caja-content {
+  overflow: visible !important;
+}
+
+/* Print-specific styles */
+@media print {
+  #cierre-caja-content {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  #cierre-caja-content * {
+    display: grid !important; /* Ensure all elements are visible */
+    grid-template-columns: repeat(14, minmax(0, 1fr)) !important;
+  }
+
+  body * {
+        visibility: hidden;
+      }
+      #print-container,
+      #print-container * {
+        visibility: visible;
+      }
+      #print-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+  ol, ul {
+    page-break-inside: avoid;
+  }
+  li {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+}
+</style>
