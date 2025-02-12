@@ -109,6 +109,7 @@ public partial class HotelDbContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false);
             entity.Property(e => e.PrecioNormal).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.PorcentajeXPersona).HasColumnType("int");
             entity.Property(e => e.UsuarioId).HasColumnName("UsuarioID");
         });
 

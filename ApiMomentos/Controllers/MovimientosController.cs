@@ -283,20 +283,21 @@ namespace ApiObjetos.Controllers
         [HttpDelete]
         [Route("AnularConsumo")]
         [AllowAnonymous]
-
         public async Task<Respuesta> AnularConsumo(int idConsumo)
         {
             Respuesta res = new Respuesta();
             try
             {
-                var consumo = await _db.Consumo.FirstAsync(c => c.ConsumoId == idConsumo);
-                var movimiento = await _db.Movimientos.FirstAsync(m => m.MovimientosId == consumo.MovimientosId);
+                var consumo = await _db.Consumo
+                    .FromSqlRaw("SELECT * FROM Consumo WITH (UPDLOCK, ROWLOCK) WHERE ConsumoId = {0} AND Anulado != 1", idConsumo)
+                    .SingleOrDefaultAsync();
 
                 if (consumo != null)
                 {
-                    //movimiento.Anulado = true;
+                    var movimiento = await _db.Movimientos.FirstAsync(m => m.MovimientosId == consumo.MovimientosId);
                     consumo.Anulado = true;
-                    movimiento.TotalFacturado -= consumo.PrecioUnitario*consumo.Cantidad;
+                    movimiento.TotalFacturado -= consumo.PrecioUnitario * consumo.Cantidad;
+
                     if (consumo.EsHabitacion == true)
                     {
                         var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == movimiento.HabitacionId);
@@ -309,8 +310,9 @@ namespace ApiObjetos.Controllers
                     }
                     await _db.SaveChangesAsync();
                 }
-                else {
-                    res.Message = "Consumo no encontrada.";
+                else
+                {
+                    res.Message = "Consumo no encontrado.";
                     res.Ok = false;
                     return res;
                 }
@@ -324,6 +326,59 @@ namespace ApiObjetos.Controllers
             res.Ok = true;
             return res;
         }
+
+
+        [HttpPut]
+        [Route("UpdateConsumo")]
+        [AllowAnonymous]
+        public async Task<Respuesta> UpdateConsumo(int idConsumo, int Cantidad)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var consumo = await _db.Consumo
+                    .FromSqlRaw("SELECT * FROM Consumo WITH (UPDLOCK, ROWLOCK) WHERE ConsumoId = {0} AND Anulado != 1", idConsumo)
+                    .SingleOrDefaultAsync();
+
+                if (consumo != null)
+                {
+                    var movimiento = await _db.Movimientos.FirstAsync(m => m.MovimientosId == consumo.MovimientosId);
+                    int? viejaCantidad = consumo.Cantidad;
+                    movimiento.TotalFacturado -= consumo.PrecioUnitario * consumo.Cantidad;
+                    consumo.Cantidad = Cantidad;
+                    movimiento.TotalFacturado += consumo.PrecioUnitario * consumo.Cantidad;
+
+                    if (consumo.EsHabitacion == true)
+                    {
+                        var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == movimiento.HabitacionId);
+                        inventario.Cantidad -= consumo.Cantidad;
+                        inventario.Cantidad += viejaCantidad;
+                    }
+                    else
+                    {
+                        var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i => i.ArticuloId == consumo.ArticuloId);
+                        inventarioGeneral.Cantidad -= consumo.Cantidad;
+                        inventarioGeneral.Cantidad += viejaCantidad;
+                    }
+                    await _db.SaveChangesAsync();
+                }
+                else
+                {
+                    res.Message = "Consumo no encontrado.";
+                    res.Ok = false;
+                    return res;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                res.Ok = false;
+            }
+            res.Message = "Consumo actualizado correctamente";
+            res.Ok = true;
+            return res;
+        }
+
 
         [HttpGet]
         [Route("GetConsumosVisita")]
