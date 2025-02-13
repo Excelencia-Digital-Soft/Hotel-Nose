@@ -12,8 +12,9 @@ import InventoryManager from "../views/InventoryManager.vue";
 import CierresManager from "../views/CierresManager.vue";
 import PromocionesManager from "../views/PromocionesManager.vue";
 import MediosPagoManager from "../views/MediosPagoManager.vue";
-
+import UsuariosManager from "../views/UsuariosManager.vue"
 import Egresos from "../views/Egresos.vue";
+
 import { useAuthStore } from "../store/auth";
 import EmpeñosManager from "../views/EmpeñosManager.vue";
 const routes = [
@@ -129,6 +130,12 @@ const routes = [
           requireAuth: true,
           roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
+      },
+      {
+        path: "/UsuariosManager",
+        name: "UsuariosManager",
+        component: UsuariosManager,
+        meta: { requireAuth: true, roles: [1] }, // Solo accesible para admins
       },
       {
         path: "/MediosPago",
