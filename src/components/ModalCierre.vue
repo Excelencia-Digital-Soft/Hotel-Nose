@@ -25,7 +25,7 @@
 
         <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Efectivo</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Tarjeta</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Billetera Virtual</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Tarjeta Usada</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Descuento</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Total</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Observacion</div>
@@ -48,9 +48,9 @@
           <!-- Money values with right alignment and hiding zeros -->
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoEfectivo || '' }}</div>
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoTarjeta || '' }}</div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoBillVirt || '' }}</div>
+          <div class="text-black font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.tarjetaNombre|| '' }}</div>
           <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoDescuento || '' }}</div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ (pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta) || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ (pago.montoEfectivo + pago.montoTarjeta) || '' }}</div>
 
           <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
         </div>
@@ -71,7 +71,7 @@
 
         <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center">Efectivo Total</div>{{ calculateEfectivo() }}</div>
         <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center">Tarjeta Total</div>{{ calculateTarjeta() }}</div>
-        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center">MP Total</div>{{ calculateMP() }}</div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center"></div></div>
         <div class="font-bold text-red-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center">Desc.</div>{{ calculateDescuento() }}</div>
         <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center">Total</div>{{ calculateTotal() }}</div>
         <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
@@ -115,7 +115,7 @@
 
       <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Efectivo</div>
       <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Tarjeta</div>
-      <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Billetera Virtual</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Tarjeta Usada</div>
       <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Descuento</div>
       <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Total</div>
       <div class="font-bold text-black p-2 border-b border-r border-gray-300">Observacion</div>
@@ -137,7 +137,7 @@
 
         <!-- Money values with right alignment and hiding zeros -->
         <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoEfectivo || '' }}</div>
-        <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoTarjeta || '' }}</div>
+        <div class="text-black font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.tarjetaNombre || '' }}</div>
         <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoBillVirt || '' }}</div>
         <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoDescuento || '' }}</div>
         <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ (pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta) || '' }}</div>
@@ -161,7 +161,7 @@
 
       <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center">Efectivo Total</div>{{ calculateEfectivo() }}</div>
       <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center">Tarjeta Total</div>{{ calculateTarjeta() }}</div>
-      <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center">MP Total</div>{{ calculateMP() }}</div>
+      <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center"></div></div>
       <div class="font-bold text-red-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center">Desc.</div>{{ calculateDescuento() }}</div>
       <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right"><div class="font-bold text-black p-2 text-center">Total</div>{{ calculateTotal() }}</div>
       <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
@@ -274,44 +274,11 @@ const calculateAdicional = () => {
   }, 0);
 };
 
-const calculateMP = () => {
-  return props.selectedPagos.reduce((total, pago) => {
-    return total + pago.montoBillVirt;
-  }, 0);
-};
-
 const cerrarCaja = () => {
   console.log('Caja cerrada');
 };
 
-const printCierreCaja = () => {
-  const hiddenContent = document.getElementById('hidden-print-content');
 
-  if (hiddenContent) {
-    // Create a copy of the hidden content
-    const clonedContent = hiddenContent.cloneNode(true);
-
-    // Create a temporary container for printing
-    const printContainer = document.createElement('div');
-    printContainer.style.position = 'absolute';
-    printContainer.style.top = '0';
-    printContainer.style.left = '0';
-    printContainer.style.zIndex = '-1';
-    printContainer.style.visibility = 'visible'; // Make it visible for printing
-    printContainer.appendChild(clonedContent);
-
-    // Append to body temporarily
-    document.body.appendChild(printContainer);
-
-    // Trigger print
-    window.print();
-
-    // Remove the temporary container after printing
-    document.body.removeChild(printContainer);
-  } else {
-    console.error('The hidden content was not found.');
-  }
-};
 </script>
 
 <style scoped>
