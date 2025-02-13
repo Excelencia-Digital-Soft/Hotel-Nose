@@ -89,13 +89,13 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("ReservarHabitacion")]
         [AllowAnonymous]
-        public async Task<Respuesta> ReservarHabitacion([FromBody] ReservaRequest request)
+        public async Task<Respuesta> ReservarHabitacion(int InstitucionID, int UsuarioID, [FromBody] ReservaRequest request)
         {
             Respuesta res = new Respuesta();
             try
             {
                 // Step 1: Create a new VisitaID based on the provided vehicle, phone number, and identifier
-                var VisitaID = await _visita.CrearVisita(request.EsReserva, request.PatenteVehiculo, request.NumeroTelefono, request.Identificador);
+                var VisitaID = await _visita.CrearVisita(request.EsReserva, InstitucionID, UsuarioID, request.PatenteVehiculo, request.NumeroTelefono, request.Identificador);
 
                 // Step 2: Retrieve the room details
                 Habitaciones habitacion = await GetHabitacionById(request.HabitacionID);
@@ -120,10 +120,11 @@ namespace ApiObjetos.Controllers
                     VisitaId = VisitaID,
                     HabitacionId = request.HabitacionID,
                     FechaReserva = request.FechaReserva,
+                    InstitucionID = InstitucionID,
                     FechaFin = null,
                     TotalHoras = request.TotalHoras,
                     TotalMinutos = request.TotalMinutos,
-                    UsuarioId = request.UsuarioID,
+                    UsuarioId = UsuarioID,
                     FechaRegistro = DateTime.Now,
                     FechaAnula = null,
                     Habitacion = habitacion
