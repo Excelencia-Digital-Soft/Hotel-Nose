@@ -388,6 +388,7 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.PagoId).HasColumnName("PagoID");
             entity.Property(e => e.CierreId).HasColumnName("CierreID");
             entity.Property(e => e.MedioPagoId).HasColumnName("MedioPagoID");
+            entity.Property(e => e.TarjetaId).HasColumnName("TarjetaId");
             entity.Property(e => e.MontoBillVirt).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.MontoEfectivo).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.MontoTarjeta).HasColumnType("decimal(10, 2)");
