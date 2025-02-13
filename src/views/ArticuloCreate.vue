@@ -213,6 +213,8 @@ const defaultImage = "https://placehold.co/400"; // URL de la imagen por defecto
 const previewImage = ref(defaultImage); // Inicia con la imagen por defecto
 const newArticuloImage = ref(null);
 const keyword = ref("");
+const InstitucionID = ref(null);
+const UsuarioID = ref(null);
 
 const computedArticulos = computed(() => articulos.value.filter(i => i.nombreArticulo.toLowerCase().includes(keyword.value.toLowerCase())))
 
@@ -280,8 +282,8 @@ const fetchArticulos = () => {
   console.log(selectedCategory?.value);
   const categoriaID = selectedCategory?.value || null; // Use the selected category ID if available
   const url = categoriaID
-    ? `/api/Articulos/GetArticulos?categoriaID=${categoriaID}`
-    : "/api/Articulos/GetArticulos";
+    ? `/api/Articulos/GetArticulos?InstitucionID=${InstitucionID.value}&categoriaID=${categoriaID}`
+    : `/api/Articulos/GetArticulos?InstitucionID=${InstitucionID.value}`;
 
   articulos.value = []; // Clear the articles list before fetching
 
@@ -310,7 +312,7 @@ const createArticulo = async () => {
       formData.append("categoriaID", newArticuloCategoriaId.value);
       formData.append("imagen", newArticuloImage.value); // Agregamos la imagen al FormData
 
-      const response = await axiosClient.post(`/api/Articulos/CreateArticuloWithImage`, formData, {
+      const response = await axiosClient.post(`/api/Articulos/CreateArticuloWithImage?InstitucionID=${InstitucionID.value}?UsuarioID=${UsuarioID.value}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data", // Indicar al servidor que enviamos un archivo
         },
@@ -336,7 +338,7 @@ const updateArticulo = async (articuloID) => {
     try {
       // Step 1: Update article details (name, price, and category)
       const updateResponse = await axiosClient.put(
-        `/api/Articulos/UpdateArticulo?id=${articuloID}&nombre=${encodeURIComponent(updateArticuloName.value)}&precio=${updateArticuloPrice.value}&categoriaID=${updateArticuloCategoriaId.value}`
+        `/api/Articulos/UpdateArticulo?id=${articuloID}&UsuarioID=${UsuarioID.value}&nombre=${encodeURIComponent(updateArticuloName.value)}&precio=${updateArticuloPrice.value}&categoriaID=${updateArticuloCategoriaId.value}`
       );
 
       alert(updateResponse.data.message);
@@ -405,7 +407,7 @@ onMounted(() => {
 // LOGICA CATEGORIAS
 
 const fetchCategories = () => {
-  axiosClient.get("/api/CategoriaArticulos/GetCategorias")
+  axiosClient.get(`/api/CategoriaArticulos/GetCategorias?InstitucionID=${InstitucionID.value}`)
     .then(({ data }) => {
       if (data && data.ok) {
         categories.value = [{ categoriaId: null, nombreCategoria: "Todos" }, ...data.data];
@@ -438,6 +440,17 @@ const filterByCategory = (categoriaID) => {
   selectedCategory.value = categoriaID;
   fetchArticulos();
 };
+// Sección datos login
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+
+const authStore = useAuthStore();
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+    UsuarioID.value = authStore.auth?.usuarioID;
+  }
+  onMounted(() => {
+  getDatosLogin();
+});
 
 </script>
 

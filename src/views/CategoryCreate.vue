@@ -184,7 +184,10 @@
   <script setup>
   import { ref, onMounted } from 'vue'
   import axiosClient from '../axiosClient'; // Adjust the path according to your project structure
-  
+  import { useAuthStore } from '../store/auth.js'; // Import the auth store
+
+  const authStore = useAuthStore();
+
   const categorias = ref([]);
   const newCategoryCapacity = ref('');
   const newCategoryName = ref('');
@@ -198,7 +201,13 @@
   const showUpdateModal= ref(null);
   const categoryToDelete = ref(null);
   const categoryToUpdate = ref(null);
+  const UsuarioID = ref(null);
+  const InstitucionID = ref(null);
 
+  function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+    UsuarioID.value = authStore.auth?.usuarioID;
+  }
   function confirmDeleteCategory(category){
     categoryToDelete.value = category;
     showDeleteModal.value = true;
@@ -224,7 +233,10 @@
   }
   // Fetch rooms and categories initially
   const fetchCategorias = () => {
-    axiosClient.get("/api/Objetos/GetCategorias")
+  if (InstitucionID.value == null) {
+  console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
+  return; }
+    axiosClient.get(`/api/Objetos/GetCategorias?InstitucionID=${InstitucionID.value}`)
       .then(({ data }) => {
         if (data && data.ok) {
           categorias.value = data.data;
@@ -240,11 +252,14 @@
   
   // Create a new room
   const createCategory = async () => {
+  if (InstitucionID.value== null) {
+  console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
+  return; }
     if (newCategoryName.value && newCategoryPrice.value) {
       try {
         // Make sure to format the URL correctly
         const response = await axiosClient.post(
-          `/api/Objetos/CrearCategoria?nombreCategoria=${encodeURIComponent(newCategoryName.value)}&precio=${newCategoryPrice.value}&capacidadmaxima=${newCategoryCapacity.value}&Porcentaje=${newCategoryPercentaje.value}`
+          `/api/Objetos/CrearCategoria?nombreCategoria=${encodeURIComponent(newCategoryName.value)}&UsuarioID=${UsuarioID.value}&InstitucionID=${InstitucionID.value}&precio=${newCategoryPrice.value}&capacidadmaxima=${newCategoryCapacity.value}&Porcentaje=${newCategoryPercentaje.value}`
         );
         alert(response.data.message);
         fetchCategorias(); // Refresh the list of rooms
@@ -267,7 +282,7 @@
       try {
         // Make sure to format the URL correctly
         const response = await axiosClient.put(
-          `/api/Objetos/ActualizarCategoria?id=${categoriaID}&nuevoNombre=${encodeURIComponent(updateCategoryName.value)}&nuevaCapacidad=${updateCategoryCapacity.value}&Precio=${updateCategoryPrice.value}&Porcentaje=${updateCategoryPercentaje.value}`
+          `/api/Objetos/ActualizarCategoria?id=${categoriaID}&UsuarioID=${UsuarioID.value}&nuevoNombre=${encodeURIComponent(updateCategoryName.value)}&nuevaCapacidad=${updateCategoryCapacity.value}&Precio=${updateCategoryPrice.value}&Porcentaje=${updateCategoryPercentaje.value}`
         );
         alert(response.data.message);
         fetchCategorias(); // Refrescar categorias
@@ -306,6 +321,7 @@
   
   // Fetch rooms and categories on component mount
   onMounted(() => {
+    getDatosLogin();
     fetchCategorias();
   });
   </script>

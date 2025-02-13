@@ -105,7 +105,7 @@ const keyword = ref("");
 let getInv = ref("");
 onMounted(() => {
   if (!props.consumoHabitacion){
-    getInv.value = "/GetInventarioGeneral"
+    getInv.value = `/GetInventarioGeneral?InstitucionID=${InstitucionID.value}`
   }
   else{
      getInv.value = `api/Inventario/GetInventario?habitacionID=${props.habitacionID}`
@@ -156,7 +156,7 @@ const fetchArticulos = async () => {
 // Fetch categories from the API
 const fetchCategorias = async () => {
   try {
-    const response = await axiosClient.get("/api/CategoriaArticulos/GetCategorias");
+    const response = await axiosClient.get(`/api/CategoriaArticulos/GetCategorias?InstitucionID=${InstitucionID.value}`);
     if (response.data && response.data.data) {
       categorias.value = response.data.data; // Store full category data (ID and name)
     } else {

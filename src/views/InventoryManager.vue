@@ -47,6 +47,9 @@
 <script setup>
 import { onMounted, ref,computed } from 'vue';
 import axiosClient from '../axiosClient';
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+
+const authStore = useAuthStore();
 
 const inventory = ref([]);
 const isLoading = ref(true);
@@ -57,8 +60,12 @@ const computedinventory = computed(() => inventory.value.filter(i => i.articulo.
 
 // Fetch all inventory items
 const fetchInventory = async () => {
+  const institucionID = authStore.auth?.institucionID;
+  if (institucionID == null) {
+  console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
+  return; }
   try {
-    const response = await axiosClient.get('/GetInventarioGeneral');
+    const response = await axiosClient.get(`/GetInventarioGeneral?InstitucionID=${institucionID}`);
     if (response.data && response.data.data) {
       inventory.value = response.data.data.map((item) => ({
         ...item,
@@ -91,9 +98,13 @@ const updateStock = async (itemId, newStock) => {
 
 // Call /CoordinarInventarioGeneral
 const actualizarInventario = async () => {
+  const institucionID = authStore.auth?.institucionID;
+  if (institucionID == null) {
+  console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
+  return; }
   try {
     isLoading.value = true;
-    await axiosClient.get('/CoordinarInventarioGeneral');
+    await axiosClient.get(`/CoordinarInventarioGeneral?InstitucionID=${institucionID}`);
     await fetchInventory(); // Refresh inventory after coordinating
     console.log('Inventario coordinado con éxito.');
   } catch (error) {

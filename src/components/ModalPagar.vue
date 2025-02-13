@@ -278,10 +278,11 @@ const pagarVisita = async () => {
       montoRecargo: recargoMonto.value,
       descripcionRecargo: recargoDetalle.value,
     };
-
+    var tarjetaSeleccionada = 0
+    if(selectedTarjeta.value != null){tarjetaSeleccionada = selectedTarjeta.value.tarjetaID}
     const url = recargoMonto.value > 0
-      ? `/api/Pago/PagarVisita?visitaId=${data.visitaId}&montoDescuento=${data.montoDescuento}&montoEfectivo=${data.montoEfectivo}&montoTarjeta=${data.montoTarjeta}&montoBillVirt=${data.montoBillVirt}&adicional=${props.adicional}&medioPagoId=${data.medioPagoId}&comentario=${data.comentario}&montoRecargo=${data.montoRecargo}&descripcionRecargo=${data.descripcionRecargo}`
-      : `/api/Pago/PagarVisita?visitaId=${data.visitaId}&montoDescuento=${data.montoDescuento}&montoEfectivo=${data.montoEfectivo}&montoTarjeta=${data.montoTarjeta}&montoBillVirt=${data.montoBillVirt}&adicional=${props.adicional}&medioPagoId=${data.medioPagoId}&comentario=${data.comentario}`;
+      ? `/api/Pago/PagarVisita?visitaId=${data.visitaId}&montoDescuento=${data.montoDescuento}&montoEfectivo=${data.montoEfectivo}&montoTarjeta=${data.montoTarjeta}&montoBillVirt=${data.montoBillVirt}&adicional=${props.adicional}&medioPagoId=${data.medioPagoId}&comentario=${data.comentario}&montoRecargo=${data.montoRecargo}&descripcionRecargo=${data.descripcionRecargo}&tarjetaID=${tarjetaSeleccionada}`
+      : `/api/Pago/PagarVisita?visitaId=${data.visitaId}&montoDescuento=${data.montoDescuento}&montoEfectivo=${data.montoEfectivo}&montoTarjeta=${data.montoTarjeta}&montoBillVirt=${data.montoBillVirt}&adicional=${props.adicional}&medioPagoId=${data.medioPagoId}&comentario=${data.comentario}&tarjetaID=${tarjetaSeleccionada}`;
 
     await axiosClient.post(url);
     finalizarReserva(props.habitacionId);

@@ -243,7 +243,7 @@
     }
     console.log("loquese Envía", selectedRoom.value)
     debugger
-    axiosClient.post('/ReservarHabitacion', selectedRoom.value)
+    axiosClient.post(`/ReservarHabitacion?InstitucionID=${InstitucionID.value}&UsuarioID=${UsuarioID.value}`, selectedRoom.value)
       .then(res => {
         console.log(res.data);
         alert("Reservacion Exitosa");
@@ -255,6 +255,17 @@
       });
   }
   
+  import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const UsuarioID = ref(null);
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+    UsuarioID.value = authStore.auth?.usuarioID;
+    InstitucionID.value = authStore.auth?.InstitucionID;
+  }
+  onMounted(() => {
+  getDatosLogin();
+});
   </script>
   <style scoped>
   .modal-outer-enter-active,

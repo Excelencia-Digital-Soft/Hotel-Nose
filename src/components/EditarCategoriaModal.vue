@@ -57,7 +57,7 @@ const categoryName = ref('');
 const editCategory = async () => {
   if (categoryName.value.trim()) {
     try {
-      const response = await axiosClient.put(`/api/CategoriaArticulos/ActualizarCategoria?id=${props.categoria}`, {
+      const response = await axiosClient.put(`/api/CategoriaArticulos/ActualizarCategoria?id=${props.categoria}&UsuarioID=${UsuarioID.value}`, {
         NombreCategoria: categoryName.value,
       });
 
@@ -100,6 +100,15 @@ const deleteCategory = async () => {
     }
   }
 };
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const UsuarioID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+    UsuarioID.value = authStore.auth?.usuarioID;
+  }
+  onMounted(() => {
+  getDatosLogin();
+});
 </script>
 
 <style scoped>

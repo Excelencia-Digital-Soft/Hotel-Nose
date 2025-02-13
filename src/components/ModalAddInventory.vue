@@ -112,7 +112,7 @@ const availableItems = ref([]);
 const fetchAllItems = async () => {
   isLoading.value = true;
   try {
-    const response = await axiosClient.get("/api/Articulos/GetArticulos");
+    const response = await axiosClient.get(`/api/Articulos/GetArticulos?InstitucionID=${InstitucionID.value}`);
     const items = response.data?.data || [];
     // Fetch images for each item
     allItems.value = await Promise.all(
@@ -176,6 +176,15 @@ onMounted(() => {
   fetchAllItems();
 });
 
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.InstitucionID;
+  }
+  onMounted(() => {
+  getDatosLogin();
+});
 // Watch for inventory updates and re-filter available items
 watch(() => props.currentInventory, filterAvailableItems, { immediate: true });
 
