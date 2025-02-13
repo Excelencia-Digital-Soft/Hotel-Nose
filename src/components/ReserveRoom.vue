@@ -64,7 +64,7 @@
                     <div class="flex flex-col items-start justify-center w-full  ">
                       <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
                       <input type="text"
-                        class="focus:ring-purple-500 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                        class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
                         v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
                     </div>
 
@@ -72,13 +72,13 @@
                       <div class="flex flex-col items-start justify-center w-full mb-2 mr-2 ">
                         <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
                         <input type="text"
-                          class="focus:ring-purple-500 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                          class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
                           v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
                       </div>
                       <div class="flex flex-col items-start justify-center w-full mb-2 ">
                         <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
                         <input type="text"
-                          class="focus:ring-purple-500 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                          class="focus:ring-purple-500 text-neutral-900 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
                           maxlength="11" v-model="selectedRoom.NumeroTelefono"
                           placeholder="Ingresa Marca y modelo de vehiculo">
                       </div>

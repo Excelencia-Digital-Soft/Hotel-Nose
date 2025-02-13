@@ -6,7 +6,7 @@
       <div class="mb-6">
         <h3 class="font-semibold text-lg mb-4">Cierres</h3>
         
-        <button 
+        <button v-if="pagosSinCierres"
         class="cursor-pointer hover:text-blue-600 border border-white p-4 h-[15vh] flex items-center justify-center w-full"
 
           @click="abrirPagosSinCierre" 
@@ -33,6 +33,7 @@
 >
   <ModalCierre
     :selectedPagos="pagos"
+    :idcierre="selectedIdCierre"
     :esAbierto="false"
     @imprimir-modal="ImprimirModal"
     @close-modal="togglePagosModal">
@@ -53,7 +54,7 @@
   </template>
 
   <script setup>
-  import { ref } from 'vue';
+  import { ref ,onBeforeMount} from 'vue';
   import axiosClient from '../axiosClient'; // Adjust the path to match your project structure
   import ModalCierre from '../components/ModalCierre.vue';
   import { useAuthStore } from "../store/auth";
@@ -66,6 +67,11 @@ const authStore = useAuthStore();
 
   const pagos = ref([]);
   const pagosSinCierres = ref([]);
+  const selectedIdCierre = ref()
+
+  onBeforeMount(() => {
+    fetchCierres();
+});
 
   const togglePagosModal = () => {
     showPagosModal.value = !showPagosModal.value
@@ -77,7 +83,7 @@ const authStore = useAuthStore();
   // Fetch all cierres with their associated pagos when the view is loaded
   const fetchCierres = async () => {
     try {
-      const response = await axiosClient.get('/api/Caja/GetCierresConPagos');
+      const response = await axiosClient.get('/api/Caja/GetCierresyActual');
       if (response.data.ok) {
         cierres.value = response.data.data.cierres;
         pagosSinCierres.value = response.data.data.pagosSinCierre
@@ -91,10 +97,8 @@ const authStore = useAuthStore();
 
   // Fetch pagos by CierreId when a Cierre is clicked
   const fetchPagosByCierre = (cierreId) => {
-    const cierre = cierres.value.find((item) => item.cierreId === cierreId);
-    if (cierre) {
-      pagos.value = cierre.pagos || [];
-    }
+    selectedIdCierre.value = cierreId
+    console.log("idcierreenviado",selectedIdCierre.value)
     togglePagosModal()
   };
 
@@ -148,8 +152,7 @@ const authStore = useAuthStore();
   printWindow.document.close();
 };
 
-  // Call fetchCierres on component mount
-  fetchCierres();
+
   </script>
 <style scoped>
 /* Ensure the modal content is not truncated */
