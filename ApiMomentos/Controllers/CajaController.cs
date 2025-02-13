@@ -379,18 +379,92 @@ namespace ApiObjetos.Controllers
                     return res;
                 }
 
-                var pagosConDetalle = cierre.Pagos.Select(pago => new
-                {
-                    pago.PagoId,
-                    pago.fechaHora,
-                    pago.MontoEfectivo,
-                    pago.MontoTarjeta,
-                    pago.MontoBillVirt,
-                    pago.MontoDescuento,
-                    MontoAdicional = pago.Adicional ?? 0,
-                    pago.Observacion
-                }).ToList();
+                // Obtener cierre anterior
+                var cierreAnterior = await _db.Cierre
+                    .Where(c => c.FechaHoraCierre < cierre.FechaHoraCierre)
+                    .OrderByDescending(c => c.FechaHoraCierre)
+                    .FirstOrDefaultAsync();
 
+                var fechaCierreAnterior = cierreAnterior?.FechaHoraCierre ?? DateTime.MinValue;
+
+                // Obtener datos auxiliares
+                var habitaciones = await _db.Habitaciones.Include(h => h.Categoria).ToListAsync();
+                var anulados = await _db.Reservas
+                    .Where(r => r.FechaAnula < cierre.FechaHoraCierre && r.FechaAnula > fechaCierreAnterior)
+                    .ToListAsync();
+
+                var movimientos = await _db.Movimientos.Include(m => m.Visita).ThenInclude(v => v.Reservas).ToListAsync();
+                var consumos = await _db.Consumo.ToListAsync();
+
+                var pagosConDetalle = new List<object>();
+
+                // Agregar pagos normales con detalles adicionales
+                foreach (var pago in cierre.Pagos)
+                {
+                    var movimiento = movimientos.FirstOrDefault(m => m.PagoId == pago.PagoId);
+                    var visita = movimiento?.Visita;
+                    var horaSalida = pago.fechaHora;
+                    var ultimaReserva = visita?.Reservas?.FirstOrDefault();
+
+                    var movimientosPago = movimientos.Where(m => m.PagoId == pago.PagoId).ToList();
+                    decimal? totalConsumo = consumos
+                        .Where(c => movimientosPago.Any(m => m.MovimientosId == c.MovimientosId))
+                        .Sum(c => c.PrecioUnitario);
+
+                    var habitacion = ultimaReserva != null
+                        ? habitaciones.FirstOrDefault(h => h.HabitacionId == ultimaReserva.HabitacionId)
+                        : null;
+
+                    decimal? periodo = movimiento?.TotalFacturado ?? 0;
+
+                    pagosConDetalle.Add(new
+                    {
+                        pago.PagoId,
+                        CategoriaNombre = habitacion?.Categoria.NombreCategoria,
+                        Periodo = periodo,
+                        Fecha = pago.fechaHora,
+                        HoraIngreso = ultimaReserva?.FechaReserva,
+                        HoraSalida = horaSalida,
+                        TotalConsumo = totalConsumo ?? 0,
+                        MontoAdicional = pago.Adicional ?? 0,
+                        pago.MontoEfectivo,
+                        pago.MontoTarjeta,
+                        pago.MontoBillVirt,
+                        pago.MontoDescuento,
+                        pago.Observacion,
+                        TipoHabitacion = habitacion?.NombreHabitacion
+                    });
+                }
+
+                // Agregar reservas anuladas
+                foreach (var reserva in anulados)
+                {
+                    var nombreHabitacion = habitaciones
+                        .Where(h => h.HabitacionId == reserva.HabitacionId)
+                        .Select(h => h.NombreHabitacion)
+                        .FirstOrDefault();
+
+                    var reservaAnulada = await _db.Registros.FirstOrDefaultAsync(r => r.ReservaId == reserva.ReservaId);
+
+                    pagosConDetalle.Add(new
+                    {
+                        PagoId = 0,
+                        Fecha = reserva.FechaAnula,
+                        Periodo = 0,
+                        HoraIngreso = reserva.FechaReserva,
+                        HoraSalida = reserva.FechaAnula,
+                        TotalConsumo = 0,
+                        MontoAdicional = 0,
+                        MontoEfectivo = 0,
+                        MontoTarjeta = 0,
+                        MontoBillVirt = 0,
+                        MontoDescuento = 0,
+                        Observacion = reservaAnulada?.Contenido,
+                        TipoHabitacion = nombreHabitacion
+                    });
+                }
+
+                // Retornar respuesta con los datos del cierre
                 res.Ok = true;
                 res.Data = new
                 {
@@ -414,8 +488,10 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
-        [HttpGet("GetCierresConPagosSinCierre")]
-        public async Task<Respuesta> GetCierresConPagosSinCierre()
+
+
+        [HttpGet("GetCierresyActual")]
+        public async Task<Respuesta> GetCierresyActual()
         {
             Respuesta res = new Respuesta();
             try 
@@ -502,9 +578,9 @@ namespace ApiObjetos.Controllers
                         pago.Observacion,
                         TipoHabitacion = habitacionNombre
                     });
-                }
-                else
-                {
+                    }
+                    else
+                    {
                     PagosSinCierreReturn.Add(new
                     {
                         pago.PagoId,
@@ -523,33 +599,39 @@ namespace ApiObjetos.Controllers
                     });
                 }
 
-                    if (anulados.Count() != 0) {
-                        foreach (var row in anulados) {
+                    
+                }
+                if (anulados.Count() != 0)
+                {
+                    foreach (var row in anulados)
+                    {
+                        var nombreHabitacion = habitaciones
+                            .Where(r => r.HabitacionId == row.HabitacionId)
+                            .Select(r => r.NombreHabitacion)
+                            .FirstOrDefault();
 
-                            var reservaAnulada = await _db.Registros.FirstOrDefaultAsync(r => r.ReservaId == row.ReservaId);
-                            PagosSinCierreReturn.Add(new
-                            {
-                                PagoId = 0,
-                                Fecha = pago.fechaHora,
-                                Periodo = 0,
-                                HoraIngreso = row.FechaReserva,
-                                HoraSalida = row.FechaAnula,
-                                totalConsumo = 0,
-                                MontoAdicional = 0,
-                                MontoEfectivo=0,
-                                MontoTarjeta=0,
-                                MontoBillVirt=0,
-                                MontoDescuento=0,
-                                Observacion = reservaAnulada?.Contenido,
-                                TipoHabitacion = (string?)null
-                            });
-                        }
+                        var reservaAnulada = await _db.Registros.FirstOrDefaultAsync(r => r.ReservaId == row.ReservaId);
+                        PagosSinCierreReturn.Add(new
+                        {
+                            PagoId = 0,
+                            Fecha = row.FechaAnula,
+                            Periodo = 0,
+                            HoraIngreso = row.FechaReserva,
+                            HoraSalida = row.FechaAnula,
+                            totalConsumo = 0,
+                            MontoAdicional = 0,
+                            MontoEfectivo = 0,
+                            MontoTarjeta = 0,
+                            MontoBillVirt = 0,
+                            MontoDescuento = 0,
+                            Observacion = reservaAnulada?.Contenido,
+                            TipoHabitacion = nombreHabitacion
+                        });
                     }
                 }
-            
 
-            // Set the response
-            res.Ok = true;
+                // Set the response
+                res.Ok = true;
             res.Data = new
             {
                 Cierres = cierres,
