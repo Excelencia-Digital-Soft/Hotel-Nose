@@ -60,6 +60,7 @@ namespace ApiObjetos.Controllers
             var usuario = new Usuarios
             {
                 NombreUsuario = usuarioDto.NombreUsuario,
+                InstitucionID = usuarioDto.InstitucionID,
                 Contraseña = BCrypt.Net.BCrypt.HashPassword(usuarioDto.Contraseña) ,
                 RolId = usuarioDto.RolId
             };

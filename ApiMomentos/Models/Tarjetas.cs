@@ -9,5 +9,7 @@ public partial class Tarjetas
 
     public string Nombre { get; set; }
     public int MontoPorcentual { get; set; }
+
+    public int InstitucionID { get; set; }
     
 }

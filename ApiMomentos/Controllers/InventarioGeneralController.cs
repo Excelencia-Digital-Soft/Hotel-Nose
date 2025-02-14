@@ -198,7 +198,8 @@ namespace ApiObjetos.Controllers
                     ArticuloId = a.ArticuloId,
                     Cantidad = 0, // Default quantity
                     FechaRegistro = DateTime.Now,
-                    Anulado = false
+                    Anulado = false,
+                    InstitucionID = a.InstitucionID
                 }).ToList();
 
                 _db.InventarioGeneral.AddRange(newInventarios);

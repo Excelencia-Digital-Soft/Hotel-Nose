@@ -305,7 +305,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPost]
         [Route("CreateArticuloWithImage")]
-        public async Task<Respuesta> CreateArticuloWithImage([FromForm] int institucionID, [FromForm] string nombre, [FromForm] decimal precio, [FromForm] IFormFile? imagen, [FromForm] int categoriaID)
+        public async Task<Respuesta> CreateArticuloWithImage(int InstitucionID, [FromForm] string nombre, [FromForm] decimal precio, [FromForm] IFormFile? imagen, [FromForm] int categoriaID)
         {
             Respuesta res = new Respuesta();
 
@@ -343,7 +343,7 @@ namespace ApiObjetos.Controllers
                     Anulado = false, // Por defecto, el artículo no está anulado
                     FechaRegistro = DateTime.Now,
                     CategoriaID = categoriaID, // Asignar la categoría al artículo
-                    InstitucionID = institucionID,
+                    InstitucionID = InstitucionID,
                 };
 
                 // Agregar el artículo a la base de datos

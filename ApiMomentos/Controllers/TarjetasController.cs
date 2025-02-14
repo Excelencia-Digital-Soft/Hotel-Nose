@@ -20,7 +20,7 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("CrearRecargoTarjeta")]
         [AllowAnonymous]
-        public async Task<Respuesta> CrearRecargoTarjeta(string Nombre, int Monto)
+        public async Task<Respuesta> CrearRecargoTarjeta(string Nombre, int Monto, int InstitucionID)
         {
             Respuesta res = new Respuesta();
             try
@@ -29,6 +29,7 @@ namespace ApiObjetos.Controllers
                 {
                     Nombre = Nombre,
                     MontoPorcentual = Monto,
+                    InstitucionID = InstitucionID
                 };
 
                 _db.Add(nuevaTarjeta);
@@ -48,12 +49,12 @@ namespace ApiObjetos.Controllers
         }
         [HttpGet]
         [Route("GetTarjetas")]
-        public async Task<Respuesta> GetTarjetas()
+        public async Task<Respuesta> GetTarjetas(int InstitucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
-                var tarjetas = await _db.Tarjetas.ToListAsync();
+                var tarjetas = await _db.Tarjetas.Where(t => t.InstitucionID == InstitucionID).ToListAsync();
                 res.Ok = true;
                 res.Data = tarjetas;
             }

@@ -38,7 +38,7 @@ namespace ApiObjetos.Controllers
 
                 // Step 2: Check if the category name is already taken (case-insensitive)
                 if (await _db.CategoriasArticulos
-                    .AnyAsync(c => c.NombreCategoria.ToLower() == categoriaCreada.NombreCategoria.ToLower()))
+                    .AnyAsync(c => c.NombreCategoria.ToLower() == categoriaCreada.NombreCategoria.ToLower() && c.InstitucionID == categoriaCreada.InstitucionID))
                 {
                     res.Ok = false;
                     res.Message = "Ya existe una categoría con este nombre.";
@@ -118,7 +118,7 @@ namespace ApiObjetos.Controllers
 
         [HttpGet]
         [Route("GetCategorias")]
-        public async Task<Respuesta> GetCategorias()
+        public async Task<Respuesta> GetCategorias(int InstitucionID)
         {
             Respuesta res = new Respuesta();
 
@@ -126,7 +126,7 @@ namespace ApiObjetos.Controllers
             {
 
                     var categorias = await _db.CategoriasArticulos.
-                        Where(a => a.Anulado != true)
+                        Where(a => a.Anulado != true && a.InstitucionID == InstitucionID)
                         .
                         ToListAsync();
    

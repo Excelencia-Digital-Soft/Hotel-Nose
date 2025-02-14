@@ -46,7 +46,7 @@ namespace ApiObjetos.Controllers
         [Route("CrearCategoria")] // Crea un nuevo paciente
         [AllowAnonymous]
 
-        public async Task<Respuesta> CrearCategoria(string nombreCategoria, int Precio, int? capacidadMaxima, int? Porcentaje, int? UsuarioID)
+        public async Task<Respuesta> CrearCategoria(string nombreCategoria, int UsuarioID, int InstitucionID, int Precio, int? capacidadMaxima, int? Porcentaje)
         {
             Respuesta res = new Respuesta();
             try
@@ -56,7 +56,8 @@ namespace ApiObjetos.Controllers
 
                 CategoriasHabitaciones nuevaCategoria = new CategoriasHabitaciones
                 {
-
+                    InstitucionID = InstitucionID,
+                    UsuarioId = UsuarioID,
                     NombreCategoria = nombreCategoria,
                     PrecioNormal = Precio,
                     CapacidadMaxima = capacidad,
@@ -113,14 +114,14 @@ namespace ApiObjetos.Controllers
         [Route("GetCategorias")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
 
-        public async Task<Respuesta> GetCategorias()
+        public async Task<Respuesta> GetCategorias(int InstitucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
 
                 var Objeto = await _db.CategoriasHabitaciones.
-                    Where(c => c.Anulado != true)
+                    Where(c => c.Anulado != true && c.InstitucionID == InstitucionID)
                     .ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto;
