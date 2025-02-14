@@ -39,7 +39,8 @@
   const createCategory = async () => {
     if (categoryName.value.trim()) {
       try {
-        const response = await axiosClient.post(`/api/CategoriaArticulos/CrearCategoria?InstitucionID=${InstitucionID.value}&UsuarioID=${UsuarioID.value}`, {
+        const response = await axiosClient.post(`/api/CategoriaArticulos/CrearCategoria`, {
+          InstitucionID: InstitucionID.value,
           NombreCategoria: categoryName.value,
         });
   
@@ -61,11 +62,9 @@
   // logica login
 import { useAuthStore } from '../store/auth.js'; // Import the auth store
 const InstitucionID = ref(null);
-const UsuarioID = ref(null);
 const authStore = useAuthStore();
 function getDatosLogin(){
     InstitucionID.value = authStore.auth?.institucionID;
-    UsuarioID.value = authStore.auth?.usuarioID;
   }
   onMounted(() => {
   getDatosLogin();

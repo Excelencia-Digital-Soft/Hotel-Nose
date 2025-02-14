@@ -72,7 +72,7 @@ const selectedPromocion = ref(null);
 // Fetch categories on mount
 const fetchCategorias = async () => {
   try {
-    const response = await axiosClient.get('/GetCategorias');
+    const response = await axiosClient.get(`/GetCategorias?InstitucionID=${InstitucionID.value}`);
     if (response.data.ok) {
       categorias.value = response.data.data;
     } else {
@@ -147,6 +147,8 @@ const handleSave = async (data) => {
 };
 
 // Fetch categories on component mount
+onMounted(getDatosLogin);
+
 onMounted(fetchCategorias);
 
 // TODO ESTO ES PARA TEMA VISUAL
@@ -163,6 +165,14 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', updateScreenWidth);
 });
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+  console.log("AAAA")
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
+
 </script>
 
   

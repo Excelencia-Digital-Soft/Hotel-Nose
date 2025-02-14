@@ -312,7 +312,7 @@ const createArticulo = async () => {
       formData.append("categoriaID", newArticuloCategoriaId.value);
       formData.append("imagen", newArticuloImage.value); // Agregamos la imagen al FormData
 
-      const response = await axiosClient.post(`/api/Articulos/CreateArticuloWithImage?InstitucionID=${InstitucionID.value}?UsuarioID=${UsuarioID.value}`, formData, {
+      const response = await axiosClient.post(`/api/Articulos/CreateArticuloWithImage?InstitucionID=${InstitucionID.value}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data", // Indicar al servidor que enviamos un archivo
         },
@@ -400,6 +400,7 @@ const deleteArticulo = (idArticulo) => {
 
 // Fetch rooms and categories on component mount
 onMounted(() => {
+  getDatosLogin();
   fetchCategories();
   fetchArticulos();
 });
@@ -448,9 +449,7 @@ function getDatosLogin(){
     InstitucionID.value = authStore.auth?.institucionID;
     UsuarioID.value = authStore.auth?.usuarioID;
   }
-  onMounted(() => {
-  getDatosLogin();
-});
+
 
 </script>
 
