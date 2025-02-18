@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ApiObjetos.Data;
 using ApiObjetos.DTOs;
+using AutoMapper;
 
 namespace ApiObjetos.Controllers
 {
@@ -13,18 +14,27 @@ namespace ApiObjetos.Controllers
     {
         private readonly HotelDbContext _context;
         private readonly JwtService _jwtService;
+        private readonly IMapper _mapper;
 
-        public UsuariosController(HotelDbContext context, JwtService jwtService)
+        public UsuariosController(HotelDbContext context, JwtService jwtService, IMapper mapper)
         {
             _context = context;
             _jwtService = jwtService;
+            _mapper = mapper;
         }
 
-        // GET: api/Usuarios
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Usuarios>>> GetUsuarios()
+        [HttpGet("GetUsuarios")]
+        public async Task<ActionResult<IEnumerable<UsuarioDTO>>> GetUsuarios()
         {
-            return await _context.Usuarios.Include(u => u.Rol).ToListAsync();
+            // Obtén los usuarios con su rol relacionado
+            var usuarios = await _context.Usuarios
+                .Include(u => u.Rol)  // Incluye la relación con Rol
+                .ToListAsync();
+
+            // Mapea las entidades a DTOs usando AutoMapper
+            var usuariosDTO = _mapper.Map<IEnumerable<UsuarioDTO>>(usuarios);
+
+            return Ok(usuariosDTO);
         }
 
         // GET: api/Usuarios/5
@@ -141,11 +151,25 @@ namespace ApiObjetos.Controllers
             });
         }
 
+        [HttpGet("GetRoles")]
+        public async Task<ActionResult<IEnumerable<RolDTO>>> GetRoles()
+        {
+            var roles = await _context.Roles.ToListAsync();
+
+            // Si estás usando AutoMapper
+            var rolesDTO = _mapper.Map<IEnumerable<RolDTO>>(roles);
+
+            return Ok(rolesDTO);
+        }
+
+
         private bool UsuarioExists(int id)
         {
             return _context.Usuarios.Any(e => e.UsuarioId == id);
         }
+
     }
+
 
     public class LoginDto
     {
