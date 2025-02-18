@@ -129,7 +129,7 @@ const handleSave = async (data) => {
     } else {
       // Create Promotion
       const response = await axiosClient.post(
-        `/api/Promociones/AddPromocion?tarifa=${data.tarifa}&cantidadHoras=${data.cantidadHoras}&categoriaID=${selectedCategory.value}&Detalle=${encodeURIComponent(data.detalle)}`
+        `/api/Promociones/AddPromocion?tarifa=${data.tarifa}&cantidadHoras=${data.cantidadHoras}&categoriaID=${selectedCategory.value}&Detalle=${encodeURIComponent(data.detalle)}&InstitucionID=${InstitucionID.value}`
       );
       if (response.data.ok) {
         console.log('Promoción creada:', response.data);
@@ -169,7 +169,6 @@ import { useAuthStore } from '../store/auth.js'; // Import the auth store
 const InstitucionID = ref(null);
 const authStore = useAuthStore();
 function getDatosLogin(){
-  console.log("AAAA")
     InstitucionID.value = authStore.auth?.institucionID;
   }
 

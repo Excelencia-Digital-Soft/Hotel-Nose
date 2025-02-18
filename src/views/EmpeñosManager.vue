@@ -62,7 +62,7 @@ import ModalPagarEmpeño from '../components/ModalPagarEmpeño.vue';
   // Fetch all empeños when the component is mounted
   const fetchEmpenos = async () => {
     try {
-      const response = await axiosClient.get('/api/Empeño/GetAllEmpenos');
+      const response = await axiosClient.get(`/api/Empeño/GetAllEmpenos?InstitucionID=${InstitucionID.value}`);
       if (response.data) {
         empeños.value = response.data;  // Assuming the data is directly in response.data
         console.log(empeños.value); // For debugging
@@ -76,8 +76,18 @@ import ModalPagarEmpeño from '../components/ModalPagarEmpeño.vue';
   
   // Call fetchEmpenos when the component is mounted
   onMounted(() => {
+    getDatosLogin();
     fetchEmpenos();
   });
+
+  import { useAuthStore } from '../store/auth.js'; // Import the auth store
+
+const authStore = useAuthStore();
+const InstitucionID = ref(null)
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
+
   </script>
   
   <style scoped>

@@ -37,12 +37,14 @@
   </template>
   
   <script setup>
-  import { ref, defineEmits } from 'vue';
+  import { ref, defineEmits, onMounted } from 'vue';
   import axiosClient from '../axiosClient';
   import ProgressSpinner from 'primevue/progressspinner';
   // Emit to close the modal
   const emit = defineEmits(['close', 'refresh']);
-  
+  onMounted(() => {
+    getDatosLogin()
+  })
   // New initial amount for the next cash register
   const montoInicial = ref(0);
   let isLoading = ref(false);
@@ -57,7 +59,7 @@
     if (isLoading.value) return; // Evitar múltiples solicitudes
     isLoading.value = true; // Activar indicador de carga
     try {
-      const response = await axiosClient.post(`/api/Caja/CierreCaja?montoInicial=${montoInicial.value}&observacion=Prueba`);
+      const response = await axiosClient.post(`/api/Caja/CierreCaja?montoInicial=${montoInicial.value}&InstitucionID=${InstitucionID.value}&observacion=Prueba`);
       if (response.data.ok) {
         alert('Caja cerrada exitosamente');
         emit('refresh'); // Emit event to refresh the page
@@ -71,6 +73,12 @@
 		isLoading.value = false; // Desactivar indicador de carga
 	  }
     };
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
   </script>
   
   <style scoped>

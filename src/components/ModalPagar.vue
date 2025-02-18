@@ -179,7 +179,7 @@ const fetchTarjetas = async () => {
 const calculoInicial = async () => {
   totalPago.value = props.total + props.adicional;
 };
-
+onMounted(getDatosLogin);
 onMounted(fetchTarjetas);
 onMounted(calculoInicial);
 
@@ -245,7 +245,7 @@ const crearMovimientoAdicional = async () => {
   if (empenoMonto.value > 0) {
     try {
       await axiosClient.post(
-        `api/Empeño/AddEmpeno?visitaID=${props.visitaId}&detalle=${empenoDetalle.value}&monto=${empenoMonto.value}`
+        `api/Empeño/AddEmpeno?institucionID=${InstitucionID.value}&visitaID=${props.visitaId}&detalle=${empenoDetalle.value}&monto=${empenoMonto.value}`
       );
     } catch (error) {
       console.error('Error al crear el empeño:', error);
@@ -327,6 +327,15 @@ watch(
     isButtonDisabled.value = false;
   }
 );
+
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+
+const authStore = useAuthStore();
+const InstitucionID = ref(null)
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
+
 </script>
 
 <style>

@@ -107,7 +107,7 @@
       </div>
 
       <!-- Efectivo Section -->
-      <div class="mb-4 mt-4">
+      <div class="mb-4 mt-4 hidden">
         <h3 class="font-semibold text-lg mb-2">Efectivo</h3>
         <div class="overflow-x-auto">
           <table class="table-auto w-full border border-gray-600 text-sm">
@@ -177,7 +177,7 @@ const editingEfectivoMonto = ref('');
 // Fetch Tarjetas
 const fetchTarjetas = async () => {
   try {
-    const response = await axiosClient.get('/GetTarjetas');
+    const response = await axiosClient.get(`/GetTarjetas?InstitucionID=${InstitucionID.value}`);
     if (response.data.ok) {
       tarjetas.value = response.data.data;
     } else {
@@ -232,7 +232,7 @@ const createTarjeta = async () => {
 
   try {
     await axiosClient.post(
-      `/CrearRecargoTarjeta?Nombre=${newTarjetaNombre.value}&Monto=${newTarjetaMonto.value}`
+      `/CrearRecargoTarjeta?Nombre=${newTarjetaNombre.value}&Monto=${newTarjetaMonto.value}&InstitucionID=${InstitucionID.value}`
     );
     newTarjetaNombre.value = '';
     newTarjetaMonto.value = '';
@@ -288,9 +288,16 @@ const editOrSaveEfectivo = async () => {
 };
 
 onMounted(() => {
+  getDatosLogin();
   fetchTarjetas();
   fetchDescuentoEfectivo();
 });
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
 </script>
 
 <style scoped>

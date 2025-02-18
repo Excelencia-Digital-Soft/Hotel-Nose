@@ -70,6 +70,7 @@ const authStore = useAuthStore();
   const selectedIdCierre = ref()
 
   onBeforeMount(() => {
+    getDatosLogin();
     fetchCierres();
 });
 
@@ -83,7 +84,7 @@ const authStore = useAuthStore();
   // Fetch all cierres with their associated pagos when the view is loaded
   const fetchCierres = async () => {
     try {
-      const response = await axiosClient.get('/api/Caja/GetCierresyActual');
+      const response = await axiosClient.get(`/api/Caja/GetCierresyActual?InstitucionID=${InstitucionID.value}`);
       if (response.data.ok) {
         cierres.value = response.data.data.cierres;
         pagosSinCierres.value = response.data.data.pagosSinCierre
@@ -153,6 +154,11 @@ const authStore = useAuthStore();
 };
 
 
+const InstitucionID = ref(null)
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
+  
   </script>
 <style scoped>
 /* Ensure the modal content is not truncated */

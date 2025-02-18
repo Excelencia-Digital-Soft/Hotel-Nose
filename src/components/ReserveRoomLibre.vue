@@ -159,7 +159,9 @@
   let idNewTag = ref(0);
   let numeroError = ref('');
   
-
+  onMounted(() => {
+  getDatosLogin();
+});
   
   console.log("tagselected : " + editTagRel.value)
   
@@ -260,12 +262,9 @@ const UsuarioID = ref(null);
 const InstitucionID = ref(null);
 const authStore = useAuthStore();
 function getDatosLogin(){
-    UsuarioID.value = authStore.auth?.usuarioID;
-    InstitucionID.value = authStore.auth?.InstitucionID;
+    InstitucionID.value = authStore.auth?.institucionID;
   }
-  onMounted(() => {
-  getDatosLogin();
-});
+
   </script>
   <style scoped>
   .modal-outer-enter-active,
