@@ -3,6 +3,7 @@ using ApiObjetos.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ApiObjetos.Models.Sistema;
+using System.Data.SqlTypes;
 
 namespace ApiObjetos.Controllers
 {
@@ -51,6 +52,7 @@ namespace ApiObjetos.Controllers
                         TotalIngresosBillVirt = 0,
                         TotalIngresosEfectivo = 0,
                         TotalIngresosTarjeta = 0,
+                            InstitucionID = institucionID,
                     };
                     _db.Cierre.Add(ultimoCierre);
                     await _db.SaveChangesAsync();
@@ -400,7 +402,7 @@ namespace ApiObjetos.Controllers
                 var habitaciones = await _db.Habitaciones.Include(h => h.Categoria).ToListAsync();
                 var anulados = await _db.Reservas
                     .Where(r => r.FechaAnula < cierre.FechaHoraCierre && r.FechaAnula > fechaCierreAnterior)
-                    .ToListAsync();
+                    .ToListAsync() ?? null;
 
                 var movimientos = await _db.Movimientos.Include(m => m.Visita).ThenInclude(v => v.Reservas).ToListAsync();
                 var consumos = await _db.Consumo.ToListAsync();
@@ -500,7 +502,7 @@ namespace ApiObjetos.Controllers
 
 
         [HttpGet("GetCierresyActual")]
-        public async Task<Respuesta> GetCierresyActual()
+        public async Task<Respuesta> GetCierresyActual(int InstitucionID)
         {
             Respuesta res = new Respuesta();
             try 
@@ -509,30 +511,31 @@ namespace ApiObjetos.Controllers
                 //ademas para encasillarlas dentro de un cierre anterior deberían tener la fecha anula dentro del marco
                 //de fecha fin y fecha inicio de ese cierre
             // Fetch all necessary data from the database
-            var empeños = await _db.Empeño.ToListAsync();
+            var empeños = await _db.Empeño.Where(e => e.InstitucionID == InstitucionID).ToListAsync();
 
             var cierres = await _db.Cierre
-                .Where(c => c.FechaHoraCierre != null)
+                .Where(c => c.FechaHoraCierre != null && c.InstitucionID == InstitucionID)
                 .Include(c => c.Pagos)
                 .ToListAsync();
 
             List<Pagos>? pagosSinCierre = _db.Pagos != null
-                ? await _db.Pagos.Where(p => p.CierreId == null).ToListAsync()
+                ? await _db.Pagos.Where(p => p.CierreId == null && p.InstitucionID == InstitucionID).ToListAsync()
                 : new List<Pagos>();
 
                 var movimientos = await _db.Movimientos
                     .Include(m => m.Visita)
                     .ThenInclude(v => v.Reservas)
                     .ToListAsync();
-                var ultimocierre = cierres.LastOrDefault();
+                var ultimocierre = cierres.Where(c => c.InstitucionID == InstitucionID).LastOrDefault() ?? new Cierre { FechaHoraCierre = SqlDateTime.MinValue.Value };
 
                 var anulados = await _db.Reservas
-                    .Where(r => r.FechaAnula > ultimocierre.FechaHoraCierre)
+                    .Where(r => r.FechaAnula > ultimocierre.FechaHoraCierre && r.InstitucionID == InstitucionID)
                     .ToListAsync();
                 
 
             var habitaciones = await _db.Habitaciones
                 .Include(h => h.Categoria)
+                .Where(h => h.Categoria.InstitucionID == InstitucionID)
                 .ToListAsync();
             var consumos = await _db.Consumo.ToListAsync();
             // List to store the mapped Cierres with Pagos

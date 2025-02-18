@@ -65,6 +65,7 @@ namespace ApiObjetos.Controllers
                 {
                     MontoDescuento = montoDescuento,
                     MontoEfectivo = montoEfectivo,
+                    InstitucionID = visita.InstitucionID,
                     MontoTarjeta = montoTarjeta,
                     MontoBillVirt = montoBillVirt,
                     TarjetaId = tarjetaID,
