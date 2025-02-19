@@ -24,10 +24,11 @@ namespace ApiObjetos.Controllers
         }
 
         [HttpGet("GetUsuarios")]
-        public async Task<ActionResult<IEnumerable<UsuarioDTO>>> GetUsuarios()
+        public async Task<ActionResult<IEnumerable<UsuarioDTO>>> GetUsuarios(int InstitucionID)
         {
             // Obtén los usuarios con su rol relacionado
             var usuarios = await _context.Usuarios
+                .Where(u => u.InstitucionID == InstitucionID)
                 .Include(u => u.Rol)  // Incluye la relación con Rol
                 .ToListAsync();
 
@@ -64,13 +65,13 @@ namespace ApiObjetos.Controllers
             return usuario.InstitucionID;
         }
         [HttpPost]
-        public async Task<ActionResult<Usuarios>> PostUsuario(UsuarioCreateDto usuarioDto)
+        public async Task<ActionResult<Usuarios>> PostUsuario(int InstitucionID, UsuarioCreateDto usuarioDto)
         {
             // Crear un nuevo usuario a partir del DTO
             var usuario = new Usuarios
             {
                 NombreUsuario = usuarioDto.NombreUsuario,
-                InstitucionID = usuarioDto.InstitucionID,
+                InstitucionID = InstitucionID,
                 Contraseña = BCrypt.Net.BCrypt.HashPassword(usuarioDto.Contraseña) ,
                 RolId = usuarioDto.RolId
             };
