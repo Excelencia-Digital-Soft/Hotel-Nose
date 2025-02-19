@@ -7,8 +7,8 @@
   <div class="w-1/3 h-auto fixed top-40 flex flex-col justify-evenly items-center p-8 pb-16 rounded-3xl self-start mt-2 border-x-8 border-y-2 border-accent-500 bg-neutral-800">
     <h2 class="text-xl font-bold mb-4 text-white">{{ usuario ? 'Editar Usuario' : 'Agregar Usuario' }}</h2>
     <form class="flex flex-col items-center justify-center w-full" @submit.prevent="saveUsuario">
-      <label class="block mb-2 text-white">Nombre de Usuario:</label>
-      <input v-model="form.nombreUsuario" type="text" class="w-full p-2 border rounded mb-4" required />
+      <label v-if="!usuario" class="block mb-2 text-white">Nombre de Usuario:</label>
+      <input v-if="!usuario" v-model="form.nombreUsuario" type="text" class="w-full p-2 border rounded mb-4" required />
       
       <label v-if="!usuario" class="block mb-2 text-white">Contraseña:</label>
       <input v-if="!usuario" v-model="form.contraseña" type="password" class="w-full p-2 border rounded mb-4" required />
@@ -57,9 +57,9 @@ watch(() => props.usuario, (newUsuario) => {
 const saveUsuario = async () => {
   try {
     if (props.usuario) {
-      await axiosClient.put(`/api/Usuarios/${props.usuario.usuarioId}`, form.value);
+      await axiosClient.put(`/api/Usuarios/ActualizarUsuario?id=${props.usuario.usuarioId}&RolID=${form.value.rolId}`);
     } else {
-      await axiosClient.post(`/api/Usuarios/${InstitucionID.value}`, form.value);
+      await axiosClient.post(`/api/Usuarios/CrearUsuario?InstitucionID=${InstitucionID.value}`, form.value);
     }
     emit('refresh');
     emit('close');
@@ -68,6 +68,7 @@ const saveUsuario = async () => {
   }
 };
 onMounted(() => {
+  console.log()
   getDatosLogin();
 });
 const InstitucionID = ref(null)

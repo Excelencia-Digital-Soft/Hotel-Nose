@@ -67,7 +67,7 @@ const fetchRoles = async () => {
 const deleteUsuario = async (id) => {
   if (!confirm('¿Seguro que deseas eliminar este usuario?')) return;
   try {
-    await axiosClient.delete(`/api/Usuarios/${id}`);
+    await axiosClient.delete(`/api/Usuarios/BorrarUsuario?id=${id}`);
     fetchUsuarios();
   } catch (error) {
     console.error('Error al eliminar usuario:', error);
