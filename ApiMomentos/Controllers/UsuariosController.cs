@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using ApiObjetos.Data;
 using ApiObjetos.DTOs;
 using AutoMapper;
+using ApiObjetos.Models.Sistema;
 
 namespace ApiObjetos.Controllers
 {
@@ -23,7 +24,9 @@ namespace ApiObjetos.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet("GetUsuarios")]
+        [HttpGet]
+        [Route("GetUsuarios")]
+
         public async Task<ActionResult<IEnumerable<UsuarioDTO>>> GetUsuarios(int InstitucionID)
         {
             // Obtén los usuarios con su rol relacionado
@@ -39,7 +42,8 @@ namespace ApiObjetos.Controllers
         }
 
         // GET: api/Usuarios/5
-        [HttpGet("{id}")]
+        [HttpGet]
+        [Route("GetUsuario")]
         public async Task<ActionResult<Usuarios>> GetUsuario(int id)
         {
             var usuario = await _context.Usuarios.Include(u => u.Rol).FirstOrDefaultAsync(u => u.UsuarioId == id);
@@ -65,6 +69,8 @@ namespace ApiObjetos.Controllers
             return usuario.InstitucionID;
         }
         [HttpPost]
+        [Route("CrearUsuario")]
+
         public async Task<ActionResult<Usuarios>> PostUsuario(int InstitucionID, UsuarioCreateDto usuarioDto)
         {
             // Crear un nuevo usuario a partir del DTO
@@ -72,7 +78,7 @@ namespace ApiObjetos.Controllers
             {
                 NombreUsuario = usuarioDto.NombreUsuario,
                 InstitucionID = InstitucionID,
-                Contraseña = BCrypt.Net.BCrypt.HashPassword(usuarioDto.Contraseña) ,
+                Contraseña = BCrypt.Net.BCrypt.HashPassword(usuarioDto.Contraseña),
                 RolId = usuarioDto.RolId
             };
 
@@ -83,38 +89,56 @@ namespace ApiObjetos.Controllers
         }
 
 
-        // PUT: api/Usuarios/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutUsuario(int id, Usuarios usuario)
-        {
-            if (id != usuario.UsuarioId)
-            {
-                return BadRequest();
-            }
 
-            _context.Entry(usuario).State = EntityState.Modified;
+        [HttpPut]
+        [Route("ActualizarUsuario")]
+        public async Task<Respuesta> ActualizarUsuario(int id, string? contraseña, int RolID = 404)
+        {
+            Respuesta res = new Respuesta();
 
             try
             {
+                // Step 1: Retrieve the articulo by ID
+                var usuario = await _context.Usuarios.FindAsync(id);
+                if (usuario == null)
+                {
+                    res.Ok = false;
+                    res.Message = $"No se encontró el usuario con ID: {id}.";
+                    return res;
+                }
+
+                // Step 2: Update the articulo fields if the new values are provided
+                if (!string.IsNullOrEmpty(contraseña))
+                {
+                    usuario.Contraseña = BCrypt.Net.BCrypt.HashPassword(contraseña);
+                }
+
+                if (RolID != 404)
+                {
+                    usuario.RolId = RolID;
+                }
+
+                // Step 3: Save changes to the database
+                _context.Usuarios.Update(usuario);
                 await _context.SaveChangesAsync();
+
+                // Set response on success
+                res.Ok = true;
+                res.Message = "Usuario actualizado correctamente.";
+                res.Data = usuario;
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!UsuarioExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                res.Message = $"Error: {ex.Message}";
+                res.Ok = false;
             }
 
-            return NoContent();
+            return res;
         }
-
         // DELETE: api/Usuarios/5
-        [HttpDelete("{id}")]
+        [HttpDelete]
+        [Route("BorrarUsuario")]
+
         public async Task<IActionResult> DeleteUsuario(int id)
         {
             var usuario = await _context.Usuarios.FindAsync(id);
@@ -143,7 +167,7 @@ namespace ApiObjetos.Controllers
             }
 
             var token = _jwtService.GenerateToken(usuario.UsuarioId.ToString(), usuario.Rol.NombreRol);
-            return Ok(new { 
+            return Ok(new {
                 Token = token,
                 Rol = usuario.Rol.RolId,
                 UsuarioID = usuario.UsuarioId,
@@ -177,4 +201,5 @@ namespace ApiObjetos.Controllers
         public string NombreUsuario { get; set; }
         public string Contraseña { get; set; }
     }
+
 }
