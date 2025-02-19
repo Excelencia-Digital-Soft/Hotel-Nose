@@ -47,7 +47,7 @@ const selectedUsuario = ref(null);
 
 const fetchUsuarios = async () => {
   try {
-    const response = await axiosClient.get('/api/Usuarios/GetUsuarios');
+    const response = await axiosClient.get(`/api/Usuarios/GetUsuarios?InstitucionID=${InstitucionID.value}`);
     usuarios.value = response.data;
     console.log(usuarios.value)
   } catch (error) {
@@ -85,7 +85,13 @@ const closeModal = () => {
 };
 
 onMounted(() => {
+  getDatosLogin();
   fetchUsuarios();
   fetchRoles();
 });
+const InstitucionID = ref(null)
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
+  
 </script>

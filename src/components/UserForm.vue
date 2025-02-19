@@ -32,8 +32,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import axiosClient from '../axiosClient';
+import { useAuthStore } from '../store/auth.js';
+const authStore = useAuthStore();
 
 const props = defineProps({ usuario: Object, roles: Array });
 const emit = defineEmits(['close', 'refresh']);
@@ -57,7 +59,7 @@ const saveUsuario = async () => {
     if (props.usuario) {
       await axiosClient.put(`/api/Usuarios/${props.usuario.usuarioId}`, form.value);
     } else {
-      await axiosClient.post('/api/Usuarios', form.value);
+      await axiosClient.post(`/api/Usuarios/${InstitucionID.value}`, form.value);
     }
     emit('refresh');
     emit('close');
@@ -65,4 +67,11 @@ const saveUsuario = async () => {
     console.error('Error al guardar usuario:', error);
   }
 };
+onMounted(() => {
+  getDatosLogin();
+});
+const InstitucionID = ref(null)
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
 </script>
