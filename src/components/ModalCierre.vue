@@ -61,11 +61,11 @@
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
             pago.montoTarjeta || '' }}</div>
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
-            pago.montoBillVirt || '' }}</div>
+            pago.tarjetaNombre || '' }}</div>
           <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
             pago.montoDescuento || '' }}</div>
           <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
-            (pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta) || '' }}</div>
+            (pago.montoEfectivo + pago.montoTarjeta) || '' }}</div>
 
           <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
         </div>
@@ -97,13 +97,13 @@
           <div class="font-bold text-black p-2 text-center">Tarjeta Total</div>{{ calculateTarjeta() }}
         </div>
         <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
-          <div class="font-bold text-black p-2 text-center">MP Total</div>{{ calculateMP() }}
+          <div class="font-bold text-black p-2 text-center"> </div>
         </div>
         <div class="font-bold text-red-600 p-2 border-t border-r border-gray-300 text-right">
-          <div class="font-bold text-black p-2 text-center">Desc.</div>{{ calculateDescuento() }}
+          <div class="font-bold text-black p-2 text-center">Desc.</div>{{ calculateDescuento().toFixed(2) }}
         </div>
         <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
-          <div class="font-bold text-black p-2 text-center">Total</div>{{ calculateTotal() }}
+          <div class="font-bold text-black p-2 text-center">Total</div>{{ calculateTotal().toFixed(2) }}
         </div>
         <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
       </div>
@@ -179,7 +179,7 @@
           || '' }}</div>
         <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoTarjeta
           || '' }}</div>
-        <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoBillVirt
+        <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.tarjetaNombre
           || '' }}</div>
         <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoDescuento
           || '' }}</div>
@@ -201,7 +201,7 @@
         <div class="font-bold text-black p-2 text-left">Periodo Total</div>{{ calculatePeriodo() }}
       </div>
       <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
-        <div class="font-bold text-black p-2 text-center">Adicional Total</div>{{ calculateAdicional() }}
+        <div class="font-bold text-black p-2 text-center">Adicional Total</div>{{ calculateAdicional().toFixed(2) }}
       </div>
       <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
         <div class="font-bold text-black p-2 text-center">Consumo Total</div>{{ calculateConsumo() }}
@@ -216,13 +216,13 @@
         <div class="font-bold text-black p-2 text-center">Tarjeta Total</div>{{ calculateTarjeta() }}
       </div>
       <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
-        <div class="font-bold text-black p-2 text-center">MP Total</div>{{ calculateMP() }}
+        <div class="font-bold text-black p-2 text-center"></div>
       </div>
       <div class="font-bold text-red-600 p-2 border-t border-r border-gray-300 text-right">
-        <div class="font-bold text-black p-2 text-center">Desc.</div>{{ calculateDescuento() }}
+        <div class="font-bold text-black p-2 text-center">Desc.</div>{{ calculateDescuento().toFixed(2) }}
       </div>
       <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
-        <div class="font-bold text-black p-2 text-center">Total</div>{{ calculateTotal() }}
+        <div class="font-bold text-black p-2 text-center">Total</div>{{ calculateTotal().toFixed(2) }}
       </div>
       <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
     </div>
@@ -362,16 +362,6 @@ const calculateAdicional = () => {
   return listaPagos.value.reduce((total, pago) => {
     return total + (pago.montoAdicional || 0);
   }, 0);
-};
-
-const calculateMP = () => {
-  return listaPagos.value.reduce((total, pago) => {
-    return total + pago.montoBillVirt;
-  }, 0);
-};
-
-const cerrarCaja = () => {
-  console.log('Caja cerrada');
 };
 
 
