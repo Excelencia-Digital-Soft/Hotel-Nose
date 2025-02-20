@@ -406,12 +406,14 @@ namespace ApiObjetos.Controllers
 
                 var movimientos = await _db.Movimientos.Include(m => m.Visita).ThenInclude(v => v.Reservas).ToListAsync();
                 var consumos = await _db.Consumo.ToListAsync();
+                var tarjetas = await _db.Tarjetas.ToListAsync();
 
                 var pagosConDetalle = new List<object>();
 
                 // Agregar pagos normales con detalles adicionales
                 foreach (var pago in cierre.Pagos)
                 {
+                    var tarjeta = tarjetas.FirstOrDefault(t => pago.TarjetaId == t.TarjetaID);
                     var movimiento = movimientos.FirstOrDefault(m => m.PagoId == pago.PagoId);
                     var visita = movimiento?.Visita;
                     var horaSalida = pago.fechaHora;
@@ -433,6 +435,7 @@ namespace ApiObjetos.Controllers
                         pago.PagoId,
                         CategoriaNombre = habitacion?.Categoria.NombreCategoria,
                         Periodo = periodo,
+                        TarjetaNombre = tarjeta?.Nombre ?? null,
                         Fecha = pago.fechaHora,
                         HoraIngreso = ultimaReserva?.FechaReserva,
                         HoraSalida = horaSalida,
@@ -538,8 +541,9 @@ namespace ApiObjetos.Controllers
                 .Where(h => h.Categoria.InstitucionID == InstitucionID)
                 .ToListAsync();
             var consumos = await _db.Consumo.ToListAsync();
-            // List to store the mapped Cierres with Pagos
-            var CierresReturn = new List<object>();
+            var tarjetas = await _db.Tarjetas.ToListAsync();
+                // List to store the mapped Cierres with Pagos
+                var CierresReturn = new List<object>();
 
             // Handle Pagos without associated Cierres
             var PagosSinCierreReturn = new List<object>();
@@ -551,11 +555,12 @@ namespace ApiObjetos.Controllers
             foreach (var pago in pagosSinCierre)
             {
                 var empeño = empeños.FirstOrDefault(e => e.PagoID == pago.PagoId);
+                    var tarjeta = tarjetas.FirstOrDefault(t => pago.TarjetaId == t.TarjetaID);
 
-                if (empeño == null)
+                    if (empeño == null)
                 {
                     var movimiento = movimientos.FirstOrDefault(m => m.PagoId == pago.PagoId);
-                    var movimientosPago = movimientos.Where(m => m.PagoId == pago.PagoId).ToList(); // realmente debería haberse hecho pensando en multiples movimientos desde un principio, si es posible arreglar a futuro.
+                        var movimientosPago = movimientos.Where(m => m.PagoId == pago.PagoId).ToList(); // realmente debería haberse hecho pensando en multiples movimientos desde un principio, si es posible arreglar a futuro.
                     decimal? totalConsumo = consumos
 .Where(c => movimientosPago.Any(m => m.MovimientosId == c.MovimientosId))
 .Sum(c => c.PrecioUnitario);
@@ -576,6 +581,7 @@ namespace ApiObjetos.Controllers
                     {
                         pago.PagoId,
                         HabitacionID = ultimaReserva.HabitacionId ?? null,
+                        TarjetaNombre = tarjeta?.Nombre ?? null,
                         Periodo,
                         categoriaNombre,
                         Fecha = pago.fechaHora,
@@ -598,6 +604,7 @@ namespace ApiObjetos.Controllers
                         pago.PagoId,
                         Fecha = pago.fechaHora,
                         Periodo = 0,
+                        TarjetaNombre = tarjeta?.Nombre ?? null,
                         HoraIngreso = (DateTime?)null,
                         HoraSalida = (DateTime?)null,
                         totalConsumo = 0,
@@ -641,12 +648,13 @@ namespace ApiObjetos.Controllers
                         });
                     }
                 }
+                var reversedCierres = cierres.AsEnumerable().Reverse().ToList();
 
                 // Set the response
                 res.Ok = true;
             res.Data = new
             {
-                Cierres = cierres,
+                Cierres = reversedCierres,
                 PagosSinCierre = PagosSinCierreReturn
             };
             }
