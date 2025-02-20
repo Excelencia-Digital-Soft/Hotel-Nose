@@ -135,7 +135,7 @@ const routes = [
         path: "/UsuariosManager",
         name: "UsuariosManager",
         component: UsuariosManager,
-        meta: { requireAuth: true, roles: [1] }, // Solo accesible para admins
+        meta: { requireAuth: true, roles: [1, 2] }, // Solo accesible para admins
       },
       {
         path: "/MediosPago",

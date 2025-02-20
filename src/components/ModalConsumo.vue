@@ -84,9 +84,12 @@
 </template>
 <script setup>
 import { onMounted, ref, computed } from 'vue';
+import { useAuthStore } from '../store/auth.js';
 import axiosClient from '../axiosClient';
 import { fetchImage } from '../services/imageService';
 import TableRow from './TableRow.vue';
+
+const authStore = useAuthStore();
 
 const props = defineProps({
   name: String,
@@ -104,6 +107,7 @@ const selectedCategory = ref(null); // Reactive variable for selected category
 const keyword = ref("");
 let getInv = ref("");
 onMounted(() => {
+  getDatosLogin();
   if (!props.consumoHabitacion){
     getInv.value = `/GetInventarioGeneral?InstitucionID=${InstitucionID.value}`
   }
@@ -191,6 +195,11 @@ const confirmarAccion = () => {
   emits("confirmaAccion", seleccionados.value);
   emits("close");
 };
+
+const InstitucionID = ref(null)
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
 </script>
 
 

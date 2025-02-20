@@ -8,8 +8,12 @@
         <table class=" w-full  text-left">
           <tbody>
             <tr>
-              <td class="p-1 font-semibold">Total</td>
-              <td class="p-1 text-right">${{ total.toFixed(2) }}</td>
+              <td class="p-1 font-semibold">Periodo</td>
+              <td class="p-1 text-right">${{ periodo }}</td>
+            </tr>
+            <tr>
+              <td class="p-1 font-semibold">Consumision</td>
+              <td class="p-1 text-right text-teal-400">${{ consumo }}</td>
             </tr>
             <tr>
               <td class="p-1 font-semibold">Adicional</td>
@@ -121,7 +125,9 @@ import EmpenoModal from './EmpenoModal.vue';
 import RecargoModal from './RecargoModal.vue';
 
 const props = defineProps({
-  total: { type: Number, required: true },
+  periodo: { type: Number, required: true },
+  consumo: { type: Number, required: true },
+  total: {type: Number, required: true},
   adicional: { type: Number, required: true },
   visitaId: { type: Number, required: true },
   habitacionId: { type: Number, required: true },

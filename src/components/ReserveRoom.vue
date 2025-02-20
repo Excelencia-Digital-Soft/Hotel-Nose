@@ -253,7 +253,7 @@
               Hay pedidos pendientes, no se puede desocupar la habitación.
             </p>
 
-            <ModalPagar v-if="modalPayment" :total="totalAmount" :adicional="Number(adicional)"
+            <ModalPagar v-if="modalPayment" :periodo="periodoCost" :consumo="consumos.reduce((sum, consumo) => sum + consumo.total, 0)" :total="totalAmount" :adicional="Number(adicional)"
               :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID" :pausa="Pausa"
               @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
 
