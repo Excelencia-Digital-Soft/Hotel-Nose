@@ -5,8 +5,8 @@
       <!-- List of Cierres -->
       <div class="mb-6">
         <h3 class="font-semibold text-lg mb-4">Cierres</h3>
-        <DropDownCreateSearchGastos/>
-        <button 
+        
+        <button v-if="pagosSinCierres"
         class="cursor-pointer hover:text-blue-600 border border-white p-4 h-[15vh] flex items-center justify-center w-full"
 
           @click="abrirPagosSinCierre" 
@@ -14,7 +14,7 @@
         >
           Cierre Actual
         </button>
-        <ul class="space-y-2">
+        <ul v-if="authStore.auth && (authStore.auth.rol === 1 || authStore.auth.rol === 2)" class="space-y-2">
           <li 
             v-for="cierre in cierres" 
             :key="cierre.cierreId" 
@@ -33,7 +33,9 @@
 >
   <ModalCierre
     :selectedPagos="pagos"
+    :idcierre="selectedIdCierre"
     :esAbierto="false"
+    @imprimir-modal="ImprimirModal"
     @close-modal="togglePagosModal">
   </ModalCierre>
   </div>
@@ -44,6 +46,7 @@
   <ModalCierre
     :selectedPagos="pagosSinCierres"
     :esAbierto="true"
+    @imprimir-modal="ImprimirModal"
     @close-modal="togglePagosSinCierreModal">
   </ModalCierre>
   </div>
@@ -51,9 +54,12 @@
   </template>
 
   <script setup>
-  import { ref } from 'vue';
+  import { ref ,onBeforeMount} from 'vue';
   import axiosClient from '../axiosClient'; // Adjust the path to match your project structure
   import ModalCierre from '../components/ModalCierre.vue';
+  import { useAuthStore } from "../store/auth";
+
+const authStore = useAuthStore();
   // Data for cierres and pagos
   const cierres = ref([]);
   const showPagosModal = ref(false);
@@ -61,6 +67,12 @@
 
   const pagos = ref([]);
   const pagosSinCierres = ref([]);
+  const selectedIdCierre = ref()
+
+  onBeforeMount(() => {
+    getDatosLogin();
+    fetchCierres();
+});
 
   const togglePagosModal = () => {
     showPagosModal.value = !showPagosModal.value
@@ -72,11 +84,10 @@
   // Fetch all cierres with their associated pagos when the view is loaded
   const fetchCierres = async () => {
     try {
-      const response = await axiosClient.get('/api/Caja/GetCierresConPagos');
+      const response = await axiosClient.get(`/api/Caja/GetCierresyActual?InstitucionID=${InstitucionID.value}`);
       if (response.data.ok) {
         cierres.value = response.data.data.cierres;
         pagosSinCierres.value = response.data.data.pagosSinCierre
-        console.log(pagosSinCierres.value);
       } else {
         console.error('Error fetching cierres:', response.data.message);
       }
@@ -87,10 +98,8 @@
 
   // Fetch pagos by CierreId when a Cierre is clicked
   const fetchPagosByCierre = (cierreId) => {
-    const cierre = cierres.value.find((item) => item.cierreId === cierreId);
-    if (cierre) {
-      pagos.value = cierre.pagos || [];
-    }
+    selectedIdCierre.value = cierreId
+    console.log("idcierreenviado",selectedIdCierre.value)
     togglePagosModal()
   };
 
@@ -98,13 +107,98 @@
     pagos.value = pagosSinCierres.value
     togglePagosSinCierreModal()
   };
+ 
+  const ImprimirModal = (cierreCajaRef) => {
+
+  // Get the modal content
+  const printContent = cierreCajaRef.innerHTML;
+
+  // Clone styles from document
+  const styles = Array.from(document.styleSheets)
+    .map((styleSheet) => {
+      try {
+        return Array.from(styleSheet.cssRules)
+          .map((rule) => rule.cssText)
+          .join("\n");
+      } catch (error) {
+        return ""; // Ignore cross-origin styles
+      }
+    })
+    .join("\n");
+
+  // Open a new window
+  const printWindow = window.open("", "_blank");
+
+  printWindow.document.write(`
+    <html>
+      <head>
+        <title>Imprimir</title>
+        <style>
+          ${styles}  
+        </style>
+      </head>
+      <body>
+        <div id="cierre-caja-content">${printContent}</div>
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() { 
+              window.close(); 
+            };           };
+        <\/script> 
+      </body>
+    </html>
+`);
+
+  printWindow.document.close();
+};
+
+
+const InstitucionID = ref(null)
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
   
-  
-  // Call fetchCierres on component mount
-  fetchCierres();
   </script>
-  
-  <style scoped>
-  /* Add custom styles if needed */
-  </style>
-  
+<style scoped>
+/* Ensure the modal content is not truncated */
+#cierre-caja-content {
+  overflow: visible !important;
+}
+
+/* Print-specific styles */
+@media print {
+  #cierre-caja-content {
+    overflow: visible !important;
+    height: auto !important;
+  }
+  #cierre-caja-content * {
+    display: grid !important; /* Ensure all elements are visible */
+    grid-template-columns: repeat(14, minmax(0, 1fr)) !important;
+  }
+
+  body * {
+        visibility: hidden;
+      }
+      #print-container,
+      #print-container * {
+        visibility: visible;
+      }
+      #print-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: auto !important;
+        overflow: visible !important;
+      }
+
+  ol, ul {
+    page-break-inside: avoid;
+  }
+  li {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+}
+</style>

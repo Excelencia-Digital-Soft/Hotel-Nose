@@ -11,7 +11,10 @@ import ReceptionOrder from "../views/ReceptionOrder.vue";
 import InventoryManager from "../views/InventoryManager.vue";
 import CierresManager from "../views/CierresManager.vue";
 import PromocionesManager from "../views/PromocionesManager.vue";
+import MediosPagoManager from "../views/MediosPagoManager.vue";
+import UsuariosManager from "../views/UsuariosManager.vue"
 import Egresos from "../views/Egresos.vue";
+
 import { useAuthStore } from "../store/auth";
 import EmpeñosManager from "../views/EmpeñosManager.vue";
 const routes = [
@@ -36,7 +39,7 @@ const routes = [
         component: Rooms,
         meta: {
           requireAuth: true,
-          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
       {
@@ -80,7 +83,7 @@ const routes = [
         component: ReceptionOrder,
         meta: {
           requireAuth: true,
-          roles: [3,4], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [2,3,4],
         },
       },
       {
@@ -98,7 +101,7 @@ const routes = [
         component: CierresManager,
         meta: {
           requireAuth: true,
-          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
       {
@@ -107,7 +110,7 @@ const routes = [
         component: EmpeñosManager,
         meta: {
           requireAuth: true,
-          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
       {
@@ -123,6 +126,21 @@ const routes = [
         path: "/Egresos",
         name: "Egresos",
         component: Egresos,
+        meta: {
+          requireAuth: true,
+          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
+      },
+      {
+        path: "/UsuariosManager",
+        name: "UsuariosManager",
+        component: UsuariosManager,
+        meta: { requireAuth: true, roles: [1, 2] }, // Solo accesible para admins
+      },
+      {
+        path: "/MediosPago",
+        name: "MediosPago",
+        component: MediosPagoManager,
         meta: {
           requireAuth: true,
           roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)

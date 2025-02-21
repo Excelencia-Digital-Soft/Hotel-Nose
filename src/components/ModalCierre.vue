@@ -2,74 +2,124 @@
   <!-- Modal container -->
   <div class="fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center" @click.self="closeModal">
     <!-- Modal content -->
-    <div class="bg-white w-3/4 h-5/6 rounded-lg overflow-y-auto p-6 relative">
+    <div class="bg-white w-11/12 h-5/6 rounded-lg overflow-y-auto p-6 relative" ref="prueba" id="testCierre">
       <!-- Title of the modal -->
       <h2 class="text-2xl text-black font-semibold mb-4">Lista de Pagos</h2>
 
       <!-- "Cerrar" Button -->
-      <button @click="closeModal" class="absolute top-4 right-4 bg-gray-300 hover:bg-gray-400 text-black px-4 py-2 rounded-full">
-        Cerrar
+      <button @click="closeModal"
+        class="fixed top-12 right-12 btn-danger px-4 py-2 rounded-full">
+        X
       </button>
 
       <!-- Grid Layout for Pagos -->
-      <div class="grid grid-cols-10 gap-0 border-t border-l border-gray-300">
+      <div ref="cierreCajaRef" id="cierre-caja-content"
+        class="grid grid-cols-[repeat(14,minmax(0,1fr))] gap-0 border-t border-l border-gray-300">
         <!-- Headers -->
+        <div class="font-bold col-span-2 text-black p-2 border-b border-r border-gray-300">Tipo Habitacion</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Pago</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Periodo</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Adicional</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Consumo</div>
+
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Hora Ingreso</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Hora Salida</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Tipo Habitacion</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Efectivo</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Tarjeta</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Billetera Virtual</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Descuento</div>
-        <div class="font-bold text-black p-2 border-b border-r border-gray-300">Total</div>
+
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Efectivo</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Tarjeta</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Tarjeta Usada</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Descuento</div>
+        <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Total</div>
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Observacion</div>
 
-
         <!-- Iterate over Pagos -->
-        <div v-for="(pago, index) in selectedPagos" :key="pago.pagoId" class="contents">
+        <div v-for="(pago, index) in listaPagos" :key="pago.pagoId" class="contents bg-red-400" >
           <!-- Pago Info -->
-          <div @click="openInfoModal(pago)" class="cursor-pointer text-blue-600 hover:underline p-2 border-b border-r border-gray-300">
+          <div class="text-black col-span-2 font-semibold p-2 border-b border-r border-gray-300"
+            :class="{ 'bg-red-400': pago.pagoId === 0 }">
+            {{ pago.pagoId === 0 ? pago.tipoHabitacion + ' ANULADA' : pago.tipoHabitacion }}</div>
+          <div @click="openInfoModal(pago)"
+            class="cursor-pointer text-blue-600 hover:underline p-2 border-b border-r border-gray-300">
             Pago {{ pago.pagoId }}
-            <div class="text-gray-500 text-sm">{{ formatFechaHora(pago.fecha) }}</div>
+            <div class="text-gray-500 text-sm ">{{ formatFechaHora(pago.fecha) }}</div>
           </div>
-          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ formatFechaHora(pago.horaIngreso) }}</div>
-          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ formatFechaHora(pago.horaSalida) }}</div>
-          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.tipoHabitacion}}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.periodo }}
+          </div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+            pago.montoAdicional || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+            pago.totalConsumo || '' }}</div>
+          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{
+            formatFechaHora(pago.horaIngreso) }}</div>
+          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{
+            formatFechaHora(pago.horaSalida) }}</div>
 
-          <!-- Efectivo -->
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoEfectivo }}</div>
-          <!-- Tarjeta -->
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoTarjeta }}</div>
-          <!-- Billetera Virtual -->
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoBillVirt }}</div>
-          <!-- Descuento -->
-          <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoDescuento }}</div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300">${{ pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta }}</div>
+
+          <!-- Money values with right alignment and hiding zeros -->
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+            pago.montoEfectivo || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+            pago.montoTarjeta || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+            pago.tarjetaNombre || '' }}</div>
+          <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+            pago.montoDescuento || '' }}</div>
+          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+            (pago.montoEfectivo + pago.montoTarjeta) || '' }}</div>
+
           <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
-
         </div>
+
+        <!-- Total values per column -->
+        <div class="font-bold col-span-2 text-black p-2 border-t border-r border-gray-300">
+          <div class="font-bold text-black p-2 text-left">Habitaciones</div>
+          <div v-for="(item, index) in formatCategorias()" :key="index">
+            {{ item.categoria }}: {{ item.count }}
+          </div>
+        </div>
+        <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-left">
+          <div class="font-bold text-black p-2 text-left">Periodo Total</div>{{ calculatePeriodo() }}
+        </div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+          <div class="font-bold text-black p-2 text-center">Adicional Total</div>{{ calculateAdicional() }}
+        </div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+          <div class="font-bold text-black p-2 text-center">Consumo Total</div>{{ calculateConsumo() }}
+        </div>
+        <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
+        <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
+
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+          <div class="font-bold text-black p-2 text-center">Efectivo Total</div>{{ calculateEfectivo() }}
+        </div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+          <div class="font-bold text-black p-2 text-center">Tarjeta Total</div>{{ calculateTarjeta() }}
+        </div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+          <div class="font-bold text-black p-2 text-center"> </div>
+        </div>
+        <div class="font-bold text-red-600 p-2 border-t border-r border-gray-300 text-right">
+          <div class="font-bold text-black p-2 text-center">Desc.</div>{{ calculateDescuento().toFixed(2) }}
+        </div>
+        <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+          <div class="font-bold text-black p-2 text-center">Total</div>{{ calculateTotal().toFixed(2) }}
+        </div>
+        <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
       </div>
-
-      <!-- Total Section -->
-      <div class="mt-4 font-semibold">
-
-        <label class="text-black">      Total Efectivo:</label>
-        <span class="text-green-600">${{ calculateEfectivo() }}</span>
-        <label class="text-black">      Total Tarjeta:</label>
-        <span class="text-green-600">${{ calculateTarjeta() }}</span>
-        <label class="text-black">      Total MercadoPago:</label>
-        <span class="text-green-600">${{ calculateMP() }}</span>
-        <label class="text-black">      Total:</label>
-        <span class="text-green-600">${{ calculateTotal() }}</span>
-      </div>
-
 
       <!-- "Cerrar Caja" Button (only shown if esAbierto is true) -->
-  <!-- "Cerrar Caja" Button -->
-  <div v-if="esAbierto" class="mt-4">
-        <button @click="showCerrarCajaModal = true" class="w-full bg-red-600 text-black p-3 rounded-xl font-semibold hover:bg-red-700">
+      <div v-if="esAbierto" class="mt-4">
+        <button @click="showCerrarCajaModal = true"
+          class="w-full bg-red-600 text-black p-3 rounded-xl font-semibold hover:bg-red-700">
           Cerrar Caja
+        </button>
+      </div>
+      <div>
+        <!-- Imprimir Button -->
+        <button @click="imprimirModal"
+          class="w-full mt-2 btn-secondary text-black p-3 rounded-xl font-semibold hover:bg-gray-200">
+          Imprimir
         </button>
       </div>
     </div>
@@ -79,159 +129,351 @@
 
     <!-- CerrarCaja Modal -->
     <CerrarCajaModal v-if="showCerrarCajaModal" @close="closeCerrarCajaModal" @refresh="refreshPage" />
+  </div>
 
+
+  <!-- Hidden List for Printing -->
+  <div id="hidden-print-content" class="hidden">
+    <h1>Lista de Pagos</h1>
+    <div class="grid grid-cols-[repeat(14,minmax(0,1fr))] gap-0 border-t border-l border-gray-300">
+      <!-- Headers -->
+      <div class="font-bold col-span-2 text-black p-2 border-b border-r border-gray-300">Tipo Habitacion</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300">Pago</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Periodo</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Adicional</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Consumo</div>
+
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300">Hora Ingreso</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300">Hora Salida</div>
+
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Efectivo</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Tarjeta</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Tarjeta Usada</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Descuento</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300 text-right">Total</div>
+      <div class="font-bold text-black p-2 border-b border-r border-gray-300">Observacion</div>
+
+      <!-- Iterate over Pagos -->
+      <div v-for="(pago, index) in listaPagos" :key="pago.pagoId" class="contents bg-red-400">
+        <!-- Pago Info -->
+        <div class="text-black col-span-2 font-semibold p-2 border-b border-r border-gray-300">{{ pago.tipoHabitacion }}
+        </div>
+        <div class="text-blue-600 p-2 border-b border-r border-gray-300">
+          Pago {{ pago.pagoId }}
+          <div class="text-gray-500 text-sm">{{ formatFechaHora(pago.fecha) }}</div>
+        </div>
+        <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.periodo }}
+        </div>
+        <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+          pago.montoAdicional || '' }}</div>
+        <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+          pago.totalConsumo || '' }}</div>
+        <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ formatFechaHora(pago.horaIngreso)
+          }}</div>
+        <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ formatFechaHora(pago.horaSalida)
+          }}</div>
+
+
+        <!-- Money values with right alignment and hiding zeros -->
+        <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoEfectivo
+          || '' }}</div>
+        <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoTarjeta
+          || '' }}</div>
+        <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.tarjetaNombre
+          || '' }}</div>
+        <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.montoDescuento
+          || '' }}</div>
+        <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+          (pago.montoEfectivo + pago.montoBillVirt + pago.montoTarjeta) || '' }}</div>
+
+        <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
+      </div>
+
+      <!-- Total values per column -->
+      <div class="font-bold col-span-2 text-black p-2 border-t border-r border-gray-300">
+        <div class="font-bold text-black p-2 text-left">Habitaciones</div>
+        <div v-for="(item, index) in formatCategorias()" :key="index">
+          {{ item.categoria }}: {{ item.count }}
+        </div>
+      </div>
+      <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
+      <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-left">
+        <div class="font-bold text-black p-2 text-left">Periodo Total</div>{{ calculatePeriodo() }}
+      </div>
+      <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+        <div class="font-bold text-black p-2 text-center">Adicional Total</div>{{ calculateAdicional().toFixed(2) }}
+      </div>
+      <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+        <div class="font-bold text-black p-2 text-center">Consumo Total</div>{{ calculateConsumo() }}
+      </div>
+      <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
+      <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
+
+      <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+        <div class="font-bold text-black p-2 text-center">Efectivo Total</div>{{ calculateEfectivo() }}
+      </div>
+      <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+        <div class="font-bold text-black p-2 text-center">Tarjeta Total</div>{{ calculateTarjeta() }}
+      </div>
+      <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+        <div class="font-bold text-black p-2 text-center"></div>
+      </div>
+      <div class="font-bold text-red-600 p-2 border-t border-r border-gray-300 text-right">
+        <div class="font-bold text-black p-2 text-center">Desc.</div>{{ calculateDescuento().toFixed(2) }}
+      </div>
+      <div class="font-bold text-green-600 p-2 border-t border-r border-gray-300 text-right">
+        <div class="font-bold text-black p-2 text-center">Total</div>{{ calculateTotal().toFixed(2) }}
+      </div>
+      <div class="font-bold text-black p-2 border-t border-r border-gray-300"></div>
+    </div>
   </div>
 </template>
 
-
 <script setup>
-import { ref, defineProps, defineEmits } from 'vue';
+import { ref, defineProps, defineEmits, onMounted,onBeforeMount } from 'vue';
 import InfoPago from './InfoPago.vue';
+import axiosClient from '../axiosClient';
 import CerrarCajaModal from './CerrarCajaModal.vue';
-
 const props = defineProps({
   selectedPagos: Array,
   esAbierto: Boolean,
+  idcierre:Number
 });
 
-const emit = defineEmits(['close-modal']);
+const emit = defineEmits(['close-modal','imprimir-modal']);
 
 const closeModal = () => {
   emit('close-modal');
 };
 
-// State for the InfoPago modal
+const imprimirModal = () => {
+  if (cierreCajaRef.value) {
+    emit('imprimir-modal', cierreCajaRef.value);
+  }
+}
+const cierreCajaRef = ref(null);
 const showInfoModal = ref(false);
 const selectedPago = ref(null);
+const showCerrarCajaModal = ref(false);
+let listaPagos=ref([])
 
-// Open InfoPago modal with detailed information
+onBeforeMount(() => {
+  if (props.selectedPagos.length > 0) {
+    listaPagos.value = props.selectedPagos;
+  }
+});
+
+onMounted(() => {
+  if (props.selectedPagos.length > 0) {
+    listaPagos.value = props.selectedPagos;
+  }
+  if(props.idcierre>0){
+    fetchDetalleCierre()
+  }
+
+})
+
+const fetchDetalleCierre = () => {
+  console.log(props.idcierre)
+  axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`)
+    .then(({ data }) => {
+      console.log(data.data.pagos)
+      listaPagos.value=data.data.pagos
+    })
+    .catch(error => {
+      console.error('Error al obtener detalle cierres:', error);
+    });
+}
 const openInfoModal = (pago) => {
   selectedPago.value = pago;
   showInfoModal.value = true;
 };
 
-// Close InfoPago modal
 const closeInfoModal = () => {
   showInfoModal.value = false;
   selectedPago.value = null;
 };
 
-const showCerrarCajaModal = ref(false);
-
 const closeCerrarCajaModal = () => {
   showCerrarCajaModal.value = false;
 };
 
-// Refresh the page
 const refreshPage = () => {
   window.location.reload();
 };
 
-// Format fechaHora (assuming it's in ISO format)
 const formatFechaHora = (fechaHora) => {
+  if (!fechaHora) return '';
   const date = new Date(fechaHora);
   return date.toLocaleString();
 };
 
-// Calculate total amount
 const calculateTotal = () => {
-  return props.selectedPagos.reduce((total, pago) => {
+  return listaPagos.value.reduce((total, pago) => {
     return total + pago.montoEfectivo + pago.montoTarjeta + pago.montoBillVirt;
   }, 0);
 };
+
 const calculateEfectivo = () => {
-  return props.selectedPagos.reduce((total, pago) => {
+  return listaPagos.value.reduce((total, pago) => {
     return total + pago.montoEfectivo;
   }, 0);
 };
+
+const calculateDescuento = () => {
+  return listaPagos.value.reduce((total, pago) => {
+    return total + pago.montoDescuento;
+  }, 0);
+};
+
 const calculateTarjeta = () => {
-  return props.selectedPagos.reduce((total, pago) => {
+  return listaPagos.value.reduce((total, pago) => {
     return total + pago.montoTarjeta;
   }, 0);
 };
-const calculateMP = () => {
-  return props.selectedPagos.reduce((total, pago) => {
-    return total + pago.montoBillVirt;
+
+const calculateConsumo = () => {
+  return listaPagos.value.reduce((total, pago) => {
+    return total + (pago.totalConsumo || 0);
   }, 0);
 };
 
-const cerrarCaja = () => {
-  // Logic to close the cash register
-  console.log('Caja cerrada');
+const calculatePeriodo = () => {
+  return listaPagos.value.reduce((total, pago) => {
+    return total + (pago.periodo || 0);
+  }, 0);
 };
+
+const countCategorias = () => {
+  return listaPagos.value.reduce((counts, pago) => {
+    if (pago.categoriaNombre) {
+      counts[pago.categoriaNombre] = (counts[pago.categoriaNombre] || 0) + 1;
+    }
+    return counts;
+  }, {});
+};
+
+const formatCategorias = () => {
+  const categorias = countCategorias();
+  return Object.entries(categorias).map(([categoria, count]) => ({ categoria, count }));
+};
+
+const calculateAdicional = () => {
+  return listaPagos.value.reduce((total, pago) => {
+    return total + (pago.montoAdicional || 0);
+  }, 0);
+};
+
+
 </script>
 
-  
-  <style scoped>
-  /* Modal content styles */
-  .bg-white {
-    background-color: white;
-  }
-  
-  .w- {
-    width: 75%;
-  }
-  
-  .h- {
-    height: 87vh;
-  }
-  
-  .overflow-y-auto {
-    overflow-y: auto;
-  }
- 
-  
-  .text-gray-700 {
-    color: #4a4a4a;
-  }
-  
-  .border-b {
-    border-bottom-width: 1px;
-  }
-  
-  .border-gray-300 {
-    border-color: #e0e0e0;
-  }
-  
-  .grid-cols-5 {
+<style scoped>
+/* Modal content styles */
+
+
+.w- {
+  width: 75%;
+}
+
+.h- {
+  height: 87vh;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+.text-gray-700 {
+  color: #4a4a4a;
+}
+
+.border-b {
+  border-bottom-width: 1px;
+}
+
+.border-gray-300 {
+  border-color: #e0e0e0;
+}
+
+.grid-cols-5 {
   grid-template-columns: repeat(5, 1fr);
 }
 
 .cursor-pointer {
   cursor: pointer;
 }
-  .gap-4 {
-    gap: 1rem;
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+.p-3 {
+  padding: 0.75rem;
+}
+
+.rounded-xl {
+  border-radius: 1rem;
+}
+
+.bg-red-600 {
+  background-color: #f56565;
+}
+
+.hover\:bg-red-700:hover {
+  background-color: #c53030;
+}
+
+/* Style for the secondary button */
+.btn-secondary {
+  background-color: #e2e8f0;
+  /* Example: Light gray */
+  color: #000;
+}
+
+.btn-secondary:hover {
+  background-color: #cbd5e1;
+}
+</style>
+
+<style>
+@media print {
+  #cierre-caja-content {
+    display: grid !important;
+    grid-template-columns: repeat(14, minmax(0, 1fr)) !important;
+    border: 1px solid black !important;
+    font-size: 10px !important;
+    width: 100% !important;
+    height: auto !important;
   }
-  
-  .mt-4 {
-    margin-top: 1rem;
+
+  #cierre-caja-content>div {
+    border: 1px solid black !important;
+    padding: 4px !important;
+    color: black !important;
   }
-  
-  .font-semibold {
-    font-weight: 600;
+
+  /* Hide interactive elements */
+  button,
+  .btn-secondary,
+  .absolute {
+    display: none !important;
   }
-  
-  
-  .font-medium {
-    font-weight: 500;
+
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
   }
-  
-  .p-3 {
-    padding: 0.75rem;
-  }
-  
-  .rounded-xl {
-    border-radius: 1rem;
-  }
-  
-  .bg-red-600 {
-    background-color: #f56565;
-  }
-  
-  
-  .hover\:bg-red-700:hover {
-    background-color: #c53030;
-  }
-  </style>
-  
+}
+</style>

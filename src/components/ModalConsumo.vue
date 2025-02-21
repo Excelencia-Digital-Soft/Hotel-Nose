@@ -1,45 +1,45 @@
 <template>
   <Teleport to="body" class="overflow-hidden">
     <Transition name="modal-outer" appear>
-      <div class="fixed w-full h-full overflow-auto z-20 bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center px-8">
+      <div
+        class="fixed w-full h-full overflow-auto z-20 bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center px-8">
         <Transition name="modal-inner">
-          <div
-            class="w-4/6 bg-surface-900 fixed top-6 flex flex-col justify-evenly items-start p-8 pb-12 rounded-3xl self-start mt-0 border-8 border-purple-300/75">
-            <h2 class="text-lg font-bold text-white">Lista de Productos</h2>
-            <input type="text" v-model="keyword"
-          class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors mb-4 "
-          placeholder="Buscar productos" />
-            <!-- Categoría de productos -->
-            <div class="flex justify-between items-center mb-4">
-              <label for="categoryFilter" class="text-white">Filtrar por categoría:</label>
-              <select
-  id="categoryFilter"
-  v-model="selectedCategory"
-  class="text-black rounded-md px-4 py-2"
->
-  <option :value="null">Todas</option>
-  <option v-for="category in categorias" :key="category.categoriaId" :value="category">
-    {{ category.nombreCategoria }}
-  </option>
-</select>
-            </div>
+          <div class="w-11/12 md:w-4/6 h-[90%] bg-neutral-800 fixed top-6 flex flex-col bg-opacity-60 backdrop-blur-lg justify-evenly items-start p-8 pb-12 rounded-3xl self-start mt-0 border-y-4 border-accent-400">
+            
+            <section class="flex space-x-1 mb-4 ">
+              <div class="pr-4">
+              <label class="text-lg font-bold text-white whitespace-nowrap">Lista de Productos</label> 
+              <input type="text" v-model="keyword"
+                class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors  "
+                placeholder="Buscar productos" />
+              </div>
+              <!-- Categoría de productos -->
+              <div class="flex flex-col items-center">
+                <label for="categoryFilter" class="text-white font-semibold whitespace-nowrap">Filtrar por categoría:</label>
+                <select id="categoryFilter" v-model="selectedCategory" class="focus:ring-purple-500 border-2 w-full  focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors  ">
+                  <option :value="null">Todas</option>
+                  <option v-for="category in categorias" :key="category.categoriaId" :value="category">
+                    {{ category.nombreCategoria }}
+                  </option>
+                </select>
+              </div>
+            </section>
+
 
             <div class="container mx-auto">
               <!-- Contenedor con overflow-hidden y altura de 500px -->
-              <div style="max-height: 50vh; overflow-y: auto;">
-                <div class="grid grid-cols-3 gap-4 mx-2">
+              <div class="h-80" style="max-height: 40vh; overflow-y: auto;">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mx-2">
                   <!-- Iteramos sobre los productos filtrados -->
-                  <div
-                    v-for="producto in filteredProductos"
-                    :key="producto.articuloId"
-                    @click="toggleSeleccion(producto)"
-                    :class="{
-                      'relative hover:bg-surface-700 cursor-pointer text-white rounded-lg p-4 flex flex-col items-center justify-center': true,
-                      'ring-4 bg-secondary-900 ring-primary-500': seleccionados.includes(producto)
+                  <div v-for="producto in filteredProductos" :key="producto.articuloId"
+                    @click="toggleSeleccion(producto)" :class="{
+                      'relative hover:bg-accent-900 hover:bg-opacity-50 cursor-pointer text-white text-center rounded-lg p-4 flex flex-col items-center justify-center transition-colors duration-50 ease-out md:ease-in': true,
+                      ' bg-accent-800 border-primary-400 border-x-2':seleccionados.some(p => p.articuloId === producto.articuloId)
                     }">
                     <!-- Imagen del producto -->
-                    <div class="w-20 h-20 bg-gray-500 flex items-center justify-center rounded-md mb-2">
-                      <img :src="producto.imageUrl || '../assets/image59.svg'" alt="Imagen del producto" class="w-full h-full object-cover" />
+                    <div class="w-16 h-16 flex items-center justify-center rounded-md mb-2">
+                      <img :src="producto.imageUrl || '../assets/image59.svg'" alt="Imagen del producto"
+                        class="w-full h-full object-cover" />
                     </div>
                     <!-- Nombre del producto -->
                     <p>{{ producto.nombreArticulo }}</p>
@@ -50,16 +50,17 @@
             </div>
 
             <!-- TABLE CONTENT -->
-            <TableRow class="w-full" :selectedList="seleccionados" @update:productList="actualizarSeleccionados"></TableRow>
-            <h3 class="text-md text-white font-semibold">"{{ props.name }}"</h3>
+            <TableRow class="w-full" :selectedList="seleccionados" @update:productList="actualizarSeleccionados"/>
+            <h3 class="text-md text-white font-semibold">{{ props.name }}</h3>
             <h3 class="text-md text-white font-semibold">¿Seguro que desea confirmar?</h3>
             <div class="flex">
               <button type="button"
-                class="btn-light absolute -bottom-8 left-8 text-md w-1/3 h-16 rounded-3xl border-2 border-purple-200"
+                class="btn-secondary absolute -bottom-8 left-6 md:left-16 text-md w-1/3 h-16 rounded-3xl"
                 @click="confirmarAccion">
                 <span v-if="!isLoading">Confirmar</span>
                 <span v-else>
-                  <button type="button" class="cargando w-8 flex justify-center items-center font-semibold text-stone-800" disabled>
+                  <button type="button"
+                    class="cargando w-8 flex justify-center items-center font-semibold text-stone-800" disabled>
                     <svg class="motion-safe:animate-spin" enable-background="new 0 0 24 24" viewBox="0 0 24 24"
                       xmlns="http://www.w3.org/2000/svg">
                       <path
@@ -70,11 +71,10 @@
                 </span>
               </button>
               <button type="button"
-                class="btn-danger absolute -bottom-8 right-8 text-md w-1/3 h-16 rounded-3xl transition-colors border-2 border-purple-200"
+                class="btn-danger absolute -bottom-8 right-6 md:right-16 text-md w-1/3 h-16 rounded-3xl transition-colors border-2 border-purple-200"
                 @click="emits('close')">cancelar</button>
             </div>
-            <button
-              class="btn-danger absolute text-md w-12 h-12 -top-6 right-0 rounded-full border-2 border-purple-200"
+            <button class="btn-danger absolute text-md w-12 h-12 -top-6 right-0 rounded-full border-2 border-purple-200"
               @click="emits('close')">X</button>
           </div>
         </Transition>
@@ -84,13 +84,17 @@
 </template>
 <script setup>
 import { onMounted, ref, computed } from 'vue';
+import { useAuthStore } from '../store/auth.js';
 import axiosClient from '../axiosClient';
 import { fetchImage } from '../services/imageService';
 import TableRow from './TableRow.vue';
 
+const authStore = useAuthStore();
+
 const props = defineProps({
   name: String,
   habitacionID: Number,
+  consumoHabitacion:Boolean
 });
 
 const emits = defineEmits(["close", "confirmaAccion"]);
@@ -101,8 +105,15 @@ const categorias = ref([]); // Store categories with ID-to-name mapping
 let seleccionados = ref([]);
 const selectedCategory = ref(null); // Reactive variable for selected category
 const keyword = ref("");
-
+let getInv = ref("");
 onMounted(() => {
+  getDatosLogin();
+  if (!props.consumoHabitacion){
+    getInv.value = `/GetInventarioGeneral?InstitucionID=${InstitucionID.value}`
+  }
+  else{
+     getInv.value = `api/Inventario/GetInventario?habitacionID=${props.habitacionID}`
+  }
   fetchCategorias(); // Fetch categories when the component mounts
   fetchArticulos();
   console.log(props.habitacionID);
@@ -119,41 +130,37 @@ const filteredProductos = computed(() => {
 });
 
 
-
 // Dropdown options for categories
 const uniqueCategories = computed(() => categorias.value.map(c => c.nombreCategoria));
 
-// Fetch products from the inventory API
 const fetchArticulos = async () => {
   try {
-    const response = await axiosClient.get(`api/Inventario/GetInventario?habitacionID=${props.habitacionID}`);
+    const response = await axiosClient.get(getInv.value);
     if (response.data && response.data.data) {
+      // Filter articles with stock > 0 and fetch their images
       productos.value = await Promise.all(
         response.data.data
           .filter(a => a.cantidad > 0)
           .map(async (articulo) => {
-            const imageUrl = await fetchImage(articulo.articulo.articuloId);
-            const categoria = categorias.value.find(c => c.categoriaID === articulo.articulo.categoriaID)?.nombreCategoria || 'Sin Categoría';
+            const imageUrl = await fetchImage(articulo.articulo.articuloId); // Fetch the image URL
             return {
               ...articulo.articulo,
               cantidad: articulo.cantidad,
-              imageUrl,
-              categoria, // Map categoriaID to category name
+              imageUrl, // Include the image URL
             };
           })
       );
     } else {
-      console.error("Datos de la API no válidos:", response.data);
+      console.error('Datos de la API no válidos:', response.data);
     }
   } catch (error) {
-    console.error("Error al obtener las habitaciones:", error);
+    console.error('Error al obtener los artículos:', error);
   }
 };
-
 // Fetch categories from the API
 const fetchCategorias = async () => {
   try {
-    const response = await axiosClient.get("/api/CategoriaArticulos/GetCategorias");
+    const response = await axiosClient.get(`/api/CategoriaArticulos/GetCategorias?InstitucionID=${InstitucionID.value}`);
     if (response.data && response.data.data) {
       categorias.value = response.data.data; // Store full category data (ID and name)
     } else {
@@ -188,6 +195,11 @@ const confirmarAccion = () => {
   emits("confirmaAccion", seleccionados.value);
   emits("close");
 };
+
+const InstitucionID = ref(null)
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
 </script>
 
 
@@ -196,20 +208,25 @@ const confirmarAccion = () => {
 .modal-outer-leave-active {
   transition: opacity 0.3s cubic-bezier(0.52, 0.02, 0.19, 1.02);
 }
+
 .modal-outer-enter-from,
 .modal-outer-leave-to {
   opacity: 0;
 }
+
 .modal-inner-enter-active {
   transition: all 0.3s cubic-bezier(0.52, 0.02, 0.19, 1.02) 0.10s;
 }
+
 .modal-inner-leave-active {
   transition: all 0.3s cubic-bezier(0.52, 0.02, 0.19, 1.02);
 }
+
 .modal-inner-enter-from {
   opacity: 0;
   transform: scale(0.8);
 }
+
 .modal-inner-leave-to {
   transform: scale(0.8);
 }

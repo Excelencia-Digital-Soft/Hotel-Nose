@@ -165,6 +165,9 @@
 import { ref, onMounted } from 'vue'
 import axiosClient from '../axiosClient'; // Adjust the path according to your project structure
 import ModalInventory from '../components/ModalInventory.vue'
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const authStore = useAuthStore();
+
 const habitaciones = ref([]);
 const categorias = ref([]);
 const newRoomName = ref('');
@@ -180,8 +183,15 @@ const roomToInventory = ref(null)
 
 // Fetch rooms and categories initially
 const fetchHabitaciones = () => {
-  axiosClient.get("/GetHabitaciones")
-    .then(({ data }) => {
+  const institucionID = authStore.auth?.institucionID;
+
+if (institucionID == null) {
+  console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
+  // Optionally, you could redirect the user to the login page here.
+  return; // Or handle the case where the user is not logged in appropriately
+}
+axiosClient.get(`/GetHabitaciones?InstitucionID=${institucionID}`)
+.then(({ data }) => {
       if (data && data.ok) {
         habitaciones.value = data.data;
       } else {
@@ -194,7 +204,14 @@ const fetchHabitaciones = () => {
 };
 
 const fetchCategorias = () => {
-  axiosClient.get("/api/Objetos/GetCategorias")
+  const institucionID = authStore.auth?.institucionID;
+
+  if (institucionID == null) {
+  console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
+  // Optionally, you could redirect the user to the login page here.
+  return; // Or handle the case where the user is not logged in appropriately
+}
+  axiosClient.get(`/api/Objetos/GetCategorias?InstitucionID=${institucionID}`)
     .then(({ data }) => {
       if (data && data.ok) {
         categorias.value = data.data;
@@ -239,11 +256,17 @@ function cancelUpdateRoom() {
 
 // Create a new room
 const createRoom = async () => {
+  const institucionID = authStore.auth?.institucionID;
+  const usuarioID = authStore.auth?.usuarioID;
+if (institucionID == null) {
+console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
+return; 
+}
   if (selectedCategory.value && newRoomName.value) {
     try {
       // Make sure to format the URL correctly
       const response = await axiosClient.post(
-        `/CrearHabitacion?nombreHabitacion=${encodeURIComponent(newRoomName.value)}&categoriaID=${selectedCategory.value}`
+        `/CrearHabitacion?nombreHabitacion=${encodeURIComponent(newRoomName.value)}&categoriaID=${selectedCategory.value}&institucionID=${institucionID}&usuarioID=${usuarioID}`
       );
       alert(response.data.message);
       fetchHabitaciones(); // Refresh the list of rooms
@@ -279,11 +302,16 @@ const deleteRoom = (idHabitacion) => {
 };
 
 const updateRoom = async (habitacionID) => {
+  const usuarioID = authStore.auth?.usuarioID;
+if (usuarioID == null) {
+console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
+return; 
+}
     if (updateRoomName.value && updateRoomCategory.value) {
       try {
         // Make sure to format the URL correctly
         const response = await axiosClient.put(
-          `/ActualizarHabitacion?id=${habitacionID}&nuevoNombre=${encodeURIComponent(updateRoomName.value)}&nuevaCategoria=${updateRoomCategory.value}`
+          `/ActualizarHabitacion?id=${habitacionID}&nuevoNombre=${encodeURIComponent(updateRoomName.value)}&nuevaCategoria=${updateRoomCategory.value}&usuarioId=${usuarioID}`
         );
         alert(response.data.message);
         fetchHabitaciones(); // Refresh the list of rooms

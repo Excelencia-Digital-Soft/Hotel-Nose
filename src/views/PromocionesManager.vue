@@ -40,7 +40,7 @@
 
       <!-- Add New Promotion Box -->
       <div 
-        class="border border-white rounded p-6 flex items-center justify-center bg-neutral-700 hover:bg-neutral-600 cursor-pointer"
+        class="border btn-primary border-white rounded p-6 flex items-center justify-center bg-neutral-700 hover:bg-neutral-600 cursor-pointer"
         @click="openCreateModal"
       >
         <span class="text-3xl font-bold">+</span>
@@ -72,7 +72,7 @@ const selectedPromocion = ref(null);
 // Fetch categories on mount
 const fetchCategorias = async () => {
   try {
-    const response = await axiosClient.get('/GetCategorias');
+    const response = await axiosClient.get(`/GetCategorias?InstitucionID=${InstitucionID.value}`);
     if (response.data.ok) {
       categorias.value = response.data.data;
     } else {
@@ -129,7 +129,7 @@ const handleSave = async (data) => {
     } else {
       // Create Promotion
       const response = await axiosClient.post(
-        `/api/Promociones/AddPromocion?tarifa=${data.tarifa}&cantidadHoras=${data.cantidadHoras}&categoriaID=${selectedCategory.value}&Detalle=${encodeURIComponent(data.detalle)}`
+        `/api/Promociones/AddPromocion?tarifa=${data.tarifa}&cantidadHoras=${data.cantidadHoras}&categoriaID=${selectedCategory.value}&Detalle=${encodeURIComponent(data.detalle)}&InstitucionID=${InstitucionID.value}`
       );
       if (response.data.ok) {
         console.log('Promoción creada:', response.data);
@@ -147,6 +147,8 @@ const handleSave = async (data) => {
 };
 
 // Fetch categories on component mount
+onMounted(getDatosLogin);
+
 onMounted(fetchCategorias);
 
 // TODO ESTO ES PARA TEMA VISUAL
@@ -163,6 +165,13 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('resize', updateScreenWidth);
 });
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
+
 </script>
 
   
