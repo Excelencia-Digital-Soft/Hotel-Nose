@@ -10,9 +10,11 @@ import ToastService from 'primevue/toastservice';
 import 'primevue/resources/primevue.min.css';
 import 'primeicons/primeicons.css';
 
+
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 const app = createApp(App)
+
 
 app.use(router)
    .use(pinia)

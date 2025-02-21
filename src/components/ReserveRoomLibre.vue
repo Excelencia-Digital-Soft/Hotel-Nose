@@ -3,20 +3,20 @@
     <Transition name="modal-outer" appear>
       <div class="fixed w-full h-full bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
         <Transition name="modal-inner">
-          <div class="w-2/4 h-3/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8 border-secondary-400 rounded-xl bg-neutral-900">
+          <div class="w-full md:w-2/4 h-auto flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8 border-secondary-400 rounded-xl bg-neutral-900">
             <h1 class="self-center text-2xl text-white lexend-exa font-bold mt-5 mb-5">
               {{ room.nombreHabitacion }}
             </h1>
             
-            <form class="grid-cols-1">
-              <section v-if="selectedRoom.Disponible" class="grid place-items-center mb-3">
+            <form class="w-full grid-cols-1">
+              <section v-if="selectedRoom.Disponible" class="grid  place-items-center mb-3">
                 <label class="text-sm font-semibold text-white">Tiempo de Reserva</label>
-                <div class="flex space-x-4">
-                  <div>
+                <div class="flex flex-col  space-y-4 w-full border-y-2 border-accent-500 rounded-xl p-4 ">
+                  <div class="grid ">
                     <label class="text-xs font-semibold text-white">Horas</label>
                     <InputNumber v-model="hours" :min="0" :max="99" showButtons />
                   </div>
-                  <div>
+                  <div class="grid">
                     <label class="text-xs font-semibold text-white">Minutos</label>
                     <InputNumber v-model="minutes" :min="0" :max="59" showButtons />
                   </div>
@@ -57,10 +57,10 @@
                 </div>
               </section>
               <div class="col-span-3 flex justify-center items-center w-full">
-                <button @click="reserveRoom" type="button" class="btn-primary w-2/4 h-16 rounded-2xl">Reservar Habitación</button>
+                <button @click="reserveRoom" type="button" class="btn-primary w-full md:w-2/4 h-16 rounded-2xl">Reservar Habitación</button>
               </div>
             </form>
-            <button class="absolute text-xl w-14 h-14 text-white -top-7 right-7 btn-primary rounded-full"
+            <button class="absolute text-xl w-12 h-12 lg:w-14 lg:h-14 text-white top-0 -right-2 lg:top-6 lg:right-6 btn-danger rounded-xl lg:rounded-full"
                     @click="$emit('close-modal')">X</button>
           </div>
         </Transition>
@@ -76,7 +76,7 @@
   import axiosClient from '../axiosClient';
   import InputNumber from 'primevue/inputnumber';
   import Checkbox from 'primevue/checkbox';
-  import ModalConfirm from './ModalConfirm.vue';
+
   
   const hours = ref(0);
   const periodoCost = ref(0);
@@ -102,24 +102,19 @@
     console.error('Error fetching promociones:', error);
   }
   console.log("Se aplicó");
-  updatePeriodCost(); // Initial calculation    setCurrentDateTime();
+  updatePeriodoCost(); // Initial calculation    setCurrentDateTime();
     document.body.style.overflow = 'hidden';
   })
 
-  function updatePeriodCost() {
-    selectedRoom.value.PromocionID = selectedPromocion.value.promocionID;
-  if (selectedPromocion.value) {
-    // Use the promotional rate
+
+
+  watch([selectedPromocion], () => {
+    if(selectedPromocion.value != null){
     hours.value = selectedPromocion.value.cantidadHoras;
     periodoCost.value = Math.round(selectedPromocion.value.tarifa * selectedPromocion.value.cantidadHoras);
-  } else {
-    // Use the default room price
-    const totalHours = hours.value + (minutes.value / 60);
-    periodoCost.value = Math.round(selectedRoom.value.Precio * totalHours);
-  }
-}
-
-  watch([hours, minutes, selectedPromocion], updatePeriodCost);
+    }
+    else updatePeriodoCost();
+  });
 
   let selectedRoom = ref({
     HabitacionID: 0,
@@ -156,7 +151,7 @@
     total: 0,
   });
   
-  let modalConfirm = ref(false);
+
   const currentDate = ref('');
   const currentTime = ref('');
   let editTagRel = {}
@@ -164,9 +159,9 @@
   let idNewTag = ref(0);
   let numeroError = ref('');
   
-  const toggleModalConfirm = () => {
-    modalConfirm.value = !modalConfirm.value;
-  }
+  onMounted(() => {
+  getDatosLogin();
+});
   
   console.log("tagselected : " + editTagRel.value)
   
@@ -194,11 +189,17 @@
   const updatePeriodoCost = () => {
       const totalHours = hours || 0;
       const totalMinutes = minutes || 0;
+      console.log(selectedPromocion.value);
+      if(selectedPromocion.value == null){
       const hourlyRate = selectedRoom.value.Precio || 0;
       const totalPeriod = totalHours.value + totalMinutes.value / 60;
       periodoCost.value = (totalPeriod * hourlyRate).toFixed(2);
       console.log(totalPeriod)
       console.log(totalHours.value, totalMinutes.value, hourlyRate)
+      }
+      else{
+        periodoCost.value = Math.round(selectedPromocion.value.tarifa * totalHours.value + selectedPromocion.value.tarifa * totalMinutes.value / 60 );
+      console.log(periodoCost)}
     };
 
     watch([hours, minutes], updatePeriodoCost);
@@ -244,7 +245,7 @@
     }
     console.log("loquese Envía", selectedRoom.value)
     debugger
-    axiosClient.post('/ReservarHabitacion', selectedRoom.value)
+    axiosClient.post(`/ReservarHabitacion?InstitucionID=${InstitucionID.value}&UsuarioID=${UsuarioID.value}`, selectedRoom.value)
       .then(res => {
         console.log(res.data);
         alert("Reservacion Exitosa");
@@ -256,6 +257,14 @@
       });
   }
   
+  import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const UsuarioID = ref(null);
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+    InstitucionID.value = authStore.auth?.institucionID;
+  }
+
   </script>
   <style scoped>
   .modal-outer-enter-active,

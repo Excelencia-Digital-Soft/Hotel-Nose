@@ -2,16 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 .principal-convination-color {
-  @apply bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500
+  @apply bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400
+}
+.secondary-convination-color {
+  @apply bg-gradient-to-r from-accent-200 via-accent-300 to-accent-200
+}
+.primary-convination-color {
+  @apply bg-gradient-to-r from-primary-200 via-primary-400 to-primary-600
+}
+.other-convination-color {
+  @apply bg-gradient-to-r from-secondary-400 via-secondary-500 to-secondary-600
 }
 .btn-primary {
   @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-800 hover:via-secondary-700 hover:to-accent-800 transition duration-150 ease-in-out md:ease-in border-purple-200;
 }
 .btn-secondary {
-  @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-lime-200 via-lime-300 to-lime-200  text-white hover:shadow-lg hover:shadow-lime-500/50 hover:from-lime-400 hover:via-lime-400 hover:to-lime-400 transition duration-150 ease-in-out md:ease-in border-lime-100;
+  @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-accent-200 via-accent-300 to-accent-200  text-white hover:shadow-lg hover:shadow-accent-500/50 hover:from-accent-400 hover:via-accent-400 hover:to-accent-400 transition duration-150 ease-in-out md:ease-in border-lime-100;
 }
 .btn-third {
-  @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-blue-300 via-blue-400 to-blue-300  text-white hover:shadow-lg hover:shadow-blue-500/50 hover:from-blue-400 hover:via-blue-400 hover:to-blue-400 transition duration-150 ease-in-out md:ease-in border-blue-100;
+  @apply flex justify-center items-center shadow-lg bg-gradient-to-r from-primary-200 via-primary-400 to-primary-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-400 hover:via-primary-600 hover:to-primary-500 transition duration-150 ease-in-out md:ease-in border-white;
 }
 
 .btn-big {
@@ -23,11 +32,14 @@
 .btn-danger {
   @apply flex justify-center items-center shadow-lg  bg-gradient-to-r from-rose-400 via-rose-500 to-red-500  text-white hover:shadow-lg hover:shadow-red-500/50 hover:from-rose-400 hover:via-rose-500 hover:to-red-400 transition duration-150 ease-in-out md:ease-in;
 }
+.btn-disabled {
+  @apply flex justify-center items-center shadow-lg border-2 bg-gray-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-800 hover:via-secondary-700 hover:to-accent-800 transition duration-150 ease-in-out md:ease-in border-purple-200;
+}
 .option-menu{
   @apply w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg;
 }
 .menu-column{
-  @apply shadow-xl text-white border-4 border-accent-200 bg-secondary-300 rounded-xl transition duration-200 ease-out md:ease-in
+  @apply shadow-xl text-white border-4 border-accent-200 bg-secondary-600 rounded-xl transition duration-200 ease-out md:ease-in
 }
 .colors-input-login{
   @apply hover:shadow-lg hover:shadow-secondary-500/50 border-blue-200 rounded-3xl transition-colors focus:ring-secondary-300 focus:border-secondary-400 border-2;
@@ -48,24 +60,26 @@
   --primary-100: 251, 201, 224;
   --primary-200: 249, 157, 206;
   --primary-300: 246, 108, 194;
-  --primary-400: 244, 63, 184;
-  --primary-500: 255, 73, 209; /* Color principal */
+  --primary-400: 255, 73, 209;
+  --primary-500: 244, 63, 184; /* Color principal */
   --primary-600: 230, 57, 179;
   --primary-700: 212, 49, 158;
   --primary-800: 185, 42, 139;
   --primary-900: 163, 33, 117;
   
   /* Colores secundarios */
-  --secondary-50: 230, 215, 255;
-  --secondary-100: 194, 163, 255;
-  --secondary-200: 159, 109, 255;
-  --secondary-300: 123, 59, 255;
-  --secondary-400: 95, 0, 255;
-  --secondary-500: 141, 28, 255; /* Color secundario */
-  --secondary-600: 120, 23, 209;
-  --secondary-700: 98, 20, 183;
-  --secondary-800: 77, 15, 158;
-  --secondary-900: 61, 10, 141;
+  --secondary-50:  245, 243, 255;
+  --secondary-100: 237, 233, 254;
+  --secondary-200: 221, 214, 254;
+  --secondary-300: 196, 181, 253;
+  --secondary-400: 167, 139, 250;
+  --secondary-500: 139, 92, 246; /* Color principal */
+  --secondary-600: 124, 58, 237;
+  --secondary-700: 109, 40, 217;
+  --secondary-800: 91, 33, 182;
+  --secondary-900: 76, 29, 149;
+  --secondary-950: 46, 16, 101;
+  
   
   /* Colores de acento */
   --accent-50: 224, 232, 255;

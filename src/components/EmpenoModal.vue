@@ -22,7 +22,7 @@
         </div>
         <div class="flex justify-end space-x-4">
           <button @click="$emit('close')" class="btn-danger">Cancelar</button>
-          <button @click="confirmEmpeno" class="btn-primary">Confirmar</button>
+          <button @click.prevent="confirmEmpeno" class="btn-primary">Confirmar</button>
         </div>
       </div>
     </div>
@@ -45,6 +45,7 @@
       },
     },
   };
+  
   </script>
   
   <style scoped>

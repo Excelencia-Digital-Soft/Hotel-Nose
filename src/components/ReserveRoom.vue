@@ -5,118 +5,217 @@
         class="fixed w-full h-full  bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
         <Transition name="modal-inner">
           <div
-            :class="selectedRoom.Disponible ? 'w-2/4 h-3/6 flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900' : ' w-3/4 h-[90%] flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8  border-secondary-400 rounded-xl bg-neutral-900'">
-            <i class="fa-thin fa-circle-xmark"></i>
-            <!-- Modal Content -->
-            <h1 class="absolute  self-center text-2xl lexend-exa font-bold mt-5 mb-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
-              {{ selectedRoom.nombreHabitacion }}
-            </h1>
+            class="relative w-11/12 md:h-auto flex flex-col justify-center  mt-4 px-8 py-6 border-x-4  border-fuchsia-900 rounded-3xl bg-neutral-800">
 
-            <form :class="!selectedRoom.Disponible ? 'grid grid-cols-3 gap-3 mb-2' : 'grid-cols-1'">
-              <section v-if="!selectedRoom.Disponible" class="flex flex-col justify-start p-2">
-                <div>
-                  <h1 class="text-xl text-white font-bold mb-2">Consumos</h1>
-                  <div class="bg-gray-800 rounded-lg p-4 h-56 overflow-y-auto">
-                    <!-- Header row -->
-                    <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 text-white font-semibold mb-2">
-                      <span>Producto</span>
-                      <span>Cantidad</span>
-                      <span>Precio</span>
-                      <span>Origen</span>
-                      <span>Total</span>
+            <!-- Modal Content -->
+            <button
+              class="absolute top-2 right-2 text-xl w-14 h-14 text-white items-end btn-danger rounded-full transition duration-150 ease-out md:ease-in"
+              @click="$emit('close-modal')">X</button>
+
+            <form class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div class="flex justify-between col-span-1 md:col-span-3  pr-16">
+                <div
+                  class="timer-container flex items-center bg-black bg-clip-padding backdrop-filter backdrop-blur-md bg-opacity-40 rounded-xl  shadow-neutral-900 shadow-lg">
+                  <!-- Contenedor del reloj -->
+                  <div class="timer flex items-center    border-x-2 border-primary-500 rounded-xl  shadow-lg">
+                    <p class="w-contain text-primary-400 text-xs font-semibold">Tiempo restante:</p>
+                    <p class="time mr-2">
+                      <span v-for="(char, index) in formattedTime" :key="index" class="digit">
+                        {{ char }}
+                      </span>
+                    </p>
+                    <!-- Botón para ignorar tiempo extra -->
+                    <button @click="ignorarTiempoExtra" type="button" :class="[
+                      'timerbutton',
+                      'w-2/4',
+                      'font-semibold',
+                      'text-white',
+                      'grid',
+                      'transition-all',
+                      {
+                        'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400': ignorarTiempo,
+                        'transform scale-80': ignorarTiempo,
+                        'shadow-inner': ignorarTiempo
+                      }
+                    ]" :style="{
+                    border: '4px solid transparent',
+                    borderImage: 'linear-gradient(to right, #ff49d1, #a78bfa, #3b5cff) 1',
+
+                  }">
+                      <span class="material-symbols-outlined">
+                        block
+                      </span>
+                    </button>
+                  </div>
+    
+
+                </div>
+                <h1
+                    class="   text-2xl lexend-exa font-bold mt-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
+                    {{ selectedRoom.nombreHabitacion }}
+                  </h1>
+              </div>
+              <div class="grid shadow-lg w-full rounded-2xl border-2  border-primary-500  ">
+
+                <section class="relative  drop-shadow-xl w-full h-44 overflow-hidden rounded-2xl bg-[#691660]">
+                  <div
+                    class=" grid absolute items-center justify-center text-white z-[1] opacity-90 rounded-2xl inset-0.5 bg-[#323132]  px-4">
+
+                    <div class="flex flex-col items-start justify-center w-full  ">
+                      <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
+                      <input type="text"
+                        class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                        v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
                     </div>
 
-                    <!-- Ordered list for the consumos -->
-                    <ol class="space-y-2">
-                      <li v-for="consumo in consumos" :key="consumo.consumoId"
-                        class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-4 bg-gray-700 p-3 rounded-md text-white">
-                        <span class="font-semibold">{{ consumo.articleName }}</span>
-                        <span class="text-sm text-gray-400">{{ consumo.cantidad }}</span>
-                        <span class="text-sm text-gray-400">${{ consumo.precioUnitario }}</span>
-                        <span class="text-sm text-gray-400">
-                          {{ consumo.esHabitacion ? 'Habitacion' : 'Inv. General' }}
-                        </span>
-                        <span class="text-sm font-bold text-green-400">${{ consumo.total }}</span>
-                      </li>
-                    </ol>
+                    <div class="flex  justify-start w-full  ">
+                      <div class="flex flex-col items-start justify-center w-full mb-2 mr-2 ">
+                        <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
+                        <input type="text"
+                          class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                          v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
+                      </div>
+                      <div class="flex flex-col items-start justify-center w-full mb-2 ">
+                        <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
+                        <input type="text"
+                          class="focus:ring-purple-500 text-neutral-900 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                          maxlength="11" v-model="selectedRoom.NumeroTelefono"
+                          placeholder="Ingresa Marca y modelo de vehiculo">
+                      </div>
+
+
+                    </div>
+                  </div>
+                  <div class="absolute w-full h-36 bg-white blur-[50px] -left-1/2 -top-1/2"></div>
+
+                </section>
+                <div class="w-full flex justify-center items-center px-4 ">
+
+                  <div class="m-4 w-full">
+                    <label class="text-xs font-semibold text-white">Seleccionar Promoción</label>
+                    <select v-model="selectedPromocion" class="w-full text-sm p-2 mt-2 rounded-lg">
+                      <!-- Default 'Sin Promoción' option -->
+                      <option :value="null">Sin Promoción</option>
+
+                      <!-- Display promotions if available -->
+                      <option v-for="promo in promociones" :key="promo.promocionID" :value="promo">
+                        {{ promo.detalle }}
+                      </option>
+
+                      <!-- Show this message if there are no promociones -->
+                      <option v-if="promociones.length === 0" disabled>Sin promociones disponibles</option>
+                    </select>
                   </div>
                 </div>
 
-                <div class="flex">                <button type="button" @click="toggleModalConfirm()"
-                  class="btn-primary w-full h-8 mr-2 p-1 text-sm  rounded-3xl mt-4">
-                  Consumo general
-                </button>
-                <button type="button" @click="toggleModalConfirmHabitacion()"
-                  class="btn-primary w-full h-8 text-sm p-2   rounded-3xl mt-4">
-                  Consumo habitación
-                </button></div>
+
+              </div>
+              <section class="relative z-10 flex col-span-1 md:col-span-2 flex-col  justify-start ">
+
+                <div
+                  class="bg-neutral-700  h-72 border-l-4 border-accent-400  rounded-l-3xl p-4 overflow-y-auto shadow-neutral-900 shadow-lg">
+                  <!-- Header row -->
+                  <div
+                    class="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] gap-3  text-white text-xs font-semibold mb-2">
+                    <span>Producto</span>
+                    <span>Cant</span>
+                    <span>Precio</span>
+                    <span>Orig</span>
+                    <span>Total</span>
+                    <span>Editar</span>
+                    <span>Borrar</span>
+                  </div>
+
+                  <ul class="space-y-2">
+    <li v-for="consumo in consumos" :key="consumo.consumoId"
+      class="grid grid-cols-7  bg-neutral-600 p-2 rounded-md text-white items-center">
+      <span class="text-xs w-16 break-words font-semibold">{{ consumo.articleName }}</span>
+
+      <!-- Quantity Display/Edit -->
+      <template v-if="editingConsumoId !== consumo.consumoId">
+        <span class="text-xs text-center text-neutral-200">{{ consumo.cantidad }}</span>
+      </template>
+      <template v-else>
+        <input type="number" v-model.number="editedCantidad" @blur="saveConsumo(consumo.consumoId)"
+          class="text-xs text-center w-16 rounded-md bg-neutral-700 text-white" />
+      </template>
+
+      <span class="text-xs text-center text-neutral-200">${{ consumo.precioUnitario }}</span>
+      <span class="text-xs text-center text-neutral-200">
+        {{ consumo.esHabitacion ? 'Hab' : 'Inv' }}
+      </span>
+      <span class="text-xs font-bold text-green-400">${{ consumo.total }}</span>
+
+      <!-- Edit/Cancel/Delete Buttons -->
+      <template v-if="editingConsumoId !== consumo.consumoId">
+        <button type="button" class="btn-secondary rounded-xl text-xs h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
+          @click="startEditConsumo(consumo.consumoId)">
+          edit
+        </button>
+      </template>
+      <template v-else>
+        <button type="button" class="btn-danger rounded-xl text-xs h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
+          @click="cancelEditConsumo()">
+          cancel
+        </button>
+      </template>
+
+      <!-- Cancel button with trashcan icon -->
+      <button type="button"
+        class="btn-danger rounded-xl text-xl h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
+        @click="anularConsumo(consumo.consumoId)">
+        delete
+      </button>
+    </li>
+  </ul>
+
+                  <div
+                    class="absolute -bottom-16 z-[-1] left-12 flex self-center w-10/12 border-x-2 border-b-2 rounded-b-2xl p-4 shadow-neutral-900 shadow-lg">
+                    <button type="button" @click="toggleModalConsumo(false)"
+                      class="btn-third w-full  h-8 mr-2 p-1 text-sm  rounded-3xl mt-4">
+                      Consumo general
+                    </button>
+                    <button type="button" @click="toggleModalConsumo(true)"
+                      class="btn-third w-full h-8 text-sm p-2 mr-2  rounded-3xl mt-4">
+                      Consumo habitación
+                    </button>
+                  </div>
+                </div>
+
+
+
 
 
               </section>
 
-              <section class="timer-container flex flex-col items-start space-y-4">
-                <div class="timer">
-                  <p class="label">Tiempo restante:</p>
-                  <p class="time">{{ formattedTime }}</p>
-                </div>
-                <button @click="ignorarTiempoExtra()" type="button" :class="[
-                  'w-full',
-                  'mt-4',
-                  'rounded-lg',
-                  'text-white',
-                  {
-                    'bg-gray-600': ignorarTiempo,  // Darken background when pressed
-                    'transform translate-y-1': ignorarTiempo,  // Add pressed effect
-                    'box-shadow inset 0 2px 5px rgba(0, 0, 0, 0.2)': ignorarTiempo  // Inner shadow effect
-                  }
-                ]" :style="{
-    border: '4px solid transparent',
-    borderImage: 'linear-gradient(to right, #667eea, #764ba2, #ff7e5f) 1',
-    borderRadius: '9999px', // Ensure rounded corners
-  }">
-                  Ignorar tiempo extra
-                </button>
-              </section>
-              <section class="flex flex-col items-center justify-center  mb-2">
-                <div class="flex flex-col items-start justify-center w-full mb-3 px-4">
-                  <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
-                  <input type="text"
-                    class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                    v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
-                </div>
-                <div class="flex flex-col items-start justify-center w-full mb-3 px-4">
-                  <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
-                  <input type="text"
-                    class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                    maxlength="11" v-model="selectedRoom.NumeroTelefono"
-                    placeholder="Ingresa Marca y modelo de vehiculo">
-                </div>
-                <div class="flex flex-col items-start justify-center w-full mb-3 px-4">
-                  <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
-                  <input type="text"
-                    class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                     v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
-                </div>
-              </section>
-              <section v-if="!selectedRoom.Disponible">
-                <div class="max-w-sm mx-auto border border-gray-800 bg-gray-800 text-white">
-                  <table class="w-full text-left">
+
+
+
+              <section class="relative  drop-shadow-xl w-full h-56 overflow-hidden rounded-xl bg-[#691660]">
+
+                <div
+                  class="absolute flex items-center justify-center text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] space-x-4 px-4">
+
+                  <table class="w-full text-left ">
                     <tbody>
-                      <tr class="border-b border-gray-700">
-                        <td class="p-4">Consumision</td>
+                      <tr
+                        class="border-b border-neutral-700 hover:scale-110 hover:bg-primary-500 transition duration-100 ease-out md:ease-in">
+                        <td class="p-2">Consumision</td>
                         <td class="p-4 text-right">${{ consumos.reduce((sum, consumo) => sum + consumo.total, 0) }}</td>
                       </tr>
-                      <tr class="border-b border-gray-700">
-                        <td class="p-4">Periodo</td>
-                        <td class="p-4 text-right">${{ periodoCost }}</td>
+                      <tr
+                        class="border-b border-neutral-700 hover:scale-110 hover:bg-primary-500 transition duration-100 ease-out md:ease-in">
+                        <td class="p-2">Periodo</td>
+                        <td class="p-2 text-right">${{ periodoCost }}</td>
                       </tr>
-                      <tr class="border-b border-gray-700">
-                        <td class="p-4">Adicional</td>
-                        <td class="p-4 text-right">${{ adicional }}</td> <!-- Display calculated Adicional -->
+                      <tr
+                        class="border-b border-neutral-700  hover:scale-110 hover:bg-primary-500  transition duration-100 ease-out md:ease-in ">
+                        <td class="p-2">Adicional</td>
+                        <td class="p-2 text-right">${{ adicional }}</td> <!-- Display calculated Adicional -->
                       </tr>
-                      <tr>
-                        <td class="p-4">Total</td>
-                        <td class="p-4 text-right">
+                      <tr class="  hover:bg-primary-500 hover:scale-110 transition duration-100 ease-out md:ease-in">
+                        <td class="p-2">Total</td>
+                        <td class="p-2 text-right">
                           ${{ (Number(consumos.reduce((sum, consumo) => sum + consumo.total, 0)) + Number(periodoCost) +
                             Number(adicional)).toFixed(2) }}
                         </td>
@@ -124,52 +223,47 @@
                     </tbody>
                   </table>
                 </div>
+                <div class="absolute w-full h-full bg-white blur-[50px] -left-1/2 -top-1/2"></div>
               </section>
-              <section></section>
-              <section v-if="!selectedRoom.Disponible">
-  <div class="card flex flex-col ml-4 flex-wrap justify-center gap-4">
-    <div class="mt-4 w-full">
-      <label class="text-xs font-semibold text-white">Seleccionar Promoción</label>
-      <select v-model="selectedPromocion" class="w-full p-2 mt-2 rounded-lg">
-        <!-- Default 'Sin Promoción' option -->
-        <option :value="null">Sin Promoción</option>
 
-        <!-- Display promotions if available -->
-        <option v-for="promo in promociones" :key="promo.promocionID" :value="promo">
-          {{ promo.detalle }}
-        </option>
+              <section class=" flex col-span-1 md:col-span-2 justify-center items-end">
+                <div class="relative  drop-shadow-xl w-3/4 h-24 overflow-hidden rounded-xl bg-[#691660]">
+                  <div
+                    class="absolute flex items-center justify-center text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] space-x-4 px-4">
+                    <button @click="toggleAnularOcupacionModal" type="button"
+                      class="btn-danger w-2/4 h-12 rounded-2xl border-l-2 border-neutral-300">
+                      Anular Ocupación
+                    </button>
+                    <button @click="openPaymentModal" type="button" :disabled="selectedRoom.pedidosPendientes"
+                      class="btn-secondary w-2/4 h-12 rounded-2xl">
+                      Desocupar Habitación<span class="material-symbols-outlined">
+                        door_open
+                      </span>
+                    </button>
+                  </div>
+                  <div class="absolute w-3/4 h-24 bg-white blur-[50px] -left-1/2 -top-1/2"></div>
+                </div>
+              </section>
 
-        <!-- Show this message if there are no promociones -->
-        <option v-if="promociones.length === 0" disabled>Sin promociones disponibles</option>
-      </select>
-    </div>
-  </div>
-</section>
-              <div class="col-span-3 flex flex-col justify-center items-center w-full">
-                <button @click="openPaymentModal" type="button" :disabled="selectedRoom.pedidosPendientes"
-                  class="btn-primary w-2/4 h-16 rounded-2xl">
-                  Desocupar Habitación
-                </button>
 
-                <!-- Conditional warning text -->
-                <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-2 text-center">
-                  Hay pedidos pendientes, no se puede desocupar la habitación.
-                </p>
 
-                <ModalPagar v-if="modalPayment" :total="totalAmount" :adicional="Number(adicional)"
-                  :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID"
-                  @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
-              </div>
             </form>
-            <button
-              class="absolute text-xl  w-14 h-14 text-white -top-7 right-7 btn-primary rounded-full transition duration-150 ease-out md:ease-in"
-              @click="$emit('close-modal')">X</button>
-            <ModalConfirm v-if="modalConfirm" :name="selectedRoom.Identificador" @confirmaAccion="confirmAndSend"
-              @close="toggleModalConfirm" />
+            <!-- Conditional warning text -->
+            <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-2 text-center">
+              Hay pedidos pendientes, no se puede desocupar la habitación.
+            </p>
 
-            <ModalConfirmHabitacion v-if="modalConfirmHabitacion" :name="selectedRoom.Identificador"
-              :habitacionID="selectedRoom.HabitacionID" @confirmaAccion="confirmAndSendHabitacion"
-              @close="toggleModalConfirmHabitacion" />
+            <ModalPagar v-if="modalPayment" :periodo="periodoCost" :consumo="consumos.reduce((sum, consumo) => sum + consumo.total, 0)" :total="totalAmount" :adicional="Number(adicional)"
+              :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID" :pausa="Pausa"
+              @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
+
+            <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID"
+              @close-modal="modalAnular = false" />
+            <ModalConsumo v-if="modalConsumo" :name="selectedRoom.Identificador"
+              :habitacionID="selectedRoom.HabitacionID" :consumoHabitacion="esConsumoHabitacion"
+              @confirmaAccion="confirmAndSend" @close="toggleModalConsumo" />
+
+
           </div>
 
         </Transition>
@@ -180,13 +274,14 @@
 
 <script setup>
 
-import { computed } from 'vue';
+import { computed, toRaw } from 'vue';
 import { onMounted, ref, watch, onUnmounted } from 'vue';
 import axiosClient from '../axiosClient';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
-import ModalConfirm from './ModalConfirm.vue';
-import ModalConfirmHabitacion from './ModalConfirmHabitacion.vue';
+import ModalConsumo from './ModalConsumo.vue';
+import AnularOcupacionModal from './AnularOcupacionModal.vue';
+import ModalPagar from './ModalPagar.vue';
 import dayjs from 'dayjs';
 
 const emits = defineEmits(['close-modal', 'update-room']);
@@ -204,7 +299,7 @@ const periodoCost = computed(() => {
 
 const adicional = computed(() => {
   console.log(overtime.value)
-  return (overtime.value * ((promocionActiva.value && selectedPromocion.value ? selectedPromocion.value.tarifa : selectedRoom.value.Precio)/ 60)).toFixed(2); // Calculates overtime charge
+  return (overtime.value * ((promocionActiva.value && selectedPromocion.value ? selectedPromocion.value.tarifa : selectedRoom.value.Precio) / 60)).toFixed(2); // Calculates overtime charge
 });
 
 onMounted(() => {
@@ -218,14 +313,17 @@ onMounted(() => {
   selectedRoom.value.Precio = props.room.precio;
   selectedRoom.value.PromocionID = props.room.visita.reservaActiva.promocionId;
   selectedRoom.value.pedidosPendientes = props.room.pedidosPendientes,
-  selectedRoom.value.ReservaID = props.room.visita.reservaActiva.reservaId;
-    selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
+    selectedRoom.value.ReservaID = props.room.visita.reservaActiva.reservaId;
+  selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
   selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
   selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono; // Safe access
   selectedRoom.value.PatenteVehiculo = props.room.visita?.patenteVehiculo; // Safe access
+  selectedRoom.value.PausaHoras = props.room.reservaActiva.pausaHoras ?? 0;
+  selectedRoom.value.PausaMinutos = props.room.reservaActiva.pausaMinutos ?? 0;
+
   console.log(selectedRoom.value)
   actualizarConsumos();
-  document.body.style.overflow = 'hidden';
+
 })
 
 let selectedRoom = ref({
@@ -261,8 +359,8 @@ const tableData = ref({
   total: 0,
 });
 
-let modalConfirm = ref(false);
-let modalConfirmHabitacion = ref(false);
+let modalConsumo = ref(false);
+
 
 
 const pizza = ref();
@@ -273,36 +371,16 @@ const hours = ref(0);
 const minutes = ref(0);
 const selectedTags = ref([]);
 const consumos = ref([]);
+const Pausa = ref(false)
 let editTagRel = {}
 let cheatRefresh = ref(false);
 let idNewTag = ref(0);
 let numeroError = ref('');
-/* const addToConsumos = (selectedItems) => {
-  // Add the selected items to the consumos list
-  selectedItems.forEach(item => {
-    const total = item.cantidad * item.precio; // Use 'precio' for total calculation
-
-    // Check if the item already exists in the consumos list
-    const existingItem = consumos.value.find(consumo => consumo.articuloId === item.articuloId);
-
-    if (existingItem) {
-      // If the item exists, update its quantity and total
-      existingItem.cantidad += item.cantidad;
-      existingItem.total += total;
-    } else {
-      // If the item does not exist, add it as a new entry
-      consumos.value.push({
-        consumoId: Date.now(), // Generate a unique ID for the consumption item
-        articuloId: item.articuloId,
-        articleName: item.nombreArticulo,
-        cantidad: item.cantidad,
-        precioUnitario: item.precio,
-        total
-      });
-    }
-  });
-}; */
-
+const esConsumoHabitacion = ref(false)
+const verconsumo = () => {
+  console.log(selectedRoom.value.VisitaID)
+  console.log("Consumos", consumos.value)
+}
 const agregarConsumos = (selectedItems) => {
   console.log(selectedItems);
   axiosClient.post(
@@ -318,8 +396,21 @@ const agregarConsumos = (selectedItems) => {
     });
 };
 
+const anularConsumo = (consumoId) => {
+  console.log("elimino", consumoId)
+  axiosClient.delete(
+    `/AnularConsumo?idConsumo=${consumoId}`,
+  )
+    .then(response => {
+      actualizarConsumos();
+      console.log('Consumo anulado exitosamente');
+    })
+    .catch(error => {
+      console.error('Error al agregar consumo:', error);
+    });
+};
 const agregarConsumosHabitacion = (selectedItems) => {
-  console.log(selectedItems);
+  console.log("itemsselec", selectedItems);
   axiosClient.post(
     `/ConsumoHabitacion?habitacionId=${selectedRoom.value.HabitacionID}&visitaId=${selectedRoom.value.VisitaID}`,
     selectedItems // Send selectedItems directly as the body
@@ -367,12 +458,15 @@ const actualizarConsumos = () => {
       console.error('Error al obtener los consumos:', error);
     });
 };
-const toggleModalConfirm = () => {
-  modalConfirm.value = !modalConfirm.value;
+const toggleModalConsumo = (esHabitacion) => {
+  esConsumoHabitacion.value = esHabitacion
+  modalConsumo.value = !modalConsumo.value;
 }
-const toggleModalConfirmHabitacion = () => {
-  modalConfirmHabitacion.value = !modalConfirmHabitacion.value;
+
+const toggleAnularOcupacionModal = () => {
+  modalAnular.value = !modalAnular.value;
 }
+
 const confirmAndSend = (ConfirmedArticles) => {
 
   console.log(JSON.stringify(ConfirmedArticles) + " Llegamos al ReserveROOM");
@@ -380,7 +474,6 @@ const confirmAndSend = (ConfirmedArticles) => {
 }
 
 const confirmAndSendHabitacion = (ConfirmedArticles) => {
-
   console.log(JSON.stringify(ConfirmedArticles) + " Llegamos al ReserveROOM");
   console.log(ConfirmedArticles)
   if (ConfirmedArticles.length > 0) {
@@ -448,7 +541,6 @@ const endRoomReserve = () => {
       console.error(error);
     });
 }
-// LOGICA TIMER
 
 // LOGICA TIMER
 const formattedTime = ref('');
@@ -456,41 +548,58 @@ let timerInterval = null;
 
 // Timer calculation logic, kept separate
 function calculateRemainingTime() {
-  const endTime = dayjs(selectedRoom.value.FechaReserva)
-    .add(selectedRoom.value.TotalHoras, 'hour')
-    .add(selectedRoom.value.TotalMinutos, 'minute');
+  if (!modalPayment.value) {
+    if (selectedRoom.value.PausaHoras == 0 && selectedRoom.value.PausaMinutos == 0) {
+      const endTime = dayjs(selectedRoom.value.FechaReserva)
+        .add(selectedRoom.value.TotalHoras, 'hour')
+        .add(selectedRoom.value.TotalMinutos, 'minute');
 
-  const now = dayjs();
-  const diffInMinutes = endTime.diff(now, 'minute');
-  const isOvertime = diffInMinutes < 0;
-  if (isOvertime && ignorarTiempo.value == false) {
-    if (diffInMinutes >= -12 * 60) {
-      overtime.value = diffInMinutes * (-1);
-      console.log(overtime.value);
+      const now = dayjs();
+      const diffInMinutes = endTime.diff(now, 'minute');
+      const isOvertime = diffInMinutes < 0;
+      if (isOvertime && ignorarTiempo.value == false) {
+          overtime.value = diffInMinutes * (-1);
+          console.log(overtime.value);
+     
+        const hours = Math.floor(Math.abs(diffInMinutes) / 60);
+        const minutes = Math.abs(diffInMinutes) % 60;
+        if (isOvertime) formattedTime.value = `-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        else formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+
+
+      } else if (isOvertime) {
+        formattedTime.value = `00:00`
+        overtime.value = 0
+      }
+      else {
+        const hours = Math.floor(Math.abs(diffInMinutes) / 60);
+        const minutes = Math.abs(diffInMinutes) % 60;
+        formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+      }
+
     }
-    if (diffInMinutes < -12 * 60) {
-      overtime.value = 720;
-      clearInterval(timerInterval);
-      formattedTime.value = `-12:00`;
-      return;
+    else {
+      const absolutePausaHoras = Math.abs(selectedRoom.value.PausaHoras);
+      const absolutePausaMinutos = Math.abs(selectedRoom.value.PausaMinutos);
+
+      if (selectedRoom.value.PausaHoras < 0 || selectedRoom.value.PausaMinutos < 0) {
+        Pausa.value = true;
+        if (ignorarTiempo.value == false) {
+          overtime.value = absolutePausaHoras * 60 + absolutePausaMinutos;
+          formattedTime.value = `-${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`
+        }
+        else {
+          formattedTime.value = `00:00`
+          overtime.value = 0
+        }
+      }
+      else if (selectedRoom.value.PausaHoras > 0 || selectedRoom.value.PausaMinutos > 0) {
+        Pausa.value = true;
+        formattedTime.value = `${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`
+
+      }
     }
-    const hours = Math.floor(Math.abs(diffInMinutes) / 60) * (isOvertime ? -1 : 1);
-    const minutes = Math.abs(diffInMinutes) % 60;
-    formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-
-
-  } else if (isOvertime) {
-    formattedTime.value = `00:00`
-    overtime.value = 0
   }
-  else {
-    const hours = Math.floor(Math.abs(diffInMinutes) / 60);
-    const minutes = Math.abs(diffInMinutes) % 60;
-    formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-  }
-
-
-
 }
 
 function ignorarTiempoExtra() {
@@ -513,23 +622,28 @@ onUnmounted(() => {
 });
 
 
-// Logica botón para pagar
-import ModalPagar from './ModalPagar.vue';
+
 
 // States
 const modalPayment = ref(false);
 const totalAmount = ref(null);
+const modalAnular = ref(false);
 // Props from your existing data, for example:
 
 // Methods
 const openPaymentModal = () => {
-  totalAmount.value =
-    (Number(consumos.value.reduce((sum, consumo) => sum + consumo.total, 0)) +
-      Number(periodoCost.value))
-  console.log(totalAmount.value);
-  modalPayment.value = true;
-};
+  console.log("Se abrió");
+  if (!modalPayment.value) {
+    // Take snapshots of the current values
+    const consumosSnapshot = consumos.value.map(consumo => ({ ...consumo })); // Shallow copy
+    const periodoCostSnapshot = Number(periodoCost.value);
 
+    totalAmount.value = consumosSnapshot.reduce((sum, consumo) => sum + consumo.total, 0) + periodoCostSnapshot;
+
+    console.log("Total Amount:", totalAmount.value);
+    modalPayment.value = true; // Open the modal
+  }
+};
 const handlePaymentConfirmation = (paymentDetails) => {
   console.log('Payment Confirmed:', paymentDetails);
   modalPayment.value = false;
@@ -550,9 +664,9 @@ onMounted(async () => {
   }
   console.log("Puede no haber nada")
 
-    if(selectedRoom.value.PromocionID != null){
+  if (selectedRoom.value.PromocionID != null) {
 
-      const matchedPromo = promociones.value.find(
+    const matchedPromo = promociones.value.find(
       (promo) => promo.promocionID === selectedRoom.value.PromocionID
     );
 
@@ -560,18 +674,18 @@ onMounted(async () => {
       selectedPromocion.value = matchedPromo; // Set the selected promotion
       promocionActiva.value = true;
     }
-    }
-    document.body.style.overflow = 'hidden';
-  })
-  
+  }
 
-  watch(selectedPromocion, (newVal) => {
-      promocionActiva.value = newVal !== null; // True if a promo is selected
-      props.room.visita.reservaActiva.promocionId = selectedPromocion.value.promocionID;
-      actualizarPromocion();
-    });
+})
 
-    const actualizarPromocion = () => {
+
+watch(selectedPromocion, (newVal) => {
+  promocionActiva.value = newVal !== null; // True if a promo is selected
+  props.room.visita.reservaActiva.promocionId = selectedPromocion.value.promocionID;
+  actualizarPromocion();
+});
+
+const actualizarPromocion = () => {
   if (!selectedRoom.value || !selectedRoom.value.ReservaID) {
     console.error("Reserva or HabitacionID is not set.");
     return;
@@ -582,12 +696,12 @@ onMounted(async () => {
 
   // PUT request to update the promotion for the reservation
   axiosClient
-  .put('/ActualizarReservaPromocion', null, {
-    params: {
-      reservaId,   // Pass reservaId as a query parameter
-      promocionId, // Pass promocionId as a query parameter (or null if no promo is selected)
-    },
-  })
+    .put('/ActualizarReservaPromocion', null, {
+      params: {
+        reservaId,   // Pass reservaId as a query parameter
+        promocionId, // Pass promocionId as a query parameter (or null if no promo is selected)
+      },
+    })
     .then((response) => {
       console.log("Promoción actualizada correctamente:", response.data);
 
@@ -602,27 +716,51 @@ onMounted(async () => {
       console.error("Error actualizando la promoción:", error);
     });
 }
+
+// SECCION CONSUMOS
+
+const editingConsumoId = ref(null);
+const editedCantidad = ref(0);
+
+const startEditConsumo = (consumoId) => {
+  editingConsumoId.value = consumoId;
+  const consumo = consumos.value.find(c => c.consumoId === consumoId);
+  if (consumo) {
+    editedCantidad.value = consumo.cantidad;
+  }
+};
+
+const cancelEditConsumo = () => {
+  editingConsumoId.value = null;
+};
+
+const saveConsumo = (consumoId) => {
+  if (editingConsumoId.value === consumoId) {
+    axiosClient.put(`/UpdateConsumo?idConsumo=${consumoId}&Cantidad=${editedCantidad.value}`)
+      .then(response => {
+        console.log('Consumo updated successfully:', response.data);
+        // Update the consumos array with the new quantity
+        const consumo = consumos.value.find(c => c.consumoId === consumoId);
+        if (consumo) {
+          consumo.cantidad = editedCantidad.value;
+          consumo.total = consumo.cantidad * consumo.precioUnitario; // Recalculate total
+        }
+        editingConsumoId.value = null; // Exit edit mode
+      })
+      .catch(error => {
+        console.error('Error updating consumo:', error);
+        alert('Failed to update consumo. See console for details.');
+      });
+  }
+};
 </script>
 <style scoped>
-.timer-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
 .timer {
   text-align: center;
 }
 
-.label {
-  font-size: 24px;
-  font-weight: bold;
-  color: white;
-  margin-bottom: 10px;
-}
-
 .time {
-  font-size: 60px;
+  font-size: 24px;
   /* Large numbers */
   font-weight: bold;
   color: white;
@@ -666,5 +804,41 @@ onMounted(async () => {
 
 .modal-inner-leave-to {
   transform: scale(0.8);
+}
+
+.timer {
+  font-family: 'Courier New', monospace;
+  text-align: center;
+
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.time {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ff1cc3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  letter-spacing: -10px;
+}
+
+
+.digit {
+  display: inline-block;
+  min-width: 10px;
+  text-align: center;
+  animation: glow 1.5s infinite alternate;
+}
+
+@keyframes glow {
+  0% {
+    text-shadow: 0 0 5px #ff1cc3, 0 0 10px #ff1cc3;
+  }
+
+  100% {
+    text-shadow: 0 0 10px #ff1cc3, 0 0 20px #ff1cc3;
+  }
 }
 </style>
