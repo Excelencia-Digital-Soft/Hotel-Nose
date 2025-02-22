@@ -205,7 +205,7 @@
   const InstitucionID = ref(null);
 
   function getDatosLogin(){
-    InstitucionID.value = authStore.auth?.institucionID;
+    InstitucionID.value = authStore.institucionID;
     UsuarioID.value = authStore.auth?.usuarioID;
   }
   function confirmDeleteCategory(category){

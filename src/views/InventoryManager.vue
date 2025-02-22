@@ -60,7 +60,7 @@ const computedinventory = computed(() => inventory.value.filter(i => i.articulo.
 
 // Fetch all inventory items
 const fetchInventory = async () => {
-  const institucionID = authStore.auth?.institucionID;
+  const institucionID = authStore.institucionID;
   if (institucionID == null) {
   console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
   return; }
@@ -98,7 +98,7 @@ const updateStock = async (itemId, newStock) => {
 
 // Call /CoordinarInventarioGeneral
 const actualizarInventario = async () => {
-  const institucionID = authStore.auth?.institucionID;
+  const institucionID = authStore.institucionID;
   if (institucionID == null) {
   console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
   return; }
