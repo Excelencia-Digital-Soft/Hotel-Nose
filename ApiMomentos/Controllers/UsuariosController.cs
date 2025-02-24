@@ -24,18 +24,18 @@ namespace ApiObjetos.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet]
-        [Route("GetUsuarios")]
-
-        public async Task<ActionResult<IEnumerable<UsuarioDTO>>> GetUsuarios(int InstitucionID)
+        [HttpGet("GetUsuarios")]
+        public async Task<ActionResult<IEnumerable<UsuarioDTO>>> GetUsuarios(int institucionID)
         {
-            // Obtén los usuarios con su rol relacionado
-            var usuarios = await _context.Usuarios
-                .Where(u => u.InstitucionID == InstitucionID)
-                .Include(u => u.Rol)  // Incluye la relación con Rol
+            // Obtener los usuarios asociados a la institución a través de la tabla intermedia
+            var usuarios = await _context.UsuariosInstituciones
+                .Where(ui => ui.InstitucionId == institucionID)  // Filtrar por InstitucionId
+                .Include(ui => ui.Usuario)  // Incluir la relación con Usuario
+                .ThenInclude(u => u.Rol)  // Incluir la relación con Rol dentro de Usuario
+                .Select(ui => ui.Usuario)  // Obtener los usuarios relacionados
                 .ToListAsync();
 
-            // Mapea las entidades a DTOs usando AutoMapper
+            // Mapear a DTOs usando AutoMapper
             var usuariosDTO = _mapper.Map<IEnumerable<UsuarioDTO>>(usuarios);
 
             return Ok(usuariosDTO);
@@ -44,50 +44,105 @@ namespace ApiObjetos.Controllers
         // GET: api/Usuarios/5
         [HttpGet]
         [Route("GetUsuario")]
-        public async Task<ActionResult<Usuarios>> GetUsuario(int id)
+        public async Task<ActionResult<UsuarioDTO>> GetUsuario(int id)
         {
-            var usuario = await _context.Usuarios.Include(u => u.Rol).FirstOrDefaultAsync(u => u.UsuarioId == id);
+            var usuario = await _context.Usuarios
+                .Include(u => u.Rol)
+                .FirstOrDefaultAsync(u => u.UsuarioId == id);
 
             if (usuario == null)
             {
                 return NotFound();
             }
 
-            return usuario;
+            // Mapear a DTO antes de devolver
+            var usuarioDTO = _mapper.Map<UsuarioDTO>(usuario);
+
+            return Ok(usuarioDTO);
         }
 
         [HttpGet("institucionUsuario")]
-        public async Task<ActionResult<int>> GetInstitucionUsuario(int usuarioID)
+        public async Task<ActionResult<IEnumerable<int>>> GetInstitucionUsuario(int usuarioID)
         {
-            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.UsuarioId == usuarioID);
+            var instituciones = await _context.UsuariosInstituciones
+                .Where(ui => ui.UsuarioId == usuarioID)
+                .Select(ui => ui.InstitucionId)
+                .ToListAsync();
 
-            if (usuario == null)
+            if (instituciones == null || instituciones.Count == 0)
             {
-                return NotFound();
+                return NotFound("El usuario no está asociado a ninguna institución.");
             }
 
-            return usuario.InstitucionID;
+            return Ok(instituciones);
+        }
+        [HttpGet("GetInstitucionesPorUsuario")]
+        public async Task<ActionResult<IEnumerable<Institucion>>> GetInstitucionesPorUsuario(int usuarioId)
+        {
+            var instituciones = await _context.UsuariosInstituciones
+                .Where(ui => ui.UsuarioId == usuarioId)
+                .Select(ui => ui.InstitucionId)
+                .ToListAsync();
+            if (instituciones == null || instituciones.Count == 0)
+            {
+                return NotFound("El usuario no está asociado a ninguna institución.");
+            }
+            return Ok(instituciones);
         }
         [HttpPost]
         [Route("CrearUsuario")]
-
-        public async Task<ActionResult<Usuarios>> PostUsuario(int InstitucionID, UsuarioCreateDto usuarioDto)
+        public async Task<ActionResult<Usuarios>> PostUsuario(int InstitucionID, UsuarioCreateDTO UsuarioCreateDTO)
         {
-            // Crear un nuevo usuario a partir del DTO
-            var usuario = new Usuarios
+            if (!ModelState.IsValid)
             {
-                NombreUsuario = usuarioDto.NombreUsuario,
-                InstitucionID = InstitucionID,
-                Contraseña = BCrypt.Net.BCrypt.HashPassword(usuarioDto.Contraseña),
-                RolId = usuarioDto.RolId
-            };
+                return BadRequest(ModelState);
+            }
 
-            _context.Usuarios.Add(usuario);
-            await _context.SaveChangesAsync();
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    // Crear el usuario sin la referencia directa a InstitucionID
+                    var usuario = new Usuarios
+                    {
+                        NombreUsuario = UsuarioCreateDTO.NombreUsuario,
+                        Contraseña = BCrypt.Net.BCrypt.HashPassword(UsuarioCreateDTO.Contraseña),
+                        RolId = UsuarioCreateDTO.RolId
+                    };
 
-            return CreatedAtAction("GetUsuario", new { id = usuario.UsuarioId }, usuario);
+                    _context.Usuarios.Add(usuario);
+                    await _context.SaveChangesAsync(); // Guardamos el usuario primero para obtener su ID
+
+                    // Crear la relación en la tabla intermedia
+                    var usuarioInstitucion = new UsuariosInstituciones
+                    {
+                        UsuarioId = usuario.UsuarioId,
+                        InstitucionId = InstitucionID
+                    };
+
+                    _context.UsuariosInstituciones.Add(usuarioInstitucion);
+                    await _context.SaveChangesAsync(); // Guardamos la relación en la tabla intermedia
+                                                       // Mapear a DTO
+                    var response = new UsuarioResponseDTO
+                    {
+                        UsuarioId = usuario.UsuarioId,
+                        NombreUsuario = usuario.NombreUsuario,
+                        RolId = usuario.RolId
+                    };
+
+                    await transaction.CommitAsync();
+
+
+
+                    return CreatedAtAction("GetUsuario", new { id = usuario.UsuarioId }, response);
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    return StatusCode(500, "An error occurred while creating the user.");
+                }
+            }
         }
-
 
 
         [HttpPut]
@@ -153,12 +208,13 @@ namespace ApiObjetos.Controllers
             return NoContent();
         }
 
-        // POST: api/Usuarios/Login
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
         {
             var usuario = await _context.Usuarios
                 .Include(u => u.Rol)
+                .Include(u => u.UsuariosInstituciones)
+                .ThenInclude(ui => ui.Institucion)
                 .FirstOrDefaultAsync(u => u.NombreUsuario == loginDto.NombreUsuario);
 
             if (usuario == null || !BCrypt.Net.BCrypt.Verify(loginDto.Contraseña, usuario.Contraseña))
@@ -167,12 +223,17 @@ namespace ApiObjetos.Controllers
             }
 
             var token = _jwtService.GenerateToken(usuario.UsuarioId.ToString(), usuario.Rol.NombreRol);
-            return Ok(new {
+
+            return Ok(new
+            {
                 Token = token,
                 Rol = usuario.Rol.RolId,
                 UsuarioID = usuario.UsuarioId,
                 UsuarioName = usuario.NombreUsuario,
-                InstitucionID = usuario.InstitucionID
+                Instituciones = usuario.UsuariosInstituciones.Select(ui => new {
+                    ui.Institucion.InstitucionId,
+                    ui.Institucion.Nombre
+                }).ToList()
             });
         }
 
@@ -191,6 +252,47 @@ namespace ApiObjetos.Controllers
         private bool UsuarioExists(int id)
         {
             return _context.Usuarios.Any(e => e.UsuarioId == id);
+        }
+
+
+        [HttpPost("AsignarUsuarioAInstitucion")]
+        public async Task<IActionResult> AsignarUsuarioAInstitucion(int usuarioId, int institucionId)
+        {
+            var existeRelacion = await _context.UsuariosInstituciones
+                .AnyAsync(ui => ui.UsuarioId == usuarioId && ui.InstitucionId == institucionId);
+
+            if (existeRelacion)
+            {
+                return BadRequest("El usuario ya pertenece a esta institución.");
+            }
+
+            var nuevaRelacion = new UsuariosInstituciones
+            {
+                UsuarioId = usuarioId,
+                InstitucionId = institucionId
+            };
+
+            _context.UsuariosInstituciones.Add(nuevaRelacion);
+            await _context.SaveChangesAsync();
+
+            return Ok("Usuario asignado a la institución correctamente.");
+        }
+
+        [HttpDelete("EliminarUsuarioDeInstitucion")]
+        public async Task<IActionResult> EliminarUsuarioDeInstitucion(int usuarioId, int institucionId)
+        {
+            var relacion = await _context.UsuariosInstituciones
+                .FirstOrDefaultAsync(ui => ui.UsuarioId == usuarioId && ui.InstitucionId == institucionId);
+
+            if (relacion == null)
+            {
+                return NotFound("No se encontró la relación.");
+            }
+
+            _context.UsuariosInstituciones.Remove(relacion);
+            await _context.SaveChangesAsync();
+
+            return Ok("Usuario eliminado de la institución.");
         }
 
     }

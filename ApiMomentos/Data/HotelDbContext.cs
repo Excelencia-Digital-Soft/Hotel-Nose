@@ -66,7 +66,8 @@ public partial class HotelDbContext : DbContext
 
     public virtual DbSet<Empeño> Empeño{ get; set; }
     public virtual DbSet<CategoriasArticulos> CategoriasArticulos { get; set; }
-
+    public DbSet<Institucion> Instituciones { get; set; }
+    public DbSet<UsuariosInstituciones> UsuariosInstituciones { get; set; }
 
     public virtual DbSet<Usuarios> Usuarios { get; set; }
 
@@ -727,7 +728,19 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.ReservaId).HasColumnName("ReservaID");
         });
 
-        OnModelCreatingPartial(modelBuilder);
+        modelBuilder.Entity<UsuariosInstituciones>()
+                    .ToTable("UsuariosInstituciones") // Especificamos el nombre correcto de la tabla
+                    .HasKey(ui => new { ui.UsuarioId, ui.InstitucionId });
+
+        modelBuilder.Entity<UsuariosInstituciones>()
+            .HasOne(ui => ui.Usuario)
+            .WithMany(u => u.UsuariosInstituciones)
+            .HasForeignKey(ui => ui.UsuarioId);
+
+        modelBuilder.Entity<UsuariosInstituciones>()
+            .HasOne(ui => ui.Institucion)
+            .WithMany(i => i.UsuariosInstituciones)
+            .HasForeignKey(ui => ui.InstitucionId);
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
