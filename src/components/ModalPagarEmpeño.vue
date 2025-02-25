@@ -33,11 +33,17 @@
             </td>
           </tr>
           <tr>
-            <td class="p-2 font-semibold text-black">MercadoPago</td>
-            <td class="p-2 text-right text-black">
-              <input type="number" class="border rounded p-1 w-full" v-model.number="mercadoPago" placeholder="0.00" />
-            </td>
-          </tr>
+              <td class="p-1 font-semibold text-black">Seleccionar Tarjeta</td>
+              <td class="p-1 text-right text-black">
+                <select v-model="selectedTarjeta" class="border rounded p-1 w-full" @change="updateRecargo">
+                  <option :value="null">Sin tarjeta seleccionada</option>
+                  <option v-for="tarjeta in tarjetas" :key="tarjeta.tarjetaID" :value="tarjeta" 
+                  >
+                    {{ tarjeta.nombre }}
+                  </option>
+                </select>
+              </td>
+            </tr>
           <tr>
             <td class="p-2 font-semibold text-black">Falta por pagar</td>
             <td class="p-2 text-right text-red-500">${{ faltaPorPagar.toFixed(2) }}</td>
@@ -59,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import axiosClient from '../axiosClient';
 const emit = defineEmits(["close"])
 const props = defineProps({
@@ -67,18 +73,17 @@ const props = defineProps({
   empenoId: { type: Number, required: true },
   visitaId: { type: Number, required: true },
 });
-
+const extraTarjeta = ref(0);
 const efectivo = ref(0);
 const tarjeta = ref(0);
-const mercadoPago = ref(0);
 const descuento = ref(0);
 const recargo = ref(0);
 const observacion = ref(`Pago de empeño correspondiente a la visita ${props.visitaId}`);
 console.log(props);
 const totalConAjustes = computed(() => props.total - descuento.value + recargo.value);
-const faltaPorPagar = computed(() => totalConAjustes.value - (efectivo.value + tarjeta.value + mercadoPago.value));
+const faltaPorPagar = computed(() => totalConAjustes.value + extraTarjeta.value - (efectivo.value + tarjeta.value));
 watch(() => faltaPorPagar, (newValue) => {
-  console.log(totalConAjustes);
+  console.log(totalConAjustes.value);
 }, { deep: true });
 const pagarEmpeno = async () => {
   try {
@@ -95,7 +100,6 @@ const pagarEmpeno = async () => {
       empenoId: props.empenoId,
       montoEfectivo: efectivo.value,
       montoTarjeta: tarjeta.value,
-      montoBillVirt: mercadoPago.value,
       observacion: observacion.value,
     };
 
@@ -108,7 +112,6 @@ const pagarEmpeno = async () => {
           observacion: paymentData.observacion,
           montoEfectivo: paymentData.montoEfectivo,
           montoTarjeta: paymentData.montoTarjeta,
-          montoBillVirt: paymentData.montoBillVirt,
         },
       }
     );
@@ -119,6 +122,45 @@ const pagarEmpeno = async () => {
     console.error('Error al realizar el pago:', error);
   }
 };
+
+// tarjetas logic
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const selectedTarjeta = ref(null);
+const tarjetas = ref([])
+const porcentajeRecargo = ref(0);
+
+const fetchTarjetas = async () => {
+  try {
+    const response = await axiosClient.get(`/GetTarjetas?InstitucionID=${InstitucionID.value}`);
+    tarjetas.value = [...response.data.data];
+  } catch (error) {
+    console.error('Error fetching tarjetas:', error);
+  }
+};
+
+
+const updateRecargo = () => {
+  const subtotal = totalConAjustes.value - efectivo.value;
+  if (selectedTarjeta.value) {
+    porcentajeRecargo.value = selectedTarjeta.value.montoPorcentual;
+    const newTarjetaValue = Number((subtotal * (1 + (selectedTarjeta.value.montoPorcentual / 100))).toFixed(2));
+    extraTarjeta.value = Number((newTarjetaValue - subtotal).toFixed(2));
+    tarjeta.value = newTarjetaValue;
+  } else {
+    tarjeta.value = 0;
+    extraTarjeta.value = 0;
+    porcentajeRecargo.value = 0;
+  }
+};
+
+onMounted(getDatosLogin);
+onMounted(fetchTarjetas);
+const authStore = useAuthStore();
+const InstitucionID = ref(null)
+function getDatosLogin(){
+    InstitucionID.value = authStore.institucionID;
+  }
+
 </script>
 
 <style>
