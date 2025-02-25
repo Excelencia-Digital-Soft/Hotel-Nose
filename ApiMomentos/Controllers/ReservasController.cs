@@ -147,7 +147,7 @@ namespace ApiObjetos.Controllers
                 else nuevaReserva.PromocionId = null;
                 var prueba = Math.Round((decimal)((int)tarifa * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2);
                 _db.Add(nuevaReserva);
-                var movimientoID = await _movimiento.CrearMovimientoHabitacion(VisitaID,
+                var movimientoID = await _movimiento.CrearMovimientoHabitacion(VisitaID, InstitucionID,
                 Math.Round((decimal)((int)tarifa * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2), request.HabitacionID);
                 nuevaReserva.MovimientoId = movimientoID;
                 await _db.SaveChangesAsync();

@@ -13,6 +13,7 @@ namespace ApiObjetos.Models
         public int? ArticuloId { get; set; }
         public int? VisitaId { get; set; }
         public int? CantidadArt { get; set; }
+        public string? Comentario { get; set; }
         public bool? Entregado { get; set; }
         public bool? Anulado { get; set; }
         public DateTime? FechaCrea { get; set; }

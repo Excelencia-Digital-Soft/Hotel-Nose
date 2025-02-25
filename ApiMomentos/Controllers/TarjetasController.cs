@@ -51,7 +51,7 @@ namespace ApiObjetos.Controllers
         [Route("GetTarjetas")]
         public async Task<Respuesta> GetTarjetas(int InstitucionID)
         {
-            Respuesta res = new Respuesta();
+                Respuesta res = new Respuesta();
             try
             {
                 var tarjetas = await _db.Tarjetas.Where(t => t.InstitucionID == InstitucionID).ToListAsync();

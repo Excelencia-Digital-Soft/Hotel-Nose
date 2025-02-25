@@ -20,13 +20,14 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("MovimientoHabitacion")]
         [AllowAnonymous]
-        public async Task<int> CrearMovimientoHabitacion(int visitaId, decimal totalFacturado, int habitacionId)
+        public async Task<int> CrearMovimientoHabitacion(int visitaId, int InstitucionID, decimal totalFacturado, int habitacionId)
         {
             try
             {
                 Movimientos nuevoMovimiento = new Movimientos
                 {
                     VisitaId = visitaId,
+                    InstitucionID = InstitucionID,
                     TotalFacturado = totalFacturado,
                     HabitacionId = habitacionId,
                 };
@@ -54,12 +55,20 @@ namespace ApiObjetos.Controllers
             {
                 try
                 {
+                    var habitacion = await _db.Habitaciones.FindAsync(habitacionId);
+                    if (habitacion == null)
+                    {
+                        res.Message = "Habitación no encontrada.";
+                        res.Ok = false;
+                        return res;
+                    }
                     decimal? totalFacturado = 0;
                     List<Consumo> consumosToAdd = new List<Consumo>();
                     Movimientos nuevoMovimiento = new Movimientos
                     {
                         HabitacionId = habitacionId,
                         VisitaId = visitaId,
+                        InstitucionID = habitacion.InstitucionID,  
                         FechaRegistro = DateTime.Now,
                         Anulado = false
                     };
@@ -171,12 +180,20 @@ namespace ApiObjetos.Controllers
             {
                 try
                 {
+                    var habitacion = await _db.Habitaciones.FindAsync(habitacionId);
+                    if (habitacion == null)
+                    {
+                        res.Message = "Habitación no encontrada.";
+                        res.Ok = false;
+                        return res;
+                    }
                     decimal? totalFacturado = 0;
                     List<Consumo> consumosToAdd = new List<Consumo>();
                     Movimientos nuevoMovimiento = new Movimientos
                     {
                         HabitacionId = habitacionId,
                         VisitaId = visitaId,
+                        InstitucionID = habitacion.InstitucionID,
                         FechaRegistro = DateTime.Now,
                         Anulado = false
                     };

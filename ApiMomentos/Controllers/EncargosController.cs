@@ -2,8 +2,10 @@
 using ApiObjetos.DTOs;
 using ApiObjetos.Models;
 using ApiObjetos.Models.Sistema;
+using ApiObjetos.NotificacionesHub;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +33,7 @@ public class EncargosController : ControllerBase
 
     // GET: api/Encargos/Habitaciones
     [HttpGet("Habitaciones")]
-    public async Task<Respuesta> GetEncargosConHabitaciones()
+    public async Task<Respuesta> GetEncargosConHabitaciones(int idInstitucion)
     {
         Respuesta res = new Respuesta();
 
@@ -42,7 +44,7 @@ public class EncargosController : ControllerBase
                                 join v in _db.Visitas on r.VisitaId equals v.VisitaId
                                 join h in _db.Habitaciones on r.HabitacionId equals h.HabitacionId
                                 join a in _db.Articulos on e.ArticuloId equals a.ArticuloId
-                                where !v.Anulado && e.Entregado != true
+                                where (!v.Anulado && e.Entregado != true && h.InstitucionID == idInstitucion)
                                 select new
                                 {
                                     h.HabitacionId,
@@ -216,7 +218,7 @@ public class EncargosController : ControllerBase
 
     [HttpPost]
     [Route("AddEncargos")]
-    public async Task<Respuesta> AddEncargos(List<EncargoRequestDTO> encargos)
+    public async Task<Respuesta> AddEncargos(List<EncargoRequestDTO> encargos, [FromServices] IHubContext<NotificationsHub> hubContext)
     {
         Respuesta res = new Respuesta();
         List<Encargos> addedEncargos = new List<Encargos>();
@@ -249,6 +251,7 @@ public class EncargosController : ControllerBase
                     ArticuloId = EncargoRequestDTO.ArticuloId,
                     VisitaId = EncargoRequestDTO.VisitaId,
                     CantidadArt = EncargoRequestDTO.Cantidad,
+                    Comentario = EncargoRequestDTO.Comentario,
                     FechaCrea = DateTime.Now,
                     Anulado = false
                 };
@@ -260,6 +263,7 @@ public class EncargosController : ControllerBase
 
             // Guardar todos los cambios en la base de datos
             await _db.SaveChangesAsync();
+            await hubContext.Clients.All.SendAsync("ReceiveNotification", "¡Hay una nueva orden!");
 
             // Configurar la respuesta en caso de éxito
             res.Ok = true;

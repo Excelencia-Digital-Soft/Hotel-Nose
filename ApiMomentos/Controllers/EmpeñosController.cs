@@ -130,7 +130,7 @@ namespace ApiObjetos.Controllers
         }
         [HttpPost]
         [Route("PagarEmpeno")]
-        public async Task<Respuesta> PagarEmpeno(int empeñoID, string observacion, decimal montoEfectivo = 0, decimal montoTarjeta = 0, decimal montoBillVirt = 0)
+        public async Task<Respuesta> PagarEmpeno(int empeñoID, string observacion, decimal montoEfectivo = 0, decimal montoTarjeta = 0)
         {
             Respuesta res = new Respuesta();
 
@@ -156,12 +156,21 @@ namespace ApiObjetos.Controllers
                     res.Message = $"No se encontró el movimiento para la visita con ID: {empeño.VisitaID}.";
                     return res;
                 }
+                var visita = await _db.Visitas.FindAsync(empeño.VisitaID);
+                if (visita == null)
+                {
+                    res.Ok = false;
+                    res.Message = $"No se encontró la visita con ID: {empeño.VisitaID}.";
+                    return res;
+                }
+
 
                 // Step 3: Create a new Movimiento with the same HabitacionId as the original Movimiento
                 var nuevoMovimiento = new Movimientos
                 {
                     VisitaId = empeño.VisitaID,
-                    TotalFacturado = montoEfectivo + montoTarjeta + montoBillVirt, // assuming the monto is the total facturado for the new movimiento
+                    InstitucionID = visita.InstitucionID, // Retrieve InstitucionID from the visita
+                    TotalFacturado = montoEfectivo + montoTarjeta, // assuming the monto is the total facturado for the new movimiento
                     HabitacionId = movimiento.HabitacionId, // Use the same HabitacionId as the existing movimiento
                 };
 
@@ -175,9 +184,9 @@ namespace ApiObjetos.Controllers
                     MontoDescuento = 0, // assuming no discount for now
                     MontoEfectivo = montoEfectivo,
                     MontoTarjeta = montoTarjeta,
-                    MontoBillVirt = montoBillVirt,
                     MedioPagoId = 1, // assuming the MedioPagoId = 1 for now
                     fechaHora = DateTime.Now, // current time as payment time
+                    InstitucionID = visita.InstitucionID, // Retrieve InstitucionID from the visita
                     Observacion = observacion,
                 };
 

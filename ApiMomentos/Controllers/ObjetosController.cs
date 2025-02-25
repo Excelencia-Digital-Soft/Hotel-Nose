@@ -21,6 +21,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
+using Microsoft.AspNetCore.SignalR;
+using ApiObjetos.NotificacionesHub;
 
 namespace ApiObjetos.Controllers
 {
@@ -32,14 +34,24 @@ namespace ApiObjetos.Controllers
     {
         private readonly HotelDbContext _db;
         private readonly IConfiguration _configuration;
+        private readonly IHubContext<NotificationsHub> _hubContext;
 
-        public ObjetosController(HotelDbContext db, IConfiguration configuration)
+        public ObjetosController(HotelDbContext db, IConfiguration configuration, IHubContext<NotificationsHub> hubContext)
         {
             _db = db;
             _configuration = configuration;
+            _hubContext = hubContext;
         }
 
-   
+
+
+        [HttpGet("sendTestNotification")]
+        public async Task<IActionResult> SendTestNotification(string testMessage)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveNotification", testMessage);
+            return Ok(new { message = "Test notification sent!" });
+        }
+
         #region Categorias
 
         [HttpPost]
