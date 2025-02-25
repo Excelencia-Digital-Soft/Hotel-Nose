@@ -19,6 +19,10 @@
               <td class="p-1 font-semibold">Adicional</td>
               <td class="p-1 text-right">${{ adicional.toFixed(2) }}</td>
             </tr>
+            <tr v-if="recargoMonto > 0">
+              <td class="p-1 font-semibold">Recargo</td>
+              <td class="p-1 text-right text-red-500">${{ recargoMonto.toFixed(2) }}</td>
+            </tr>
             <tr>
               <td class="p-1 font-semibold">Descuento</td>
               <td class="p-1 text-right">
@@ -50,7 +54,6 @@
                 />
               </td>
             </tr>
-            <!-- REMOVED MERCADOPAGO INPUT -->
             <tr>
               <td class="p-1 font-semibold">Seleccionar Tarjeta</td>
               <td class="p-1 text-right">
@@ -67,10 +70,6 @@
             <tr v-if="empenoMonto > 0">
               <td class="p-1 font-semibold">Empeño</td>
               <td class="p-1 text-right text-green-500">-${{ empenoMonto.toFixed(2) }}</td>
-            </tr>
-            <tr v-if="recargoMonto > 0">
-              <td class="p-1 font-semibold">Recargo</td>
-              <td class="p-1 text-right text-red-500">${{ recargoMonto.toFixed(2) }}</td>
             </tr>
             <tr>
               <td class="p-1 font-semibold">Total</td>
@@ -154,7 +153,7 @@ const porcentajeRecargo = ref(0);
 
 // Computed property to calculate the total
 const calculatedTotal = computed(() => {
-  return props.total + props.adicional + extraTarjeta.value;
+  return props.total + props.adicional + extraTarjeta.value + recargoMonto.value;
 });
 
 // Watch the calculated total and update totalPago
@@ -167,14 +166,13 @@ const faltaPorPagar = computed(() => {
   return (
     props.total +
     props.adicional -
-    (descuento.value + efectivo.value + tarjeta.value + empenoMonto.value - extraTarjeta.value) +
-    recargoMonto.value
+    (descuento.value + efectivo.value + tarjeta.value + empenoMonto.value - extraTarjeta.value) + recargoMonto.value
   );
 });
 
 const fetchTarjetas = async () => {
   try {
-    const response = await axiosClient.get('/GetTarjetas');
+    const response = await axiosClient.get(`/GetTarjetas?InstitucionID=${InstitucionID.value}`);
     tarjetas.value = [...response.data.data];
   } catch (error) {
     console.error('Error fetching tarjetas:', error);
@@ -183,14 +181,14 @@ const fetchTarjetas = async () => {
 
 
 const calculoInicial = async () => {
-  totalPago.value = props.total + props.adicional;
+  totalPago.value = props.total + props.adicional + recargoMonto.value;
 };
 onMounted(getDatosLogin);
 onMounted(fetchTarjetas);
 onMounted(calculoInicial);
 
 const updateRecargo = () => {
-  const subtotal = props.total + props.adicional - descuento.value - efectivo.value - empenoMonto.value;
+  const subtotal = props.total + props.adicional + recargoMonto.value - descuento.value - efectivo.value - empenoMonto.value;
 
   if (selectedTarjeta.value) {
     porcentajeRecargo.value = selectedTarjeta.value.montoPorcentual;
