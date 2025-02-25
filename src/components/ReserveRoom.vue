@@ -559,7 +559,7 @@ function calculateRemainingTime() {
       const isOvertime = diffInMinutes < 0;
       if (isOvertime && ignorarTiempo.value == false) {
           overtime.value = diffInMinutes * (-1);
-          console.log(overtime.value);
+          
      
         const hours = Math.floor(Math.abs(diffInMinutes) / 60);
         const minutes = Math.abs(diffInMinutes) % 60;
