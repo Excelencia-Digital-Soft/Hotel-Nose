@@ -163,12 +163,18 @@ watch(calculatedTotal, (newTotal) => {
 
 
 const faltaPorPagar = computed(() => {
+  const descuentoValue = descuento.value || 0;
+  const efectivoValue = efectivo.value || 0;
+  const tarjetaValue = tarjeta.value || 0;
+  const empenoMontoValue = empenoMonto.value || 0;
+
   return (
     props.total +
     props.adicional -
-    (descuento.value + efectivo.value + tarjeta.value + empenoMonto.value - extraTarjeta.value) + recargoMonto.value
+    (descuentoValue + efectivoValue + tarjetaValue + empenoMontoValue - extraTarjeta.value) + recargoMonto.value
   );
 });
+
 
 const fetchTarjetas = async () => {
   try {

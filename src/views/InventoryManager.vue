@@ -1,10 +1,10 @@
 <template>
   <div class="inventory-container p-4">
-    <h2 class="text-lg font-bold text-white text-center mb-4">Inventory Management</h2>
+    <h2 class="text-lg font-bold text-white text-center mb-4">Inventario</h2>
     <input type="text" v-model="keyword"
           class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors mb-4 "
-          placeholder="Buscar productos" />
-    <div v-if="isLoading" class="text-gray-600">Loading inventory...</div>
+          placeholder="Buscar articulos" />
+    <div v-if="isLoading" class="text-gray-600">Cargando inventario...</div>
     <div v-else class="inventory-list grid grid-cols-1 md:grid-cols-2 gap-4">
       <div
         v-for="item in computedinventory"
@@ -13,7 +13,7 @@
       >
         <div>
           <h3 class="font-semibold text-gray-700">{{ item.articulo.nombreArticulo }}</h3>
-          <p class="text-sm text-gray-500">Current Stock: {{ item.cantidad }}</p>
+          <p class="text-sm text-gray-500">Stock Actual: {{ item.cantidad }}</p>
         </div>
         <div class="flex items-center space-x-2">
           <input
@@ -27,7 +27,7 @@
             @click="updateStock(item.inventarioId, item.newStock)"
             class="bg-blue-500 text-white px-3 py-1 rounded-lg hover:bg-blue-600"
           >
-            Update
+            Actualizar
           </button>
         </div>
       </div>
