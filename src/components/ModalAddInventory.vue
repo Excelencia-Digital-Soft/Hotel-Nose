@@ -173,6 +173,7 @@ const addItemToInventory = (itemId) => {
 
 // Fetch all items on component mount
 onMounted(() => {
+  getDatosLogin();
   fetchAllItems();
 });
 
@@ -180,11 +181,9 @@ import { useAuthStore } from '../store/auth.js'; // Import the auth store
 const InstitucionID = ref(null);
 const authStore = useAuthStore();
 function getDatosLogin(){
-    InstitucionID.value = authStore.InstitucionID;
+    console.log(authStore.institucionID);
+    InstitucionID.value = authStore.institucionID;
   }
-  onMounted(() => {
-  getDatosLogin();
-});
 // Watch for inventory updates and re-filter available items
 watch(() => props.currentInventory, filterAvailableItems, { immediate: true });
 
