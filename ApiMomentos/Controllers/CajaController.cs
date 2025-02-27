@@ -64,7 +64,7 @@ namespace ApiObjetos.Controllers
                         ultimoCierre.Observaciones = observacion;
                     }
                     var pagos = await _db.Pagos
-                    .Where(p => p.CierreId == null)
+                    .Where(p => p.CierreId == null && p.InstitucionID == institucionID)
                     .ToListAsync();
                     if (pagos.Count == 0)
                     {
@@ -80,6 +80,16 @@ namespace ApiObjetos.Controllers
                         ultimoCierre.TotalIngresosTarjeta = ultimoCierre.TotalIngresosTarjeta + p.MontoTarjeta;
                         ultimoCierre.TotalIngresosEfectivo = ultimoCierre.TotalIngresosEfectivo + p.MontoEfectivo;
                         ultimoCierre.TotalIngresosBillVirt = ultimoCierre.TotalIngresosBillVirt + p.MontoBillVirt;
+
+                    }
+                    var egresos = await _db.Egresos
+                    .Where(p => p.CierreID == null && p.InstitucionID == institucionID)
+                    .ToListAsync();
+                    foreach (var e in egresos)
+                    {
+                        e.CierreID = ultimoCierre.CierreId;
+                        ultimoCierre.Egresos.Add(e);
+                        ultimoCierre.TotalIngresosEfectivo = ultimoCierre.TotalIngresosEfectivo - (e.Precio * e.Cantidad);
 
                     }
                 await _db.SaveChangesAsync();
@@ -502,8 +512,6 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
-
-
         [HttpGet("GetCierresyActual")]
         public async Task<Respuesta> GetCierresyActual(int InstitucionID)
         {
@@ -648,6 +656,32 @@ namespace ApiObjetos.Controllers
                         });
                     }
                 }
+                var egresosSinCierreReturn = new List<object>();
+
+                var egresosSinCierre = await _db.Egresos
+                    .Where(e => e.CierreID == null && e.InstitucionID == InstitucionID)
+                    .Include(e => e.TipoEgreso) // Ensure TipoEgreso is loaded
+                    .ToListAsync();
+
+                foreach (var egreso in egresosSinCierre)
+                {
+                    egresosSinCierreReturn.Add(new
+                    {
+                        PagoId = 0,
+                        Periodo = 0,
+                        HoraIngreso = (DateTime?)null,
+                        HoraSalida = (DateTime?)null,
+                        TipoHabitacion = (string?)null,
+                        totalConsumo = 0,
+                        MontoAdicional = 0,
+                        MontoEfectivo = egreso.Cantidad * egreso.Precio, // Assuming 'Cierre' was a mistake, using 'Precio'
+                        MontoTarjeta = 0,
+                        MontoBillVirt = 0,
+                        MontoDescuento = 0,
+                        Fecha = egreso.Fecha,
+                        Observacion = "Pago de egreso por: " + egreso.TipoEgreso?.Nombre // Ensure TipoEgreso is not null
+                    });
+                }
                 var reversedCierres = cierres.AsEnumerable().Reverse().ToList();
 
                 // Set the response
@@ -655,7 +689,8 @@ namespace ApiObjetos.Controllers
             res.Data = new
             {
                 Cierres = reversedCierres,
-                PagosSinCierre = PagosSinCierreReturn
+                PagosSinCierre = PagosSinCierreReturn,
+                egresosSinCierre = egresosSinCierreReturn
             };
             }
             catch (Exception ex)
