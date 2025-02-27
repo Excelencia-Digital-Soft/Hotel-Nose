@@ -39,7 +39,7 @@
   
   <script setup>
   import axiosClient from '../axiosClient';
-  import { ref } from 'vue';
+  import { ref, onMounted } from 'vue';
   const props = defineProps({
     name:String
   });
@@ -50,7 +50,7 @@
   const confirmarAccion = async () => {
   isLoading.value = true;
   try {
-    await axiosClient.post('/CreateTipoEgreso', { nombre: props.name });
+    await axiosClient.post(`/CreateTipoEgreso?InstitucionID=${InstitucionID.value}`, { nombre: props.name });
     emits('confirmaAccion');
   } catch (error) {
     console.error('Error creating Tipo Egreso:', error);
@@ -59,6 +59,15 @@
     emits('close');
   }
 };
+
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+onMounted(getDatosLogin);
+function getDatosLogin(){
+    InstitucionID.value = authStore.institucionID;
+  }
+  
   </script>
   
   <style scoped>

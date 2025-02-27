@@ -65,7 +65,7 @@ const emits = defineEmits(['addGasto']);
 // Fetch the list of TipoEgresos from the API
 const fetchTipoEgresos = async () => {
   try {
-    const response = await axiosClient.get('/GetTipoEgresos');
+    const response = await axiosClient.get(`/GetTipoEgresos?InstitucionID=${InstitucionID.value}`);
     if (response.data.ok) {
       tiposCuentaGastos.value = response.data.data;
     } else {
@@ -75,6 +75,7 @@ const fetchTipoEgresos = async () => {
     console.error('Error fetching TipoEgresos:', error);
   }
 };
+onMounted(getDatosLogin)
 
 onMounted(fetchTipoEgresos);
 
@@ -121,6 +122,13 @@ const validarGasto = () => {
 
   toggleModalAceptar();
 
+}
+  import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+    InstitucionID.value = authStore.institucionID;
+  }
   
-};
+
 </script>
