@@ -130,7 +130,7 @@ namespace ApiObjetos.Controllers
         }
         [HttpPost]
         [Route("PagarEmpeno")]
-        public async Task<Respuesta> PagarEmpeno(int empeñoID, string observacion, decimal montoEfectivo = 0, decimal montoTarjeta = 0)
+        public async Task<Respuesta> PagarEmpeno(int empeñoID, string observacion, int? TarjetaID, decimal montoEfectivo = 0, decimal montoTarjeta = 0)
         {
             Respuesta res = new Respuesta();
 
@@ -185,6 +185,7 @@ namespace ApiObjetos.Controllers
                     MontoEfectivo = montoEfectivo,
                     MontoTarjeta = montoTarjeta,
                     MedioPagoId = 1, // assuming the MedioPagoId = 1 for now
+                    TarjetaId = TarjetaID,
                     fechaHora = DateTime.Now, // current time as payment time
                     InstitucionID = visita.InstitucionID, // Retrieve InstitucionID from the visita
                     Observacion = observacion,
