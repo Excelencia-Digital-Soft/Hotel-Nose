@@ -9,15 +9,20 @@ import Lara from './presets/lara';      //import preset
 import ToastService from 'primevue/toastservice'; 
 import 'primevue/resources/primevue.min.css';
 import 'primeicons/primeicons.css';
+import { useWebSocketStore } from "./store/websocket";
 
 
-const pinia = createPinia()
-pinia.use(piniaPluginPersistedstate)
-const app = createApp(App)
+const pinia = createPinia();
+const app = createApp(App);
 
+app.use(pinia);  // ✅ Install Pinia before using stores
+pinia.use(piniaPluginPersistedstate);  // ✅ Add persistence after installing Pinia
+
+const websocketStore = useWebSocketStore(); // ✅ Now Pinia is active
+websocketStore.connect();
 
 app.use(router)
-   .use(pinia)
-   .use(PrimeVue, { unstyled: true, pt: Lara  })
+   .use(PrimeVue, { unstyled: true, pt: Lara })
    .use(ToastService)
    .mount("#app");
+

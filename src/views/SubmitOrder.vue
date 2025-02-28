@@ -156,7 +156,7 @@ const fetchVisitaId = () => {
 };
 
 const fetchCategories = () => {
-  axiosClient.get(`/api/CategoriaArticulos/GetCategorias?InstitucionID=0`)
+  axiosClient.get(`/api/CategoriaArticulos/GetCategorias?InstitucionID=1`)
     .then(({ data }) => {
       if (data && data.ok) {
         categories.value = [{ categoriaId: null, nombreCategoria: "Todos" }, ...data.data];

@@ -3,65 +3,88 @@
     <div
       class="fixed w-full h-full overflow-auto z-20 bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center p-2">
       <Transition name="modal-inner">
-        <div class="w-full flex flex-col justify-between mt-4" style="max-height: 90vh; overflow-y: auto;">
-          <table class="w-full text-xs text-white">
-            <thead>
-              <tr>
-                <th class=" bg-secondary-800 border-white border-r-2 text-sm shadow-sm">Item</th>
-                <th class=" bg-secondary-800 border-white border-r-2 text-sm shadow-sm">Producto</th>
-                <th class=" bg-secondary-800 border-white border-r-2 text-sm shadow-sm">Precio</th>
-                <th class=" bg-secondary-800 border-white border-r-2 w-1/6 text-sm shadow-sm">Cantidad</th>
-                <th class=" bg-secondary-800 border-white border-r-2 text-sm shadow-sm">Total</th>
-                <th class=" bg-secondary-800 w-12 text-sm shadow-sm"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="hover:shadow-md hover:shadow-secondary-400 text-white m-2" 
-                  v-for="(detalle, index) in productList" 
-                  :key="detalle.articuloId">
-                <td class="rounded-md text-center shadow-sm">
-                  {{ index + 1 }}
-                </td>
-                <td class="rounded-md shadow-sm">
-                  {{ detalle.nombreArticulo }}
-                </td>
-                <td class="rounded-md pl-2 shadow-sm">
-                  {{ detalle.precio }}
-                </td>
-                <td class="rounded-md shadow-sm">
-                  <!-- Quantity Input -->
-                  <input 
-                    v-model.number="detalle.cantidad" 
-                    type="number" 
-                    :max="detalle.maxCantidad" 
-                    :min="1" 
-                    class="w-full bg-inherit border-0">
-                </td>
-                <td class="rounded-md pl-2 shadow-sm">
-                  {{ detalle.precio * detalle.cantidad }}
-                </td>
-
-                <button @click="quitarRegistro(index)" type="button"
-                  class="btn-danger rounded-xl text-xl h-12 text-white w-full flex justify-center items-center mt-1 material-symbols-outlined">delete</button>
-              </tr>
-            </tbody>
-          </table>
-          <div class="flex w-full items-center">
-            <button type="button"
-              class="btn-danger -bottom-8 right-8 text-md w-1/3 h-12 rounded-2xl transition-colors border-2 border-purple-200 mx-4"
-              @click="emits('close')">volver</button>
-            <button @click="EnviarPedido"
-              class="w-full text-white font-bold btn-primary rounded-2xl flex items-center justify-evenly cursor-pointer px-5 h-12 mr-4 border-2 border-purple-200"
-              id="signUp">
-              Encargar
-              <span class="material-symbols-outlined">arrow_forward</span>
-            </button>
+        <!-- Outer container with a max height -->
+        <div class="w-full flex flex-col mt-4 bg-surface-900" style="max-height: 90vh; overflow: hidden;">
+          <!-- Scrollable table container -->
+          <div class="flex-grow overflow-y-auto">
+            <table class="w-full text-xs text-white">
+              <thead>
+                <tr>
+                  <th class="bg-secondary-800 border-white border-r-2 text-sm shadow-sm">Item</th>
+                  <th class="bg-secondary-800 border-white border-r-2 text-sm shadow-sm">Producto</th>
+                  <th class="bg-secondary-800 border-white border-r-2 text-sm shadow-sm">Precio</th>
+                  <th class="bg-secondary-800 border-white border-r-2 w-1/6 text-sm shadow-sm">Cantidad</th>
+                  <th class="bg-secondary-800 border-white border-r-2 text-sm shadow-sm">Total</th>
+                  <th class="bg-secondary-800 w-12 text-sm shadow-sm"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="hover:shadow-md hover:shadow-secondary-400 text-white m-2" 
+                    v-for="(detalle, index) in productList" 
+                    :key="detalle.articuloId">
+                  <td class="rounded-md text-center shadow-sm">
+                    {{ index + 1 }}
+                  </td>
+                  <td class="rounded-md shadow-sm">
+                    {{ detalle.nombreArticulo }}
+                  </td>
+                  <td class="rounded-md pl-2 shadow-sm">
+                    {{ detalle.precio }}
+                  </td>
+                  <td class="rounded-md shadow-sm">
+                    <input 
+                      v-model.number="detalle.cantidad" 
+                      type="number" 
+                      :max="detalle.maxCantidad" 
+                      :min="1" 
+                      class="w-full bg-inherit border-0">
+                  </td>
+                  <td class="rounded-md pl-2 shadow-sm">
+                    {{ detalle.precio * detalle.cantidad }}
+                  </td>
+                  <button @click="quitarRegistro(index)" type="button"
+                    class="btn-danger rounded-xl text-xl h-12 text-white w-full flex justify-center items-center mt-1 material-symbols-outlined">
+                    delete
+                  </button>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- Fixed bottom container for comentario and buttons -->
+          <div class="p-4 bg-surface-900">
+            <!-- Comentario Input -->
+            <div class="mb-4">
+              <label for="comentario" class="block text-white text-sm font-bold mb-2">
+                Comentario:
+              </label>
+              <textarea
+                id="comentario"
+                v-model="comentario"
+                class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-inherit text-white"
+                placeholder="Escribe aquí tus comentarios adicionales"
+              ></textarea>
+            </div>
+            <!-- Buttons -->
+            <div class="flex w-full items-center mt-4">
+              <button type="button"
+                class="btn-danger text-md w-1/3 h-12 rounded-2xl transition-colors border-2 border-purple-200 mx-4"
+                @click="emits('close')">
+                volver
+              </button>
+              <button @click="EnviarPedido"
+                class="w-full text-white font-bold btn-primary rounded-2xl flex items-center justify-evenly cursor-pointer px-5 h-12 mr-4 border-2 border-purple-200"
+                id="signUp">
+                Encargar
+                <span class="material-symbols-outlined">arrow_forward</span>
+              </button>
+            </div>
           </div>
         </div>
       </Transition>
     </div>
   </Transition>
 </template>
+
 
 <script setup>
 import { ref, watch } from 'vue';
@@ -76,6 +99,7 @@ const emits = defineEmits(['close', 'update:productList']);
 
 // Reactive State
 const productList = ref([]);
+const comentario = ref(''); // Comentario
 
 // Initialize productList with default quantities
 watch(
@@ -112,6 +136,7 @@ const EnviarPedido = () => {
     cantidad: item.cantidad,
     articuloId: item.articuloId,
     visitaId: props.visitaId,
+    comentario: comentario.value // Include comentario
   }));
 
   axiosClient
