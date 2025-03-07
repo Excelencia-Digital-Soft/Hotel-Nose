@@ -3,35 +3,62 @@ import { useAuthStore } from "./auth.js";
 import * as signalR from "@microsoft/signalr";
 
 export const useWebSocketStore = defineStore("websocket", {
-  state: () => ({
-    connection: null,
-    notification: null, // Stores the latest notification
-    showModal: false, // Controls the modal visibility
-  }),
-  actions: {
-    async connect() {
-      const authStore = useAuthStore(); // Get the user's role
+    state: () => ({
+        connection: null,
+        notifications: [], 
+        nextNotificationId: 1, 
+    }),
+    actions: {
+        async connect() {
+            const authStore = useAuthStore();
+            const institucionID = authStore.institucionID; // Get facility ID from auth
 
-      this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${import.meta.env.VITE_API_BASE_URL}notifications`)
-      .withAutomaticReconnect()
-      .build();
+            if (!institucionID) {
+                console.error("No InstitucionID found, cannot connect to WebSocket.");
+                return;
+            }
 
-      try {
-        await this.connection.start();
-        console.log("WebSocket connected");
+            console.log("Connecting to WebSocket with InstitucionID:", institucionID);
 
-        // Listen for new order notifications
-        this.connection.on("ReceiveNotification", (message) => {
-          console.log("New notification:", message);
+            this.connection = new signalR.HubConnectionBuilder()
+                .withUrl(`${import.meta.env.VITE_API_BASE_URL}notifications`) 
+                .withAutomaticReconnect()
+                .build();
 
-          // Show modal only for users with the right role
-            this.notification = message;
-            this.showModal = true;
-        });
-      } catch (error) {
-        console.error("WebSocket connection error:", error);
-      }
+            try {
+                await this.connection.start();
+                console.log("WebSocket connected, subscribing to institution:", institucionID);
+
+                // Send the institution ID as a string to prevent errors
+                await this.connection.invoke("SubscribeToInstitution", institucionID.toString());
+
+                this.connection.on("ReceiveNotification", (notification) => {
+                    console.log("New notification:", notification);
+                    this.addNotification(notification);
+                });
+            } catch (error) {
+                console.error("WebSocket connection error:", error);
+            }
+        },
+
+        addNotification(notification) {
+            const id = this.nextNotificationId++;
+
+            this.notifications.push({
+                id: id,
+                type: notification.type, 
+                message: notification.message,
+                timestamp: Date.now(),
+            });
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                this.removeNotification(id);
+            }, 300000);
+        },
+
+        removeNotification(id) {
+            this.notifications = this.notifications.filter(notification => notification.id !== id);
+        },
     },
-  },
 });

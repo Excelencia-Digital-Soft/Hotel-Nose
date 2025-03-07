@@ -1,4 +1,3 @@
-<!-- DropDownCreateSearchGastos.vue -->
 <template>
   <Listbox as="div" v-model="selected">
     <ListboxLabel class="text-sm font-medium leading-6 text-white">Cuenta Gasto</ListboxLabel>
@@ -98,14 +97,20 @@ const toggleModalAceptar = () => {
   ModalAceptar.value = !ModalAceptar.value;
 };
 
-const confirmAndSend = () => {
+const confirmAndSend = (tipoEgresoId) => {
   fetchTipoEgresos();
-  const nuevoGasto = {
-    TipoId: Date.now(), // Generate a temporary unique ID
-    nombre: keyword.value,
-  };
+  if (tipoEgresoId) {
+    const nuevoGasto = {
+      TipoId: tipoEgresoId,
+      nombre: keyword.value,
+    };
+    emits('addGasto', nuevoGasto); // Emit the new gasto to the parent
+  } else {
+    // Handle the error case where tipoEgresoId is null
+    console.error('Failed to create TipoEgreso.  tipoEgresoId is null.');
+    // Display an error message to the user, or take other appropriate action
+  }
 
-  emits('addGasto', nuevoGasto); // Emit the new gasto to the parent
   toggleModalAceptar(); // Close the modal
   keyword.value = ''; // Clear the input field
 };

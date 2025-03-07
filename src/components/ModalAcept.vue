@@ -50,8 +50,18 @@
   const confirmarAccion = async () => {
   isLoading.value = true;
   try {
-    await axiosClient.post(`/CreateTipoEgreso?InstitucionID=${InstitucionID.value}`, { nombre: props.name });
-    emits('confirmaAccion');
+    const response = await axiosClient.post(`/CreateTipoEgreso?InstitucionID=${InstitucionID.value}`, { nombre: props.name });
+    // Check if the response contains the new tipoEgresoId
+    if (response.data && response.data.data && response.data.data.tipoEgresoId) {
+      const tipoEgresoId = response.data.data.tipoEgresoId;
+      emits('confirmaAccion', tipoEgresoId); // Emit the ID
+    } else {
+      console.error('tipoEgresoId not found in response:', response.data);
+      // Handle the error appropriately (e.g., show an error message)
+      // You might want to emit a default value or null in this case
+      emits('confirmaAccion', null);
+    }
+    emits('close');
   } catch (error) {
     console.error('Error creating Tipo Egreso:', error);
   } finally {
@@ -69,6 +79,7 @@ function getDatosLogin(){
   }
   
   </script>
+
   
   <style scoped>
   .modalConfirma{

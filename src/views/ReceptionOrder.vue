@@ -34,8 +34,9 @@ let isLoading = ref(false)
 const productoSeleccionado = ref(null)
 const productos = ref([])
 const show = ref(false)
-
+const InstitucionID = ref(null)
 onMounted(() => {
+  getDatosLogin();
   fetchArticulos();
   seleccionados = ref([])// le asignamos como variable reactiva en el montado para luego 
 })
@@ -61,7 +62,7 @@ const toggleTableCierre = () => {
 
 
 const fetchArticulos = () => {
-  axiosClient.get("/api/Encargos/Habitaciones")
+  axiosClient.get(`/api/Encargos/Habitaciones?idInstitucion=${InstitucionID.value}`)
     .then(({ data }) => {
       if (data && data.data) {
         console.log(data.data)
@@ -75,6 +76,12 @@ const fetchArticulos = () => {
       console.error('Error al obtener las habitaciones:', error);
     });
 }
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+
+const authStore = useAuthStore();
+function getDatosLogin(){
+    InstitucionID.value = authStore.institucionID;
+  }
 </script>
 
 <style scoped></style>
