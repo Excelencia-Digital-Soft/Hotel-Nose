@@ -59,8 +59,12 @@ public class ReservationMonitorService : BackgroundService
             if (timeUntilWarning.TotalMilliseconds > 0)
             {
                 await Task.Delay(timeUntilWarning, stoppingToken);
-                await _hubContext.Clients.All.SendAsync("ReceiveNotification",
-                    $"⏳ Room {reserva.HabitacionId} will be free in 5 minutes!", stoppingToken);
+                await _hubContext.Clients.Group($"institution-{reserva.Visita.InstitucionID}").SendAsync("ReceiveNotification", new
+                {
+                    type = "warning",
+                    roomId = reserva.HabitacionId,
+                    message = $"⏳ La habitación {reserva.Habitacion.NombreHabitacion} le quedan 5 minutos!"
+                }, stoppingToken);
             }
 
             // Wait until the reservation ends
@@ -68,8 +72,12 @@ public class ReservationMonitorService : BackgroundService
             if (timeUntilEnd.TotalMilliseconds > 0)
             {
                 await Task.Delay(timeUntilEnd, stoppingToken);
-                await _hubContext.Clients.All.SendAsync("ReceiveNotification",
-                    $"⚠️ Room {reserva.HabitacionId} occupation time has ended!", stoppingToken);
+                await _hubContext.Clients.Group($"institution-{reserva.Visita.InstitucionID}").SendAsync("ReceiveNotification", new
+                {
+                    type = "ended",
+                    roomId = reserva.HabitacionId,
+                    message = $"⚠️ La habitación {reserva.Habitacion.NombreHabitacion} se le acabó el tiempo!"
+                }, stoppingToken);
             }
         }, stoppingToken);
     }
