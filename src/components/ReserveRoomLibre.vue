@@ -57,7 +57,7 @@
                 </div>
               </section>
               <div class="col-span-3 flex justify-center items-center w-full">
-                <button @click="reserveRoom" type="button" class="btn-primary w-full md:w-2/4 h-16 rounded-2xl">Reservar Habitación</button>
+                <button @click="reserveRoom" type="button" class="btn-primary w-full md:w-2/4 h-16 rounded-2xl">Ocupar Habitación</button>
               </div>
             </form>
             <button class="absolute text-xl w-12 h-12 lg:w-14 lg:h-14 text-white top-0 -right-2 lg:top-6 lg:right-6 btn-danger rounded-xl lg:rounded-full"

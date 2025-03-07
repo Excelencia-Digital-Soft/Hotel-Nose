@@ -33,42 +33,73 @@
         <div class="font-bold text-black p-2 border-b border-r border-gray-300">Observacion</div>
 
         <!-- Iterate over Pagos -->
-        <div v-for="(pago, index) in listaPagos" :key="pago.pagoId" class="contents bg-red-400" >
-          <!-- Pago Info -->
-          <div class="text-black col-span-2 font-semibold p-2 border-b border-r border-gray-300"
-            :class="{ 'bg-red-400': pago.pagoId === 0 }">
-            {{ pago.pagoId === 0 ? pago.tipoHabitacion + ' ANULADA' : pago.tipoHabitacion }}</div>
-          <div @click="openInfoModal(pago)"
-            class="cursor-pointer text-blue-600 hover:underline p-2 border-b border-r border-gray-300">
-            Pago {{ pago.pagoId }}
-            <div class="text-gray-500 text-sm ">{{ formatFechaHora(pago.fecha) }}</div>
+        <template v-for="(pago, index) in listaPagos" :key="pago.pagoId">
+          <div v-if="pago.tipoHabitacion !== null" class="contents" :class="{ 'bg-red-400': pago.pagoId === 0 }">
+            <!-- Pago Info -->
+            <div class="text-black col-span-2 font-semibold p-2 border-b border-r border-gray-300"
+              :class="{ 'bg-red-400': pago.pagoId === 0 }">
+              {{ pago.pagoId === 0 ? pago.tipoHabitacion + ' ANULADA' : pago.tipoHabitacion }}</div>
+            <div @click="openInfoModal(pago)"
+              class="cursor-pointer text-blue-600 hover:underline p-2 border-b border-r border-gray-300">
+              Pago {{ pago.pagoId }}
+              <div class="text-gray-500 text-sm ">{{ formatFechaHora(pago.fecha) }}</div>
+            </div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.periodo }}
+            </div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoAdicional || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.totalConsumo || '' }}</div>
+            <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{
+              formatFechaHora(pago.horaIngreso) }}</div>
+            <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{
+              formatFechaHora(pago.horaSalida) }}</div>
+
+
+            <!-- Money values with right alignment and hiding zeros -->
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoEfectivo || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoTarjeta || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.tarjetaNombre || '' }}</div>
+            <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoDescuento || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              (pago.montoEfectivo + pago.montoTarjeta) || '' }}</div>
+
+            <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
           </div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.periodo }}
+        </template>
+
+        <!-- Iterate over Egresos -->
+        <template v-for="(egreso, index) in selectedEgresos" :key="`egreso-${index}`">
+          <div class="contents text-red-500">
+            <!-- Egreso Info -->
+            <div class="text-red-500 col-span-2 font-semibold p-2 border-b border-r border-gray-300">Egreso</div>
+            <div class="text-red-500 p-2 border-b border-r border-gray-300">Egreso {{ index + 1 }}
+              <div class="text-gray-500 text-sm">{{ formatFechaHora(egreso.fecha) }}</div>
+            </div>
+            <div class="text-red-500 font-semibold p-2 border-b border-r border-gray-300 text-right"></div>
+            <div class="text-red-500 font-semibold p-2 border-b border-r border-gray-300 text-right"></div>
+            <div class="text-red-500 font-semibold p-2 border-b border-r border-gray-300 text-right"></div>
+            <div class="text-red-500 font-semibold p-2 border-b border-r border-gray-300"></div>
+            <div class="text-red-500 font-semibold p-2 border-b border-r border-gray-300"></div>
+
+            <!-- Money values with right alignment and hiding zeros -->
+            <div class="text-red-500 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              egreso.montoEfectivo || '' }}</div>
+            <div class="text-red-500 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              egreso.montoTarjeta || '' }}</div>
+            <div class="text-red-500 font-semibold p-2 border-b border-r border-gray-300 text-right"></div>
+            <div class="text-red-500 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              egreso.montoDescuento || '' }}</div>
+            <div class="text-red-500 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              (egreso.montoEfectivo + egreso.montoTarjeta) || '' }}</div>
+
+            <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ egreso.observacion }}</div>
           </div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
-            pago.montoAdicional || '' }}</div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
-            pago.totalConsumo || '' }}</div>
-          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{
-            formatFechaHora(pago.horaIngreso) }}</div>
-          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{
-            formatFechaHora(pago.horaSalida) }}</div>
-
-
-          <!-- Money values with right alignment and hiding zeros -->
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
-            pago.montoEfectivo || '' }}</div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
-            pago.montoTarjeta || '' }}</div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
-            pago.tarjetaNombre || '' }}</div>
-          <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
-            pago.montoDescuento || '' }}</div>
-          <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
-            (pago.montoEfectivo + pago.montoTarjeta) || '' }}</div>
-
-          <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
-        </div>
+        </template>
 
         <!-- Total values per column -->
         <div class="font-bold col-span-2 text-black p-2 border-t border-r border-gray-300">
@@ -230,17 +261,18 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted,onBeforeMount } from 'vue';
+import { ref, defineProps, defineEmits, onMounted, onBeforeMount } from 'vue';
 import InfoPago from './InfoPago.vue';
 import axiosClient from '../axiosClient';
 import CerrarCajaModal from './CerrarCajaModal.vue';
 const props = defineProps({
   selectedPagos: Array,
+  selectedEgresos: Array,
   esAbierto: Boolean,
-  idcierre:Number
+  idcierre: Number
 });
 
-const emit = defineEmits(['close-modal','imprimir-modal']);
+const emit = defineEmits(['close-modal', 'imprimir-modal']);
 
 const closeModal = () => {
   emit('close-modal');
@@ -255,7 +287,7 @@ const cierreCajaRef = ref(null);
 const showInfoModal = ref(false);
 const selectedPago = ref(null);
 const showCerrarCajaModal = ref(false);
-let listaPagos=ref([])
+let listaPagos = ref([])
 
 onBeforeMount(() => {
   if (props.selectedPagos.length > 0) {
@@ -267,9 +299,11 @@ onMounted(() => {
   if (props.selectedPagos.length > 0) {
     listaPagos.value = props.selectedPagos;
   }
-  if(props.idcierre>0){
+  if (props.idcierre > 0) {
     fetchDetalleCierre()
   }
+  // Add egresos to the list after fetching pagos or on initial load
+  listaPagos.value = [...listaPagos.value, ...props.selectedEgresos];
 
 })
 
@@ -278,7 +312,7 @@ const fetchDetalleCierre = () => {
   axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`)
     .then(({ data }) => {
       console.log(data.data.pagos)
-      listaPagos.value=data.data.pagos
+      listaPagos.value = data.data.pagos
     })
     .catch(error => {
       console.error('Error al obtener detalle cierres:', error);
@@ -309,45 +343,53 @@ const formatFechaHora = (fechaHora) => {
 };
 
 const calculateTotal = () => {
-  return listaPagos.value.reduce((total, pago) => {
-    return total + pago.montoEfectivo + pago.montoTarjeta + pago.montoBillVirt;
+  return listaPagos.value.reduce((total, item) => {
+    if (item.tipoHabitacion === null && item.pagoId === 0) {
+      return total - (item.montoEfectivo); // Subtract if it's a specific anulada
+    } else {
+      return total + item.montoEfectivo + item.montoTarjeta + item.montoBillVirt; // Add otherwise
+    }
   }, 0);
 };
 
 const calculateEfectivo = () => {
-  return listaPagos.value.reduce((total, pago) => {
-    return total + pago.montoEfectivo;
+  return listaPagos.value.reduce((total, item) => {
+    if (item.tipoHabitacion === null && item.pagoId === 0) {
+      return total - item.montoEfectivo; // Subtract if it's a specific anulada
+    } else {
+      return total + item.montoEfectivo; // Add otherwise
+    }
   }, 0);
 };
 
 const calculateDescuento = () => {
-  return listaPagos.value.reduce((total, pago) => {
-    return total + pago.montoDescuento;
+  return listaPagos.value.reduce((total, item) => {
+    return total + item.montoDescuento;
   }, 0);
 };
 
 const calculateTarjeta = () => {
-  return listaPagos.value.reduce((total, pago) => {
-    return total + pago.montoTarjeta;
+  return listaPagos.value.reduce((total, item) => {
+    return total + item.montoTarjeta;
   }, 0);
 };
 
 const calculateConsumo = () => {
-  return listaPagos.value.reduce((total, pago) => {
-    return total + (pago.totalConsumo || 0);
+  return listaPagos.value.reduce((total, item) => {
+    return total + (item.totalConsumo || 0);
   }, 0);
 };
 
 const calculatePeriodo = () => {
-  return listaPagos.value.reduce((total, pago) => {
-    return total + (pago.periodo || 0);
+  return listaPagos.value.reduce((total, item) => {
+    return total + (item.periodo || 0);
   }, 0);
 };
 
 const countCategorias = () => {
-  return listaPagos.value.reduce((counts, pago) => {
-    if (pago.categoriaNombre) {
-      counts[pago.categoriaNombre] = (counts[pago.categoriaNombre] || 0) + 1;
+  return listaPagos.value.reduce((counts, item) => {
+    if (item.categoriaNombre) {
+      counts[item.categoriaNombre] = (counts[item.categoriaNombre] || 0) + 1;
     }
     return counts;
   }, {});
@@ -359,8 +401,8 @@ const formatCategorias = () => {
 };
 
 const calculateAdicional = () => {
-  return listaPagos.value.reduce((total, pago) => {
-    return total + (pago.montoAdicional || 0);
+  return listaPagos.value.reduce((total, item) => {
+    return total + (item.montoAdicional || 0);
   }, 0);
 };
 

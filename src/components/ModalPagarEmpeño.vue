@@ -95,12 +95,14 @@ const pagarEmpeno = async () => {
         },
       });
     }
-
+    var tarjetaSeleccionada = 0
+    if(selectedTarjeta.value != null){tarjetaSeleccionada = selectedTarjeta.value.tarjetaID}
     const paymentData = {
       empenoId: props.empenoId,
       montoEfectivo: efectivo.value,
       montoTarjeta: tarjeta.value,
       observacion: observacion.value,
+      TarjetaID: tarjetaSeleccionada,
     };
 
     const response = await axiosClient.post(
@@ -112,6 +114,7 @@ const pagarEmpeno = async () => {
           observacion: paymentData.observacion,
           montoEfectivo: paymentData.montoEfectivo,
           montoTarjeta: paymentData.montoTarjeta,
+          TarjetaID: paymentData.TarjetaID
         },
       }
     );
@@ -140,6 +143,7 @@ const fetchTarjetas = async () => {
 
 
 const updateRecargo = () => {
+  console.log(selectedTarjeta.value)
   const subtotal = totalConAjustes.value - efectivo.value;
   if (selectedTarjeta.value) {
     porcentajeRecargo.value = selectedTarjeta.value.montoPorcentual;

@@ -45,6 +45,7 @@
 >
   <ModalCierre
     :selectedPagos="pagosSinCierres"
+    :selectedEgresos="egresosSinCierres"
     :esAbierto="true"
     @imprimir-modal="ImprimirModal"
     @close-modal="togglePagosSinCierreModal">
@@ -66,7 +67,9 @@ const authStore = useAuthStore();
   const showPagosSinCierreModal = ref(false);
 
   const pagos = ref([]);
+  const egresos = ref([]);
   const pagosSinCierres = ref([]);
+  const egresosSinCierres = ref([]);
   const selectedIdCierre = ref()
 
   onBeforeMount(() => {
@@ -87,7 +90,8 @@ const authStore = useAuthStore();
       const response = await axiosClient.get(`/api/Caja/GetCierresyActual?InstitucionID=${InstitucionID.value}`);
       if (response.data.ok) {
         cierres.value = response.data.data.cierres;
-        pagosSinCierres.value = response.data.data.pagosSinCierre
+        pagosSinCierres.value = response.data.data.pagosSinCierre;
+        egresosSinCierres.value = response.data.data.egresosSinCierre;
       } else {
         console.error('Error fetching cierres:', response.data.message);
       }
@@ -105,6 +109,7 @@ const authStore = useAuthStore();
 
   const abrirPagosSinCierre = () => {
     pagos.value = pagosSinCierres.value
+    egresos.value = egresosSinCierres.value;
     togglePagosSinCierreModal()
   };
  

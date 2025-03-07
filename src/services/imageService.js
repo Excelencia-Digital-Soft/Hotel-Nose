@@ -19,7 +19,7 @@ export const fetchImage = async (articuloId) => {
 // Function to fetch articles with images and stock > 0
 export const fetchArticulos = async () => {
   try {
-    const response = await axiosClient.get("/GetInventarioGeneral");
+    const response = await axiosClient.get("/GetInventarioGeneral?InstitucionID=1");
     if (response.data && response.data.data) {
       const validItems = response.data.data.filter(item => item.cantidad > 0);
       return await Promise.all(
