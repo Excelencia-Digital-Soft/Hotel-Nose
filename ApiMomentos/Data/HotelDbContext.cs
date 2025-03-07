@@ -675,6 +675,7 @@ public partial class HotelDbContext : DbContext
 
             entity.Property(e => e.EgresoId).HasColumnName("EgresoID");
             entity.Property(e => e.TipoEgresoId).HasColumnName("TipoEgresoID");
+            entity.Property(e => e.CierreID).HasColumnName("CierreID");
             entity.Property(e => e.Cantidad).HasDefaultValue(0);
             entity.Property(e => e.Precio).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Fecha).HasColumnType("datetime").HasDefaultValueSql("getdate()");

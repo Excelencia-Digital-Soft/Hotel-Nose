@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+Ôªøusing Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using ApiObjetos.Data;
@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using ApiObjetos.NotificacionesHub;
 using System;
 using ApiObjetos.Jobs;
 using ApiObjetos.Auth;
@@ -22,9 +23,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("NuevaPolitica", app =>
     {
-        app.AllowAnyOrigin()
+        app
+           .SetIsOriginAllowed(_ => true)
            .AllowAnyHeader()
-           .AllowAnyMethod();
+           .AllowAnyMethod()
+           .AllowCredentials();
     });
 });
 
@@ -98,6 +101,12 @@ builder.Services.AddCronJob<MySchedulerJob>(options =>
     options.TimeZone = TimeZoneInfo.Local;
 });
 
+builder.Services.AddSignalR();
+builder.Services.AddHostedService<ReservationMonitorService>(); // Add background service
+
+builder.Services.AddSingleton<ReservationMonitorService>();
+builder.Services.AddHostedService<ReservationMonitorService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -108,7 +117,7 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API V1");
 });
 
-// Habilitar archivos est·ticos (im·genes, CSS, JavaScript, etc.)
+// Habilitar archivos est√°ticos (im√°genes, CSS, JavaScript, etc.)
 app.UseStaticFiles();
 //app.UseHttpsRedirection();
 app.UseCors("NuevaPolitica");
@@ -116,5 +125,6 @@ app.UseAuthentication();  // Enable JWT authentication
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<NotificationsHub>("/notifications"); // WebSocket endpoint
 
 app.Run();

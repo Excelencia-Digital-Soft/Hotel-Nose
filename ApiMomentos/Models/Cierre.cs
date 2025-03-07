@@ -30,5 +30,7 @@ public partial class Cierre
     [JsonIgnore]
     public virtual ICollection<Pagos> Pagos { get; } = new List<Pagos>();
     [JsonIgnore]
+    public virtual ICollection<Egresos>? Egresos { get; } = new List<Egresos>();
+    [JsonIgnore]
     public virtual Usuarios? Usuario { get; set; }
 }

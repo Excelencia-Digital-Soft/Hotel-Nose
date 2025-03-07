@@ -225,6 +225,7 @@ public class EncargosController : ControllerBase
 
         try
         {
+            int institucionID = 0;
             foreach (var EncargoRequestDTO in encargos)
             {
                 // Validar si el Articulo existe
@@ -259,12 +260,16 @@ public class EncargosController : ControllerBase
                 // Añadir la entidad Encargo al DbContext
                 await _db.Encargos.AddAsync(newEncargo);
                 addedEncargos.Add(newEncargo);
+                institucionID = visita.InstitucionID;
             }
 
             // Guardar todos los cambios en la base de datos
             await _db.SaveChangesAsync();
-            await hubContext.Clients.All.SendAsync("ReceiveNotification", "¡Hay una nueva orden!");
-
+            await hubContext.Clients.Group($"institution-{institucionID}").SendAsync("ReceiveNotification", new
+            {
+                type = "warning-encargo",
+                message = "¡Hay nuevos pedidos!"
+            });
             // Configurar la respuesta en caso de éxito
             res.Ok = true;
             res.Message = "Encargos agregados exitosamente.";

@@ -52,6 +52,18 @@ namespace ApiObjetos.Controllers
             return Ok(new { message = "Test notification sent!" });
         }
 
+
+        [HttpGet("sendTestNotificationInstitucion")]
+        public async Task<IActionResult> SendTestNotificationInstitucion(string testMessage, string type, int institucionID)
+        {
+            await _hubContext.Clients.Group($"institution-{institucionID}").SendAsync("ReceiveNotification", new
+            {
+                type = type,
+                message = testMessage,
+            }); return Ok(new { message = "Test notification sent!" });
+        }
+
+
         #region Categorias
 
         [HttpPost]

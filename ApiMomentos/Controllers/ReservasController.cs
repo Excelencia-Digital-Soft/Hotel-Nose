@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using ApiObjetos.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 namespace ApiObjetos.Controllers
 {
     public class ReservasController : Controller
@@ -12,12 +13,14 @@ namespace ApiObjetos.Controllers
         private readonly HotelDbContext _db;
         private readonly MovimientosController _movimiento;
         private readonly VisitasController _visita;
+        private readonly IServiceProvider _serviceProvider;
 
-        public ReservasController(HotelDbContext db, IConfiguration configuration)
+        public ReservasController(HotelDbContext db, IServiceProvider serviceProvider, IConfiguration configuration)
         {
             _db = db;
             _movimiento = new MovimientosController(db);
             _visita =  new VisitasController(db);
+            _serviceProvider = serviceProvider;
 
         }
         #region Reservas
@@ -151,7 +154,11 @@ namespace ApiObjetos.Controllers
                 Math.Round((decimal)((int)tarifa * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2), request.HabitacionID);
                 nuevaReserva.MovimientoId = movimientoID;
                 await _db.SaveChangesAsync();
-
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var notificationService = scope.ServiceProvider.GetRequiredService<ReservationMonitorService>();
+                    notificationService.ScheduleNotification(nuevaReserva, CancellationToken.None);
+                }
                 // Step 5: Update the room's availability and set the current VisitaID
                 habitacion.Disponible = false;
                 habitacion.VisitaID = VisitaID;

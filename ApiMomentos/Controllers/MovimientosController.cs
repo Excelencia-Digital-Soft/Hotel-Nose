@@ -709,7 +709,7 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("CreateEgreso")]
         [AllowAnonymous]
-        public async Task<Respuesta> CreateEgreso([FromBody] Egresos newEgreso)
+        public async Task<Respuesta> CreateEgreso(int InstitucionID, [FromBody] Egresos newEgreso)
         {
             Respuesta res = new Respuesta();
             try
@@ -727,6 +727,7 @@ namespace ApiObjetos.Controllers
                 // Create the new Movimiento
                 Movimientos nuevoMovimiento = new Movimientos
                 {
+                    InstitucionID = InstitucionID,
                     TotalFacturado = totalFacturado,
                     FechaRegistro = DateTime.Now // Assuming you have a Fecha field
                 };
@@ -735,7 +736,7 @@ namespace ApiObjetos.Controllers
                 newEgreso.MovimientoId = nuevoMovimiento.MovimientosId;
                 _db.Movimientos.Add(nuevoMovimiento);
                 await _db.SaveChangesAsync();
-
+                newEgreso.InstitucionID = InstitucionID;
                 // Link the Movimiento to the Egreso via MovimientoId
                 newEgreso.MovimientoId = nuevoMovimiento.MovimientosId;
                 _db.Egresos.Add(newEgreso);
@@ -755,7 +756,7 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("CreateTipoEgreso")]
         [AllowAnonymous]
-        public async Task<Respuesta> CreateTipoEgreso([FromBody] TipoEgreso newTipoEgreso)
+        public async Task<Respuesta> CreateTipoEgreso(int InstitucionID, [FromBody] TipoEgreso newTipoEgreso)
         {
             Respuesta res = new Respuesta();
             try
@@ -766,7 +767,7 @@ namespace ApiObjetos.Controllers
                     res.Message = "Invalid Egreso data.";
                     return res;
                 }
-
+                newTipoEgreso.InstitucionID = InstitucionID;
                 _db.TipoEgreso.Add(newTipoEgreso);
                 await _db.SaveChangesAsync();
 
