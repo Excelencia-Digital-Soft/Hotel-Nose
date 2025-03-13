@@ -7,14 +7,15 @@
         </div>
 
         </Transition>
-
+        <router-link :to="{ name: 'SelectRoom' }" class="w-32 h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg">
+          ir a externo
+        </router-link>
   </div>
 </template>
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useAuthStore } from "../store/auth.js";
-
-
+import SelectRoom from '../views/SelectRoom.vue';
 const show = ref(false)
 onMounted(() => {
 show.value = !show.value

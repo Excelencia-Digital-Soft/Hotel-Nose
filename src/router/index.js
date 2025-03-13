@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from "vue-router";
+//LAYOUTS
 import DefaultLayout from "../layouts/DefaultLayout.vue";
 import GuestLayout from "../layouts/GuestLayout.vue";
+import ExternalLayout from "../layouts/ExternalLayout.vue";
+//VISTAS
 import Home from "../views/Home.vue";
 import Rooms from "../views/Rooms.vue";
 import RoomCreate from "../views/RoomCreate.vue";
@@ -12,11 +15,14 @@ import InventoryManager from "../views/InventoryManager.vue";
 import CierresManager from "../views/CierresManager.vue";
 import PromocionesManager from "../views/PromocionesManager.vue";
 import MediosPagoManager from "../views/MediosPagoManager.vue";
-import UsuariosManager from "../views/UsuariosManager.vue"
+import UsuariosManager from "../views/UsuariosManager.vue";
 import Egresos from "../views/Egresos.vue";
+import EmpeñosManager from "../views/EmpeñosManager.vue";
+import SelectRoom from "../views/SelectRoom.vue"
+
 
 import { useAuthStore } from "../store/auth";
-import EmpeñosManager from "../views/EmpeñosManager.vue";
+
 const routes = [
   {
     path: "/",
@@ -39,7 +45,7 @@ const routes = [
         component: Rooms,
         meta: {
           requireAuth: true,
-          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2, 3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
       {
@@ -83,7 +89,7 @@ const routes = [
         component: ReceptionOrder,
         meta: {
           requireAuth: true,
-          roles: [2,3,4],
+          roles: [2, 3, 4],
         },
       },
       {
@@ -101,7 +107,7 @@ const routes = [
         component: CierresManager,
         meta: {
           requireAuth: true,
-          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2, 3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
       {
@@ -110,7 +116,7 @@ const routes = [
         component: EmpeñosManager,
         meta: {
           requireAuth: true,
-          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2, 3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
       {
@@ -128,7 +134,7 @@ const routes = [
         component: Egresos,
         meta: {
           requireAuth: true,
-          roles: [1, 2,3], // Solo Supervisores y Administrativos (idRol 1 y 2)
+          roles: [1, 2, 3], // Solo Supervisores y Administrativos (idRol 1 y 2)
         },
       },
       {
@@ -148,6 +154,24 @@ const routes = [
       },
     ],
   },
+
+  {
+    path: "/external",
+    component: ExternalLayout,
+    meta: {
+      requireAuth: false,
+    },
+    children: [
+      {
+        path: "/SelectRoom",
+        name: "SelectRoom",
+        component: SelectRoom,
+        meta: {
+          requireAuth: false,
+        },
+      },
+    ],
+  },
   {
     path: "/guest",
     component: GuestLayout,
@@ -158,7 +182,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory('/hotel/'),
+  history: createWebHistory("/hotel/"),
   routes,
 });
 
@@ -174,7 +198,7 @@ router.beforeEach((to, from, next) => {
   }
   // Si la ruta tiene roles específicos y el rol del usuario no está incluido
   if (to.meta.roles && !to.meta.roles.includes(userRoleId)) {
-    alert("Acceso denegado")
+    alert("Acceso denegado");
     next("/guest"); // Redirige a una página de acceso denegado
     return;
   }
