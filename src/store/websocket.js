@@ -5,13 +5,14 @@ import * as signalR from "@microsoft/signalr";
 export const useWebSocketStore = defineStore("websocket", {
     state: () => ({
         connection: null,
-        notifications: [], 
-        nextNotificationId: 1, 
+        notifications: [],
+        nextNotificationId: 1,
+        eventCallbacks: {}, // New: Store event listeners per component
     }),
     actions: {
         async connect() {
             const authStore = useAuthStore();
-            const institucionID = authStore.institucionID; // Get facility ID from auth
+            const institucionID = authStore.institucionID;
 
             if (!institucionID) {
                 console.error("No InstitucionID found, cannot connect to WebSocket.");
@@ -21,7 +22,7 @@ export const useWebSocketStore = defineStore("websocket", {
             console.log("Connecting to WebSocket with InstitucionID:", institucionID);
 
             this.connection = new signalR.HubConnectionBuilder()
-                .withUrl(`${import.meta.env.VITE_API_BASE_URL}notifications`) 
+                .withUrl(`${import.meta.env.VITE_API_BASE_URL}notifications`)
                 .withAutomaticReconnect()
                 .build();
 
@@ -29,12 +30,18 @@ export const useWebSocketStore = defineStore("websocket", {
                 await this.connection.start();
                 console.log("WebSocket connected, subscribing to institution:", institucionID);
 
-                // Send the institution ID as a string to prevent errors
                 await this.connection.invoke("SubscribeToInstitution", institucionID.toString());
 
                 this.connection.on("ReceiveNotification", (notification) => {
                     console.log("New notification:", notification);
                     this.addNotification(notification);
+
+                    // Trigger all registered component-specific callbacks
+                    Object.values(this.eventCallbacks).forEach(callback => {
+                        if (typeof callback === "function") {
+                            callback(notification);
+                        }
+                    });
                 });
             } catch (error) {
                 console.error("WebSocket connection error:", error);
@@ -46,12 +53,12 @@ export const useWebSocketStore = defineStore("websocket", {
 
             this.notifications.push({
                 id: id,
-                type: notification.type, 
+                type: notification.type,
                 message: notification.message,
                 timestamp: Date.now(),
             });
 
-            // Auto-remove after 5 seconds
+            // Auto-remove after 5 minutes (300000 ms)
             setTimeout(() => {
                 this.removeNotification(id);
             }, 300000);
@@ -59,6 +66,14 @@ export const useWebSocketStore = defineStore("websocket", {
 
         removeNotification(id) {
             this.notifications = this.notifications.filter(notification => notification.id !== id);
+        },
+
+        registerEventCallback(componentName, callback) {
+            this.eventCallbacks[componentName] = callback;
+        },
+
+        unregisterEventCallback(componentName) {
+            delete this.eventCallbacks[componentName];
         },
     },
 });
