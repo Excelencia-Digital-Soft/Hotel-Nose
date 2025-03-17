@@ -55,6 +55,7 @@ public class EncargosController : ControllerBase
                                         e.EncargosId,
                                         e.FechaCrea,
                                         a.ArticuloId,
+                                        Comentario = e.Comentario,
                                         NombreArt = a.NombreArticulo,
                                         e.CantidadArt,
                                         e.Entregado

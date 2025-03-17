@@ -583,14 +583,23 @@ namespace ApiObjetos.Controllers
                 // Step 1: Retrieve the list of Movimientos for the given VisitaId
                 var movimientos = await _db.Movimientos
                                            .Where(t => t.VisitaId == id)
+                                           .Include(m => m.Habitacion)
                                            .ToListAsync();
+                var movimiento = new Movimientos();
+                movimiento = movimientos.First();
+                var reserva = await _db.Reservas
+                               .Where(r => r.MovimientoId == movimiento.MovimientosId)
+                               .Include(r => r.Promocion)
+                               .FirstAsync();
 
                 // Step 2: Calculate the total sum of TotalFacturado
                 var totalFacturado = movimientos.Sum(m => m.TotalFacturado);
-
+                decimal? facturadoEstadia = 0;
+                if (reserva.Promocion != null) facturadoEstadia = reserva.Promocion.Tarifa * (reserva.TotalHoras + reserva.TotalMinutos / 60);
+                else facturadoEstadia = movimiento.TotalFacturado;
                 // Step 3: Return the result
                 res.Ok = true;
-                res.Data = totalFacturado; // return the total sum
+                res.Data = totalFacturado + facturadoEstadia; // return the total sum
                 res.Message = "Total facturado calculado correctamente.";
             }
             catch (Exception ex)
