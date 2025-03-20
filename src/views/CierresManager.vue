@@ -34,6 +34,7 @@
   <ModalCierre
     :selectedPagos="pagos"
     :idcierre="selectedIdCierre"
+    :selectedEgresos="egresosSinCierres"
     :esAbierto="false"
     @imprimir-modal="ImprimirModal"
     @close-modal="togglePagosModal">
@@ -91,7 +92,7 @@ const authStore = useAuthStore();
       if (response.data.ok) {
         cierres.value = response.data.data.cierres;
         pagosSinCierres.value = response.data.data.pagosSinCierre;
-        egresosSinCierres.value = response.data.data.egresosSinCierre;
+        egresosSinCierres.value = response.data.data.egresos;
       } else {
         console.error('Error fetching cierres:', response.data.message);
       }

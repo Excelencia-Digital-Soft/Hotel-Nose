@@ -73,7 +73,7 @@
         </template>
 
         <!-- Iterate over Egresos -->
-        <template v-for="(egreso, index) in selectedEgresos" :key="`egreso-${index}`">
+        <template v-for="(egreso, index) in egresos" :key="`egreso-${index}`">
           <div class="contents text-red-500">
             <!-- Egreso Info -->
             <div class="text-red-500 col-span-2 font-semibold p-2 border-b border-r border-gray-300">Egreso</div>
@@ -271,7 +271,6 @@ const props = defineProps({
   esAbierto: Boolean,
   idcierre: Number
 });
-
 const emit = defineEmits(['close-modal', 'imprimir-modal']);
 
 const closeModal = () => {
@@ -288,22 +287,23 @@ const showInfoModal = ref(false);
 const selectedPago = ref(null);
 const showCerrarCajaModal = ref(false);
 let listaPagos = ref([])
+let egresos = ref([]);
 
 onBeforeMount(() => {
   if (props.selectedPagos.length > 0) {
     listaPagos.value = props.selectedPagos;
   }
+  if (props.idcierre > 0) {
+    fetchDetalleCierre()
+  } else egresos.value = props.selectedEgresos;
 });
 
 onMounted(() => {
   if (props.selectedPagos.length > 0) {
     listaPagos.value = props.selectedPagos;
   }
-  if (props.idcierre > 0) {
-    fetchDetalleCierre()
-  }
-  // Add egresos to the list after fetching pagos or on initial load
-  listaPagos.value = [...listaPagos.value, ...props.selectedEgresos];
+  console.log(egresos.value);
+  listaPagos.value = [...listaPagos.value, ...egresos.value];
 
 })
 
@@ -311,8 +311,8 @@ const fetchDetalleCierre = () => {
   console.log(props.idcierre)
   axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`)
     .then(({ data }) => {
-      console.log(data.data.pagos)
       listaPagos.value = data.data.pagos
+      egresos.value = data.data.egresos
     })
     .catch(error => {
       console.error('Error al obtener detalle cierres:', error);
