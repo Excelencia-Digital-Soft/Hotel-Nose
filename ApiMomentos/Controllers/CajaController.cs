@@ -489,6 +489,32 @@ namespace ApiObjetos.Controllers
                 }
 
                 // Retornar respuesta con los datos del cierre
+                var egresosReturn = new List<object>();
+
+                var egresos = await _db.Egresos
+                    .Where(e => e.CierreID == idCierre)
+                    .Include(e => e.TipoEgreso) // Ensure TipoEgreso is loaded
+                    .ToListAsync();
+
+                foreach (var egreso in egresos)
+                {
+                    egresosReturn.Add(new
+                    {
+                        PagoId = 0,
+                        Periodo = 0,
+                        HoraIngreso = (DateTime?)null,
+                        HoraSalida = (DateTime?)null,
+                        TipoHabitacion = (string?)null,
+                        totalConsumo = 0,
+                        MontoAdicional = 0,
+                        MontoEfectivo = egreso.Cantidad * egreso.Precio, // Assuming 'Cierre' was a mistake, using 'Precio'
+                        MontoTarjeta = 0,
+                        MontoBillVirt = 0,
+                        MontoDescuento = 0,
+                        Fecha = egreso.Fecha,
+                        Observacion = "Pago de egreso por: " + egreso.TipoEgreso?.Nombre // Ensure TipoEgreso is not null
+                    });
+                }
                 res.Ok = true;
                 res.Data = new
                 {
@@ -500,9 +526,11 @@ namespace ApiObjetos.Controllers
                     cierre.TotalIngresosTarjeta,
                     cierre.MontoInicialCaja,
                     cierre.Observaciones,
-                    Pagos = pagosConDetalle
+                    Pagos = pagosConDetalle,
+                    egresos = egresosReturn,
                 };
             }
+
             catch (Exception ex)
             {
                 res.Ok = false;
@@ -690,7 +718,7 @@ namespace ApiObjetos.Controllers
             {
                 Cierres = reversedCierres,
                 PagosSinCierre = PagosSinCierreReturn,
-                egresosSinCierre = egresosSinCierreReturn
+                egresos = egresosSinCierreReturn
             };
             }
             catch (Exception ex)

@@ -88,6 +88,92 @@ namespace ApiObjetos.Controllers
                 return res;
             }
         */
+        [HttpPost]
+        [Route("ReservarHabitacionFutura")]
+        [AllowAnonymous]
+        public async Task<Respuesta> ReservarHabitacionFutura(int InstitucionID, int UsuarioID, [FromBody] ReservaRequest request)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                // Step 1: Create a new VisitaID based on the provided vehicle, phone number, and identifier
+                var VisitaID = await _visita.CrearVisita(request.EsReserva, InstitucionID, UsuarioID, request.PatenteVehiculo, request.NumeroTelefono, request.Identificador);
+
+                // Step 2: Retrieve the room details
+                Habitaciones habitacion = await GetHabitacionById(request.HabitacionID);
+                if (habitacion == null)
+                {
+                    res.Message = "Habitación no encontrada.";
+                    res.Ok = false;
+                    return res;
+                }
+
+                // Step 3: Check if the room is available for reservation
+                if (habitacion.Disponible == false)
+                {
+                    res.Message = "La habitación no está disponible.";
+                    res.Ok = false;
+                    return res;
+                }
+
+                // Step 4: If the room is available, proceed with creating the reservation
+                Reservas nuevaReserva = new Reservas
+                {
+                    VisitaId = VisitaID,
+                    HabitacionId = request.HabitacionID,
+                    FechaReserva = request.FechaReserva,
+                    InstitucionID = InstitucionID,
+                    FechaFin = null,
+                    TotalHoras = request.TotalHoras,
+                    TotalMinutos = request.TotalMinutos,
+                    UsuarioId = UsuarioID,
+                    FechaRegistro = DateTime.Now,
+                    FechaAnula = null,
+                    Habitacion = habitacion
+                };
+
+                decimal? tarifa = habitacion.Categoria.PrecioNormal; // Default price
+                if (request.PromocionID != null && request.PromocionID != 0)
+                {
+                    nuevaReserva.PromocionId = request.PromocionID;
+                    // Fetch the promotion from the database
+                    var promocion = await _db.Promociones.FindAsync(request.PromocionID);
+                    if (promocion == null)
+                    {
+                        res.Message = "La promoción no es válida.";
+                        res.Ok = false;
+                        return res;
+                    }
+                    tarifa = promocion.Tarifa; // Use the promotional rate
+                }
+                else nuevaReserva.PromocionId = null;
+                var prueba = Math.Round((decimal)((int)tarifa * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2);
+                _db.Add(nuevaReserva);
+                var movimientoID = await _movimiento.CrearMovimientoHabitacion(VisitaID, InstitucionID,
+                Math.Round((decimal)((int)tarifa * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2), request.HabitacionID);
+                nuevaReserva.MovimientoId = movimientoID;
+                await _db.SaveChangesAsync();
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var notificationService = scope.ServiceProvider.GetRequiredService<ReservationMonitorService>();
+                    notificationService.ScheduleNotification(nuevaReserva, CancellationToken.None);
+                }
+                // Step 5: Update the room's availability and set the current VisitaID
+                habitacion.Disponible = false;
+                habitacion.VisitaID = VisitaID;
+                await _db.SaveChangesAsync();
+
+                res.Message = "La reserva se grabó correctamente";
+                res.Ok = true;
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
 
         [HttpPost]
         [Route("ReservarHabitacion")]
