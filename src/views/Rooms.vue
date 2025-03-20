@@ -47,7 +47,7 @@
         </div>
       </div>
     </div>
-    <ReserveRoom :room="room" v-if="show" @close-modal="toggleModal" @update-room="updateRoom">
+    <ReserveRoom :room="room" v-if="show" @close-modal="toggleModal" @update-room="updateRoom" @update-tiempo="agregarTiempoExtra">
     </ReserveRoom>
   
     <ReserveRoomLibre :room="room" v-if="showFree" @close-modal="toggleModalLibre">
@@ -157,6 +157,34 @@ onUnmounted(() => {
     console.log("❌ Unregistering WebSocket event listener in RoomComponent");
     websocketStore.unregisterEventCallback("RoomComponent");
 });
+
+const agregarTiempoExtra = (reservaID, horas, minutos) => {
+  const index = habitacionesOcupadas.value.findIndex(h => h.reservaActiva.reservaId === reservaID);
+  if (index === -1) {
+    console.warn(`No se encontró una habitación con reservaID ${reservaID}`);
+    return;
+  }
+
+  const habitacion = habitacionesOcupadas.value[index];
+
+  let newHoras = habitacion.reservaActiva.totalHoras + horas;
+  let newMinutos = habitacion.reservaActiva.totalMinutos + minutos;
+
+  while (newMinutos >= 60) {
+    newHoras += 1;
+    newMinutos -= 60;
+  }
+
+  habitacionesOcupadas.value[index] = {
+    ...habitacion, 
+    reservaActiva: {
+      ...habitacion.reservaActiva,
+      totalHoras: newHoras,
+      totalMinutos: newMinutos
+    }
+  };
+  console.log(habitacionesOcupadas.value[index]);
+};
 
 // Toggle Modals
 function toggleModal(Room) {
