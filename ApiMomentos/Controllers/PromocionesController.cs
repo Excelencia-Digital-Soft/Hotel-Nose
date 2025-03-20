@@ -101,7 +101,7 @@ namespace ApiObjetos.Controllers
 
             try
             {
-                var promocion = await _db.Promociones.Where(p => p.CategoriaID == categoriaID).ToListAsync();
+                var promocion = await _db.Promociones.Where(p => p.CategoriaID == categoriaID && p.Anulado == null).ToListAsync();
                 if (promocion == null)
                 {
                     res.Ok = false;
