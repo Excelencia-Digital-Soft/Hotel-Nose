@@ -90,6 +90,7 @@ const authStore = useAuthStore();
     try {
       const response = await axiosClient.get(`/api/Caja/GetCierresyActual?InstitucionID=${InstitucionID.value}`);
       if (response.data.ok) {
+        console.log(response.data);
         cierres.value = response.data.data.cierres;
         pagosSinCierres.value = response.data.data.pagosSinCierre;
         egresosSinCierres.value = response.data.data.egresos;

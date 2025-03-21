@@ -70,6 +70,42 @@
 
             <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
           </div>
+          <div v-if="pago.tipoHabitacion == null && pago.pagoId != 0" class="contents">
+            <!-- Pago Info -->
+            <div class="text-black col-span-2 font-semibold p-2 border-b border-r border-gray-300"
+              :class="{ 'bg-red-400': pago.pagoId === 0 }"> PAGO EMPEÑO
+              </div>
+            <div @click="openInfoModal(pago)"
+              class="cursor-pointer text-blue-600 hover:underline p-2 border-b border-r border-gray-300">
+              Pago {{ pago.pagoId }}
+              <div class="text-gray-500 text-sm ">{{ formatFechaHora(pago.fecha) }}</div>
+            </div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.periodo }}
+            </div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoAdicional || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.totalConsumo || '' }}</div>
+            <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{
+              formatFechaHora(pago.horaIngreso) }}</div>
+            <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{
+              formatFechaHora(pago.horaSalida) }}</div>
+
+
+            <!-- Money values with right alignment and hiding zeros -->
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoEfectivo || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoTarjeta || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.tarjetaNombre || '' }}</div>
+            <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoDescuento || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              (pago.montoEfectivo + pago.montoTarjeta) || '' }}</div>
+
+            <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
+          </div>
         </template>
 
         <!-- Iterate over Egresos -->
@@ -311,6 +347,7 @@ const fetchDetalleCierre = () => {
   console.log(props.idcierre)
   axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`)
     .then(({ data }) => {
+      console.log(data.data);
       listaPagos.value = data.data.pagos
       egresos.value = data.data.egresos
     })
