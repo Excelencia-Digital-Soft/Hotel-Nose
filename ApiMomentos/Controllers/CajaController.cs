@@ -413,7 +413,7 @@ namespace ApiObjetos.Controllers
                 var anulados = await _db.Reservas
                     .Where(r => r.FechaAnula < cierre.FechaHoraCierre && r.FechaAnula > fechaCierreAnterior)
                     .ToListAsync() ?? null;
-
+                var empeños = await _db.Empeño.Where(e => e.InstitucionID == cierre.InstitucionID).ToListAsync();
                 var movimientos = await _db.Movimientos.Include(m => m.Visita).ThenInclude(v => v.Reservas).ToListAsync();
                 var consumos = await _db.Consumo.ToListAsync();
                 var tarjetas = await _db.Tarjetas.ToListAsync();
@@ -424,6 +424,9 @@ namespace ApiObjetos.Controllers
                 foreach (var pago in cierre.Pagos)
                 {
                     var tarjeta = tarjetas.FirstOrDefault(t => pago.TarjetaId == t.TarjetaID);
+                    var empeño = empeños.FirstOrDefault(e => e.PagoID == pago.PagoId);
+                    if (empeño == null)
+                    {
                     var movimiento = movimientos.FirstOrDefault(m => m.PagoId == pago.PagoId);
                     var visita = movimiento?.Visita;
                     var horaSalida = pago.fechaHora;
@@ -440,24 +443,45 @@ namespace ApiObjetos.Controllers
 
                     decimal? periodo = movimiento?.TotalFacturado ?? 0;
 
-                    pagosConDetalle.Add(new
+                        pagosConDetalle.Add(new
+                        {
+                            pago.PagoId,
+                            CategoriaNombre = habitacion?.Categoria.NombreCategoria,
+                            Periodo = periodo,
+                            TarjetaNombre = tarjeta?.Nombre ?? null,
+                            Fecha = pago.fechaHora,
+                            HoraIngreso = ultimaReserva?.FechaReserva,
+                            HoraSalida = horaSalida,
+                            TotalConsumo = totalConsumo ?? 0,
+                            MontoAdicional = pago.Adicional ?? 0,
+                            pago.MontoEfectivo,
+                            pago.MontoTarjeta,
+                            pago.MontoBillVirt,
+                            pago.MontoDescuento,
+                            pago.Observacion,
+                            TipoHabitacion = habitacion?.NombreHabitacion
+                        });
+                    }
+                    else
                     {
-                        pago.PagoId,
-                        CategoriaNombre = habitacion?.Categoria.NombreCategoria,
-                        Periodo = periodo,
-                        TarjetaNombre = tarjeta?.Nombre ?? null,
-                        Fecha = pago.fechaHora,
-                        HoraIngreso = ultimaReserva?.FechaReserva,
-                        HoraSalida = horaSalida,
-                        TotalConsumo = totalConsumo ?? 0,
-                        MontoAdicional = pago.Adicional ?? 0,
-                        pago.MontoEfectivo,
-                        pago.MontoTarjeta,
-                        pago.MontoBillVirt,
-                        pago.MontoDescuento,
-                        pago.Observacion,
-                        TipoHabitacion = habitacion?.NombreHabitacion
-                    });
+                        pagosConDetalle.Add(new
+                        {
+                            pago.PagoId,
+                            Fecha = pago.fechaHora,
+                            Periodo = 0,
+                            TarjetaNombre = tarjeta?.Nombre ?? null,
+                            HoraIngreso = (DateTime?)null,
+                            HoraSalida = (DateTime?)null,
+                            totalConsumo = 0,
+                            MontoAdicional = 0,
+                            pago.MontoEfectivo,
+                            pago.MontoTarjeta,
+                            pago.MontoBillVirt,
+                            pago.MontoDescuento,
+                            pago.Observacion,
+                            TipoHabitacion = (string?)null
+                        });
+                    }
                 }
 
                 // Agregar reservas anuladas
@@ -487,7 +511,32 @@ namespace ApiObjetos.Controllers
                         TipoHabitacion = nombreHabitacion
                     });
                 }
+                var egresosReturn = new List<object>();
 
+                var egresos = await _db.Egresos
+                    .Where(e => e.CierreID == idCierre)
+                    .Include(e => e.TipoEgreso) // Ensure TipoEgreso is loaded
+                    .ToListAsync();
+
+                foreach (var egreso in egresos)
+                {
+                    egresosReturn.Add(new
+                    {
+                        PagoId = 0,
+                        Periodo = 0,
+                        HoraIngreso = (DateTime?)null,
+                        HoraSalida = (DateTime?)null,
+                        TipoHabitacion = (string?)null,
+                        totalConsumo = 0,
+                        MontoAdicional = 0,
+                        MontoEfectivo = egreso.Cantidad * egreso.Precio, // Assuming 'Cierre' was a mistake, using 'Precio'
+                        MontoTarjeta = 0,
+                        MontoBillVirt = 0,
+                        MontoDescuento = 0,
+                        Fecha = egreso.Fecha,
+                        Observacion = "Pago de egreso por: " + egreso.TipoEgreso?.Nombre // Ensure TipoEgreso is not null
+                    });
+                }
                 // Retornar respuesta con los datos del cierre
                 res.Ok = true;
                 res.Data = new
@@ -500,7 +549,8 @@ namespace ApiObjetos.Controllers
                     cierre.TotalIngresosTarjeta,
                     cierre.MontoInicialCaja,
                     cierre.Observaciones,
-                    Pagos = pagosConDetalle
+                    Pagos = pagosConDetalle,
+                    egresos = egresosReturn
                 };
             }
             catch (Exception ex)
@@ -690,7 +740,7 @@ namespace ApiObjetos.Controllers
             {
                 Cierres = reversedCierres,
                 PagosSinCierre = PagosSinCierreReturn,
-                egresosSinCierre = egresosSinCierreReturn
+                egresos = egresosSinCierreReturn
             };
             }
             catch (Exception ex)
