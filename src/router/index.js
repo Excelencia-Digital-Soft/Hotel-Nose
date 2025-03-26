@@ -19,7 +19,7 @@ import UsuariosManager from "../views/UsuariosManager.vue";
 import Egresos from "../views/Egresos.vue";
 import EmpeñosManager from "../views/EmpeñosManager.vue";
 import SelectRoom from "../views/SelectRoom.vue"
-
+import CaracteristicasManager from "../views/CaracteristicasManager.vue"
 
 import { useAuthStore } from "../store/auth";
 
@@ -147,6 +147,15 @@ const routes = [
         path: "/MediosPago",
         name: "MediosPago",
         component: MediosPagoManager,
+        meta: {
+          requireAuth: true,
+          roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)
+        },
+      },
+      {
+        path: "/CaracteristicasManager",
+        name: "CaracteristicasManager",
+        component: CaracteristicasManager,
         meta: {
           requireAuth: true,
           roles: [1, 2], // Solo Supervisores y Administrativos (idRol 1 y 2)

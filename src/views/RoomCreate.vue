@@ -1,15 +1,16 @@
 <template>
   <div class="p-4">
     <!-- Form for Creating/Updating a Room -->
-    <div class="mb-6">
+    <div class="grid grid-cols-2 mb-6 border-4 p-2 rounded-xl">
+      <section>
       <h2 class="text-xl text-white lexend-exa font-bold mb-4">
         {{ isUpdateMode ? 'Actualizar Habitación' : 'Crear Habitación' }}
       </h2>
-      <form @submit.prevent="submitForm">
+      <form @submit.prevent="submitForm" class="p-2">
         <div class="mb-4">
           <label class="block text-white text-sm font-bold mb-2" for="roomName">Nombre:</label>
           <input v-model="roomName"
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            class="shadow appearance-none border rounded w-2/4 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
             id="roomName" type="text" placeholder="Nombre de la habitación" required>
         </div>
 
@@ -52,14 +53,19 @@
           </div>
         </div>
 
-        <button class="bg-primary-500 text-white py-2 px-4 rounded hover:bg-primary-700 mt-4" type="submit">
-          {{ isUpdateMode ? 'Actualizar' : 'Crear' }}
+        <button class="btn-primary  w-3/4 text-white py-2 px-4 rounded hover:bg-primary-700 mt-4" type="submit">
+          {{ isUpdateMode ? 'Actualizar Habitacion' : 'Crear Habitacion' }}
         </button>
         <button v-if="isUpdateMode" @click="resetForm"
           class="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-700 mt-4 ml-2">
           Cancelar
         </button>
+  
       </form>
+    </section>
+    <section> 
+      <CaracteristicasComponent :trigger="triggerSignal" :idHabitacion="habitacionID" :listaCaracteristicas="listaCaracteristicas"/>
+    </section>
     </div>
 
     <!-- List of Rooms -->
@@ -116,6 +122,7 @@ import axiosClient from '../axiosClient';
 import ModalInventory from '../components/ModalInventory.vue';
 import { useAuthStore } from '../store/auth.js';
 import { fetchImagesAndIds } from '../services/imageService';
+import CaracteristicasComponent from '../components/CaracteristicasComponent.vue';
 
 const authStore = useAuthStore();
 
@@ -132,7 +139,14 @@ const roomToInventory = ref(null);
 const isUpdateMode = ref(false); // Flag for update mode
 const roomToUpdate = ref(null); // Room being updated
 const removedImageIds = ref([]); // Track IDs of removed images
+const triggerSignal = ref(false)
+const habitacionID = ref(null)
+const listaCaracteristicas=ref(null)
 
+const triggerChildFunction = (habID) => {
+  habitacionID.value = habID
+  triggerSignal.value = !triggerSignal.value // Cambia el valor para activar el watch
+}
 // Fetch rooms and categories
 const fetchHabitaciones = () => {
   const institucionID = authStore.institucionID;
@@ -210,18 +224,19 @@ function showInventoryRoom(room) {
   console.log(roomToInventory.value);
 }
 const startUpdateRoom = async (room) => {
+  listaCaracteristicas.value = room.caracteristicas
+  habitacionID.value = room.habitacionId
   isUpdateMode.value = true;
   roomToUpdate.value = room;
   roomName.value = room.nombreHabitacion;
   selectedCategory.value = room.categoriaId;
-
+  
   // Load images for the room
   const imagenIds = room.imagenes || [];
   if (imagenIds.length > 0) {
     try {
       const imagenes = await fetchImagesAndIds(imagenIds); // Fetch image URLs
       imagePreviews.value = imagenes; // Set image objects for preview
-      console.log(imagePreviews.value)
     } catch (error) {
       console.error("Error fetching images:", error);
       imagePreviews.value = []; // Fallback to empty array if there's an error
@@ -264,9 +279,13 @@ const createRoom = async () => {
     const response = await axiosClient.post("/CrearHabitacionConImagenes", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    debugger    // Verifica la estructura real de la respuesta
+    console.log("VEMOS ESTO",response.data.data)
+    triggerChildFunction(response.data.data.habitacionId)
     alert(response.data.message);
     resetForm();
     fetchHabitaciones();
+    
   } catch (error) {
     console.error("Error al crear habitación:", error);
     alert("Hubo un error al crear la habitación.");
@@ -310,6 +329,7 @@ if (removedImageIds.value.length > 0) {
       headers: { "Content-Type": "multipart/form-data" },
     });
     alert(response.data.message);
+    triggerChildFunction(habitacionID)
     resetForm();
     fetchHabitaciones();
   } catch (error) {
@@ -325,7 +345,10 @@ const resetForm = () => {
   selectedCategory.value = null;
   imageFiles.value = [];
   imagePreviews.value = [];
-  removedImageIds.value = []; 
+  removedImageIds.value = [];
+  triggerSignal.value = false;
+  habitacionID.value = null;
+  listaCaracteristicas.value = null;
 };
 
 // Delete a room

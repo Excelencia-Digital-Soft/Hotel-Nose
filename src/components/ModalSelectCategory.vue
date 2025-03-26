@@ -7,7 +7,7 @@
       <!-- Panel de la habitación seleccionada con Slider -->
 
       <div  class="flex flex-col justify-center items-center mb-24 p-4  rounded-lg w-full h-auto text-center">
-        <section class="bg-neutral-700 w-11/12 h-[80%] ">
+        <section class="bg-neutral-700 w-11/12 h-auto ">
           <h3 class="mt-6 text-lg text-white">Selecciona tu Habitación:</h3>
           <div class="flex flex-col justify-center items-center " v-for="habitacion in selectedCategory">
             <button 
