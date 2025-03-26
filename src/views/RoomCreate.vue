@@ -6,7 +6,7 @@
       <h2 class="text-xl text-white lexend-exa font-bold mb-4">
         {{ isUpdateMode ? 'Actualizar Habitación' : 'Crear Habitación' }}
       </h2>
-      <form @submit.prevent="submitForm" class="p-2">
+      <form @submit.prevent="submitForm" class="p-2 flex flex-col justify-between">
         <div class="mb-4">
           <label class="block text-white text-sm font-bold mb-2" for="roomName">Nombre:</label>
           <input v-model="roomName"
@@ -57,7 +57,7 @@
           {{ isUpdateMode ? 'Actualizar Habitacion' : 'Crear Habitacion' }}
         </button>
         <button v-if="isUpdateMode" @click="resetForm"
-          class="bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-700 mt-4 ml-2">
+          class="bg-gray-500 w-3/4 text-white py-2 px-4 rounded hover:bg-gray-700 mt-4 ">
           Cancelar
         </button>
   
@@ -75,7 +75,7 @@
         <div v-for="habitacion in habitaciones" :key="habitacion.habitacionId"
           class="p-4 border-4 bg-neutral-800 rounded-md text-lg font-semibold shadow-sm text-white text-center grid">
           {{ habitacion.nombreHabitacion }}
-          <button @click="confirmDeleteRoom(habitacion)"
+          <button @click="openDeleteRoom(habitacion)"
             class="bg-red-500 text-white px-2 py-1 mt-2 rounded hover:bg-red-700">
             Borrar
           </button>
@@ -102,7 +102,7 @@
             class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
             Eliminar
           </button>
-          <button @click="cancelDeleteRoom" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">
+          <button @click="openDeleteRoom" class="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">
             Cancelar
           </button>
         </div>
@@ -142,10 +142,15 @@ const removedImageIds = ref([]); // Track IDs of removed images
 const triggerSignal = ref(false)
 const habitacionID = ref(null)
 const listaCaracteristicas=ref(null)
-
+const openDeleteRoom = (room) =>{
+  if(room){roomToDelete.value=room}
+  showDeleteModal.value=!showDeleteModal.value
+}
 const triggerChildFunction = (habID) => {
+  console.log("PRUEBATION",triggerSignal.value)
   habitacionID.value = habID
   triggerSignal.value = !triggerSignal.value // Cambia el valor para activar el watch
+  console.log("PRUEBATION",triggerSignal.value)
 }
 // Fetch rooms and categories
 const fetchHabitaciones = () => {
@@ -279,7 +284,7 @@ const createRoom = async () => {
     const response = await axiosClient.post("/CrearHabitacionConImagenes", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    debugger    // Verifica la estructura real de la respuesta
+
     console.log("VEMOS ESTO",response.data.data)
     triggerChildFunction(response.data.data.habitacionId)
     alert(response.data.message);
@@ -346,9 +351,8 @@ const resetForm = () => {
   imageFiles.value = [];
   imagePreviews.value = [];
   removedImageIds.value = [];
-  triggerSignal.value = false;
-  habitacionID.value = null;
-  listaCaracteristicas.value = null;
+
+
 };
 
 // Delete a room
