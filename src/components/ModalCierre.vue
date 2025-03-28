@@ -70,10 +70,46 @@
 
             <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
           </div>
+          <div v-if="pago.tipoHabitacion == null && pago.pagoId != 0" class="contents">
+            <!-- Pago Info -->
+            <div class="text-black col-span-2 font-semibold p-2 border-b border-r border-gray-300"
+              :class="{ 'bg-red-400': pago.pagoId === 0 }"> PAGO EMPEÑO
+              </div>
+            <div @click="openInfoModal(pago)"
+              class="cursor-pointer text-blue-600 hover:underline p-2 border-b border-r border-gray-300">
+              Pago {{ pago.pagoId }}
+              <div class="text-gray-500 text-sm ">{{ formatFechaHora(pago.fecha) }}</div>
+            </div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{ pago.periodo }}
+            </div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoAdicional || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.totalConsumo || '' }}</div>
+            <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{
+              formatFechaHora(pago.horaIngreso) }}</div>
+            <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{
+              formatFechaHora(pago.horaSalida) }}</div>
+
+
+            <!-- Money values with right alignment and hiding zeros -->
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoEfectivo || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoTarjeta || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.tarjetaNombre || '' }}</div>
+            <div class="text-red-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              pago.montoDescuento || '' }}</div>
+            <div class="text-green-600 font-semibold p-2 border-b border-r border-gray-300 text-right">{{
+              (pago.montoEfectivo + pago.montoTarjeta) || '' }}</div>
+
+            <div class="text-black font-semibold p-2 border-b border-r border-gray-300">{{ pago.observacion }}</div>
+          </div>
         </template>
 
         <!-- Iterate over Egresos -->
-        <template v-for="(egreso, index) in selectedEgresos" :key="`egreso-${index}`">
+        <template v-for="(egreso, index) in egresos" :key="`egreso-${index}`">
           <div class="contents text-red-500">
             <!-- Egreso Info -->
             <div class="text-red-500 col-span-2 font-semibold p-2 border-b border-r border-gray-300">Egreso</div>
@@ -271,7 +307,6 @@ const props = defineProps({
   esAbierto: Boolean,
   idcierre: Number
 });
-
 const emit = defineEmits(['close-modal', 'imprimir-modal']);
 
 const closeModal = () => {
@@ -288,22 +323,23 @@ const showInfoModal = ref(false);
 const selectedPago = ref(null);
 const showCerrarCajaModal = ref(false);
 let listaPagos = ref([])
+let egresos = ref([]);
 
 onBeforeMount(() => {
   if (props.selectedPagos.length > 0) {
     listaPagos.value = props.selectedPagos;
   }
+  if (props.idcierre > 0) {
+    fetchDetalleCierre()
+  } else egresos.value = props.selectedEgresos;
 });
 
 onMounted(() => {
   if (props.selectedPagos.length > 0) {
     listaPagos.value = props.selectedPagos;
   }
-  if (props.idcierre > 0) {
-    fetchDetalleCierre()
-  }
-  // Add egresos to the list after fetching pagos or on initial load
-  listaPagos.value = [...listaPagos.value, ...props.selectedEgresos];
+  console.log(egresos.value);
+  listaPagos.value = [...listaPagos.value, ...egresos.value];
 
 })
 
@@ -311,8 +347,9 @@ const fetchDetalleCierre = () => {
   console.log(props.idcierre)
   axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`)
     .then(({ data }) => {
-      console.log(data.data.pagos)
+      console.log(data.data);
       listaPagos.value = data.data.pagos
+      egresos.value = data.data.egresos
     })
     .catch(error => {
       console.error('Error al obtener detalle cierres:', error);

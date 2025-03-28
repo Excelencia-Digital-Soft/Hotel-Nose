@@ -27,7 +27,7 @@
                     <!-- Botón para ignorar tiempo extra -->
                     <button @click="ignorarTiempoExtra" type="button" :class="[
                       'timerbutton',
-                      'w-2/4',
+                      'w-2/5',
                       'font-semibold',
                       'text-white',
                       'grid',
@@ -46,6 +46,28 @@
                         block
                       </span>
                     </button>
+                    <button @click="toggleModalExtender" type="button" :class="[
+                      'timerbutton',
+                      'w-2/4',
+                      'font-semibold',
+                      'text-white',
+                      'grid',
+                      'transition-all',
+                      {
+                        'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400': ignorarTiempo,
+                        'transform scale-80': ignorarTiempo,
+                        'shadow-inner': ignorarTiempo
+                      }
+                    ]" :style="{
+                    border: '4px solid transparent',
+                    borderImage: 'linear-gradient(to right, #ff49d1, #a78bfa, #3b5cff) 1',
+
+                  }">
+                      <span>
+                        Agregar tiempo
+                      </span>
+                    </button>
+                    
                   </div>
     
 
@@ -262,7 +284,9 @@
             <ModalConsumo v-if="modalConsumo" :name="selectedRoom.Identificador"
               :habitacionID="selectedRoom.HabitacionID" :consumoHabitacion="esConsumoHabitacion"
               @confirmaAccion="confirmAndSend" @close="toggleModalConsumo" />
-
+            <ModalExtenderOcupacion v-if="modalExtender" :name="selectedRoom.Identificador"
+            :reservaID="selectedRoom.ReservaID"
+            @confirmExtension="agregarTiempoExtra" @close-modal="modalExtender = false" />
 
           </div>
 
@@ -280,11 +304,12 @@ import axiosClient from '../axiosClient';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
 import ModalConsumo from './ModalConsumo.vue';
+import ModalExtenderOcupacion from './ExtenderOcupacionModal.vue';
 import AnularOcupacionModal from './AnularOcupacionModal.vue';
 import ModalPagar from './ModalPagar.vue';
 import dayjs from 'dayjs';
 
-const emits = defineEmits(['close-modal', 'update-room']);
+const emits = defineEmits(['close-modal', 'update-room', 'update-tiempo']);
 const props = defineProps({
   room: Object,
 });
@@ -360,6 +385,7 @@ const tableData = ref({
 });
 
 let modalConsumo = ref(false);
+let modalExtender = ref(false);
 
 
 
@@ -462,7 +488,16 @@ const toggleModalConsumo = (esHabitacion) => {
   esConsumoHabitacion.value = esHabitacion
   modalConsumo.value = !modalConsumo.value;
 }
-
+const toggleModalExtender = () => {
+  modalExtender.value = !modalExtender.value;
+}
+const agregarTiempoExtra = (horas, minutos) => {
+  selectedRoom.value.TotalHoras = selectedRoom.value.TotalHoras + horas;
+  selectedRoom.value.TotalMinutos = selectedRoom.value.TotalMinutos + minutos;
+  emits('update-tiempo', selectedRoom.value.ReservaID, horas, minutos)
+  calculateRemainingTime()
+  modalExtender.value = false;
+}
 const toggleAnularOcupacionModal = () => {
   modalAnular.value = !modalAnular.value;
 }
@@ -553,7 +588,6 @@ function calculateRemainingTime() {
       const endTime = dayjs(selectedRoom.value.FechaReserva)
         .add(selectedRoom.value.TotalHoras, 'hour')
         .add(selectedRoom.value.TotalMinutos, 'minute');
-
       const now = dayjs();
       const diffInMinutes = endTime.diff(now, 'minute');
       const isOvertime = diffInMinutes < 0;
