@@ -44,6 +44,11 @@ export const fetchImagenes = async (imagenIds) => {
     return []; // Return an empty array in case of a general error
   }
 };
+export const getCharacteristicImage = async (characteristicId)=> {
+  return axiosClient.get(`/api/Caracteristicas/GetImage/${characteristicId}`, {
+    responseType: 'blob'
+  });
+}
 export const fetchImagesAndIds = async (imagenIds) => {
   try {
     // Fetch all image URLs in parallel

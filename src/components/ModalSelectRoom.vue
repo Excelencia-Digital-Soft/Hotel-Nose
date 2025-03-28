@@ -7,23 +7,25 @@
       <!-- Panel de la habitación seleccionada con Slider -->
 
       <div  class="flex flex-col justify-center items-center mb-24 p-4  rounded-lg w-10/12 h-auto text-center">
+        <!-- <h3 class="text-3xl font-semibold text-white ">{{ selectedRoom.nombre }}</h3> -->
         
-        <h3 class="text-3xl font-semibold text-white ">{{ selectedRoom.nombre }}</h3>
-        <ul class="mt-2 list-disc pl-4 text-gray-300 text-left">
-          <li v-for="(detalle, index) in selectedRoom.descripcion" :key="index">
-            {{ detalle }}
-          </li>
-        </ul>
 
         <!-- Carrusel de imágenes -->
-        <Swiper :modules="[Navigation, Pagination]" navigation pagination class="mt-4 w-full">
+       <h3 class="text-3xl font-semibold text-white ">{{ selectedRoom.nombreHabitacion }}</h3>
+        <Swiper :modules="[Navigation, Pagination]" navigation pagination class="mt-4 w-full h-full">
           <SwiperSlide v-for="(img, index) in selectedRoom.imagenes" :key="index">
-            <img :src="img" class="w-full h-96 object-cover rounded-lg" />
+            <img :src="img" class="w-full h-full object-cover rounded-lg" />
           </SwiperSlide>
         </Swiper>
+        <ul class="mt-2 list-disc pl-4 text-gray-300 text-left">
+          <li v-for="(detalle, index) in selectedRoom.caracteristicas" :key="index">
+            {{ detalle.nombre }}
+          </li>
+        </ul>
+        <button class="btn-secondary font-semibold rounded-lg text-2xl p-8">Alquilar ${{ selectedRoom.precio }}</button>
         <button type="button"
-                class="btn-danger absolute bottom-8 right-6 md:right-16 text-md w-1/3 h-16 rounded-3xl transition-colors border-2 border-purple-200"
-                @click="emits('close')">cancelar</button>
+                class="btn-danger absolute top-6 right-4 z-10 md:right-16 text-md w-20 h-20 rounded-3xl transition-colors border-2 border-purple-200"
+                @click="emits('close')">X</button>
       </div>
     </Transition>
     </div>

@@ -43,7 +43,7 @@
 import { ref, watch } from 'vue';
 import axiosClient from '../axiosClient';
 import DropDownCreateSearchCaracters from '../components/DropDownCreateSearchCaracters.vue'
-
+import { getCharacteristicImage } from '../services/imageService';
 const props = defineProps({
   trigger: Boolean,
   idHabitacion: Number,
@@ -73,31 +73,26 @@ const obtenerIdsCaracteristicas = () => {
   return caracteristicas.value.map(c => c.caracteristicaId);
 }
 
-// Función para cargar los iconos
+
 const cargarIconos = async (lista) => {
   return await Promise.all(
     lista.map(async (caracteristica) => {
       if (caracteristica.icono) {
         try {
-          const response = await axiosClient.get(`/api/Caracteristicas/GetImage/${caracteristica.caracteristicaId}`, {
-            responseType: 'blob',
-          });
+          const response = await getCharacteristicImage(caracteristica.caracteristicaId);
           return {
             ...caracteristica,
             icono: URL.createObjectURL(response.data)
           };
         } catch (error) {
-          console.error(`Error al cargar el icono de ${caracteristica.nombre}:`, error);
+          console.error(`Error al cargar el icono: ${error}`);
           return {
             ...caracteristica,
             icono: null
           };
         }
       }
-      return {
-        ...caracteristica,
-        icono: null
-      };
+      return caracteristica;
     })
   );
 };

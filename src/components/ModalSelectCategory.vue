@@ -6,26 +6,28 @@
           <Transition name="modal-inner">
       <!-- Panel de la habitación seleccionada con Slider -->
 
-      <div  class="flex flex-col justify-center items-center mb-24 p-4  rounded-lg w-full h-auto text-center">
-        <section class="bg-neutral-700 w-11/12 h-auto ">
+      <div  class="flex flex-col justify-center items-center  p-4  rounded-lg w-full h-auto text-center">
+       
+        <section class="bg-neutral-700 max-h-[1500px] overflow-y-auto w-11/12 h-auto rounded-3xl ">
           <h3 class="mt-6 text-lg text-white">Selecciona tu Habitación:</h3>
           <div class="flex flex-col justify-center items-center " v-for="habitacion in selectedCategory">
             <button 
             @click="seleccionarHabitacion(habitacion)"
-            class="h-36 w-11/12 rounded-2xl border-2 border-white mb-4 flex justify-center items-center">
+            class=" relative h-36 w-11/12 rounded-2xl border-2 border-white mb-4 flex justify-center items-center">
                   <!-- Mostrar imagen o imagen por defecto -->
                   <img
                     :src="habitacion.imagenes.length > 0 ? habitacion.imagenes[0] : '../assets/image59.svg'"
                     alt="Imagen de la habitación"
                     class="w-full h-full object-cover rounded-2xl"
                   />
-                  <span class="absolute border-2 border-white p-4 text-white">{{ habitacion.nombreHabitacion }}</span>
+                  <span class="absolute w-48 font-semibold border-2 border-white p-4 text-white">{{ habitacion.nombreHabitacion }}</span>
                 </button>          
               </div>
+              <button type="button"
+                class="btn-danger absolute top-4 right-4 md:right-16 text-md w-16 h-16 rounded-3xl transition-colors border-2 border-purple-200"
+                @click="emits('close')">X</button>
         </section>
-        <button type="button"
-                class="btn-danger absolute bottom-8 right-6 md:right-16 text-md w-1/3 h-16 rounded-3xl transition-colors border-2 border-purple-200"
-                @click="emits('close')">cancelar</button>
+    
                 <ModalSelectRoom v-if="modalSRoom" :selectedRoom="habSeleccionada" @close="toggleModalSelectRoom" />
       </div>
       
