@@ -410,6 +410,43 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpPut]
+        [Route("ExtenderReserva")]
+        [AllowAnonymous]
+        public async Task<Respuesta> ExtenderReserva(int idReserva, int horas = 0, int minutos = 0)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                // Find the reservation by idReserva
+                var reserva = await _db.Reservas.FindAsync(idReserva);
+
+                // Check if the reservation exists
+                if (reserva != null)
+                {
+                    reserva.TotalHoras = reserva.TotalHoras + horas;
+                    reserva.TotalMinutos = reserva.TotalMinutos + minutos;
+                    await _db.SaveChangesAsync();
+                    res.Data = reserva;
+                    res.Message = "Reserva encontrada.";
+                    res.Ok = true;
+                }
+                else
+                {
+                    res.Message = "No se encontró la reserva.";
+                    res.Ok = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException?.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
+
         [HttpGet]
         [Route("GetReservas")]
         [AllowAnonymous]
