@@ -449,7 +449,42 @@ namespace ApiObjetos.Controllers
                 return NotFound(new { message = "Attachment not found in database" });
             }
         }
+        [HttpGet("GetImagenGlobal/{imagenId}")]
+        public IActionResult GetImagenGlobal(int imagenId)
+        {
+            // Access the database to find the image by imagenId
+            var imagen = _db.Imagenes.FirstOrDefault(i => i.ImagenId == imagenId);
 
+            // Check if the image was found
+            if (imagen != null)
+            {
+                // Combine the attachmentPath with the fileName to get the full path
+                var imagePath = Path.Combine(imagen.Origen);
+
+                // Check if the file exists at the specified path
+                if (System.IO.File.Exists(imagePath))
+                {
+                    // Determine the content type based on the file extension
+                    var contentType = GetContentType(imagePath);
+
+                    // Read the file data
+                    var imageData = System.IO.File.ReadAllBytes(imagePath);
+
+                    // Return the file data with the appropriate content type
+                    return File(imageData, contentType);
+                }
+                else
+                {
+                    // Return a 404 Not Found response if the image file does not exist
+                    return NotFound(new { message = "Image file not found" });
+                }
+            }
+            else
+            {
+                // Return a 404 Not Found response if the image record does not exist
+                return NotFound(new { message = "Image not found in database" });
+            }
+        }
         [HttpDelete]
         [Route("AnularArticulo")]
         public async Task<Respuesta> AnularArticulo(int id, bool estado)

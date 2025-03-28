@@ -39,4 +39,9 @@ public partial class Habitaciones
     public virtual ICollection<Reservas> Reservas { get; } = new List<Reservas>();
 
     public decimal? Precio => Categoria?.PrecioNormal;
+
+    public virtual ICollection<HabitacionImagenes> HabitacionImagenes { get; set; } = new List<HabitacionImagenes>();
+
+    public virtual ICollection<HabitacionCaracteristica> HabitacionCaracteristicas { get; set; } = new List<HabitacionCaracteristica>();
+    
 }

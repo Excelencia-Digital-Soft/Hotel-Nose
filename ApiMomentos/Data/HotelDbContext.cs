@@ -78,7 +78,9 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<DescuentoEfectivo> DescuentoEfectivo { get; set; }
     public virtual DbSet<Tarjetas> Tarjetas { get; set; }
     public virtual DbSet<Registros> Registros { get; set; }
-
+    public DbSet<HabitacionImagenes> HabitacionImagenes { get; set; }
+    public DbSet<Caracteristica> Caracteristicas { get; set; }
+    public DbSet<HabitacionCaracteristica> HabitacionCaracteristicas { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -742,6 +744,38 @@ public partial class HotelDbContext : DbContext
             .HasOne(ui => ui.Institucion)
             .WithMany(i => i.UsuariosInstituciones)
             .HasForeignKey(ui => ui.InstitucionId);
+
+        modelBuilder.Entity<HabitacionImagenes>()
+            .HasOne(hi => hi.Habitacion)
+            .WithMany(h => h.HabitacionImagenes)
+            .HasForeignKey(hi => hi.HabitacionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<HabitacionImagenes>()
+            .HasOne(hi => hi.Imagen)
+            .WithMany()
+            .HasForeignKey(hi => hi.ImagenId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<HabitacionImagenes>(entity =>
+        {
+            entity.HasKey(hi => hi.Id); // Primary key
+            entity.Property(hi => hi.Anulado).HasDefaultValue(false); // Default value for Anulado
+        });
+
+        // Configura la relación muchos a muchos
+        modelBuilder.Entity<HabitacionCaracteristica>()
+            .HasKey(hc => new { hc.HabitacionId, hc.CaracteristicaId }); // Clave compuesta
+
+        modelBuilder.Entity<HabitacionCaracteristica>()
+            .HasOne(hc => hc.Habitacion)
+            .WithMany(h => h.HabitacionCaracteristicas)
+            .HasForeignKey(hc => hc.HabitacionId);
+
+        modelBuilder.Entity<HabitacionCaracteristica>()
+            .HasOne(hc => hc.Caracteristica)
+            .WithMany(c => c.HabitacionCaracteristicas)
+            .HasForeignKey(hc => hc.CaracteristicaId);
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

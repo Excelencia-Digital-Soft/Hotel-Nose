@@ -19,6 +19,7 @@
                 .ForMember(dest => dest.NombreRol, opt => opt.MapFrom(src => src.Rol.NombreRol));
             // Mapeo de Roles a RolDTO
             CreateMap<Roles, RolDTO>();
+
         }
     }
 }
