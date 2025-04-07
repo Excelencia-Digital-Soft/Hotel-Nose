@@ -172,9 +172,11 @@ namespace ApiObjetos.Controllers
                                 h.InstitucionID == institucionID)
                             .Select(h => new
                             {
+                               
                                 h.HabitacionId,
                                 h.NombreHabitacion,
                                 h.Disponible,
+                                CategoriaId = c.CategoriaId,
                                 Precio = c.PrecioNormal,
                                 ReservaActiva = h.Visita != null ?
                                     h.Visita.Reservas.FirstOrDefault(r => r.FechaFin == null) : null,

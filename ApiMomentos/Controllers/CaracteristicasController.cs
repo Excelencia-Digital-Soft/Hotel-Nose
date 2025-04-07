@@ -100,13 +100,21 @@ namespace ApiObjetos.Controllers
             }
             return res;
         }
-
         [HttpPut("ActualizarCaracteristica/{id}")]
-        public async Task<Respuesta> ActualizarCaracteristica(int id, [FromForm] string nombre, [FromForm] string descripcion, [FromForm] IFormFile icono)
+        [AllowAnonymous]
+        public async Task<Respuesta> ActualizarCaracteristica(int id, [FromForm] CaracteristicaDTO request)
         {
             Respuesta res = new Respuesta();
             try
             {
+                // Validar que el nombre sea obligatorio
+                if (string.IsNullOrEmpty(request.Nombre))
+                {
+                    res.Ok = false;
+                    res.Message = "El nombre es obligatorio";
+                    return res;
+                }
+
                 var caracteristica = await _db.Caracteristicas.FindAsync(id);
                 if (caracteristica == null)
                 {
@@ -115,24 +123,37 @@ namespace ApiObjetos.Controllers
                     return res;
                 }
 
-                caracteristica.Nombre = nombre;
-                caracteristica.Descripcion = descripcion;
+                // Actualizar propiedades básicas
+                caracteristica.Nombre = request.Nombre;
+                caracteristica.Descripcion = request.Descripcion ?? string.Empty;
 
-                if (icono != null && icono.Length > 0)
+                // Manejo de la imagen (solo si se proporciona una nueva)
+                if (request.Icono != null && request.Icono.Length > 0)
                 {
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(icono.FileName);
+                    // Eliminar imagen anterior si existe
+                    if (!string.IsNullOrEmpty(caracteristica.Icono) && System.IO.File.Exists(caracteristica.Icono))
+                    {
+                        System.IO.File.Delete(caracteristica.Icono);
+                    }
+
+                    // Guardar nueva imagen
+                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(request.Icono.FileName);
                     var filePath = Path.Combine("wwwroot/uploads", fileName);
                     Directory.CreateDirectory("wwwroot/uploads");
+
                     using (var stream = new FileStream(filePath, FileMode.Create))
                     {
-                        await icono.CopyToAsync(stream);
+                        await request.Icono.CopyToAsync(stream);
                     }
+
                     caracteristica.Icono = filePath;
                 }
 
                 await _db.SaveChangesAsync();
+
                 res.Ok = true;
                 res.Message = "Característica actualizada correctamente";
+                res.Data = caracteristica;
             }
             catch (Exception ex)
             {
@@ -141,7 +162,6 @@ namespace ApiObjetos.Controllers
             }
             return res;
         }
-
         [HttpDelete("EliminarCaracteristica/{id}")]
         public async Task<Respuesta> EliminarCaracteristica(int id)
         {
