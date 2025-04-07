@@ -196,6 +196,7 @@ function toggleModal(Room) {
 function toggleModalLibre(Room) {
     showFree.value = !showFree.value;
     room.value = Room;
+    console.log("selecciono habitacion:",Room)
     document.body.style.overflow = showFree.value ? 'hidden' : 'auto';
 }
 

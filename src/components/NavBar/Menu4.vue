@@ -2,7 +2,7 @@
   <button class="menubtn-4 flex h-full relative w-40" @click="toggleResults4">
     <section
       id="header" 
-      class="relative flex justify-center font-bold h-full w-full  items-center text-white hover:shadow-lg hover:shadow-cyan-500/50 rounded-full transition-colors py-2"
+      class="relative flex justify-center font-bold h-full w-full  items-center text-white hover:shadow-lg hover:shadow-neutral-900/50 rounded-full transition-colors py-2"
     >
       Caja
     </section>

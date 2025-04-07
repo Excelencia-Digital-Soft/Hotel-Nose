@@ -66,7 +66,7 @@ watch(
         <!-- "Go to Rooms" button for warning and ended types -->
         <button 
           v-if="notification.type === 'warning' || notification.type === 'ended'" 
-          class="btn-go-rooms" 
+          class="btn-go-rooms mr-2" 
           @click="goToRooms"
         >
           Habitaciones  
