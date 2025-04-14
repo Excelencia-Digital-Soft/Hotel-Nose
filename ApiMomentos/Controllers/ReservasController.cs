@@ -14,13 +14,15 @@ namespace ApiObjetos.Controllers
         private readonly MovimientosController _movimiento;
         private readonly VisitasController _visita;
         private readonly IServiceProvider _serviceProvider;
+        private readonly ReservationMonitorService _reservationMonitorService;
 
-        public ReservasController(HotelDbContext db, IServiceProvider serviceProvider, IConfiguration configuration)
+        public ReservasController(HotelDbContext db, IServiceProvider serviceProvider, IConfiguration configuration, ReservationMonitorService reservationMonitorService)
         {
             _db = db;
             _movimiento = new MovimientosController(db);
             _visita =  new VisitasController(db);
             _serviceProvider = serviceProvider;
+            _reservationMonitorService = reservationMonitorService;
 
         }
         #region Reservas
@@ -157,7 +159,7 @@ namespace ApiObjetos.Controllers
                 using (var scope = _serviceProvider.CreateScope())
                 {
                     var notificationService = scope.ServiceProvider.GetRequiredService<ReservationMonitorService>();
-                    notificationService.ScheduleNotification(nuevaReserva, CancellationToken.None);
+                    notificationService.ScheduleNotification(nuevaReserva);
                 }
                 // Step 5: Update the room's availability and set the current VisitaID
                 habitacion.Disponible = false;
@@ -427,6 +429,7 @@ namespace ApiObjetos.Controllers
                     reserva.TotalHoras = reserva.TotalHoras + horas;
                     reserva.TotalMinutos = reserva.TotalMinutos + minutos;
                     await _db.SaveChangesAsync();
+                    _reservationMonitorService.ScheduleNotification(reserva);
                     res.Data = reserva;
                     res.Message = "Reserva encontrada.";
                     res.Ok = true;
