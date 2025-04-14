@@ -21,6 +21,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Text.Json;
+using Microsoft.AspNetCore.SignalR;
+using ApiObjetos.NotificacionesHub;
 
 namespace ApiObjetos.Controllers
 {
@@ -32,30 +34,58 @@ namespace ApiObjetos.Controllers
     {
         private readonly HotelDbContext _db;
         private readonly IConfiguration _configuration;
+        private readonly IHubContext<NotificationsHub> _hubContext;
 
-        public ObjetosController(HotelDbContext db, IConfiguration configuration)
+        public ObjetosController(HotelDbContext db, IConfiguration configuration, IHubContext<NotificationsHub> hubContext)
         {
             _db = db;
             _configuration = configuration;
+            _hubContext = hubContext;
         }
 
-   
+
+
+        [HttpGet("sendTestNotification")]
+        public async Task<IActionResult> SendTestNotification(string testMessage)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveNotification", testMessage);
+            return Ok(new { message = "Test notification sent!" });
+        }
+
+
+        [HttpGet("sendTestNotificationInstitucion")]
+        public async Task<IActionResult> SendTestNotificationInstitucion(string testMessage, string type, int institucionID)
+        {
+            await _hubContext.Clients.Group($"institution-{institucionID}").SendAsync("ReceiveNotification", new
+            {
+                type = type,
+                message = testMessage,
+            }); return Ok(new { message = "Test notification sent!" });
+        }
+
+
         #region Categorias
 
         [HttpPost]
         [Route("CrearCategoria")] // Crea un nuevo paciente
         [AllowAnonymous]
 
-        public async Task<Respuesta> CrearCategoria(string nombreCategoria, int Precio, int? capacidadMaxima, int? UsuarioID)
+        public async Task<Respuesta> CrearCategoria(string nombreCategoria, int UsuarioID, int InstitucionID, int Precio, int? capacidadMaxima, int? Porcentaje)
         {
             Respuesta res = new Respuesta();
             try
             {
+                var capacidad = capacidadMaxima ?? 0;
+                var porc = Porcentaje ?? 0;
+
                 CategoriasHabitaciones nuevaCategoria = new CategoriasHabitaciones
                 {
-
+                    InstitucionID = InstitucionID,
+                    UsuarioId = UsuarioID,
                     NombreCategoria = nombreCategoria,
                     PrecioNormal = Precio,
+                    CapacidadMaxima = capacidad,
+                    PorcentajeXPersona = porc,
                     FechaRegistro = DateTime.Now
                 };
 
@@ -108,14 +138,14 @@ namespace ApiObjetos.Controllers
         [Route("GetCategorias")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
 
-        public async Task<Respuesta> GetCategorias()
+        public async Task<Respuesta> GetCategorias(int InstitucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
 
                 var Objeto = await _db.CategoriasHabitaciones.
-                    Where(c => c.Anulado != true)
+                    Where(c => c.Anulado != true && c.InstitucionID == InstitucionID)
                     .ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto;
@@ -135,7 +165,7 @@ namespace ApiObjetos.Controllers
         [HttpPut]
         [Route("ActualizarCategoria")] // Hace un update a un paciente en especifico segun los datos que se le brinden. 
         [AllowAnonymous]
-        public async Task<Respuesta> ActualizarCategoria(int id, string? nuevoNombre, int nuevaCapacidad, int Precio)
+        public async Task<Respuesta> ActualizarCategoria(int id, string? nuevoNombre, int nuevaCapacidad, int Precio,int? Porcentaje, int? UsuarioID)
         {
             Respuesta res = new Respuesta();
             try
@@ -171,6 +201,22 @@ namespace ApiObjetos.Controllers
                         _db.Database.ExecuteSqlRaw(
                             "UPDATE CategoriasHabitaciones SET PrecioNormal = @Precio WHERE CategoriaID = @Id",
                             new SqlParameter("@Precio", Precio),
+                            new SqlParameter("@Id", id)
+                        );
+                    }
+                    if (Porcentaje != null)
+                    {
+                        _db.Database.ExecuteSqlRaw(
+                            "UPDATE CategoriasHabitaciones SET PorcentajeXPersona = @Porcentaje WHERE CategoriaID = @Id",
+                            new SqlParameter("@Porcentaje", Porcentaje),
+                            new SqlParameter("@Id", id)
+                        );
+                    }
+                    if (UsuarioID != null)
+                    {
+                        _db.Database.ExecuteSqlRaw(
+                            "UPDATE CategoriasHabitaciones SET UsuarioID = @UsuarioID WHERE CategoriaID = @Id",
+                            new SqlParameter("@UsuarioID", UsuarioID),
                             new SqlParameter("@Id", id)
                         );
                     }

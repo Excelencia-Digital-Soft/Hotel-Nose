@@ -21,11 +21,11 @@ public partial class Reservas
     public int? MovimientoId { get; set; }
     public int? PromocionId { get; set; }
     public int? UsuarioId { get; set; }
-    public int InstitucionID { get; set; }
-
+    public int? PausaHoras { get; set; }
+    public int? PausaMinutos { get; set; }
     public DateTime? FechaRegistro { get; set; }
-
-    public bool? Anulado { get; set; }
+    public int InstitucionID { get; set; }
+    public DateTime? FechaAnula { get; set; }
     public virtual Habitaciones? Habitacion { get; set; }
     [JsonIgnore]
     public virtual Visitas? Visita { get; set; }

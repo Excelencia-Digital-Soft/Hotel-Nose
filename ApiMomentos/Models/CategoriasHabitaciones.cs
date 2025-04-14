@@ -20,6 +20,8 @@ public partial class CategoriasHabitaciones
     public decimal? PrecioNormal { get; set; }
     public int InstitucionID { get; set; }
 
+    public int PorcentajeXPersona { get; set; }
+
     public virtual ICollection<Habitaciones> Habitaciones { get; } = new List<Habitaciones>();
 
     public virtual ICollection<Tarifas> Tarifas { get; } = new List<Tarifas>();

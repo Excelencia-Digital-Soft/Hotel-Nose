@@ -14,11 +14,15 @@ public partial class Pagos
 
     public decimal? MontoTarjeta { get; set; }
 
+    public decimal? Adicional { get; set; }
+
     public decimal? MontoDescuento { get; set; }
 
     public int? MedioPagoId { get; set; }
 
     public int? CierreId { get; set; }
+
+    public int? TarjetaId { get; set; }
     public DateTime? fechaHora { get; set; }    
     public string? Observacion { get; set; }
     public Recargos? Recargo { get; set; }

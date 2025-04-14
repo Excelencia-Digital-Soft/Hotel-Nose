@@ -66,7 +66,8 @@ public partial class HotelDbContext : DbContext
 
     public virtual DbSet<Empeño> Empeño{ get; set; }
     public virtual DbSet<CategoriasArticulos> CategoriasArticulos { get; set; }
-
+    public DbSet<Institucion> Instituciones { get; set; }
+    public DbSet<UsuariosInstituciones> UsuariosInstituciones { get; set; }
 
     public virtual DbSet<Usuarios> Usuarios { get; set; }
 
@@ -74,8 +75,12 @@ public partial class HotelDbContext : DbContext
     public virtual DbSet<Imagenes> Imagenes { get; set; }
     public virtual DbSet<TipoEgreso> TipoEgreso { get; set; }
     public virtual DbSet<Egresos> Egresos { get; set; }
-
-
+    public virtual DbSet<DescuentoEfectivo> DescuentoEfectivo { get; set; }
+    public virtual DbSet<Tarjetas> Tarjetas { get; set; }
+    public virtual DbSet<Registros> Registros { get; set; }
+    public DbSet<HabitacionImagenes> HabitacionImagenes { get; set; }
+    public DbSet<Caracteristica> Caracteristicas { get; set; }
+    public DbSet<HabitacionCaracteristica> HabitacionCaracteristicas { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -102,11 +107,13 @@ public partial class HotelDbContext : DbContext
 
             entity.Property(e => e.CategoriaId).HasColumnName("CategoriaID");
             entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
             entity.Property(e => e.FechaRegistro).HasColumnType("datetime");
             entity.Property(e => e.NombreCategoria)
                 .HasMaxLength(50)
                 .IsUnicode(false);
             entity.Property(e => e.PrecioNormal).HasColumnType("decimal(10, 2)");
+            entity.Property(e => e.PorcentajeXPersona).HasColumnType("int");
             entity.Property(e => e.UsuarioId).HasColumnName("UsuarioID");
         });
 
@@ -142,6 +149,7 @@ public partial class HotelDbContext : DbContext
                 .IsRequired() // Mark as required
                 .HasMaxLength(50) // Set maximum length to 50
                 .HasColumnName("NombreCategoria");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
             entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
 
         });
@@ -182,6 +190,8 @@ public partial class HotelDbContext : DbContext
             entity.HasKey(e => e.HabitacionId).HasName("PK__Habitaci__11AD4441DE85318D");
 
             entity.Property(e => e.HabitacionId).HasColumnName("HabitacionID");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
+
             entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
             entity.Property(e => e.CategoriaId).HasColumnName("CategoriaID");
             entity.Property(e => e.Disponible).HasDefaultValueSql("((1))");
@@ -385,6 +395,7 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.PagoId).HasColumnName("PagoID");
             entity.Property(e => e.CierreId).HasColumnName("CierreID");
             entity.Property(e => e.MedioPagoId).HasColumnName("MedioPagoID");
+            entity.Property(e => e.TarjetaId).HasColumnName("TarjetaId");
             entity.Property(e => e.MontoBillVirt).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.MontoEfectivo).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.MontoTarjeta).HasColumnType("decimal(10, 2)");
@@ -464,7 +475,8 @@ public partial class HotelDbContext : DbContext
             entity.HasKey(e => e.ReservaId).HasName("PK__Reservas__C39937031EAE2A3E");
 
             entity.Property(e => e.ReservaId).HasColumnName("ReservaID");
-            entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
+            entity.Property(e => e.FechaAnula).HasColumnType("datetime");
             entity.Property(e => e.FechaFin).HasColumnType("datetime");
             entity.Property(e => e.FechaRegistro).HasColumnType("datetime");
             entity.Property(e => e.MovimientoId).HasColumnType("int");
@@ -595,6 +607,7 @@ public partial class HotelDbContext : DbContext
             entity.Property(e => e.VisitaId).HasColumnName("VisitaID");
             entity.Property(e => e.Anulado).HasDefaultValueSql("((0))");
             entity.Property(e => e.FechaPrimerIngreso).HasColumnType("datetime");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
             entity.Property(e => e.FechaRegistro).HasColumnType("datetime");
             entity.Property(e => e.Identificador)
                 .HasMaxLength(50)
@@ -664,6 +677,7 @@ public partial class HotelDbContext : DbContext
 
             entity.Property(e => e.EgresoId).HasColumnName("EgresoID");
             entity.Property(e => e.TipoEgresoId).HasColumnName("TipoEgresoID");
+            entity.Property(e => e.CierreID).HasColumnName("CierreID");
             entity.Property(e => e.Cantidad).HasDefaultValue(0);
             entity.Property(e => e.Precio).HasColumnType("decimal(10, 2)");
             entity.Property(e => e.Fecha).HasColumnType("datetime").HasDefaultValueSql("getdate()");
@@ -684,7 +698,84 @@ public partial class HotelDbContext : DbContext
                 .IsUnicode(true);
         });
 
-        OnModelCreatingPartial(modelBuilder);
+        modelBuilder.Entity<Tarjetas>(entity =>
+        {
+            entity.HasKey(e => e.TarjetaID);
+
+            entity.Property(e => e.TarjetaID).HasColumnName("TarjetaID");
+            entity.Property(e => e.MontoPorcentual).HasColumnName("MontoPorcentual");
+            entity.Property(e => e.Nombre)
+                .HasMaxLength(100)
+                .IsUnicode(true);
+        });
+
+
+        modelBuilder.Entity<DescuentoEfectivo>(entity =>
+        {
+            entity.HasKey(e => e.DescuentoID);
+
+            entity.Property(e => e.DescuentoID).HasColumnName("DescuentoID");
+            entity.Property(e => e.MontoPorcentual).HasColumnName("MontoPorcentual");
+            entity.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
+
+        });
+
+        modelBuilder.Entity<Registros>(entity =>
+        {
+            entity.HasKey(e => e.RegistroID);
+
+            entity.Property(e => e.RegistroID).HasColumnName("RegistroID");
+            entity.Property(e => e.Contenido)
+                .HasMaxLength(250)
+                .IsUnicode(true);
+            entity.Property(e => e.ReservaId).HasColumnName("ReservaID");
+        });
+
+        modelBuilder.Entity<UsuariosInstituciones>()
+                    .ToTable("UsuariosInstituciones") // Especificamos el nombre correcto de la tabla
+                    .HasKey(ui => new { ui.UsuarioId, ui.InstitucionId });
+
+        modelBuilder.Entity<UsuariosInstituciones>()
+            .HasOne(ui => ui.Usuario)
+            .WithMany(u => u.UsuariosInstituciones)
+            .HasForeignKey(ui => ui.UsuarioId);
+
+        modelBuilder.Entity<UsuariosInstituciones>()
+            .HasOne(ui => ui.Institucion)
+            .WithMany(i => i.UsuariosInstituciones)
+            .HasForeignKey(ui => ui.InstitucionId);
+
+        modelBuilder.Entity<HabitacionImagenes>()
+            .HasOne(hi => hi.Habitacion)
+            .WithMany(h => h.HabitacionImagenes)
+            .HasForeignKey(hi => hi.HabitacionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<HabitacionImagenes>()
+            .HasOne(hi => hi.Imagen)
+            .WithMany()
+            .HasForeignKey(hi => hi.ImagenId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<HabitacionImagenes>(entity =>
+        {
+            entity.HasKey(hi => hi.Id); // Primary key
+            entity.Property(hi => hi.Anulado).HasDefaultValue(false); // Default value for Anulado
+        });
+
+        // Configura la relación muchos a muchos
+        modelBuilder.Entity<HabitacionCaracteristica>()
+            .HasKey(hc => new { hc.HabitacionId, hc.CaracteristicaId }); // Clave compuesta
+
+        modelBuilder.Entity<HabitacionCaracteristica>()
+            .HasOne(hc => hc.Habitacion)
+            .WithMany(h => h.HabitacionCaracteristicas)
+            .HasForeignKey(hc => hc.HabitacionId);
+
+        modelBuilder.Entity<HabitacionCaracteristica>()
+            .HasOne(hc => hc.Caracteristica)
+            .WithMany(c => c.HabitacionCaracteristicas)
+            .HasForeignKey(hc => hc.CaracteristicaId);
     }
 
     partial void OnModelCreatingPartial(ModelBuilder modelBuilder);

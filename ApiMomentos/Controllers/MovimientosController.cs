@@ -20,13 +20,14 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("MovimientoHabitacion")]
         [AllowAnonymous]
-        public async Task<int> CrearMovimientoHabitacion(int visitaId, decimal totalFacturado, int habitacionId)
+        public async Task<int> CrearMovimientoHabitacion(int visitaId, int InstitucionID, decimal totalFacturado, int habitacionId)
         {
             try
             {
                 Movimientos nuevoMovimiento = new Movimientos
                 {
                     VisitaId = visitaId,
+                    InstitucionID = InstitucionID,
                     TotalFacturado = totalFacturado,
                     HabitacionId = habitacionId,
                 };
@@ -54,12 +55,20 @@ namespace ApiObjetos.Controllers
             {
                 try
                 {
+                    var habitacion = await _db.Habitaciones.FindAsync(habitacionId);
+                    if (habitacion == null)
+                    {
+                        res.Message = "Habitación no encontrada.";
+                        res.Ok = false;
+                        return res;
+                    }
                     decimal? totalFacturado = 0;
                     List<Consumo> consumosToAdd = new List<Consumo>();
                     Movimientos nuevoMovimiento = new Movimientos
                     {
                         HabitacionId = habitacionId,
                         VisitaId = visitaId,
+                        InstitucionID = habitacion.InstitucionID,  
                         FechaRegistro = DateTime.Now,
                         Anulado = false
                     };
@@ -171,12 +180,20 @@ namespace ApiObjetos.Controllers
             {
                 try
                 {
+                    var habitacion = await _db.Habitaciones.FindAsync(habitacionId);
+                    if (habitacion == null)
+                    {
+                        res.Message = "Habitación no encontrada.";
+                        res.Ok = false;
+                        return res;
+                    }
                     decimal? totalFacturado = 0;
                     List<Consumo> consumosToAdd = new List<Consumo>();
                     Movimientos nuevoMovimiento = new Movimientos
                     {
                         HabitacionId = habitacionId,
                         VisitaId = visitaId,
+                        InstitucionID = habitacion.InstitucionID,
                         FechaRegistro = DateTime.Now,
                         Anulado = false
                     };
@@ -277,6 +294,105 @@ namespace ApiObjetos.Controllers
                 }
             }
 
+            return res;
+        }
+
+        [HttpDelete]
+        [Route("AnularConsumo")]
+        [AllowAnonymous]
+        public async Task<Respuesta> AnularConsumo(int idConsumo)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var consumo = await _db.Consumo
+                    .FromSqlRaw("SELECT * FROM Consumo WITH (UPDLOCK, ROWLOCK) WHERE ConsumoId = {0} AND Anulado != 1", idConsumo)
+                    .SingleOrDefaultAsync();
+
+                if (consumo != null)
+                {
+                    var movimiento = await _db.Movimientos.FirstAsync(m => m.MovimientosId == consumo.MovimientosId);
+                    consumo.Anulado = true;
+                    movimiento.TotalFacturado -= consumo.PrecioUnitario * consumo.Cantidad;
+
+                    if (consumo.EsHabitacion == true)
+                    {
+                        var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == movimiento.HabitacionId);
+                        inventario.Cantidad += consumo.Cantidad;
+                    }
+                    else
+                    {
+                        var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i => i.ArticuloId == consumo.ArticuloId);
+                        inventarioGeneral.Cantidad += consumo.Cantidad;
+                    }
+                    await _db.SaveChangesAsync();
+                }
+                else
+                {
+                    res.Message = "Consumo no encontrado.";
+                    res.Ok = false;
+                    return res;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                res.Ok = false;
+            }
+            res.Message = "Consumo anulado";
+            res.Ok = true;
+            return res;
+        }
+
+
+        [HttpPut]
+        [Route("UpdateConsumo")]
+        [AllowAnonymous]
+        public async Task<Respuesta> UpdateConsumo(int idConsumo, int Cantidad)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var consumo = await _db.Consumo
+                    .FromSqlRaw("SELECT * FROM Consumo WITH (UPDLOCK, ROWLOCK) WHERE ConsumoId = {0} AND Anulado != 1", idConsumo)
+                    .SingleOrDefaultAsync();
+
+                if (consumo != null)
+                {
+                    var movimiento = await _db.Movimientos.FirstAsync(m => m.MovimientosId == consumo.MovimientosId);
+                    int? viejaCantidad = consumo.Cantidad;
+                    movimiento.TotalFacturado -= consumo.PrecioUnitario * consumo.Cantidad;
+                    consumo.Cantidad = Cantidad;
+                    movimiento.TotalFacturado += consumo.PrecioUnitario * consumo.Cantidad;
+
+                    if (consumo.EsHabitacion == true)
+                    {
+                        var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == movimiento.HabitacionId);
+                        inventario.Cantidad -= consumo.Cantidad;
+                        inventario.Cantidad += viejaCantidad;
+                    }
+                    else
+                    {
+                        var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i => i.ArticuloId == consumo.ArticuloId);
+                        inventarioGeneral.Cantidad -= consumo.Cantidad;
+                        inventarioGeneral.Cantidad += viejaCantidad;
+                    }
+                    await _db.SaveChangesAsync();
+                }
+                else
+                {
+                    res.Message = "Consumo no encontrado.";
+                    res.Ok = false;
+                    return res;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                res.Ok = false;
+            }
+            res.Message = "Consumo actualizado correctamente";
+            res.Ok = true;
             return res;
         }
 
@@ -467,14 +583,23 @@ namespace ApiObjetos.Controllers
                 // Step 1: Retrieve the list of Movimientos for the given VisitaId
                 var movimientos = await _db.Movimientos
                                            .Where(t => t.VisitaId == id)
+                                           .Include(m => m.Habitacion)
                                            .ToListAsync();
+                var movimiento = new Movimientos();
+                movimiento = movimientos.First();
+                var reserva = await _db.Reservas
+                               .Where(r => r.MovimientoId == movimiento.MovimientosId)
+                               .Include(r => r.Promocion)
+                               .FirstAsync();
 
                 // Step 2: Calculate the total sum of TotalFacturado
                 var totalFacturado = movimientos.Sum(m => m.TotalFacturado);
-
+                decimal? facturadoEstadia = 0;
+                if (reserva.Promocion != null) facturadoEstadia = reserva.Promocion.Tarifa * (reserva.TotalHoras + reserva.TotalMinutos / 60);
+                else facturadoEstadia = movimiento.TotalFacturado;
                 // Step 3: Return the result
                 res.Ok = true;
-                res.Data = totalFacturado; // return the total sum
+                res.Data = totalFacturado + facturadoEstadia; // return the total sum
                 res.Message = "Total facturado calculado correctamente.";
             }
             catch (Exception ex)
@@ -593,7 +718,7 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("CreateEgreso")]
         [AllowAnonymous]
-        public async Task<Respuesta> CreateEgreso([FromBody] Egresos newEgreso)
+        public async Task<Respuesta> CreateEgreso(int InstitucionID, [FromBody] Egresos newEgreso)
         {
             Respuesta res = new Respuesta();
             try
@@ -611,6 +736,7 @@ namespace ApiObjetos.Controllers
                 // Create the new Movimiento
                 Movimientos nuevoMovimiento = new Movimientos
                 {
+                    InstitucionID = InstitucionID,
                     TotalFacturado = totalFacturado,
                     FechaRegistro = DateTime.Now // Assuming you have a Fecha field
                 };
@@ -619,7 +745,7 @@ namespace ApiObjetos.Controllers
                 newEgreso.MovimientoId = nuevoMovimiento.MovimientosId;
                 _db.Movimientos.Add(nuevoMovimiento);
                 await _db.SaveChangesAsync();
-
+                newEgreso.InstitucionID = InstitucionID;
                 // Link the Movimiento to the Egreso via MovimientoId
                 newEgreso.MovimientoId = nuevoMovimiento.MovimientosId;
                 _db.Egresos.Add(newEgreso);
@@ -639,7 +765,7 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("CreateTipoEgreso")]
         [AllowAnonymous]
-        public async Task<Respuesta> CreateTipoEgreso([FromBody] TipoEgreso newTipoEgreso)
+        public async Task<Respuesta> CreateTipoEgreso(int InstitucionID, [FromBody] TipoEgreso newTipoEgreso)
         {
             Respuesta res = new Respuesta();
             try
@@ -650,7 +776,7 @@ namespace ApiObjetos.Controllers
                     res.Message = "Invalid Egreso data.";
                     return res;
                 }
-
+                newTipoEgreso.InstitucionID = InstitucionID;
                 _db.TipoEgreso.Add(newTipoEgreso);
                 await _db.SaveChangesAsync();
 

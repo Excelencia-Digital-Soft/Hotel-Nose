@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using ApiObjetos.Data;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 namespace ApiObjetos.Controllers
 {
     public class ReservasController : Controller
@@ -12,12 +13,16 @@ namespace ApiObjetos.Controllers
         private readonly HotelDbContext _db;
         private readonly MovimientosController _movimiento;
         private readonly VisitasController _visita;
+        private readonly IServiceProvider _serviceProvider;
+        private readonly ReservationMonitorService _reservationMonitorService;
 
-        public ReservasController(HotelDbContext db, IConfiguration configuration)
+        public ReservasController(HotelDbContext db, IServiceProvider serviceProvider, IConfiguration configuration, ReservationMonitorService reservationMonitorService)
         {
             _db = db;
             _movimiento = new MovimientosController(db);
             _visita =  new VisitasController(db);
+            _serviceProvider = serviceProvider;
+            _reservationMonitorService = reservationMonitorService;
 
         }
         #region Reservas
@@ -89,13 +94,13 @@ namespace ApiObjetos.Controllers
         [HttpPost]
         [Route("ReservarHabitacion")]
         [AllowAnonymous]
-        public async Task<Respuesta> ReservarHabitacion([FromBody] ReservaRequest request)
+        public async Task<Respuesta> ReservarHabitacion(int InstitucionID, int UsuarioID, [FromBody] ReservaRequest request)
         {
             Respuesta res = new Respuesta();
             try
             {
                 // Step 1: Create a new VisitaID based on the provided vehicle, phone number, and identifier
-                var VisitaID = await _visita.CrearVisita(request.EsReserva, request.PatenteVehiculo, request.NumeroTelefono, request.Identificador);
+                var VisitaID = await _visita.CrearVisita(request.EsReserva, InstitucionID, UsuarioID, request.PatenteVehiculo, request.NumeroTelefono, request.Identificador);
 
                 // Step 2: Retrieve the room details
                 Habitaciones habitacion = await GetHabitacionById(request.HabitacionID);
@@ -120,12 +125,13 @@ namespace ApiObjetos.Controllers
                     VisitaId = VisitaID,
                     HabitacionId = request.HabitacionID,
                     FechaReserva = request.FechaReserva,
+                    InstitucionID = InstitucionID,
                     FechaFin = null,
                     TotalHoras = request.TotalHoras,
                     TotalMinutos = request.TotalMinutos,
-                    UsuarioId = request.UsuarioID,
+                    UsuarioId = UsuarioID,
                     FechaRegistro = DateTime.Now,
-                    Anulado = false,
+                    FechaAnula = null,
                     Habitacion = habitacion
                 };
 
@@ -146,11 +152,15 @@ namespace ApiObjetos.Controllers
                 else nuevaReserva.PromocionId = null;
                 var prueba = Math.Round((decimal)((int)tarifa * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2);
                 _db.Add(nuevaReserva);
-                var movimientoID = await _movimiento.CrearMovimientoHabitacion(VisitaID,
+                var movimientoID = await _movimiento.CrearMovimientoHabitacion(VisitaID, InstitucionID,
                 Math.Round((decimal)((int)tarifa * (request.TotalHoras + (request.TotalMinutos / 60.0))), 2), request.HabitacionID);
                 nuevaReserva.MovimientoId = movimientoID;
                 await _db.SaveChangesAsync();
-
+                using (var scope = _serviceProvider.CreateScope())
+                {
+                    var notificationService = scope.ServiceProvider.GetRequiredService<ReservationMonitorService>();
+                    notificationService.ScheduleNotification(nuevaReserva);
+                }
                 // Step 5: Update the room's availability and set the current VisitaID
                 habitacion.Disponible = false;
                 habitacion.VisitaID = VisitaID;
@@ -168,6 +178,119 @@ namespace ApiObjetos.Controllers
             return res;
         }
 
+        [HttpDelete]
+        [Route("AnularOcupacion")]
+        [AllowAnonymous]
+        public async Task<Respuesta> AnularOcupacion(int reservaId, string motivo)
+        {
+            Respuesta res = new Respuesta();
+            if (motivo.Length > 150)
+            {
+                res.Message = "Motivo muy largo.";
+                res.Ok = false;
+                return res;
+            }
+            try
+            {
+                var reserva = await _db.Reservas.FindAsync(reservaId);
+                var habitacion = await _db.Habitaciones.FirstAsync(h => h.VisitaID == reserva.VisitaId);
+                if (reserva != null && reserva.FechaAnula == null)
+                {
+                    var Movimientos = await _db.Movimientos.Where(m => m.VisitaId == reserva.VisitaId).ToListAsync();
+                    foreach (var movimiento in Movimientos)
+                    {
+                        var Consumos = await _db.Consumo.Where(c => c.MovimientosId == movimiento.MovimientosId).ToListAsync();
+                        foreach(var consumo in Consumos)
+                        {
+                            consumo.Anulado = true;
+                            if (consumo.EsHabitacion == true) { 
+                                var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == reserva.HabitacionId);
+                                inventario.Cantidad += consumo.Cantidad;
+                            }
+                            else { var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i => i.ArticuloId == consumo.ArticuloId);
+                                inventarioGeneral.Cantidad += consumo.Cantidad;
+                            }
+                        }
+                        movimiento.Anulado = true;
+                    }
+                    reserva.FechaAnula = DateTime.Now;
+                    habitacion.Disponible = true;
+                    habitacion.VisitaID = null;
+                    var visita = await _db.Visitas.FirstAsync(v => v.VisitaId == reserva.VisitaId);
+                    visita.Anulado = true;
+                    string formattedDate = DateTime.Now.ToString("d/M/yyyy HH:mm");
+                    Registros registro = new Registros();
+                    registro.Contenido = "Se anuló la visita a la habitación " + habitacion.NombreHabitacion + " a las " + formattedDate + " por el motivo de: " + motivo;
+                    registro.ReservaId = reserva.ReservaId;
+                    _db.Registros.Add(registro);
+                    await _db.SaveChangesAsync();
+                }
+                else{
+                    res.Message = "Reserva no encontrada.";
+                    res.Ok = false;
+                    return res;
+                }
+            }
+            catch(Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                res.Ok = false;
+            }
+            res.Message = "Reserva anulada";
+            res.Ok = true;
+            return res;
+        }
+
+        [HttpPut]
+        [Route("PausarOcupacion")]
+        [AllowAnonymous]
+        public async Task<Respuesta> PausarOcupacion(int visitaId)
+        {
+            Respuesta res = new Respuesta();
+            var reserva = await _db.Reservas.FirstAsync(r => r.VisitaId == visitaId);
+            try
+            {
+                DateTime fechaReserva = (DateTime)reserva.FechaReserva;
+                var fechaActual = (DateTime.Now - TimeSpan.FromHours((double)reserva.TotalHoras) - TimeSpan.FromMinutes((double)reserva.TotalMinutos));
+                TimeSpan timer = fechaReserva - fechaActual;
+                reserva.PausaHoras = timer.Hours;
+                reserva.PausaMinutos = timer.Minutes;
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                res.Message = "Error a la hora de pausar el timer " + ex.InnerException;
+                res.Ok = false;
+                return res;
+            }
+            res.Message = "El timer se pausó a las " + reserva.PausaHoras + ":" + reserva.PausaMinutos;
+            res.Ok = true;
+            return res;
+        }
+
+        [HttpPut]
+        [Route("RecalcularOcupacion")]
+        [AllowAnonymous]
+        public async Task<Respuesta> RecalcularOcupacion(int visitaId)
+        {
+            Respuesta res = new Respuesta();
+            var reserva = await _db.Reservas.FirstAsync(r => r.VisitaId == visitaId);
+            try
+            {
+                reserva.PausaHoras = null;
+                reserva.PausaMinutos = null;
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                res.Message = "Error a la hora de pausar el timer " + ex.InnerException;
+                res.Ok = false;
+                return res;
+            }
+            res.Message = "El timer se reanudo";
+            res.Ok = true;
+            return res;
+        }
         [HttpPut]
         [Route("ActualizarReservaPromocion")]
         [AllowAnonymous]
@@ -288,6 +411,44 @@ namespace ApiObjetos.Controllers
 
             return res;
         }
+
+        [HttpPut]
+        [Route("ExtenderReserva")]
+        [AllowAnonymous]
+        public async Task<Respuesta> ExtenderReserva(int idReserva, int horas = 0, int minutos = 0)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                // Find the reservation by idReserva
+                var reserva = await _db.Reservas.FindAsync(idReserva);
+
+                // Check if the reservation exists
+                if (reserva != null)
+                {
+                    reserva.TotalHoras = reserva.TotalHoras + horas;
+                    reserva.TotalMinutos = reserva.TotalMinutos + minutos;
+                    await _db.SaveChangesAsync();
+                    _reservationMonitorService.ScheduleNotification(reserva);
+                    res.Data = reserva;
+                    res.Message = "Reserva encontrada.";
+                    res.Ok = true;
+                }
+                else
+                {
+                    res.Message = "No se encontró la reserva.";
+                    res.Ok = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException?.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
 
         [HttpGet]
         [Route("GetReservas")]
@@ -417,14 +578,16 @@ namespace ApiObjetos.Controllers
             {
                 // Find the Reserva by idReserva
                 var habitacion = await _db.Habitaciones.FindAsync(idHabitacion);
-
+                var reserva = await _db.Reservas.FirstOrDefaultAsync(r => r.VisitaId == habitacion.VisitaID);
                 // Check if the reservation exists
+
                 if (habitacion != null)
                 {
-
+                        
                         // Update the room's availability to true
                         habitacion.Disponible = true;
                         habitacion.VisitaID = null;
+                        reserva.FechaFin = DateTime.Now;
 
                     // Save the changes to the database
                     await _db.SaveChangesAsync();

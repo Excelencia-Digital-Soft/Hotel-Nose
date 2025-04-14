@@ -18,7 +18,7 @@ namespace ApiObjetos.Controllers
         }
 
 
-        public async Task<int> CrearVisita(bool esReserva, string? PatenteVehiculo, string? NumeroTelefono, string? Identificador)
+        public async Task<int> CrearVisita(bool esReserva, int InstitucionID, int UsuarioID, string? PatenteVehiculo, string? NumeroTelefono, string? Identificador)
         {
             Visitas nuevaVisita;
 
@@ -28,15 +28,18 @@ namespace ApiObjetos.Controllers
                     PatenteVehiculo = PatenteVehiculo,
                     NumeroTelefono = NumeroTelefono,
                     Identificador = Identificador,
-                    FechaPrimerIngreso = DateTime.Now
-
+                    FechaPrimerIngreso = DateTime.Now,
+                    InstitucionID = InstitucionID,
+                    UsuarioId = UsuarioID,
                 };
             }
             else nuevaVisita = new Visitas
             {
                 PatenteVehiculo = PatenteVehiculo,
                 NumeroTelefono = NumeroTelefono,
-                Identificador = Identificador
+                Identificador = Identificador,
+                InstitucionID = InstitucionID,
+                UsuarioId = UsuarioID,
             };
             _db.Add(nuevaVisita);
 

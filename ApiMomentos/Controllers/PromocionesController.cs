@@ -22,7 +22,7 @@ namespace ApiObjetos.Controllers
 
         [HttpPost]
         [Route("AddPromocion")]
-        public async Task<Respuesta> AddPromocion(decimal tarifa, int cantidadHoras, int categoriaID, string Detalle)
+        public async Task<Respuesta> AddPromocion(decimal tarifa, int cantidadHoras, int categoriaID, string Detalle, int InstitucionID)
         {
             Respuesta res = new Respuesta();
 
@@ -43,7 +43,8 @@ namespace ApiObjetos.Controllers
                     Tarifa = tarifa,
                     CantidadHoras = cantidadHoras,
                     CategoriaID = categoriaID,
-                    Detalle = Detalle
+                    Detalle = Detalle,
+                    InstitucionID = InstitucionID
                 };
 
                 // Add to the DbContext
@@ -100,7 +101,7 @@ namespace ApiObjetos.Controllers
 
             try
             {
-                var promocion = await _db.Promociones.Where(p => p.CategoriaID == categoriaID).ToListAsync();
+                var promocion = await _db.Promociones.Where(p => p.CategoriaID == categoriaID && p.Anulado == null).ToListAsync();
                 if (promocion == null)
                 {
                     res.Ok = false;

@@ -20,7 +20,7 @@ namespace ApiObjetos.Controllers
         #region Create Pago
         [HttpPost]
         [Route("PagarVisita")] // Paga todos los movimientos de una visita
-        public async Task<Respuesta> PagarVisita(int visitaId, decimal montoDescuento, decimal montoEfectivo, decimal montoTarjeta, decimal montoBillVirt, int medioPagoId, string? comentario, decimal? montoRecargo, string? descripcionRecargo)
+        public async Task<Respuesta> PagarVisita(int visitaId, decimal montoDescuento, decimal montoEfectivo, decimal montoTarjeta, decimal montoBillVirt, decimal adicional, int medioPagoId, string? comentario, decimal? montoRecargo, string? descripcionRecargo, int? tarjetaID)
         {
             Respuesta res = new Respuesta();
             try
@@ -65,8 +65,11 @@ namespace ApiObjetos.Controllers
                 {
                     MontoDescuento = montoDescuento,
                     MontoEfectivo = montoEfectivo,
+                    InstitucionID = visita.InstitucionID,
                     MontoTarjeta = montoTarjeta,
                     MontoBillVirt = montoBillVirt,
+                    TarjetaId = tarjetaID,
+                    Adicional = adicional,
                     MedioPagoId = medioPagoId,
                     fechaHora = DateTime.Now,
                     Observacion = observacion,
