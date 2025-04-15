@@ -12,7 +12,10 @@
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
-
+#img
+ApiMomentos/obj/
+*.jpg
+*.svg
 # Mono auto generated files
 mono_crash.*
 
@@ -395,3 +398,4 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+
