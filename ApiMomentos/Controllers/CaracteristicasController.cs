@@ -190,86 +190,83 @@ namespace ApiObjetos.Controllers
         }
 
         [HttpPost("AsignarCaracteristicasAHabitacion")]
-        public async Task<Respuesta> AsignarCaracteristicasAHabitacion(int habitacionId, [FromBody] List<int> caracteristicaIds)
+        public async Task<Respuesta> AsignarCaracteristicasAHabitacion(
+        int habitacionId,
+        [FromBody] List<int>? caracteristicaIds)
         {
-            Respuesta res = new Respuesta();
-
-            // Validación inicial
-            if (caracteristicaIds == null || !caracteristicaIds.Any())
-            {
-                res.Ok = false;
-                res.Message = "Debe proporcionar al menos una característica";
-                return res;
-            }
+            var res = new Respuesta();
 
             try
             {
-                // Materializar primero la lista de IDs para evitar múltiples enumeraciones
-                var idsUnicos = caracteristicaIds.Distinct().ToList();
+                // Validar habitación primero (evita operaciones innecesarias)
+                var habitacionExiste = await _db.Habitaciones
+                    .AnyAsync(h => h.HabitacionId == habitacionId);
 
-                // Usar transacción para operaciones atómicas
+                if (!habitacionExiste)
+                {
+                    res.Ok = false;
+                    res.Message = "Habitación no encontrada";
+                    return res;
+                }
+
                 using (var transaction = await _db.Database.BeginTransactionAsync())
                 {
                     try
                     {
-                        // 1. Verificar existencia de habitación y características en una sola consulta
-                        var habitacion = await _db.Habitaciones
-                            .AsNoTracking() // No necesitamos tracking para esta consulta
-                            .FirstOrDefaultAsync(h => h.HabitacionId == habitacionId);
-
-                        if (habitacion == null)
-                        {
-                            res.Ok = false;
-                            res.Message = "Habitación no encontrada";
-                            return res;
-                        }
-
-                        // Verificar existencia de características
-                        var countCaracteristicas = await _db.Caracteristicas
-                            .Where(c => idsUnicos.Contains(c.CaracteristicaId))
-                            .CountAsync();
-
-                        if (countCaracteristicas != idsUnicos.Count)
-                        {
-                            res.Ok = false;
-                            res.Message = "Algunas características no existen";
-                            return res;
-                        }
-
-                        // 2. Eliminar relaciones existentes (optimizado)
+                        // Paso 1: Eliminar relaciones existentes (si las hay)
                         await _db.HabitacionCaracteristicas
                             .Where(hc => hc.HabitacionId == habitacionId)
-                            .ExecuteDeleteAsync(); // EF Core 7+ (más eficiente)
+                            .ExecuteDeleteAsync();
 
-                        // 3. Crear nuevas relaciones
-                        var nuevasRelaciones = idsUnicos
-                            .Select(cid => new HabitacionCaracteristica
+                        // Paso 2: Si se enviaron características, crear nuevas relaciones
+                        if (caracteristicaIds != null && caracteristicaIds.Any())
+                        {
+                            // Validar existencia de características (en una sola consulta)
+                            var idsUnicos = caracteristicaIds.Distinct().ToList();
+                            var countCaracteristicas = await _db.Caracteristicas
+                                .Where(c => idsUnicos.Contains(c.CaracteristicaId))
+                                .CountAsync();
+
+                            if (countCaracteristicas != idsUnicos.Count)
                             {
-                                HabitacionId = habitacionId,
-                                CaracteristicaId = cid
-                            }).ToList();
+                                res.Ok = false;
+                                res.Message = "Algunas características no existen";
+                                return res;
+                            }
 
-                        await _db.HabitacionCaracteristicas.AddRangeAsync(nuevasRelaciones);
+                            // Crear relaciones
+                            var nuevasRelaciones = idsUnicos.Select(cid =>
+                                new HabitacionCaracteristica
+                                {
+                                    HabitacionId = habitacionId,
+                                    CaracteristicaId = cid
+                                }).ToList();
+
+                            await _db.HabitacionCaracteristicas.AddRangeAsync(nuevasRelaciones);
+                        }
+
                         await _db.SaveChangesAsync();
-
                         await transaction.CommitAsync();
 
                         res.Ok = true;
-                        res.Message = "Características actualizadas correctamente";
+                        res.Message = caracteristicaIds?.Any() == true
+                            ? "Características actualizadas correctamente"
+                            : "Todas las características fueron removidas";
                     }
                     catch (Exception ex)
                     {
                         await transaction.RollbackAsync();
+                        // Log.Error(ex, "Error en transacción");
                         res.Ok = false;
-                        res.Message = "Error al asignar características: " + ex.Message;
-
+                        res.Message = "Error interno al asignar características";
                     }
                 }
             }
             catch (Exception ex)
             {
+                // Log.Error(ex, "Error general");
                 res.Ok = false;
-                res.Message = "Error en la transacción: " + ex.Message;
+                res.Message = "Error procesando la solicitud";
             }
 
             return res;
