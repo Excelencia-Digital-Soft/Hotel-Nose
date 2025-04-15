@@ -8,8 +8,10 @@ using System.Threading.Tasks;
 using ApiObjetos.Models;
 using ApiObjetos.NotificacionesHub;
 using ApiObjetos.Data;
+using System.Collections.Concurrent;
 public class ReservationMonitorService : BackgroundService
 {
+    private readonly ConcurrentDictionary<int, CancellationTokenSource> _activeTimers = new();
     private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly IHubContext<NotificationsHub> _hubContext;
 
@@ -39,47 +41,78 @@ public class ReservationMonitorService : BackgroundService
 
             foreach (var reserva in reservasActivas)
             {
-                ScheduleNotification(reserva, stoppingToken);
+                ScheduleNotification(reserva);
             }
         }
     }
-
-    public void ScheduleNotification(Reservas reserva, CancellationToken stoppingToken)
+    public void CancelNotification(int reservaId)
     {
+        if (_activeTimers.TryRemove(reservaId, out var cts))
+        {
+            cts.Cancel();
+            cts.Dispose();
+        }
+    }
+    public void ScheduleNotification(Reservas reserva)
+    {
+        // Cancel previous timer if one exists
+        if (_activeTimers.TryGetValue(reserva.ReservaId, out var existingCts))
+        {
+            existingCts.Cancel();
+            existingCts.Dispose();
+        }
+
+        var cts = new CancellationTokenSource();
+        _activeTimers[reserva.ReservaId] = cts;
+
         Task.Run(async () =>
         {
-            DateTime endTime = reserva.FechaReserva.Value
-                .AddHours(reserva.TotalHoras ?? 0)
-                .AddMinutes(reserva.TotalMinutos ?? 0);
-
-            DateTime warningTime = endTime.AddMinutes(-5); // 5-minute warning
-
-            // Wait until 5 minutes before the reservation ends
-            TimeSpan timeUntilWarning = warningTime - DateTime.Now;
-            if (timeUntilWarning.TotalMilliseconds > 0)
+            try
             {
-                await Task.Delay(timeUntilWarning, stoppingToken);
-                await _hubContext.Clients.Group($"institution-{reserva.Visita.InstitucionID}").SendAsync("ReceiveNotification", new
-                {
-                    type = "warning",
-                    roomId = reserva.HabitacionId,
-                    message = $"⏳ La habitación {reserva.Habitacion.NombreHabitacion} le quedan 5 minutos!"
-                }, stoppingToken);
-            }
+                DateTime endTime = reserva.FechaReserva.Value
+                    .AddHours(reserva.TotalHoras ?? 0)
+                    .AddMinutes(reserva.TotalMinutos ?? 0);
 
-            // Wait until the reservation ends
-            TimeSpan timeUntilEnd = endTime - DateTime.Now;
-            if (timeUntilEnd.TotalMilliseconds > 0)
-            {
-                await Task.Delay(timeUntilEnd, stoppingToken);
-                await _hubContext.Clients.Group($"institution-{reserva.Visita.InstitucionID}").SendAsync("ReceiveNotification", new
+                DateTime warningTime = endTime.AddMinutes(-5);
+
+                TimeSpan timeUntilWarning = warningTime - DateTime.Now;
+                if (timeUntilWarning.TotalMilliseconds > 0)
                 {
-                    type = "ended",
-                    roomId = reserva.HabitacionId,
-                    message = $"⚠️ La habitación {reserva.Habitacion.NombreHabitacion} se le acabó el tiempo!"
-                }, stoppingToken);
+                    await Task.Delay(timeUntilWarning, cts.Token);
+                    await _hubContext.Clients.Group($"institution-{reserva.Visita.InstitucionID}")
+                        .SendAsync("ReceiveNotification", new
+                        {
+                            type = "warning",
+                            roomId = reserva.HabitacionId,
+                            message = $"⏳ La habitación {reserva.Habitacion.NombreHabitacion} le quedan 5 minutos!"
+                        }, cts.Token);
+                }
+
+                TimeSpan timeUntilEnd = endTime - DateTime.Now;
+                if (timeUntilEnd.TotalMilliseconds > 0)
+                {
+                    await Task.Delay(timeUntilEnd, cts.Token);
+                    await _hubContext.Clients.Group($"institution-{reserva.Visita.InstitucionID}")
+                        .SendAsync("ReceiveNotification", new
+                        {
+                            type = "ended",
+                            roomId = reserva.HabitacionId,
+                            message = $"⚠️ La habitación {reserva.Habitacion.NombreHabitacion} se le acabó el tiempo!"
+                        }, cts.Token);
+                }
             }
-        }, stoppingToken);
+            catch (TaskCanceledException)
+            {
+                // Silently handle canceled task
+            }
+            finally
+            {
+                _activeTimers.TryRemove(reserva.ReservaId, out _);
+                cts.Dispose();
+            }
+        }, cts.Token);
     }
+
 }
+
 
