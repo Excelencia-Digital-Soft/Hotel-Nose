@@ -1,0 +1,41 @@
+{
+  "Files": [
+    {
+      "Id": "C:\\Users\\EXCELENCIA\\source\\repos\\Hotel-Nose\\ApiMomentos\\wwwroot\\uploads\\1c07e0a1-baf7-486f-b4c1-44efc5422d1f.png",
+      "PackagePath": "staticwebassets\\uploads\\1c07e0a1-baf7-486f-b4c1-44efc5422d1f.png"
+    },
+    {
+      "Id": "C:\\Users\\EXCELENCIA\\source\\repos\\Hotel-Nose\\ApiMomentos\\wwwroot\\uploads\\3fd54580-e965-43ab-ba9d-2cbeb8abef56.jpg",
+      "PackagePath": "staticwebassets\\uploads\\3fd54580-e965-43ab-ba9d-2cbeb8abef56.jpg"
+    },
+    {
+      "Id": "C:\\Users\\EXCELENCIA\\source\\repos\\Hotel-Nose\\ApiMomentos\\wwwroot\\uploads\\51ef5ba1-ed32-43a8-a844-8072fa5e029a.jpg",
+      "PackagePath": "staticwebassets\\uploads\\51ef5ba1-ed32-43a8-a844-8072fa5e029a.jpg"
+    },
+    {
+      "Id": "C:\\Users\\EXCELENCIA\\source\\repos\\Hotel-Nose\\ApiMomentos\\wwwroot\\uploads\\80e22b55-7e96-43cc-b19b-092117a45965.png",
+      "PackagePath": "staticwebassets\\uploads\\80e22b55-7e96-43cc-b19b-092117a45965.png"
+    },
+    {
+      "Id": "C:\\Users\\EXCELENCIA\\source\\repos\\Hotel-Nose\\ApiMomentos\\wwwroot\\uploads\\fe02d1ea-6163-4c09-b7aa-e049cdfab647.png",
+      "PackagePath": "staticwebassets\\uploads\\fe02d1ea-6163-4c09-b7aa-e049cdfab647.png"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.ApiObjetos.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.build.ApiObjetos.props",
+      "PackagePath": "build\\ApiObjetos.props"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.buildMultiTargeting.ApiObjetos.props",
+      "PackagePath": "buildMultiTargeting\\ApiObjetos.props"
+    },
+    {
+      "Id": "obj\\Debug\\net6.0\\staticwebassets\\msbuild.buildTransitive.ApiObjetos.props",
+      "PackagePath": "buildTransitive\\ApiObjetos.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
