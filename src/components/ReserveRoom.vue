@@ -299,7 +299,10 @@ const periodoCost = computed(() => {
 
 const adicional = computed(() => {
   console.log(overtime.value)
-  return (overtime.value * ((promocionActiva.value && selectedPromocion.value ? selectedPromocion.value.tarifa : selectedRoom.value.Precio) / 60)).toFixed(2); // Calculates overtime charge
+  const valueInOverTime = overtime.value * (
+    (promocionActiva.value && selectedPromocion.value ? selectedPromocion.value.tarifa : selectedRoom.value.Precio) / 60
+  ).toFixed(2);
+  return Math.Round(valueInOverTime/100) * 100;
 });
 
 onMounted(() => {
@@ -631,9 +634,16 @@ const modalAnular = ref(false);
 // Props from your existing data, for example:
 
 // Methods
-const openPaymentModal = () => {
+const openPaymentModal = async () => {
   console.log("Se abrió");
   if (!modalPayment.value) {
+    try {
+      await axiosClient.put(`/PausarOcupacion?visitaId=${selectedRoom.value.VisitaID}`);
+    }
+    catch(error){
+      console.log("Error al pausar la habitación", error)
+    }
+
     // Take snapshots of the current values
     const consumosSnapshot = consumos.value.map(consumo => ({ ...consumo })); // Shallow copy
     const periodoCostSnapshot = Number(periodoCost.value);
