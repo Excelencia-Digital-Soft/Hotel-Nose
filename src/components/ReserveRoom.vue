@@ -290,12 +290,12 @@
               Hay pedidos pendientes, no se puede desocupar la habitación.
             </p>
 
-            <ModalPagar v-if="modalPayment" :periodo="periodoCost" :consumo="consumos.reduce((sum, consumo) => sum + consumo.total, 0)" :total="totalAmount" :adicional="Number(adicional)"
+            <ModalPagar v-if="modalPayment" :periodo="Number(periodoCost)" :consumo="consumos.reduce((sum, consumo) => sum + consumo.total, 0)" :total="totalAmount" :adicional="Number(adicional)"
               :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID" :pausa="Pausa"
               @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
 
             <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID"
-              @close-modal="modalAnular = false" />
+              @close-modal="modalAnular = false" @ocupacion-anulada="handleOcupacionAnulada" />
             <ModalConsumo v-if="modalConsumo" :name="selectedRoom.Identificador"
               :habitacionID="selectedRoom.HabitacionID" :consumoHabitacion="esConsumoHabitacion"
               @confirmaAccion="confirmAndSend" @close="toggleModalConsumo" />
@@ -483,17 +483,46 @@ const agregarConsumos = (selectedItems) => {
 };
 
 const anularConsumo = (consumoId) => {
-  console.log("elimino", consumoId)
-  axiosClient.delete(
-    `/AnularConsumo?idConsumo=${consumoId}`,
-  )
-    .then(response => {
-      actualizarConsumos();
-      console.log('Consumo anulado exitosamente');
-    })
-    .catch(error => {
-      console.error('Error al agregar consumo:', error);
-    });
+  // Use PrimeVue confirm dialog for confirmation
+  confirm.require({
+    message: '¿Está seguro que desea anular este consumo?',
+    header: 'Confirmar Anulación',
+    icon: 'pi pi-exclamation-triangle',
+    acceptLabel: 'Sí, anular',
+    rejectLabel: 'Cancelar',
+    acceptClass: 'p-button-danger',
+    accept: () => {
+      console.log("elimino", consumoId);
+      axiosClient.delete(`/AnularConsumo?idConsumo=${consumoId}`)
+        .then(response => {
+          actualizarConsumos();
+          toast.add({
+            severity: 'success',
+            summary: 'Éxito',
+            detail: 'Consumo anulado exitosamente',
+            life: 10000
+          });
+          console.log('Consumo anulado exitosamente');
+        })
+        .catch(error => {
+          console.error('Error al anular consumo:', error);
+          toast.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Error al anular el consumo. Por favor, intente nuevamente.',
+            life: 10000
+          });
+        });
+    },
+    reject: () => {
+      toast.add({
+        severity: 'info',
+        summary: 'Cancelado',
+        detail: 'Operación cancelada',
+        life: 5000
+      });
+    }
+  });
 };
 const agregarConsumosHabitacion = (selectedItems) => {
   console.log("itemsselec", selectedItems);
@@ -632,7 +661,7 @@ const endRoomReserve = () => {
         severity: 'success',
         summary: 'Éxito',
         detail: 'Se terminó la reserva exitosamente',
-        life: 3000
+        life: 10000
       });
       setTimeout(() => {
         emits('room-checkout', selectedRoom.value.HabitacionID);
@@ -746,7 +775,7 @@ const openPaymentModal = async () => {
       severity: 'error',
       summary: 'Error',
       detail: 'No se encontró la información de la visita',
-      life: 4000
+      life: 10000
     });
     return;
   }
@@ -782,7 +811,7 @@ const openPaymentModal = async () => {
             severity: 'info',
             summary: 'Cancelado',
             detail: 'Operación cancelada por el usuario',
-            life: 3000
+            life: 10000
           });
         }
       });
@@ -798,7 +827,7 @@ const openPaymentModal = async () => {
       severity: 'error',
       summary: 'Error',
       detail: 'Ocurrió un error al procesar el pago. Por favor, intente nuevamente.',
-      life: 5000
+      life: 10000
     });
   } finally {
     // Always reset loading state
@@ -853,7 +882,7 @@ const continuePaymentProcess = () => {
       severity: 'error',
       summary: 'Error',
       detail: 'El total no puede ser negativo',
-      life: 4000
+      life: 10000
     });
     isProcessingPayment.value = false;
     return;
@@ -873,10 +902,22 @@ const handlePaymentConfirmation = (paymentDetails) => {
     severity: 'success',
     summary: 'Pago Confirmado',
     detail: 'El pago se procesó exitosamente. Habitación liberada.',
-    life: 3000
+    life: 10000
   });
   
   // Emit checkout event to update parent component
+  setTimeout(() => {
+    emits('room-checkout', selectedRoom.value.HabitacionID);
+  }, 1500);
+};
+
+const handleOcupacionAnulada = (reservaId) => {
+  console.log('🚫 Ocupación anulada para reserva:', reservaId);
+  
+  // Close the modal
+  modalAnular.value = false;
+  
+  // Emit checkout event to update parent component (room goes back to free)
   setTimeout(() => {
     emits('room-checkout', selectedRoom.value.HabitacionID);
   }, 1500);
@@ -989,7 +1030,7 @@ const saveConsumo = (consumoId) => {
           severity: 'error',
           summary: 'Error',
           detail: 'Error al actualizar el consumo. Ver consola para más detalles.',
-          life: 4000
+          life: 10000
         });
       });
   }

@@ -1,5 +1,7 @@
  <template>
   <Teleport to="body">
+    <!-- PrimeVue Toast for notifications -->
+    <Toast position="top-right" />
     <Transition name="modal-outer" appear>
       <div
         class="fixed w-full h-full bg-black  z-30 bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
@@ -89,6 +91,8 @@ import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
 import { useRoute } from 'vue-router';
 import ProgressSpinner from 'primevue/progressspinner';
+import Toast from 'primevue/toast';
+import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '../store/auth.js'; // Import the auth store
 
 const isSpecificRoute = computed(() => route.path.startsWith('/Rooms'));
@@ -96,9 +100,11 @@ const UsuarioID = ref(null);
 const InstitucionID = ref(null);
 const authStore = useAuthStore();
 const route = useRoute();
+const toast = useToast();
 let isLoading = ref(false);
 function getDatosLogin() {
   InstitucionID.value = authStore.institucionID;
+  UsuarioID.value = authStore.usuarioID || 14; // Fallback to 14 if no user ID
 }
 
 const hours = ref(0);
@@ -107,7 +113,7 @@ const minutes = ref(0);
 const promociones = ref([]);
 const selectedPromocion = ref(null);
 
-const emits = defineEmits(["close-modal"])
+const emits = defineEmits(["close-modal", "room-reserved"])
 const props = defineProps({
   room: Object,
 });
@@ -265,23 +271,50 @@ const reserveRoom = () => {
   if (isLoading.value) return; // Evitar múltiples solicitudes
   isLoading.value = true;
   actualizarFechas()
-  if (numeroError.value || (selectedRoom.PatenteVehiculo == '' && selectedRoom.Identificador == '' && selectedRoom.NumeroTelefono == '')) {
+  
+  // Validación corregida usando .value
+  if (numeroError.value || (selectedRoom.value.PatenteVehiculo == '' && selectedRoom.value.Identificador == '' && selectedRoom.value.NumeroTelefono == '')) {
     // No envíes el formulario si hay errores de validación
-    console.log("faltan datos obligatorios")
+    console.log("faltan datos obligatorios");
+    toast.add({
+      severity: 'warn',
+      summary: 'Datos incompletos',
+      detail: 'Por favor complete todos los campos obligatorios',
+      life: 10000
+    });
+    isLoading.value = false; // Resetear loading state
     return;
   }
 
+  console.log('Enviando reserva:', selectedRoom.value);
+  console.log('InstitucionID:', InstitucionID.value, 'UsuarioID:', UsuarioID.value);
+
   axiosClient.post(`/ReservarHabitacion?InstitucionID=${InstitucionID.value}&UsuarioID=${UsuarioID.value}`, selectedRoom.value)
     .then(res => {
-      console.log(res.data);
-      alert("Reservacion Exitosa");
+      console.log('Reserva exitosa:', res.data);
+      toast.add({
+        severity: 'success',
+        summary: 'Éxito',
+        detail: 'Habitación ocupada exitosamente',
+        life: 10000
+      });
       isLoading.value = false; // Desactivar indicador de carga
-      emits('close-modal');
-      window.location.reload();
-    
+      
+      // Emit event to update parent component instead of reloading page
+      setTimeout(() => {
+        emits('room-reserved', selectedRoom.value.HabitacionID);
+        emits('close-modal');
+      }, 1500);
     })
     .catch(error => {
-      console.error(error);
+      console.error('Error en reserva:', error);
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Error al reservar la habitación. Por favor, intente nuevamente.',
+        life: 10000
+      });
+      isLoading.value = false; // Resetear loading state
     });
 }
 

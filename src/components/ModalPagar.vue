@@ -2,7 +2,7 @@
   <Teleport to="body" class="overflow-hidden">
     <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center">
       <div class="relative bg-white rounded-lg p-8 w-1/3 h-auto">
-        <button @click="$emit('close')" class="absolute top-2 right-2 btn-danger p-4 rounded-md">X</button>
+        <button @click="emit('close')" class="absolute top-2 right-2 btn-danger p-4 rounded-md">X</button>
 
         <h2 class="text-xl font-bold ">Detalles de Pago</h2>
         <table class=" w-full  text-left">
@@ -123,6 +123,9 @@ import axiosClient from '../axiosClient';
 import EmpenoModal from './EmpenoModal.vue';
 import RecargoModal from './RecargoModal.vue';
 
+// Define emits
+const emit = defineEmits(['close', 'confirm-payment']);
+
 const props = defineProps({
   periodo: { type: Number, required: true },
   consumo: { type: Number, required: true },
@@ -151,9 +154,9 @@ const isButtonDisabled = ref(false);
 const extraTarjeta = ref(0);
 const porcentajeRecargo = ref(0);
 
-// Computed property to calculate the total
+// Computed property to calculate the total correctly
 const calculatedTotal = computed(() => {
-  return props.total + props.adicional + extraTarjeta.value + recargoMonto.value;
+  return props.periodo + props.consumo + props.adicional + extraTarjeta.value + recargoMonto.value;
 });
 
 // Watch the calculated total and update totalPago
@@ -169,7 +172,8 @@ const faltaPorPagar = computed(() => {
   const empenoMontoValue = empenoMonto.value || 0;
 
   return (
-    props.total +
+    props.periodo +
+    props.consumo +
     props.adicional -
     (descuentoValue + efectivoValue + tarjetaValue + empenoMontoValue - extraTarjeta.value) + recargoMonto.value
   );
@@ -187,14 +191,14 @@ const fetchTarjetas = async () => {
 
 
 const calculoInicial = async () => {
-  totalPago.value = props.total + props.adicional + recargoMonto.value;
+  totalPago.value = props.periodo + props.consumo + props.adicional + recargoMonto.value;
 };
 onMounted(getDatosLogin);
 onMounted(fetchTarjetas);
 onMounted(calculoInicial);
 
 const updateRecargo = () => {
-  const subtotal = props.total + props.adicional + recargoMonto.value - descuento.value - efectivo.value - empenoMonto.value;
+  const subtotal = props.periodo + props.consumo + props.adicional + recargoMonto.value - descuento.value - efectivo.value - empenoMonto.value;
 
   if (selectedTarjeta.value) {
     porcentajeRecargo.value = selectedTarjeta.value.montoPorcentual;
@@ -277,27 +281,39 @@ const crearMovimientoAdicional = async () => {
 
 const pagarVisita = async () => {
   try {
+    // Helper function to safely convert to number, handling empty strings
+    const safeNumber = (value) => {
+      if (value === '' || value === null || value === undefined) return 0;
+      const num = Number(value);
+      return isNaN(num) ? 0 : num;
+    };
+
+    // Ensure all values have proper defaults to avoid empty parameters
     const data = {
       visitaId: props.visitaId,
-      montoDescuento: descuento.value,
-      montoEfectivo: efectivo.value,
-      montoTarjeta: tarjeta.value,
+      montoDescuento: safeNumber(descuento.value),
+      montoEfectivo: safeNumber(efectivo.value),
+      montoTarjeta: safeNumber(tarjeta.value),
       montoBillVirt: 0, //Hardcoded to 0
+      adicional: safeNumber(props.adicional),
       medioPagoId: 1,
-      comentario: comentario.value,
-      montoRecargo: recargoMonto.value,
-      descripcionRecargo: recargoDetalle.value,
+      comentario: encodeURIComponent(comentario.value || ''),
+      montoRecargo: safeNumber(recargoMonto.value),
+      descripcionRecargo: encodeURIComponent(recargoDetalle.value || ''),
     };
-    var tarjetaSeleccionada = 0
-    if(selectedTarjeta.value != null){tarjetaSeleccionada = selectedTarjeta.value.tarjetaID}
-    const url = recargoMonto.value > 0
-      ? `/api/Pago/PagarVisita?visitaId=${data.visitaId}&montoDescuento=${data.montoDescuento}&montoEfectivo=${data.montoEfectivo}&montoTarjeta=${data.montoTarjeta}&montoBillVirt=${data.montoBillVirt}&adicional=${props.adicional}&medioPagoId=${data.medioPagoId}&comentario=${data.comentario}&montoRecargo=${data.montoRecargo}&descripcionRecargo=${data.descripcionRecargo}&tarjetaID=${tarjetaSeleccionada}`
-      : `/api/Pago/PagarVisita?visitaId=${data.visitaId}&montoDescuento=${data.montoDescuento}&montoEfectivo=${data.montoEfectivo}&montoTarjeta=${data.montoTarjeta}&montoBillVirt=${data.montoBillVirt}&adicional=${props.adicional}&medioPagoId=${data.medioPagoId}&comentario=${data.comentario}&tarjetaID=${tarjetaSeleccionada}`;
+    
+    const tarjetaSeleccionada = selectedTarjeta.value?.tarjetaID || 0;
+    
+    const url = data.montoRecargo > 0
+      ? `/api/Pago/PagarVisita?visitaId=${data.visitaId}&montoDescuento=${data.montoDescuento}&montoEfectivo=${data.montoEfectivo}&montoTarjeta=${data.montoTarjeta}&montoBillVirt=${data.montoBillVirt}&adicional=${data.adicional}&medioPagoId=${data.medioPagoId}&comentario=${data.comentario}&montoRecargo=${data.montoRecargo}&descripcionRecargo=${data.descripcionRecargo}&tarjetaID=${tarjetaSeleccionada}`
+      : `/api/Pago/PagarVisita?visitaId=${data.visitaId}&montoDescuento=${data.montoDescuento}&montoEfectivo=${data.montoEfectivo}&montoTarjeta=${data.montoTarjeta}&montoBillVirt=${data.montoBillVirt}&adicional=${data.adicional}&medioPagoId=${data.medioPagoId}&comentario=${data.comentario}&tarjetaID=${tarjetaSeleccionada}`;
 
+    console.log('Payment URL:', url); // Debug log
     await axiosClient.post(url);
     finalizarReserva(props.habitacionId);
   } catch (error) {
     console.error('Error al realizar el pago:', error);
+    console.error('Error response:', error.response?.data); // More detailed error info
     isButtonDisabled.value = false;
   }
 };
@@ -305,7 +321,7 @@ const pagarVisita = async () => {
 const finalizarReserva = async (idHabitacion) => {
   try {
     await axiosClient.put(`/FinalizarReserva?idHabitacion=${idHabitacion}`);
-    window.location.reload();
+    emit('confirm-payment', { habitacionId: idHabitacion });
   } catch (error) {
     console.error('Error al finalizar reserva:', error);
     isButtonDisabled.value = false;
@@ -316,7 +332,7 @@ const finalizarReserva = async (idHabitacion) => {
 const PausarTimer = async () => {
   try {
     await axiosClient.put(`/PausarOcupacion?visitaId=${props.visitaId}`);
-    window.location.reload();
+    emit('confirm-payment', { paused: true });
   } catch (error) {
     console.error('Error al pausar la reserva:', error);
   }
@@ -325,7 +341,7 @@ const PausarTimer = async () => {
 const RecalcularTimer = async () => {
   try {
     await axiosClient.put(`/RecalcularOcupacion?visitaId=${props.visitaId}`);
-    window.location.reload();
+    emit('confirm-payment', { recalculated: true });
   } catch (error) {
     console.error('Error al reanudar la reserva:', error);
   }

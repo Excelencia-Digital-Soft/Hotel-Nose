@@ -25,7 +25,7 @@
             {{ detalle.nombre }}
           </li>
         </ul>
-        <ReserveRoomLibre class=" " :room="props.selectedRoom" v-if="showFree" @close-modal="toggleModal"/> 
+        <ReserveRoomLibre class=" " :room="props.selectedRoom" v-if="showFree" @close-modal="toggleModal" @room-reserved="handleRoomReserved"/> 
         <button class="btn-third font-semibold rounded-lg text-2xl p-8"
         @click="toggleModal()">Alquilar ${{ selectedRoom.precio }}</button>
       </div>
@@ -53,11 +53,22 @@ const props = defineProps({
   selectedRoom: Object,
 })
 
+const emits = defineEmits(['close', 'room-reserved'])
+
 const caract = ref([])
 const showFree = ref(false);
 function toggleModal() {
     showFree.value = !showFree.value;
     document.body.style.overflow = showFree.value ? 'hidden' : 'auto';
+}
+
+const handleRoomReserved = (roomId) => {
+  console.log('🏠 Room reserved in ModalSelectRoom:', roomId);
+  // Close the local modal
+  showFree.value = false;
+  document.body.style.overflow = 'auto';
+  // Emit to parent component
+  emits('room-reserved', roomId);
 }
 
 // const roomToOccupied = ref(
@@ -146,5 +157,4 @@ watch(() => props.selectedRoom.caracteristicas, async (newList) => {
     caract.value = []
   }
 }, { immediate: true });
-const emits = defineEmits(["close"]);
 </script>

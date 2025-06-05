@@ -1,5 +1,9 @@
 <template>
-  <div class="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
+  <Teleport to="body">
+    <!-- PrimeVue Toast for notifications -->
+    <Toast position="top-right" />
+    
+    <div class="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
     <div class="bg-white p-6 rounded-lg w-96 relative">
       <!-- Close Button -->
       <button 
@@ -32,17 +36,23 @@
       </button>
     </div>
   </div>
+  </Teleport>
 </template>
 
 
   
   <script setup>
   import { ref } from 'vue';
-  import axiosClient from '../axiosClient'; // Import AxiosClient or adjust path as needed
+  import axiosClient from '../axiosClient';
+  import Toast from 'primevue/toast';
+  import { useToast } from 'primevue/usetoast';
   
   const props = defineProps({
     reservaId: Number,
   });
+  
+  const emit = defineEmits(['close-modal', 'ocupacion-anulada']);
+  const toast = useToast();
   
   const motivo = ref('');
   
@@ -53,11 +63,27 @@
     axiosClient.delete(`/AnularOcupacion?reservaId=${props.reservaId}&motivo=${motivo.value}`)
       .then(res => {
         console.log(res.data);
-        alert("Se anuló la reserva exitosamente");
-        window.location.reload();
+        toast.add({
+          severity: 'success',
+          summary: 'Éxito',
+          detail: 'Reserva anulada exitosamente',
+          life: 10000
+        });
+        
+        // Emit event to parent component instead of reloading
+        setTimeout(() => {
+          emit('ocupacion-anulada', props.reservaId);
+          emit('close-modal');
+        }, 1500);
       })
       .catch(error => {
         console.error(error);
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error al anular la reserva. Por favor, intente nuevamente.',
+          life: 10000
+        });
       });
   };
 

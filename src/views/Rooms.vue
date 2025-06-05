@@ -50,7 +50,7 @@
     <ReserveRoom :room="room" v-if="show" @close-modal="toggleModal" @update-room="updateRoom" @update-tiempo="agregarTiempoExtra" @room-checkout="handleRoomCheckout">
     </ReserveRoom>
   
-    <ReserveRoomLibre :room="room" v-if="showFree" @close-modal="toggleModalLibre">
+    <ReserveRoomLibre :room="room" v-if="showFree" @close-modal="toggleModalLibre" @room-reserved="handleRoomReserved">
     </ReserveRoomLibre>
   
     <div v-if="!authStore.auth">
@@ -243,6 +243,33 @@ const handleRoomCheckout = (roomId) => {
     document.body.style.overflow = 'auto';
   } else {
     console.warn('⚠️ Room not found in occupied rooms for checkout:', roomId);
+  }
+};
+
+const handleRoomReserved = (roomId) => {
+  console.log('🏠 Handling room reservation for room:', roomId);
+  
+  // Find the room in free rooms
+  const freeIndex = habitacionesLibres.value.findIndex(h => h.habitacionId === roomId);
+  
+  if (freeIndex !== -1) {
+    const room = habitacionesLibres.value[freeIndex];
+    
+    // Remove from free rooms
+    habitacionesLibres.value.splice(freeIndex, 1);
+    
+    console.log('✅ Room removed from free rooms');
+    
+    // Close the modal
+    showFree.value = false;
+    document.body.style.overflow = 'auto';
+    
+    // Refresh the room data to get the updated state from server
+    setTimeout(() => {
+      fetchHabitaciones();
+    }, 1000);
+  } else {
+    console.warn('⚠️ Room not found in free rooms for reservation:', roomId);
   }
 };
 

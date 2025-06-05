@@ -134,3 +134,58 @@ body {
 .lexend-exa {
   font-family: var(--font-lexend-exa);
 }
+
+/* PrimeVue Toast Overrides */
+.p-toast .p-toast-message {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 2px solid rgb(var(--primary-400)) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.p-toast .p-toast-message.p-toast-message-success {
+  background: rgba(16, 185, 129, 0.95) !important;
+  border-color: rgb(5, 150, 105) !important;
+}
+
+.p-toast .p-toast-message.p-toast-message-error {
+  background: rgba(239, 68, 68, 0.95) !important;
+  border-color: rgb(220, 38, 38) !important;
+}
+
+.p-toast .p-toast-message.p-toast-message-warn {
+  background: rgba(245, 158, 11, 0.95) !important;
+  border-color: rgb(217, 119, 6) !important;
+}
+
+.p-toast .p-toast-message.p-toast-message-info {
+  background: rgba(59, 130, 246, 0.95) !important;
+  border-color: rgb(37, 99, 235) !important;
+}
+
+.p-toast .p-toast-message .p-toast-message-content {
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.p-toast .p-toast-message .p-toast-summary {
+  color: white !important;
+  font-weight: 700 !important;
+  font-size: 1.1rem !important;
+}
+
+.p-toast .p-toast-message .p-toast-detail {
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500 !important;
+}
+
+.p-toast .p-toast-message .p-toast-icon-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 50% !important;
+}
+
+.p-toast .p-toast-message .p-toast-icon-close:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
