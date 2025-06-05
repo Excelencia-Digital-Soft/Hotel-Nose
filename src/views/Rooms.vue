@@ -47,10 +47,10 @@
         </div>
       </div>
     </div>
-    <ReserveRoom :room="room" v-if="show && !showFree" @close-modal="toggleModal" @update-room="updateRoom" @update-tiempo="agregarTiempoExtra" @room-checkout="handleRoomCheckout">
+    <ReserveRoom :room="room" v-if="show && !showFree" @close-modal="toggleModal">
     </ReserveRoom>
   
-    <ReserveRoomLibre :room="room" v-if="showFree && !show" @close-modal="toggleModalLibre" @room-reserved="handleRoomReserved">
+    <ReserveRoomLibre :room="room" v-if="showFree && !show" @close-modal="toggleModalLibre">
     </ReserveRoomLibre>
   
     <div v-if="!authStore.auth">

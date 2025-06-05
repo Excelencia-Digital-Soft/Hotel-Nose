@@ -5,367 +5,342 @@
     <ConfirmDialog />
     
     <Transition name="modal-outer" appear>
-      <div
-        class="fixed w-full h-full  bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
+      <div class="fixed w-full h-full bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-4 py-4 z-50">
         <Transition name="modal-inner">
-          <div
-            class="relative w-11/12 md:h-auto flex flex-col justify-center  mt-4 px-8 py-6 border-x-4  border-fuchsia-900 rounded-3xl bg-neutral-800">
-
-            <!-- Modal Content -->
-            <button
-              class="absolute top-2 right-2 text-xl w-14 h-14 text-white items-end btn-danger rounded-full transition duration-150 ease-out md:ease-in"
-              @click="$emit('close-modal')">X</button>
-
-            <form class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="flex justify-between col-span-1 md:col-span-3  pr-16">
-                <div
-                  class="timer-container flex items-center bg-black bg-clip-padding backdrop-filter backdrop-blur-md bg-opacity-40 rounded-xl  shadow-neutral-900 shadow-lg">
-                  <!-- Contenedor del reloj -->
-                  <div class="timer flex items-center    border-x-2 border-primary-500 rounded-xl  shadow-lg">
-                    <p class="w-contain text-primary-400 text-xs font-semibold">Tiempo restante:</p>
-                    <p class="time mr-2">
-                      <span v-for="(char, index) in formattedTime" :key="index" class="digit">
-                        {{ char }}
-                      </span>
+          <div class="relative w-full max-w-7xl h-[95vh] flex flex-col bg-neutral-800 border-x-4 border-fuchsia-900 rounded-3xl overflow-hidden">
+            
+            <!-- Header Compacto -->
+            <div class="flex-shrink-0 px-4 py-3 bg-neutral-800 border-b border-neutral-700">
+              <div class="flex justify-between items-center">
+                <!-- Timer Section Compacto -->
+                <div class="timer-container flex items-center bg-black bg-clip-padding backdrop-filter backdrop-blur-md bg-opacity-40 rounded-xl shadow-lg">
+                  <div class="timer flex items-center border-x-2 border-primary-500 rounded-xl shadow-lg px-3 py-2">
+                    <p class="text-primary-400 text-xs font-semibold mr-2">Tiempo:</p>
+                    <p class="time mr-2 text-lg font-bold">
+                      <span v-for="(char, index) in formattedTime" :key="index" class="digit">{{ char }}</span>
                     </p>
-                    <!-- Botón para ignorar tiempo extra -->
-                    <button @click="ignorarTiempoExtra" type="button" :class="[
-                      'timerbutton',
-                      'w-2/5',
-                      'font-semibold',
-                      'text-white',
-                      'grid',
-                      'transition-all',
-                      {
-                        'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400': ignorarTiempo,
-                        'transform scale-80': ignorarTiempo,
-                        'shadow-inner': ignorarTiempo
-                      }
-                    ]" :style="{
-                    border: '4px solid transparent',
-                    borderImage: 'linear-gradient(to right, #ff49d1, #a78bfa, #3b5cff) 1',
+                    <!-- Timer Buttons Compactos -->
+                    <div class="flex gap-1">
+                      <button @click="ignorarTiempoExtra" type="button" 
+                        :class="[
+                          'w-8 h-8 font-semibold text-white text-xs rounded-lg transition-all flex items-center justify-center',
+                          {
+                            'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 transform scale-95': ignorarTiempo,
+                            'bg-neutral-600 hover:bg-neutral-500': !ignorarTiempo
+                          }
+                        ]">
+                        <span class="material-symbols-outlined text-sm">block</span>
+                      </button>
+                      <button @click="toggleModalExtender" type="button" 
+                        class="px-2 py-1 font-semibold text-white text-xs bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 hover:from-primary-500 hover:via-secondary-500 hover:to-accent-500 rounded-lg transition-all">
+                        +Tiempo
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-                  }">
-                      <span class="material-symbols-outlined">
-                        block
-                      </span>
-                    </button>
-                    <button @click="toggleModalExtender" type="button" :class="[
-                      'timerbutton',
-                      'w-2/4',
-                      'font-semibold',
-                      'text-white',
-                      'grid',
-                      'transition-all',
-                      {
-                        'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400': ignorarTiempo,
-                        'transform scale-80': ignorarTiempo,
-                        'shadow-inner': ignorarTiempo
-                      }
-                    ]" :style="{
-                    border: '4px solid transparent',
-                    borderImage: 'linear-gradient(to right, #ff49d1, #a78bfa, #3b5cff) 1',
+                <!-- Room Title -->
+                <h1 class="text-xl lexend-exa font-bold bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg-clip-text text-transparent">
+                  {{ selectedRoom.nombreHabitacion }}
+                </h1>
 
-                  }">
-                      <span>
-                        Agregar tiempo
-                      </span>
-                    </button>
+                <!-- Close Button -->
+                <button class="text-xl w-10 h-10 text-white btn-danger rounded-full transition duration-150 flex items-center justify-center" @click="$emit('close-modal')">
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <!-- Content Area - Sin Scroll -->
+            <div class="flex-1 flex flex-col min-h-0">
+              <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4 min-h-0">
+                
+                <!-- Column 1: Customer Info & Promotions -->
+                <div class="flex flex-col gap-3 min-h-0">
+                  
+                  <!-- Customer Information - Compacto -->
+                  <div class="flex-1 relative drop-shadow-xl overflow-hidden rounded-xl bg-[#691660]">
+                    <div class="absolute flex flex-col text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] p-3 h-full">
+                      <h3 class="text-sm font-semibold text-white flex items-center gap-2 mb-2">
+                        <span class="material-symbols-outlined text-sm">person</span>
+                        Info Cliente
+                      </h3>
+
+                      <!-- Customer Fields Grid 2x2 -->
+                      <div class="grid grid-cols-1 gap-2 flex-1">
+                        <!-- Identificador -->
+                        <div class="flex flex-col space-y-1">
+                          <label class="text-xs font-semibold text-white flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">person</span>
+                            Identificador
+                          </label>
+                          <input type="text"
+                            class="text-xs text-neutral-900 border border-purple-200 rounded-lg py-1 px-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                            v-model="selectedRoom.Identificador" placeholder="Cliente" maxlength="40">
+                        </div>
+
+                        <!-- Hora de Entrada -->
+                        <div class="flex flex-col space-y-1">
+                          <label class="text-xs font-semibold text-white flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">schedule</span>
+                            Entrada
+                          </label>
+                          <input type="datetime-local"
+                            class="text-xs text-neutral-900 border border-purple-200 rounded-lg py-1 px-2 bg-gray-50"
+                            v-model="horaEntrada" readonly>
+                        </div>
+
+                        <!-- Patente -->
+                        <div class="flex flex-col space-y-1">
+                          <label class="text-xs font-semibold text-white flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">directions_car</span>
+                            Patente
+                          </label>
+                          <input type="text"
+                            class="text-xs text-neutral-900 border border-purple-200 rounded-lg py-1 px-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                            v-model="selectedRoom.PatenteVehiculo" placeholder="ABC123">
+                        </div>
+
+                        <!-- Teléfono -->
+                        <div class="flex flex-col space-y-1">
+                          <label class="text-xs font-semibold text-white flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">phone</span>
+                            Teléfono
+                          </label>
+                          <input type="text"
+                            class="text-xs text-neutral-900 border border-purple-200 rounded-lg py-1 px-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                            maxlength="11" v-model="selectedRoom.NumeroTelefono" placeholder="264 123-4567">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="absolute w-full h-full bg-white opacity-5 blur-[50px] -left-1/2 -top-1/2"></div>
+                  </div>
+
+                  <!-- Promotions Section - Compacto -->
+                  <div class="relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/30">
+                    <div class="absolute flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-3">
+                      <div class="flex items-center gap-2 mb-2">
+                        <span class="material-symbols-outlined text-purple-400 text-sm">local_offer</span>
+                        <h3 class="text-white font-semibold text-sm">Promociones</h3>
+                      </div>
+                      <select v-model="selectedPromocion" 
+                        class="w-full text-xs p-2 rounded-lg border border-purple-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 transition bg-white">
+                        <option :value="null">Sin Promoción</option>
+                        <option v-for="promo in promociones" :key="promo.promocionID" :value="promo">
+                          {{ promo.detalle }}
+                        </option>
+                        <option v-if="promociones.length === 0" disabled>Sin promociones</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Column 2: Consumos -->
+                <div class="flex flex-col min-h-0">
+                  <div class="flex-1 bg-gradient-to-br from-neutral-800 to-neutral-900 border-l-4 border-accent-400 rounded-l-3xl p-4 shadow-2xl flex flex-col min-h-0">
+                    <!-- Header del consumo -->
+                    <div class="flex items-center gap-2 mb-3 pb-2 border-b border-accent-400/30">
+                      <span class="material-symbols-outlined text-accent-400">receipt_long</span>
+                      <h3 class="text-white font-semibold">Consumos</h3>
+                    </div>
                     
-                  </div>
-    
+                    <!-- Header row -->
+                    <div class="grid grid-cols-[2fr_50px_50px_50px_60px_30px_30px] gap-2 text-white text-xs font-semibold mb-2 px-1">
+                      <span>Producto</span>
+                      <span>Cant</span>
+                      <span>$Unit</span>
+                      <span>Tipo</span>
+                      <span>Total</span>
+                      <span>✏️</span>
+                      <span>🗑️</span>
+                    </div>
 
+                    <!-- Consumos list con altura fija y scroll interno solo en desktop si es necesario -->
+                    <div class="flex-1 min-h-0 overflow-y-auto lg:max-h-[calc(100vh-400px)]">
+                      <ul class="space-y-1 pr-1">
+                        <li v-for="consumo in consumos" :key="consumo.consumoId"
+                          class="grid grid-cols-[2fr_50px_50px_50px_60px_30px_30px] gap-2 bg-gradient-to-r from-neutral-600 to-neutral-700 p-2 rounded-lg text-white items-center hover:from-neutral-500 hover:to-neutral-600 transition-all duration-200 border border-neutral-500/50">
+                          
+                          <span class="text-xs font-medium truncate" :title="consumo.articleName">{{ consumo.articleName }}</span>
+
+                          <!-- Quantity Display/Edit -->
+                          <template v-if="editingConsumoId !== consumo.consumoId">
+                            <span class="text-xs text-center font-medium">{{ consumo.cantidad }}</span>
+                          </template>
+                          <template v-else>
+                            <input type="number" v-model.number="editedCantidad" @blur="saveConsumo(consumo.consumoId)"
+                              class="text-xs text-center p-1 rounded bg-neutral-800 text-white border border-accent-400 w-full" />
+                          </template>
+
+                          <span class="text-xs text-center text-green-300 font-medium">${{ consumo.precioUnitario }}</span>
+                          <span class="text-xs text-center px-1 py-1 rounded font-medium"
+                            :class="consumo.esHabitacion ? 'bg-purple-500/30 text-purple-200' : 'bg-blue-500/30 text-blue-200'">
+                            {{ consumo.esHabitacion ? 'H' : 'I' }}
+                          </span>
+                          <span class="text-xs font-bold text-green-400 text-center">${{ consumo.total }}</span>
+
+                          <!-- Edit/Cancel/Delete Buttons -->
+                          <template v-if="editingConsumoId !== consumo.consumoId">
+                            <button type="button" 
+                              class="bg-blue-600 hover:bg-blue-500 rounded text-xs h-6 w-6 text-white flex justify-center items-center transition-colors material-symbols-outlined"
+                              @click="startEditConsumo(consumo.consumoId)" title="Editar">
+                              edit
+                            </button>
+                          </template>
+                          <template v-else>
+                            <button type="button" 
+                              class="bg-gray-600 hover:bg-gray-500 rounded text-xs h-6 w-6 text-white flex justify-center items-center transition-colors material-symbols-outlined"
+                              @click="cancelEditConsumo()" title="Cancelar">
+                              close
+                            </button>
+                          </template>
+
+                          <!-- Delete button -->
+                          <button type="button"
+                            class="bg-red-600 hover:bg-red-500 rounded text-xs h-6 w-6 text-white flex justify-center items-center transition-colors material-symbols-outlined"
+                            @click="anularConsumo(consumo.consumoId)" title="Eliminar">
+                            delete
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <!-- Consumption buttons -->
+                    <div class="mt-3 flex gap-2 border-t border-accent-400/30 pt-3">
+                      <button type="button" @click="toggleModalConsumo(false)"
+                        class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-3 py-2 rounded-lg font-medium text-xs transition-all duration-200 flex items-center justify-center gap-1 shadow-lg">
+                        <span class="material-symbols-outlined text-sm">inventory_2</span>
+                        General
+                      </button>
+                      <button type="button" @click="toggleModalConsumo(true)"
+                        class="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white px-3 py-2 rounded-lg font-medium text-xs transition-all duration-200 flex items-center justify-center gap-1 shadow-lg">
+                        <span class="material-symbols-outlined text-sm">hotel</span>
+                        Habitación
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <h1
-                    class="   text-2xl lexend-exa font-bold mt-5 bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent">
-                    {{ selectedRoom.nombreHabitacion }}
-                  </h1>
+
+                <!-- Column 3: Billing Summary -->
+                <div class="flex flex-col gap-3">
+                  <!-- Billing Summary - Compacto -->
+                  <div class="flex-1 relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-green-900/40 to-emerald-900/40 border border-green-500/30">
+                    <div class="absolute flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-3 h-full">
+                      <div class="flex items-center gap-2 mb-3 pb-2 border-b border-green-500/30">
+                        <span class="material-symbols-outlined text-green-400">calculate</span>
+                        <h3 class="text-white font-semibold text-sm">Facturación</h3>
+                      </div>
+
+                      <div class="space-y-2 flex-1">
+                        <!-- Consumos -->
+                        <div class="flex justify-between items-center p-2 bg-neutral-700/50 rounded-lg hover:bg-neutral-600/50 transition-all duration-200">
+                          <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-blue-400 text-sm">restaurant</span>
+                            <span class="font-medium text-sm">Consumos</span>
+                          </div>
+                          <span class="font-bold text-blue-300 text-sm">${{ consumos.reduce((sum, consumo) => sum + consumo.total, 0) }}</span>
+                        </div>
+
+                        <!-- Periodo -->
+                        <div class="flex justify-between items-center p-2 bg-neutral-700/50 rounded-lg hover:bg-neutral-600/50 transition-all duration-200">
+                          <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-purple-400 text-sm">schedule</span>
+                            <span class="font-medium text-sm">Periodo</span>
+                          </div>
+                          <span class="font-bold text-purple-300 text-sm">${{ periodoCost }}</span>
+                        </div>
+
+                        <!-- Adicional -->
+                        <div class="flex justify-between items-center p-2 bg-neutral-700/50 rounded-lg hover:bg-neutral-600/50 transition-all duration-200">
+                          <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-orange-400 text-sm">add_circle</span>
+                            <span class="font-medium text-sm">Tiempo Extra</span>
+                          </div>
+                          <span class="font-bold text-orange-300 text-sm">${{ adicional }}</span>
+                        </div>
+
+                        <!-- Total -->
+                        <div class="flex justify-between items-center p-3 bg-gradient-to-r from-green-600/30 to-emerald-600/30 rounded-xl border border-green-500/40 mt-3">
+                          <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-green-400">paid</span>
+                            <span class="font-bold text-base">TOTAL</span>
+                          </div>
+                          <span class="font-bold text-lg text-green-300">
+                            ${{ (() => {
+                              const consumoTotal = consumos.reduce((sum, consumo) => sum + (Number(consumo.total) || 0), 0);
+                              const periodo = Number(periodoCost) || 0;
+                              const adicionalValue = Number(adicional) || 0;
+                              const total = consumoTotal + periodo + adicionalValue;
+                              return isNaN(total) ? "0.00" : total.toFixed(2);
+                            })() }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="absolute w-full h-full bg-green-400/5 blur-[50px] -left-1/2 -top-1/2"></div>
+                  </div>
+                </div>
               </div>
-              <div class="grid shadow-lg w-full rounded-2xl border-2 border-primary-500">
+            </div>
 
-                <section class="relative drop-shadow-xl w-full h-auto overflow-hidden rounded-2xl bg-[#691660]">
-                  <div class="absolute flex flex-col text-white z-[1] opacity-90 rounded-2xl inset-0.5 bg-[#323132] p-6 space-y-4">
-
-                    <!-- Información principal -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <!-- Identificador -->
-                      <div class="flex flex-col space-y-2">
-                        <label class="text-sm font-semibold text-white flex items-center gap-2">
-                          <span class="material-symbols-outlined text-sm">person</span>
-                          Identificador
-                        </label>
-                        <input type="text"
-                          class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-2 px-3 transition duration-150 ease-out md:ease-in"
-                          v-model="selectedRoom.Identificador" placeholder="Identificador del cliente" maxlength="40">
-                      </div>
-
-                      <!-- Hora de Entrada -->
-                      <div class="flex flex-col space-y-2">
-                        <label class="text-sm font-semibold text-white flex items-center gap-2">
-                          <span class="material-symbols-outlined text-sm">schedule</span>
-                          Hora de Entrada
-                        </label>
-                        <input type="datetime-local"
-                          class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-2 px-3 transition duration-150 ease-out md:ease-in bg-gray-50"
-                          v-model="horaEntrada" readonly>
-                      </div>
-                    </div>
-
-                    <!-- Información de contacto -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <!-- Patente -->
-                      <div class="flex flex-col space-y-2">
-                        <label class="text-sm font-semibold text-white flex items-center gap-2">
-                          <span class="material-symbols-outlined text-sm">directions_car</span>
-                          Patente
-                        </label>
-                        <input type="text"
-                          class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-2 px-3 transition duration-150 ease-out md:ease-in"
-                          v-model="selectedRoom.PatenteVehiculo" placeholder="ABC123">
-                      </div>
-
-                      <!-- Teléfono -->
-                      <div class="flex flex-col space-y-2">
-                        <label class="text-sm font-semibold text-white flex items-center gap-2">
-                          <span class="material-symbols-outlined text-sm">phone</span>
-                          Teléfono
-                        </label>
-                        <input type="text"
-                          class="focus:ring-purple-500 text-neutral-900 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-2 px-3 transition duration-150 ease-out md:ease-in"
-                          maxlength="11" v-model="selectedRoom.NumeroTelefono"
-                          placeholder="11 1234-5678">
-                      </div>
-                    </div>
-
-                  </div>
-                  <div class="absolute w-full h-36 bg-white blur-[50px] -left-1/2 -top-1/2"></div>
-
-                </section>
-                <!-- Sección de Promociones -->
-                <div class="w-full flex justify-center items-center px-6 py-4 bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-t border-purple-500/30">
-                  <div class="w-full">
-                    <label class="text-sm font-semibold text-white flex items-center gap-2 mb-3">
-                      <span class="material-symbols-outlined text-sm">local_offer</span>
-                      Promociones Disponibles
-                    </label>
-                    <select v-model="selectedPromocion" 
-                      class="w-full text-sm p-3 rounded-xl border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition duration-200 bg-white">
-                      <!-- Default 'Sin Promoción' option -->
-                      <option :value="null">Sin Promoción</option>
-
-                      <!-- Display promotions if available -->
-                      <option v-for="promo in promociones" :key="promo.promocionID" :value="promo">
-                        {{ promo.detalle }}
-                      </option>
-
-                      <!-- Show this message if there are no promociones -->
-                      <option v-if="promociones.length === 0" disabled>Sin promociones disponibles</option>
-                    </select>
-                  </div>
-                </div>
-
-
+            <!-- Footer Compacto: Action Buttons -->
+            <div class="flex-shrink-0 px-4 py-3 bg-neutral-800 border-t border-neutral-700">
+              <div class="flex gap-3 justify-center">
+                <button @click="toggleAnularOcupacionModal" type="button"
+                  class="flex-1 max-w-xs bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-red-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <span class="material-symbols-outlined">cancel</span>
+                  Anular Ocupación
+                </button>
+                <button @click="openPaymentModal" type="button" 
+                  :disabled="selectedRoom.pedidosPendientes || isProcessingPayment"
+                  class="flex-1 max-w-xs bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white px-4 py-2 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
+                  <span v-if="!isProcessingPayment" class="flex items-center gap-2">
+                    <span class="material-symbols-outlined">door_open</span>
+                    Desocupar Habitación
+                  </span>
+                  <span v-else class="flex items-center gap-2">
+                    <span class="material-symbols-outlined animate-spin">sync</span>
+                    Procesando...
+                  </span>
+                </button>
               </div>
-              <section class="relative z-10 flex col-span-1 md:col-span-2 flex-col justify-start">
+              
+              <!-- Conditional warning text -->
+              <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-1 text-center text-xs">
+                Hay pedidos pendientes, no se puede desocupar la habitación.
+              </p>
+            </div>
 
-                <div class="bg-gradient-to-br from-neutral-800 to-neutral-900 h-72 border-l-4 border-accent-400 rounded-l-3xl p-6 overflow-y-auto shadow-2xl">
-                  <!-- Header del consumo -->
-                  <div class="flex items-center gap-2 mb-4 pb-2 border-b border-accent-400/30">
-                    <span class="material-symbols-outlined text-accent-400">receipt_long</span>
-                    <h3 class="text-white font-semibold">Consumos</h3>
-                  </div>
-                  
-                  <!-- Header row -->
-                  <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto_auto] gap-3 text-white text-xs font-semibold mb-3 px-2">
-                    <span>Producto</span>
-                    <span>Cant.</span>
-                    <span>Precio</span>
-                    <span>Origen</span>
-                    <span>Total</span>
-                    <span>Editar</span>
-                    <span>Eliminar</span>
-                  </div>
+            <!-- Modals -->
+            <ModalPagar v-if="modalPayment" 
+              :periodo="Number(periodoCost)" 
+              :consumo="consumos.reduce((sum, consumo) => sum + consumo.total, 0)" 
+              :total="totalAmount" 
+              :adicional="Number(adicional)"
+              :habitacionId="selectedRoom.HabitacionID" 
+              :visitaId="selectedRoom.VisitaID" 
+              :pausa="Pausa"
+              @close="modalPayment = false" 
+              @confirm-payment="handlePaymentConfirmation" />
 
-                  <ul class="space-y-2">
-    <li v-for="consumo in consumos" :key="consumo.consumoId"
-      class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto_auto] gap-3 bg-gradient-to-r from-neutral-600 to-neutral-700 p-3 rounded-xl text-white items-center hover:from-neutral-500 hover:to-neutral-600 transition-all duration-200 border border-neutral-500/50">
-      
-      <span class="text-sm font-medium truncate" :title="consumo.articleName">{{ consumo.articleName }}</span>
-
-      <!-- Quantity Display/Edit -->
-      <template v-if="editingConsumoId !== consumo.consumoId">
-        <span class="text-sm text-center font-medium">{{ consumo.cantidad }}</span>
-      </template>
-      <template v-else>
-        <input type="number" v-model.number="editedCantidad" @blur="saveConsumo(consumo.consumoId)"
-          class="text-sm text-center p-1 rounded-lg bg-neutral-800 text-white border border-accent-400 focus:border-accent-300 w-full" />
-      </template>
-
-      <span class="text-sm text-center text-green-300 font-medium">${{ consumo.precioUnitario }}</span>
-      <span class="text-xs text-center px-2 py-1 rounded-full font-medium"
-        :class="consumo.esHabitacion ? 'bg-purple-500/30 text-purple-200' : 'bg-blue-500/30 text-blue-200'">
-        {{ consumo.esHabitacion ? 'Hab' : 'Inv' }}
-      </span>
-      <span class="text-sm font-bold text-green-400 text-center">${{ consumo.total }}</span>
-
-      <!-- Edit/Cancel/Delete Buttons -->
-      <template v-if="editingConsumoId !== consumo.consumoId">
-        <button type="button" 
-          class="bg-blue-600 hover:bg-blue-500 rounded-lg text-xs h-8 w-8 text-white flex justify-center items-center transition-colors duration-200 material-symbols-outlined"
-          @click="startEditConsumo(consumo.consumoId)" title="Editar cantidad">
-          edit
-        </button>
-      </template>
-      <template v-else>
-        <button type="button" 
-          class="bg-gray-600 hover:bg-gray-500 rounded-lg text-xs h-8 w-8 text-white flex justify-center items-center transition-colors duration-200 material-symbols-outlined"
-          @click="cancelEditConsumo()" title="Cancelar edición">
-          close
-        </button>
-      </template>
-
-      <!-- Delete button -->
-      <button type="button"
-        class="bg-red-600 hover:bg-red-500 rounded-lg text-xs h-8 w-8 text-white flex justify-center items-center transition-colors duration-200 material-symbols-outlined"
-        @click="anularConsumo(consumo.consumoId)" title="Eliminar consumo">
-        delete
-      </button>
-    </li>
-  </ul>
-
-                  <!-- Botones de consumo -->
-                  <div class="absolute -bottom-14 z-10 left-8 right-8 flex gap-3 bg-gradient-to-r from-neutral-800 to-neutral-900 p-4 rounded-xl border border-accent-400/30 shadow-2xl">
-                    <button type="button" @click="toggleModalConsumo(false)"
-                      class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg">
-                      <span class="material-symbols-outlined text-sm">inventory_2</span>
-                      Consumo General
-                    </button>
-                    <button type="button" @click="toggleModalConsumo(true)"
-                      class="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg">
-                      <span class="material-symbols-outlined text-sm">hotel</span>
-                      Consumo Habitación
-                    </button>
-                  </div>
-                </div>
-
-
-
-
-
-              </section>
-
-
-
-
-              <!-- Sección de Totales -->
-              <section class="relative drop-shadow-xl w-full h-auto overflow-hidden rounded-xl bg-gradient-to-br from-green-900/40 to-emerald-900/40 border border-green-500/30">
-
-                <div class="absolute flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-6">
-                  
-                  <!-- Header -->
-                  <div class="flex items-center gap-2 mb-4 pb-2 border-b border-green-500/30">
-                    <span class="material-symbols-outlined text-green-400">calculate</span>
-                    <h3 class="text-white font-semibold">Resumen de Facturación</h3>
-                  </div>
-
-                  <div class="space-y-3">
-                    <!-- Consumos -->
-                    <div class="flex justify-between items-center p-3 bg-neutral-700/50 rounded-lg hover:bg-neutral-600/50 transition-all duration-200">
-                      <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-blue-400 text-sm">restaurant</span>
-                        <span class="font-medium">Consumos</span>
-                      </div>
-                      <span class="font-bold text-blue-300">${{ consumos.reduce((sum, consumo) => sum + consumo.total, 0) }}</span>
-                    </div>
-
-                    <!-- Periodo -->
-                    <div class="flex justify-between items-center p-3 bg-neutral-700/50 rounded-lg hover:bg-neutral-600/50 transition-all duration-200">
-                      <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-purple-400 text-sm">schedule</span>
-                        <span class="font-medium">Periodo</span>
-                      </div>
-                      <span class="font-bold text-purple-300">${{ periodoCost }}</span>
-                    </div>
-
-                    <!-- Adicional -->
-                    <div class="flex justify-between items-center p-3 bg-neutral-700/50 rounded-lg hover:bg-neutral-600/50 transition-all duration-200">
-                      <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-orange-400 text-sm">add_circle</span>
-                        <span class="font-medium">Tiempo Extra</span>
-                      </div>
-                      <span class="font-bold text-orange-300">${{ adicional }}</span>
-                    </div>
-
-                    <!-- Total -->
-                    <div class="flex justify-between items-center p-4 bg-gradient-to-r from-green-600/30 to-emerald-600/30 rounded-xl border border-green-500/40 mt-4">
-                      <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-green-400">paid</span>
-                        <span class="font-bold text-lg">TOTAL</span>
-                      </div>
-                      <span class="font-bold text-xl text-green-300">
-                        ${{ (() => {
-                          const consumoTotal = consumos.reduce((sum, consumo) => sum + (Number(consumo.total) || 0), 0);
-                          const periodo = Number(periodoCost) || 0;
-                          const adicionalValue = Number(adicional) || 0;
-                          const total = consumoTotal + periodo + adicionalValue;
-                          return isNaN(total) ? "0.00" : total.toFixed(2);
-                        })() }}
-                      </span>
-                    </div>
-                  </div>
-
-                </div>
-                <div class="absolute w-full h-full bg-green-400/5 blur-[50px] -left-1/2 -top-1/2"></div>
-              </section>
-
-              <!-- Botones de Acción -->
-              <section class="flex col-span-1 md:col-span-2 justify-center items-end">
-                <div class="w-full max-w-2xl bg-gradient-to-r from-neutral-800 to-neutral-900 p-6 rounded-2xl border border-neutral-600/50 shadow-2xl">
-                  <div class="flex gap-4">
-                    <button @click="toggleAnularOcupacionModal" type="button"
-                      class="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-red-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
-                      <span class="material-symbols-outlined">cancel</span>
-                      Anular Ocupación
-                    </button>
-                    <button @click="openPaymentModal" type="button" 
-                      :disabled="selectedRoom.pedidosPendientes || isProcessingPayment"
-                      class="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
-                      <span v-if="!isProcessingPayment" class="flex items-center gap-2">
-                        <span class="material-symbols-outlined">door_open</span>
-                        Desocupar Habitación
-                      </span>
-                      <span v-else class="flex items-center gap-2">
-                        <span class="material-symbols-outlined animate-spin">sync</span>
-                        Procesando...
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              </section>
-
-
-
-            </form>
-            <!-- Conditional warning text -->
-            <p v-if="selectedRoom.pedidosPendientes" class="text-red-500 mt-2 text-center">
-              Hay pedidos pendientes, no se puede desocupar la habitación.
-            </p>
-
-            <ModalPagar v-if="modalPayment" :periodo="Number(periodoCost)" :consumo="consumos.reduce((sum, consumo) => sum + consumo.total, 0)" :total="totalAmount" :adicional="Number(adicional)"
-              :habitacionId="selectedRoom.HabitacionID" :visitaId="selectedRoom.VisitaID" :pausa="Pausa"
-              @close="modalPayment = false" @confirm-payment="handlePaymentConfirmation" />
-
-            <AnularOcupacionModal v-if="modalAnular" :reservaId="selectedRoom.ReservaID"
-              @close-modal="modalAnular = false" @ocupacion-anulada="handleOcupacionAnulada" />
-            <ModalConsumo v-if="modalConsumo" :name="selectedRoom.Identificador"
-              :habitacionID="selectedRoom.HabitacionID" :consumoHabitacion="esConsumoHabitacion"
-              @confirmaAccion="confirmAndSend" @close="toggleModalConsumo" />
-            <ModalExtenderOcupacion v-if="modalExtender" :name="selectedRoom.Identificador"
-            :reservaID="selectedRoom.ReservaID"
-            @confirmExtension="agregarTiempoExtra" @close-modal="modalExtender = false" />
-
+            <AnularOcupacionModal v-if="modalAnular" 
+              :reservaId="selectedRoom.ReservaID"
+              @close-modal="modalAnular = false" 
+              @ocupacion-anulada="handleOcupacionAnulada" />
+              
+            <ModalConsumo v-if="modalConsumo" 
+              :name="selectedRoom.Identificador"
+              :habitacionID="selectedRoom.HabitacionID" 
+              :consumoHabitacion="esConsumoHabitacion"
+              @confirmaAccion="confirmAndSend" 
+              @close="toggleModalConsumo" />
+              
+            <ModalExtenderOcupacion v-if="modalExtender" 
+              :name="selectedRoom.Identificador"
+              :reservaID="selectedRoom.ReservaID"
+              @confirmExtension="agregarTiempoExtra" 
+              @close-modal="modalExtender = false" />
           </div>
-
         </Transition>
       </div>
     </Transition>
@@ -652,9 +627,12 @@ const toggleModalExtender = () => {
 const agregarTiempoExtra = (horas, minutos) => {
   selectedRoom.value.TotalHoras = selectedRoom.value.TotalHoras + horas;
   selectedRoom.value.TotalMinutos = selectedRoom.value.TotalMinutos + minutos;
-  emits('update-tiempo', selectedRoom.value.ReservaID, horas, minutos)
+  // Room time updated, reload to refresh data
   calculateRemainingTime()
   modalExtender.value = false;
+  setTimeout(() => {
+    window.location.reload();
+  }, 500);
 }
 const toggleAnularOcupacionModal = () => {
   modalAnular.value = !modalAnular.value;
@@ -974,9 +952,9 @@ const handlePaymentConfirmation = (paymentDetails) => {
     life: 10000
   });
   
-  // Emit checkout event to update parent component
+  // Reload page to update rooms
   setTimeout(() => {
-    emits('room-checkout', selectedRoom.value.HabitacionID);
+    window.location.reload();
   }, 1500);
 };
 
@@ -986,9 +964,9 @@ const handleOcupacionAnulada = (reservaId) => {
   // Close the modal
   modalAnular.value = false;
   
-  // Emit checkout event to update parent component (room goes back to free)
+  // Reload page to update rooms (room goes back to free)
   setTimeout(() => {
-    emits('room-checkout', selectedRoom.value.HabitacionID);
+    window.location.reload();
   }, 1500);
 };
 
@@ -1051,12 +1029,11 @@ const actualizarPromocion = () => {
     .then((response) => {
       console.log("Promoción actualizada correctamente:", response.data);
 
-      // Update the room object to reflect the change
-      const updatedRoom = { ...props.room, promocionID: promocionId }; // Use the correct promocionID
-      emits('update-room', updatedRoom); // Emit the updated room to the parent
-
-      // Optionally: You can reset or set some local state here
+      // Promotion updated, reload to refresh data
       promocionActiva.value = promocionId !== null; // Set the promocionActiva flag accordingly
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     })
     .catch((error) => {
       console.error("Error actualizando la promoción:", error);

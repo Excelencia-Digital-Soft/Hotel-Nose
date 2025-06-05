@@ -67,8 +67,8 @@ const handleRoomReserved = (roomId) => {
   // Close the local modal
   showFree.value = false;
   document.body.style.overflow = 'auto';
-  // Emit to parent component
-  emits('room-reserved', roomId);
+  // Reload page to update rooms
+  window.location.reload();
 }
 
 // const roomToOccupied = ref(
