@@ -81,45 +81,75 @@
                     {{ selectedRoom.nombreHabitacion }}
                   </h1>
               </div>
-              <div class="grid shadow-lg w-full rounded-2xl border-2  border-primary-500  ">
+              <div class="grid shadow-lg w-full rounded-2xl border-2 border-primary-500">
 
-                <section class="relative  drop-shadow-xl w-full h-44 overflow-hidden rounded-2xl bg-[#691660]">
-                  <div
-                    class=" grid absolute items-center justify-center text-white z-[1] opacity-90 rounded-2xl inset-0.5 bg-[#323132]  px-4">
+                <section class="relative drop-shadow-xl w-full h-auto overflow-hidden rounded-2xl bg-[#691660]">
+                  <div class="absolute flex flex-col text-white z-[1] opacity-90 rounded-2xl inset-0.5 bg-[#323132] p-6 space-y-4">
 
-                    <div class="flex flex-col items-start justify-center w-full  ">
-                      <label for="nombre" class="text-sm font-semibold leading-6 text-white">Identificador</label>
-                      <input type="text"
-                        class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                        v-model="selectedRoom.Identificador" placeholder="Identificador" maxlength="40">
+                    <!-- Información principal -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <!-- Identificador -->
+                      <div class="flex flex-col space-y-2">
+                        <label class="text-sm font-semibold text-white flex items-center gap-2">
+                          <span class="material-symbols-outlined text-sm">person</span>
+                          Identificador
+                        </label>
+                        <input type="text"
+                          class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-2 px-3 transition duration-150 ease-out md:ease-in"
+                          v-model="selectedRoom.Identificador" placeholder="Identificador del cliente" maxlength="40">
+                      </div>
+
+                      <!-- Hora de Entrada -->
+                      <div class="flex flex-col space-y-2">
+                        <label class="text-sm font-semibold text-white flex items-center gap-2">
+                          <span class="material-symbols-outlined text-sm">schedule</span>
+                          Hora de Entrada
+                        </label>
+                        <input type="datetime-local"
+                          class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-2 px-3 transition duration-150 ease-out md:ease-in bg-gray-50"
+                          v-model="horaEntrada" readonly>
+                      </div>
                     </div>
 
-                    <div class="flex  justify-start w-full  ">
-                      <div class="flex flex-col items-start justify-center w-full mb-2 mr-2 ">
-                        <label for="cuit" class="text-sm font-semibold leading-6 text-white">Patente</label>
+                    <!-- Información de contacto -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <!-- Patente -->
+                      <div class="flex flex-col space-y-2">
+                        <label class="text-sm font-semibold text-white flex items-center gap-2">
+                          <span class="material-symbols-outlined text-sm">directions_car</span>
+                          Patente
+                        </label>
                         <input type="text"
-                          class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
-                          v-model="selectedRoom.PatenteVehiculo" placeholder="Ingrese el numero de Patente">
+                          class="focus:ring-purple-500 text-sm text-neutral-900 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-2 px-3 transition duration-150 ease-out md:ease-in"
+                          v-model="selectedRoom.PatenteVehiculo" placeholder="ABC123">
                       </div>
-                      <div class="flex flex-col items-start justify-center w-full mb-2 ">
-                        <label for="cuit" class="text-sm font-semibold leading-6 text-white">Telefono</label>
+
+                      <!-- Teléfono -->
+                      <div class="flex flex-col space-y-2">
+                        <label class="text-sm font-semibold text-white flex items-center gap-2">
+                          <span class="material-symbols-outlined text-sm">phone</span>
+                          Teléfono
+                        </label>
                         <input type="text"
-                          class="focus:ring-purple-500 text-neutral-900 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition duration-150 ease-out md:ease-in"
+                          class="focus:ring-purple-500 text-neutral-900 text-sm border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-2 px-3 transition duration-150 ease-out md:ease-in"
                           maxlength="11" v-model="selectedRoom.NumeroTelefono"
-                          placeholder="Ingresa Marca y modelo de vehiculo">
+                          placeholder="11 1234-5678">
                       </div>
-
-
                     </div>
+
                   </div>
                   <div class="absolute w-full h-36 bg-white blur-[50px] -left-1/2 -top-1/2"></div>
 
                 </section>
-                <div class="w-full flex justify-center items-center px-4 ">
-
-                  <div class="m-4 w-full">
-                    <label class="text-xs font-semibold text-white">Seleccionar Promoción</label>
-                    <select v-model="selectedPromocion" class="w-full text-sm p-2 mt-2 rounded-lg">
+                <!-- Sección de Promociones -->
+                <div class="w-full flex justify-center items-center px-6 py-4 bg-gradient-to-r from-purple-900/20 to-blue-900/20 border-t border-purple-500/30">
+                  <div class="w-full">
+                    <label class="text-sm font-semibold text-white flex items-center gap-2 mb-3">
+                      <span class="material-symbols-outlined text-sm">local_offer</span>
+                      Promociones Disponibles
+                    </label>
+                    <select v-model="selectedPromocion" 
+                      class="w-full text-sm p-3 rounded-xl border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition duration-200 bg-white">
                       <!-- Default 'Sin Promoción' option -->
                       <option :value="null">Sin Promoción</option>
 
@@ -136,74 +166,84 @@
 
 
               </div>
-              <section class="relative z-10 flex col-span-1 md:col-span-2 flex-col  justify-start ">
+              <section class="relative z-10 flex col-span-1 md:col-span-2 flex-col justify-start">
 
-                <div
-                  class="bg-neutral-700  h-72 border-l-4 border-accent-400  rounded-l-3xl p-4 overflow-y-auto shadow-neutral-900 shadow-lg">
+                <div class="bg-gradient-to-br from-neutral-800 to-neutral-900 h-72 border-l-4 border-accent-400 rounded-l-3xl p-6 overflow-y-auto shadow-2xl">
+                  <!-- Header del consumo -->
+                  <div class="flex items-center gap-2 mb-4 pb-2 border-b border-accent-400/30">
+                    <span class="material-symbols-outlined text-accent-400">receipt_long</span>
+                    <h3 class="text-white font-semibold">Consumos</h3>
+                  </div>
+                  
                   <!-- Header row -->
-                  <div
-                    class="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] gap-3  text-white text-xs font-semibold mb-2">
+                  <div class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto_auto] gap-3 text-white text-xs font-semibold mb-3 px-2">
                     <span>Producto</span>
-                    <span>Cant</span>
+                    <span>Cant.</span>
                     <span>Precio</span>
-                    <span>Orig</span>
+                    <span>Origen</span>
                     <span>Total</span>
                     <span>Editar</span>
-                    <span>Borrar</span>
+                    <span>Eliminar</span>
                   </div>
 
                   <ul class="space-y-2">
     <li v-for="consumo in consumos" :key="consumo.consumoId"
-      class="grid grid-cols-7  bg-neutral-600 p-2 rounded-md text-white items-center">
-      <span class="text-xs w-16 break-words font-semibold">{{ consumo.articleName }}</span>
+      class="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto_auto] gap-3 bg-gradient-to-r from-neutral-600 to-neutral-700 p-3 rounded-xl text-white items-center hover:from-neutral-500 hover:to-neutral-600 transition-all duration-200 border border-neutral-500/50">
+      
+      <span class="text-sm font-medium truncate" :title="consumo.articleName">{{ consumo.articleName }}</span>
 
       <!-- Quantity Display/Edit -->
       <template v-if="editingConsumoId !== consumo.consumoId">
-        <span class="text-xs text-center text-neutral-200">{{ consumo.cantidad }}</span>
+        <span class="text-sm text-center font-medium">{{ consumo.cantidad }}</span>
       </template>
       <template v-else>
         <input type="number" v-model.number="editedCantidad" @blur="saveConsumo(consumo.consumoId)"
-          class="text-xs text-center w-16 rounded-md bg-neutral-700 text-white" />
+          class="text-sm text-center p-1 rounded-lg bg-neutral-800 text-white border border-accent-400 focus:border-accent-300 w-full" />
       </template>
 
-      <span class="text-xs text-center text-neutral-200">${{ consumo.precioUnitario }}</span>
-      <span class="text-xs text-center text-neutral-200">
+      <span class="text-sm text-center text-green-300 font-medium">${{ consumo.precioUnitario }}</span>
+      <span class="text-xs text-center px-2 py-1 rounded-full font-medium"
+        :class="consumo.esHabitacion ? 'bg-purple-500/30 text-purple-200' : 'bg-blue-500/30 text-blue-200'">
         {{ consumo.esHabitacion ? 'Hab' : 'Inv' }}
       </span>
-      <span class="text-xs font-bold text-green-400">${{ consumo.total }}</span>
+      <span class="text-sm font-bold text-green-400 text-center">${{ consumo.total }}</span>
 
       <!-- Edit/Cancel/Delete Buttons -->
       <template v-if="editingConsumoId !== consumo.consumoId">
-        <button type="button" class="btn-secondary rounded-xl text-xs h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
-          @click="startEditConsumo(consumo.consumoId)">
+        <button type="button" 
+          class="bg-blue-600 hover:bg-blue-500 rounded-lg text-xs h-8 w-8 text-white flex justify-center items-center transition-colors duration-200 material-symbols-outlined"
+          @click="startEditConsumo(consumo.consumoId)" title="Editar cantidad">
           edit
         </button>
       </template>
       <template v-else>
-        <button type="button" class="btn-danger rounded-xl text-xs h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
-          @click="cancelEditConsumo()">
-          cancel
+        <button type="button" 
+          class="bg-gray-600 hover:bg-gray-500 rounded-lg text-xs h-8 w-8 text-white flex justify-center items-center transition-colors duration-200 material-symbols-outlined"
+          @click="cancelEditConsumo()" title="Cancelar edición">
+          close
         </button>
       </template>
 
-      <!-- Cancel button with trashcan icon -->
+      <!-- Delete button -->
       <button type="button"
-        class="btn-danger rounded-xl text-xl h-10 w-10 text-white flex justify-center ml-2 items-center material-symbols-outlined"
-        @click="anularConsumo(consumo.consumoId)">
+        class="bg-red-600 hover:bg-red-500 rounded-lg text-xs h-8 w-8 text-white flex justify-center items-center transition-colors duration-200 material-symbols-outlined"
+        @click="anularConsumo(consumo.consumoId)" title="Eliminar consumo">
         delete
       </button>
     </li>
   </ul>
 
-                  <div
-                    class="absolute -bottom-16 z-[-1] left-12 flex self-center w-10/12 border-x-2 border-b-2 rounded-b-2xl p-4 shadow-neutral-900 shadow-lg">
+                  <!-- Botones de consumo -->
+                  <div class="absolute -bottom-14 z-10 left-8 right-8 flex gap-3 bg-gradient-to-r from-neutral-800 to-neutral-900 p-4 rounded-xl border border-accent-400/30 shadow-2xl">
                     <button type="button" @click="toggleModalConsumo(false)"
-                      class="btn-third w-full  h-8 mr-2 p-1 text-sm  rounded-3xl mt-4">
-                      Consumo general
+                      class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg">
+                      <span class="material-symbols-outlined text-sm">inventory_2</span>
+                      Consumo General
                     </button>
                     <button type="button" @click="toggleModalConsumo(true)"
-                      class="btn-third w-full h-8 text-sm p-2 mr-2  rounded-3xl mt-4">
-                      Consumo habitación
+                      class="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white px-4 py-2 rounded-xl font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 shadow-lg">
+                      <span class="material-symbols-outlined text-sm">hotel</span>
+                      Consumo Habitación
                     </button>
                   </div>
                 </div>
@@ -217,68 +257,89 @@
 
 
 
-              <section class="relative  drop-shadow-xl w-full h-56 overflow-hidden rounded-xl bg-[#691660]">
+              <!-- Sección de Totales -->
+              <section class="relative drop-shadow-xl w-full h-auto overflow-hidden rounded-xl bg-gradient-to-br from-green-900/40 to-emerald-900/40 border border-green-500/30">
 
-                <div
-                  class="absolute flex items-center justify-center text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] space-x-4 px-4">
+                <div class="absolute flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-6">
+                  
+                  <!-- Header -->
+                  <div class="flex items-center gap-2 mb-4 pb-2 border-b border-green-500/30">
+                    <span class="material-symbols-outlined text-green-400">calculate</span>
+                    <h3 class="text-white font-semibold">Resumen de Facturación</h3>
+                  </div>
 
-                  <table class="w-full text-left ">
-                    <tbody>
-                      <tr
-                        class="border-b border-neutral-700 hover:scale-110 hover:bg-primary-500 transition duration-100 ease-out md:ease-in">
-                        <td class="p-2">Consumision</td>
-                        <td class="p-4 text-right">${{ consumos.reduce((sum, consumo) => sum + consumo.total, 0) }}</td>
-                      </tr>
-                      <tr
-                        class="border-b border-neutral-700 hover:scale-110 hover:bg-primary-500 transition duration-100 ease-out md:ease-in">
-                        <td class="p-2">Periodo</td>
-                        <td class="p-2 text-right">${{ periodoCost }}</td>
-                      </tr>
-                      <tr
-                        class="border-b border-neutral-700  hover:scale-110 hover:bg-primary-500  transition duration-100 ease-out md:ease-in ">
-                        <td class="p-2">Adicional</td>
-                        <td class="p-2 text-right">${{ adicional }}</td> <!-- Display calculated Adicional -->
-                      </tr>
-                      <tr class="  hover:bg-primary-500 hover:scale-110 transition duration-100 ease-out md:ease-in">
-                        <td class="p-2">Total</td>
-                        <td class="p-2 text-right">
-                          ${{ (() => {
-                            const consumoTotal = consumos.reduce((sum, consumo) => sum + (Number(consumo.total) || 0), 0);
-                            const periodo = Number(periodoCost) || 0;
-                            const adicionalValue = Number(adicional) || 0;
-                            const total = consumoTotal + periodo + adicionalValue;
-                            return isNaN(total) ? "0.00" : total.toFixed(2);
-                          })() }}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div class="space-y-3">
+                    <!-- Consumos -->
+                    <div class="flex justify-between items-center p-3 bg-neutral-700/50 rounded-lg hover:bg-neutral-600/50 transition-all duration-200">
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-blue-400 text-sm">restaurant</span>
+                        <span class="font-medium">Consumos</span>
+                      </div>
+                      <span class="font-bold text-blue-300">${{ consumos.reduce((sum, consumo) => sum + consumo.total, 0) }}</span>
+                    </div>
+
+                    <!-- Periodo -->
+                    <div class="flex justify-between items-center p-3 bg-neutral-700/50 rounded-lg hover:bg-neutral-600/50 transition-all duration-200">
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-purple-400 text-sm">schedule</span>
+                        <span class="font-medium">Periodo</span>
+                      </div>
+                      <span class="font-bold text-purple-300">${{ periodoCost }}</span>
+                    </div>
+
+                    <!-- Adicional -->
+                    <div class="flex justify-between items-center p-3 bg-neutral-700/50 rounded-lg hover:bg-neutral-600/50 transition-all duration-200">
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-orange-400 text-sm">add_circle</span>
+                        <span class="font-medium">Tiempo Extra</span>
+                      </div>
+                      <span class="font-bold text-orange-300">${{ adicional }}</span>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="flex justify-between items-center p-4 bg-gradient-to-r from-green-600/30 to-emerald-600/30 rounded-xl border border-green-500/40 mt-4">
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-green-400">paid</span>
+                        <span class="font-bold text-lg">TOTAL</span>
+                      </div>
+                      <span class="font-bold text-xl text-green-300">
+                        ${{ (() => {
+                          const consumoTotal = consumos.reduce((sum, consumo) => sum + (Number(consumo.total) || 0), 0);
+                          const periodo = Number(periodoCost) || 0;
+                          const adicionalValue = Number(adicional) || 0;
+                          const total = consumoTotal + periodo + adicionalValue;
+                          return isNaN(total) ? "0.00" : total.toFixed(2);
+                        })() }}
+                      </span>
+                    </div>
+                  </div>
+
                 </div>
-                <div class="absolute w-full h-full bg-white blur-[50px] -left-1/2 -top-1/2"></div>
+                <div class="absolute w-full h-full bg-green-400/5 blur-[50px] -left-1/2 -top-1/2"></div>
               </section>
 
-              <section class=" flex col-span-1 md:col-span-2 justify-center items-end">
-                <div class="relative  drop-shadow-xl w-3/4 h-24 overflow-hidden rounded-xl bg-[#691660]">
-                  <div
-                    class="absolute flex items-center justify-center text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] space-x-4 px-4">
+              <!-- Botones de Acción -->
+              <section class="flex col-span-1 md:col-span-2 justify-center items-end">
+                <div class="w-full max-w-2xl bg-gradient-to-r from-neutral-800 to-neutral-900 p-6 rounded-2xl border border-neutral-600/50 shadow-2xl">
+                  <div class="flex gap-4">
                     <button @click="toggleAnularOcupacionModal" type="button"
-                      class="btn-danger w-2/4 h-12 rounded-2xl border-l-2 border-neutral-300">
+                      class="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-red-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <span class="material-symbols-outlined">cancel</span>
                       Anular Ocupación
                     </button>
                     <button @click="openPaymentModal" type="button" 
                       :disabled="selectedRoom.pedidosPendientes || isProcessingPayment"
-                      class="btn-secondary w-2/4 h-12 rounded-2xl relative">
-                      <span v-if="!isProcessingPayment">
-                        Desocupar Habitación<span class="material-symbols-outlined">
-                          door_open
-                        </span>
+                      class="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white px-6 py-4 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-green-500/25 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <span v-if="!isProcessingPayment" class="flex items-center gap-2">
+                        <span class="material-symbols-outlined">door_open</span>
+                        Desocupar Habitación
                       </span>
-                      <span v-else class="flex items-center justify-center">
+                      <span v-else class="flex items-center gap-2">
+                        <span class="material-symbols-outlined animate-spin">sync</span>
                         Procesando...
                       </span>
                     </button>
                   </div>
-                  <div class="absolute w-3/4 h-24 bg-white blur-[50px] -left-1/2 -top-1/2"></div>
                 </div>
               </section>
 
@@ -405,6 +466,14 @@ onMounted(() => {
   selectedRoom.value.PatenteVehiculo = props.room.visita?.patenteVehiculo; // Safe access
   selectedRoom.value.PausaHoras = props.room.reservaActiva.pausaHoras ?? 0;
   selectedRoom.value.PausaMinutos = props.room.reservaActiva.pausaMinutos ?? 0;
+
+  // Formatear la fecha de reserva para el input datetime-local (horario Argentina UTC-3)
+  if (selectedRoom.value.FechaReserva) {
+    const fecha = new Date(selectedRoom.value.FechaReserva);
+    // Restar 3 horas para horario de Argentina
+    fecha.setHours(fecha.getHours() - 3);
+    horaEntrada.value = fecha.toISOString().slice(0, 16);
+  }
 
   console.log(selectedRoom.value)
   actualizarConsumos();
@@ -998,6 +1067,7 @@ const actualizarPromocion = () => {
 
 const editingConsumoId = ref(null);
 const editedCantidad = ref(0);
+const horaEntrada = ref('');
 
 const startEditConsumo = (consumoId) => {
   editingConsumoId.value = consumoId;

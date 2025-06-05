@@ -265,14 +265,16 @@ const reserveRoom = () => {
   isLoading.value = true;
   actualizarFechas()
   
-  // Validación corregida usando .value
-  if (numeroError.value !== '' || (selectedRoom.value.PatenteVehiculo == '' && selectedRoom.value.Identificador == '' && selectedRoom.value.NumeroTelefono == '')) {
+  // Validación: solo el tiempo es obligatorio
+  const hasTime = hours.value > 0 || minutes.value > 0;
+  
+  if (numeroError.value !== '' || !hasTime) {
     // No envíes el formulario si hay errores de validación
     console.log("faltan datos obligatorios");
     toast.add({
       severity: 'warn',
       summary: 'Datos incompletos',
-      detail: 'Por favor complete todos los campos obligatorios',
+      detail: !hasTime ? 'Por favor ingrese al menos horas o minutos' : 'Hay errores en la validación',
       life: 10000
     });
     isLoading.value = false; // Resetear loading state
