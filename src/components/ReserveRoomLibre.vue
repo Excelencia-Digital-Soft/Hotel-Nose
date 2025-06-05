@@ -4,12 +4,13 @@
     <Toast position="top-right" />
     <Transition name="modal-outer" appear>
       <div
+        v-if="room"
         class="fixed w-full h-full bg-black  z-30 bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
         <Transition name="modal-inner">
           <div
             class="w-full md:w-2/4 h-auto flex flex-col justify-center fixed mt-4 p-8 pt-6 border-x-8 border-secondary-400 rounded-xl bg-neutral-900">
             <h1 class="self-center text-2xl text-white lexend-exa font-bold mt-5 mb-5">
-              {{ room.nombreHabitacion }}
+              {{ room?.nombreHabitacion || 'Habitación' }}
             </h1>
 
             <form class="w-full grid-cols-1">
@@ -164,14 +165,6 @@ let selectedRoom = ref({
   esReserva: true,
 })
 
-
-
-
-
-
-
-
-
 // Objeto con los valores de la tabla
 const tableData = ref({
   descuento: 0,
@@ -273,7 +266,7 @@ const reserveRoom = () => {
   actualizarFechas()
   
   // Validación corregida usando .value
-  if (numeroError.value || (selectedRoom.value.PatenteVehiculo == '' && selectedRoom.value.Identificador == '' && selectedRoom.value.NumeroTelefono == '')) {
+  if (numeroError.value !== '' || (selectedRoom.value.PatenteVehiculo == '' && selectedRoom.value.Identificador == '' && selectedRoom.value.NumeroTelefono == '')) {
     // No envíes el formulario si hay errores de validación
     console.log("faltan datos obligatorios");
     toast.add({
@@ -296,7 +289,7 @@ const reserveRoom = () => {
         severity: 'success',
         summary: 'Éxito',
         detail: 'Habitación ocupada exitosamente',
-        life: 10000
+        life: 9000
       });
       isLoading.value = false; // Desactivar indicador de carga
       

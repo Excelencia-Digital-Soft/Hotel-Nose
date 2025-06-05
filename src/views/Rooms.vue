@@ -47,10 +47,10 @@
         </div>
       </div>
     </div>
-    <ReserveRoom :room="room" v-if="show" @close-modal="toggleModal" @update-room="updateRoom" @update-tiempo="agregarTiempoExtra" @room-checkout="handleRoomCheckout">
+    <ReserveRoom :room="room" v-if="show && !showFree" @close-modal="toggleModal" @update-room="updateRoom" @update-tiempo="agregarTiempoExtra" @room-checkout="handleRoomCheckout">
     </ReserveRoom>
   
-    <ReserveRoomLibre :room="room" v-if="showFree" @close-modal="toggleModalLibre" @room-reserved="handleRoomReserved">
+    <ReserveRoomLibre :room="room" v-if="showFree && !show" @close-modal="toggleModalLibre" @room-reserved="handleRoomReserved">
     </ReserveRoomLibre>
   
     <div v-if="!authStore.auth">
@@ -249,41 +249,49 @@ const handleRoomCheckout = (roomId) => {
 const handleRoomReserved = (roomId) => {
   console.log('🏠 Handling room reservation for room:', roomId);
   
-  // Find the room in free rooms
+  // Close ALL modals first to avoid rendering issues
+  showFree.value = false;
+  show.value = false;
+  document.body.style.overflow = 'auto';
+  
+  // Clear the room reference to avoid undefined errors
+  room.value = null;
+  
+  // Find and remove the room from free rooms
   const freeIndex = habitacionesLibres.value.findIndex(h => h.habitacionId === roomId);
   
   if (freeIndex !== -1) {
-    const room = habitacionesLibres.value[freeIndex];
-    
     // Remove from free rooms
     habitacionesLibres.value.splice(freeIndex, 1);
-    
     console.log('✅ Room removed from free rooms');
-    
-    // Close the modal
-    showFree.value = false;
-    document.body.style.overflow = 'auto';
-    
-    // Refresh the room data to get the updated state from server
-    setTimeout(() => {
-      fetchHabitaciones();
-    }, 1000);
   } else {
     console.warn('⚠️ Room not found in free rooms for reservation:', roomId);
   }
+  
+  // Refresh the room data to get the updated state from server
+  setTimeout(() => {
+    fetchHabitaciones();
+  }, 1000);
 };
 
 // Toggle Modals
 function toggleModal(Room) {
+    // Close any other modal first
+    showFree.value = false;
+    
     show.value = !show.value;
     room.value = Room;
+    console.log("selecciono habitacion ocupada:", Room);
     document.body.style.overflow = show.value ? 'hidden' : 'auto';
 }
 
 function toggleModalLibre(Room) {
+    // Close any other modal first
+    show.value = false;
+    
     showFree.value = !showFree.value;
     room.value = Room;
-    console.log("selecciono habitacion:",Room)
+    console.log("selecciono habitacion libre:", Room);
     document.body.style.overflow = showFree.value ? 'hidden' : 'auto';
 }
 
