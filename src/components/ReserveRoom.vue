@@ -1,5 +1,9 @@
 <template>
   <Teleport to="body">
+    <!-- PrimeVue Toast for notifications -->
+    <Toast position="top-right" />
+    <ConfirmDialog />
+    
     <Transition name="modal-outer" appear>
       <div
         class="fixed w-full h-full  bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-8">
@@ -238,8 +242,13 @@
                       <tr class="  hover:bg-primary-500 hover:scale-110 transition duration-100 ease-out md:ease-in">
                         <td class="p-2">Total</td>
                         <td class="p-2 text-right">
-                          ${{ (Number(consumos.reduce((sum, consumo) => sum + consumo.total, 0)) + Number(periodoCost) +
-                            Number(adicional)).toFixed(2) }}
+                          ${{ (() => {
+                            const consumoTotal = consumos.reduce((sum, consumo) => sum + (Number(consumo.total) || 0), 0);
+                            const periodo = Number(periodoCost) || 0;
+                            const adicionalValue = Number(adicional) || 0;
+                            const total = consumoTotal + periodo + adicionalValue;
+                            return isNaN(total) ? "0.00" : total.toFixed(2);
+                          })() }}
                         </td>
                       </tr>
                     </tbody>
@@ -256,10 +265,16 @@
                       class="btn-danger w-2/4 h-12 rounded-2xl border-l-2 border-neutral-300">
                       Anular Ocupación
                     </button>
-                    <button @click="openPaymentModal" type="button" :disabled="selectedRoom.pedidosPendientes"
-                      class="btn-secondary w-2/4 h-12 rounded-2xl">
-                      Desocupar Habitación<span class="material-symbols-outlined">
-                        door_open
+                    <button @click="openPaymentModal" type="button" 
+                      :disabled="selectedRoom.pedidosPendientes || isProcessingPayment"
+                      class="btn-secondary w-2/4 h-12 rounded-2xl relative">
+                      <span v-if="!isProcessingPayment">
+                        Desocupar Habitación<span class="material-symbols-outlined">
+                          door_open
+                        </span>
+                      </span>
+                      <span v-else class="flex items-center justify-center">
+                        Procesando...
                       </span>
                     </button>
                   </div>
@@ -303,28 +318,73 @@ import { onMounted, ref, watch, onUnmounted } from 'vue';
 import axiosClient from '../axiosClient';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
+import Toast from 'primevue/toast';
+import ConfirmDialog from 'primevue/confirmdialog';
+import { useToast } from 'primevue/usetoast';
+import { useConfirm } from 'primevue/useconfirm';
 import ModalConsumo from './ModalConsumo.vue';
 import ModalExtenderOcupacion from './ExtenderOcupacionModal.vue';
 import AnularOcupacionModal from './AnularOcupacionModal.vue';
 import ModalPagar from './ModalPagar.vue';
 import dayjs from 'dayjs';
 
-const emits = defineEmits(['close-modal', 'update-room', 'update-tiempo']);
+const emits = defineEmits(['close-modal', 'update-room', 'update-tiempo', 'room-checkout']);
 const props = defineProps({
   room: Object,
 });
 
+// PrimeVue composables
+const toast = useToast();
+const confirm = useConfirm();
+
 const periodoCost = computed(() => {
-  const totalHours = selectedRoom.value.TotalHoras || 0;
-  const totalMinutes = selectedRoom.value.TotalMinutos || 0;
-  const hourlyRate = promocionActiva.value && selectedPromocion.value ? selectedPromocion.value.tarifa : selectedRoom.value.Precio;
-  const totalPeriod = totalHours + totalMinutes / 60;
-  return (totalPeriod * hourlyRate).toFixed(2);
+  // Validate and get total hours and minutes
+  const totalHours = Number(selectedRoom.value.TotalHoras) || 0;
+  const totalMinutes = Number(selectedRoom.value.TotalMinutos) || 0;
+  
+  // Get hourly rate with proper validation
+  let hourlyRate = 0;
+  if (promocionActiva.value && selectedPromocion.value && selectedPromocion.value.tarifa) {
+    hourlyRate = Number(selectedPromocion.value.tarifa) || 0;
+  } else if (selectedRoom.value && selectedRoom.value.Precio) {
+    hourlyRate = Number(selectedRoom.value.Precio) || 0;
+  }
+  
+  // Calculate total period in hours
+  const totalPeriod = totalHours + (totalMinutes / 60);
+  
+  // Calculate cost
+  const cost = totalPeriod * hourlyRate;
+  
+  // Return with validation
+  return isNaN(cost) ? "0.00" : cost.toFixed(2);
 });
 
 const adicional = computed(() => {
-  console.log(overtime.value)
-  return (overtime.value * ((promocionActiva.value && selectedPromocion.value ? selectedPromocion.value.tarifa : selectedRoom.value.Precio) / 60)).toFixed(2); // Calculates overtime charge
+  console.log("Adicional overtime", overtime.value)
+  
+  // Validate overtime value
+  const validOvertime = isNaN(overtime.value) || overtime.value === null || overtime.value === undefined ? 0 : overtime.value;
+  
+  // Get the hourly rate with validation
+  let hourlyRate = 0;
+  if (promocionActiva.value && selectedPromocion.value && selectedPromocion.value.tarifa) {
+    hourlyRate = Number(selectedPromocion.value.tarifa) || 0;
+  } else if (selectedRoom.value && selectedRoom.value.Precio) {
+    hourlyRate = Number(selectedRoom.value.Precio) || 0;
+  }
+  
+  // Calculate per minute rate
+  const perMinuteRate = hourlyRate / 60;
+  
+  // Calculate the overtime value
+  const valueInOverTime = validOvertime * perMinuteRate;
+  
+  // Round to nearest 100 with validation
+  const roundedValue = Math.round(valueInOverTime / 100) * 100;
+  
+  // Final validation to ensure we never return NaN
+  return isNaN(roundedValue) ? 0 : roundedValue;
 });
 
 onMounted(() => {
@@ -568,9 +628,15 @@ const endRoomReserve = () => {
   axiosClient.put(`/FinalizarReserva?idHabitacion=${selectedRoom.value.HabitacionID}`)
     .then(res => {
       console.log(res.data);
-      alert("Se terminó la reserva exitosamente");
-      emits('close-modal');
-      window.location.reload();
+      toast.add({
+        severity: 'success',
+        summary: 'Éxito',
+        detail: 'Se terminó la reserva exitosamente',
+        life: 3000
+      });
+      setTimeout(() => {
+        emits('room-checkout', selectedRoom.value.HabitacionID);
+      }, 1500);
     })
     .catch(error => {
       console.error(error);
@@ -662,25 +728,158 @@ onUnmounted(() => {
 const modalPayment = ref(false);
 const totalAmount = ref(null);
 const modalAnular = ref(false);
+const isProcessingPayment = ref(false);
 // Props from your existing data, for example:
 
 // Methods
-const openPaymentModal = () => {
-  console.log("Se abrió");
-  if (!modalPayment.value) {
-    // Take snapshots of the current values
-    const consumosSnapshot = consumos.value.map(consumo => ({ ...consumo })); // Shallow copy
-    const periodoCostSnapshot = Number(periodoCost.value);
+const openPaymentModal = async () => {
+  // Prevent multiple clicks
+  if (modalPayment.value || isProcessingPayment.value) {
+    console.warn("Modal de pago ya está abierto o procesándose");
+    return;
+  }
 
-    totalAmount.value = consumosSnapshot.reduce((sum, consumo) => sum + consumo.total, 0) + periodoCostSnapshot;
+  // Validate required data
+  if (!selectedRoom.value.VisitaID) {
+    console.error("No se puede abrir el modal de pago: VisitaID no está definido");
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'No se encontró la información de la visita',
+      life: 4000
+    });
+    return;
+  }
 
-    console.log("Total Amount:", totalAmount.value);
-    modalPayment.value = true; // Open the modal
+  // Set loading state
+  isProcessingPayment.value = true;
+
+  try {
+    console.log("Abriendo modal de pago...");
+    
+    // Pause the room occupation
+    try {
+      await axiosClient.put(`/PausarOcupacion?visitaId=${selectedRoom.value.VisitaID}`);
+      console.log("Habitación pausada exitosamente");
+    } catch (pauseError) {
+      console.error("Error al pausar la habitación:", pauseError);
+      
+      // Use PrimeVue confirm dialog
+      confirm.require({
+        message: 'No se pudo pausar la habitación. ¿Desea continuar con el pago?',
+        header: 'Advertencia',
+        icon: 'pi pi-exclamation-triangle',
+        acceptLabel: 'Sí, continuar',
+        rejectLabel: 'No, cancelar',
+        acceptClass: 'p-button-warning',
+        accept: async () => {
+          // Continue with the payment process
+          continuePaymentProcess();
+        },
+        reject: () => {
+          isProcessingPayment.value = false;
+          toast.add({
+            severity: 'info',
+            summary: 'Cancelado',
+            detail: 'Operación cancelada por el usuario',
+            life: 3000
+          });
+        }
+      });
+      return; // Exit early, the accept callback will continue if needed
+    }
+
+    // Continue with payment process
+    continuePaymentProcess();
+
+  } catch (error) {
+    console.error("Error al abrir el modal de pago:", error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Ocurrió un error al procesar el pago. Por favor, intente nuevamente.',
+      life: 5000
+    });
+  } finally {
+    // Always reset loading state
+    isProcessingPayment.value = false;
   }
 };
+
+// Separate function to continue payment process
+const continuePaymentProcess = () => {
+  // Calculate all values with proper validation
+  const calcularTotales = () => {
+    // Consumos total with validation
+    const consumoTotal = consumos.value.reduce((sum, consumo) => {
+      const total = Number(consumo.total) || 0;
+      return sum + total;
+    }, 0);
+
+    // Period cost with validation
+    const periodoCostValue = Number(periodoCost.value) || 0;
+    
+    // Additional cost with validation
+    const adicionalValue = Number(adicional.value) || 0;
+
+    // Calculate final total
+    const total = consumoTotal + periodoCostValue + adicionalValue;
+
+    return {
+      consumoTotal,
+      periodoCostValue,
+      adicionalValue,
+      total: isNaN(total) ? 0 : total
+    };
+  };
+
+  const totales = calcularTotales();
+  
+  // Set the total amount for the payment modal
+  totalAmount.value = totales.total;
+
+  // Log for debugging
+  console.log("Totales calculados:", {
+    consumos: totales.consumoTotal,
+    periodo: totales.periodoCostValue,
+    adicional: totales.adicionalValue,
+    total: totales.total
+  });
+
+  // Validate total is reasonable (optional business logic)
+  if (totales.total < 0) {
+    console.error("Total negativo detectado");
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'El total no puede ser negativo',
+      life: 4000
+    });
+    isProcessingPayment.value = false;
+    return;
+  }
+
+  // Open the modal
+  modalPayment.value = true;
+  isProcessingPayment.value = false;
+};
+
 const handlePaymentConfirmation = (paymentDetails) => {
   console.log('Payment Confirmed:', paymentDetails);
   modalPayment.value = false;
+  
+  // Show success toast
+  toast.add({
+    severity: 'success',
+    summary: 'Pago Confirmado',
+    detail: 'El pago se procesó exitosamente. Habitación liberada.',
+    life: 3000
+  });
+  
+  // Emit checkout event to update parent component
+  setTimeout(() => {
+    emits('room-checkout', selectedRoom.value.HabitacionID);
+  }, 1500);
 };
 
 // LOGICA PROMOCIONES
@@ -786,7 +985,12 @@ const saveConsumo = (consumoId) => {
       })
       .catch(error => {
         console.error('Error updating consumo:', error);
-        alert('Failed to update consumo. See console for details.');
+        toast.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error al actualizar el consumo. Ver consola para más detalles.',
+          life: 4000
+        });
       });
   }
 };

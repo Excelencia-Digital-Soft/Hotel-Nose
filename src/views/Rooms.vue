@@ -47,7 +47,7 @@
         </div>
       </div>
     </div>
-    <ReserveRoom :room="room" v-if="show" @close-modal="toggleModal" @update-room="updateRoom" @update-tiempo="agregarTiempoExtra">
+    <ReserveRoom :room="room" v-if="show" @close-modal="toggleModal" @update-room="updateRoom" @update-tiempo="agregarTiempoExtra" @room-checkout="handleRoomCheckout">
     </ReserveRoom>
   
     <ReserveRoomLibre :room="room" v-if="showFree" @close-modal="toggleModalLibre">
@@ -184,6 +184,66 @@ const agregarTiempoExtra = (reservaID, horas, minutos) => {
     }
   };
   console.log(habitacionesOcupadas.value[index]);
+};
+
+const updateRoom = (updatedRoom) => {
+  console.log('🔄 Updating room:', updatedRoom);
+  
+  // Find the room in occupied rooms
+  const occupiedIndex = habitacionesOcupadas.value.findIndex(h => h.habitacionId === updatedRoom.habitacionId);
+  
+  if (occupiedIndex !== -1) {
+    // Update the room in occupied rooms
+    habitacionesOcupadas.value[occupiedIndex] = { ...habitacionesOcupadas.value[occupiedIndex], ...updatedRoom };
+    console.log('✅ Room updated in occupied rooms');
+    return;
+  }
+  
+  // Find the room in free rooms
+  const freeIndex = habitacionesLibres.value.findIndex(h => h.habitacionId === updatedRoom.habitacionId);
+  
+  if (freeIndex !== -1) {
+    // Update the room in free rooms
+    habitacionesLibres.value[freeIndex] = { ...habitacionesLibres.value[freeIndex], ...updatedRoom };
+    console.log('✅ Room updated in free rooms');
+    return;
+  }
+  
+  console.warn('⚠️ Room not found for update:', updatedRoom.habitacionId);
+};
+
+const handleRoomCheckout = (roomId) => {
+  console.log('🏠 Handling room checkout for room:', roomId);
+  
+  // Find the room in occupied rooms
+  const occupiedIndex = habitacionesOcupadas.value.findIndex(h => h.habitacionId === roomId);
+  
+  if (occupiedIndex !== -1) {
+    const room = habitacionesOcupadas.value[occupiedIndex];
+    
+    // Remove from occupied rooms
+    habitacionesOcupadas.value.splice(occupiedIndex, 1);
+    
+    // Add to free rooms (reset the room state)
+    const freeRoom = {
+      ...room,
+      disponible: true,
+      reservaActiva: null,
+      visita: null,
+      visitaID: null,
+      pedidosPendientes: false
+    };
+    
+    habitacionesLibres.value.push(freeRoom);
+    
+    console.log('✅ Room moved from occupied to free');
+    
+    // Close the modal
+    show.value = false;
+    document.body.style.overflow = 'auto';
+  } else {
+    console.warn('⚠️ Room not found in occupied rooms for checkout:', roomId);
+  }
 };
 
 // Toggle Modals
