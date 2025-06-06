@@ -29,11 +29,11 @@
               <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
                 
                 <!-- Column 1: Tiempo y Promociones -->
-                <div class="flex flex-col gap-4">
+                <div class="flex grid grid-cols-1 gap-4">
                   
                   <!-- Tiempo de Reserva -->
                   <section v-if="selectedRoom.Disponible" class="flex-1 relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-primary-900/40 to-secondary-900/40 border border-primary-500/30">
-                    <div class="absolute flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4 h-full">
+                    <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4 h-full">
                       <div class="flex items-center gap-2 mb-4 pb-2 border-b border-primary-500/30">
                         <span class="material-symbols-outlined text-primary-400">schedule</span>
                         <h3 class="text-white font-semibold">Tiempo de Reserva</h3>
@@ -74,12 +74,11 @@
                         </div>
                       </div>
                     </div>
-                    <div class="absolute w-full h-full bg-primary-400/5 blur-[50px] -left-1/2 -top-1/2"></div>
                   </section>
 
                   <!-- Promociones -->
                   <section class="relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/30">
-                    <div class="absolute flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4">
+                    <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4">
                       <div class="flex items-center gap-2 mb-3 pb-2 border-b border-purple-500/30">
                         <span class="material-symbols-outlined text-purple-400">local_offer</span>
                         <h3 class="text-white font-semibold">Promociones Disponibles</h3>

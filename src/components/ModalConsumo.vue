@@ -29,7 +29,13 @@
             <div class="container mx-auto">
               <!-- Contenedor con overflow-hidden y altura de 500px -->
               <div class="h-80" style="max-height: 40vh; overflow-y: auto;">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mx-2">
+                <div v-if="filteredProductos.length === 0" class="flex items-center justify-center h-full">
+                  <div class="text-white text-center">
+                    <p class="text-xl mb-2">No hay productos disponibles</p>
+                    <p class="text-sm text-gray-400">{{ consumoHabitacion ? 'No se encontraron productos en esta habitación' : 'No se encontraron productos en el inventario general' }}</p>
+                  </div>
+                </div>
+                <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-2 mx-2">
                   <!-- Iteramos sobre los productos filtrados -->
                   <div v-for="producto in filteredProductos" :key="producto.articuloId"
                     @click="toggleSeleccion(producto)" :class="{
@@ -38,8 +44,8 @@
                     }">
                     <!-- Imagen del producto -->
                     <div class="w-16 h-16 flex items-center justify-center rounded-md mb-2">
-                      <img :src="producto.imageUrl || '../assets/image59.svg'" alt="Imagen del producto"
-                        class="w-full h-full object-cover" />
+                      <img :src="producto.imageUrl || defaultProductImage" alt="Imagen del producto"
+                        class="w-full h-full object-cover" @error="handleImageError" />
                     </div>
                     <!-- Nombre del producto -->
                     <p>{{ producto.nombreArticulo }}</p>
@@ -87,6 +93,7 @@ import { onMounted, ref, computed } from 'vue';
 import { useAuthStore } from '../store/auth.js';
 import axiosClient from '../axiosClient';
 import { fetchImage } from '../services/imageService';
+import defaultProductImage from '../assets/image59.svg';
 import TableRow from './TableRow.vue';
 
 const authStore = useAuthStore();
@@ -102,21 +109,35 @@ const emits = defineEmits(["close", "confirmaAccion"]);
 let isLoading = ref(false);
 const productos = ref([]);
 const categorias = ref([]); // Store categories with ID-to-name mapping
-let seleccionados = ref([]);
+const seleccionados = ref([]);
 const selectedCategory = ref(null); // Reactive variable for selected category
 const keyword = ref("");
-let getInv = ref("");
-onMounted(() => {
-  getDatosLogin();
-  if (!props.consumoHabitacion){
-    getInv.value = `/GetInventarioGeneral?InstitucionID=${InstitucionID.value}`
+const getInv = ref("");
+onMounted(async () => {
+  try {
+    getDatosLogin();
+    // Set the API endpoint after getting institution ID
+    if (!props.consumoHabitacion){
+      getInv.value = `/GetInventarioGeneral?InstitucionID=${authStore.institucionID}`
+    }
+    else{
+       getInv.value = `/api/Inventario/GetInventario?habitacionID=${props.habitacionID}`
+    }
+    console.log('ModalConsumo mounted with:', {
+      consumoHabitacion: props.consumoHabitacion,
+      habitacionID: props.habitacionID,
+      institucionID: authStore.institucionID,
+      apiEndpoint: getInv.value
+    });
+    
+    // Fetch data in parallel
+    await Promise.all([
+      fetchCategorias(),
+      fetchArticulos()
+    ]);
+  } catch (error) {
+    console.error('Error initializing ModalConsumo:', error);
   }
-  else{
-     getInv.value = `api/Inventario/GetInventario?habitacionID=${props.habitacionID}`
-  }
-  fetchCategorias(); // Fetch categories when the component mounts
-  fetchArticulos();
-  console.log(props.habitacionID);
 });
 
 const filteredProductos = computed(() => {
@@ -133,34 +154,62 @@ const filteredProductos = computed(() => {
 // Dropdown options for categories
 const uniqueCategories = computed(() => categorias.value.map(c => c.nombreCategoria));
 
+// Handle image load errors
+const handleImageError = (event) => {
+  event.target.src = defaultProductImage;
+};
+
 const fetchArticulos = async () => {
   try {
     const response = await axiosClient.get(getInv.value);
     if (response.data && response.data.data) {
-      // Filter articles with stock > 0 and fetch their images
-      productos.value = await Promise.all(
-        response.data.data
-          .filter(a => a.cantidad > 0)
-          .map(async (articulo) => {
-            const imageUrl = await fetchImage(articulo.articulo.articuloId); // Fetch the image URL
-            return {
-              ...articulo.articulo,
-              cantidad: articulo.cantidad,
-              imageUrl, // Include the image URL
-            };
+      // First, get all articles with stock > 0
+      const articlesWithStock = response.data.data.filter(a => a.cantidad > 0);
+      
+      // Then fetch images in batches to avoid too many concurrent requests
+      const batchSize = 10;
+      productos.value = [];
+      
+      for (let i = 0; i < articlesWithStock.length; i += batchSize) {
+        const batch = articlesWithStock.slice(i, i + batchSize);
+        const batchResults = await Promise.all(
+          batch.map(async (articulo) => {
+            try {
+              const imageUrl = await fetchImage(articulo.articulo.articuloId);
+              return {
+                ...articulo.articulo,
+                cantidad: articulo.cantidad,
+                imageUrl: imageUrl || null, // Use null if no image
+              };
+            } catch (imgError) {
+              console.warn('Error fetching image for article:', articulo.articulo.articuloId, imgError);
+              return {
+                ...articulo.articulo,
+                cantidad: articulo.cantidad,
+                imageUrl: null, // Use null if image fetch fails
+              };
+            }
           })
-      );
+        );
+        productos.value.push(...batchResults);
+      }
     } else {
-      console.error('Datos de la API no válidos:', response.data);
+      console.warn('Datos de la API no válidos, usando lista vacía:', response.data);
+      productos.value = []; // Initialize with empty array to prevent errors
+      // Mostrar mensaje al usuario
+      if (response.data && response.data.message) {
+        alert(response.data.message);
+      }
     }
   } catch (error) {
     console.error('Error al obtener los artículos:', error);
+    productos.value = []; // Initialize with empty array on error
   }
 };
 // Fetch categories from the API
 const fetchCategorias = async () => {
   try {
-    const response = await axiosClient.get(`/api/CategoriaArticulos/GetCategorias?InstitucionID=${InstitucionID.value}`);
+    const response = await axiosClient.get(`/api/CategoriaArticulos/GetCategorias?InstitucionID=${authStore.institucionID}`);
     if (response.data && response.data.data) {
       categorias.value = response.data.data; // Store full category data (ID and name)
     } else {

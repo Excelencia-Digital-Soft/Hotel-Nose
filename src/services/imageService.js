@@ -3,7 +3,6 @@ import axiosClient from '../axiosClient';
 // Function to fetch the image for a given articuloId
 export const fetchImage = async (articuloId) => {
   try {
-    console.log(articuloId)
     const response = await axiosClient.get(`api/Articulos/GetImage/${articuloId}`, {
       responseType: 'blob',
     });
@@ -12,7 +11,10 @@ export const fetchImage = async (articuloId) => {
     const imageUrl = URL.createObjectURL(response.data);
     return imageUrl;
   } catch (error) {
-    console.error(`Error fetching image for articuloId ${articuloId}:`, error);
+    // Only log non-404 errors (404 means the article doesn't have an image, which is normal)
+    if (error.response?.status !== 404) {
+      console.error(`Error fetching image for articuloId ${articuloId}:`, error);
+    }
     return null;
   }
 };
@@ -31,7 +33,10 @@ export const fetchImagenes = async (imagenIds) => {
           const imageUrl = URL.createObjectURL(response.data);
           return imageUrl;
         } catch (error) {
-          console.error(`Error fetching image for imagenId ${imagenId}:`, error);
+          // Only log non-404 errors
+          if (error.response?.status !== 404) {
+            console.error(`Error fetching image for imagenId ${imagenId}:`, error);
+          }
           return null; // Return null for failed fetches
         }
       })
@@ -63,7 +68,10 @@ export const fetchImagesAndIds = async (imagenIds) => {
           const imageUrl = URL.createObjectURL(response.data);
           return { id: imagenId, url: imageUrl }; // Return an object with id and url
         } catch (error) {
-          console.error(`Error fetching image for imagenId ${imagenId}:`, error);
+          // Only log non-404 errors
+          if (error.response?.status !== 404) {
+            console.error(`Error fetching image for imagenId ${imagenId}:`, error);
+          }
           return null; // Return null for failed fetches
         }
       })

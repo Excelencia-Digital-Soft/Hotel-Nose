@@ -47,7 +47,8 @@
         </div>
       </div>
     </div>
-    <ReserveRoom :room="room" v-if="show && !showFree" @close-modal="toggleModal">
+    <ReserveRoom :room="room" v-if="show && !showFree" @close-modal="toggleModal" 
+      @update-room="updateRoom" @update-tiempo="agregarTiempoExtra" @room-checkout="handleRoomCheckout">
     </ReserveRoom>
   
     <ReserveRoomLibre :room="room" v-if="showFree && !show" @close-modal="toggleModalLibre">
@@ -107,7 +108,6 @@ const calculateReservationEnd = (fechaReserva, totalHoras, totalMinutos) => {
 };
 
 const getBackgroundColor = (fechaReserva, totalHoras, totalMinutos) => {
-    console.log("Colores!")
     const now = new Date();
     const endDate = calculateReservationEnd(fechaReserva, totalHoras, totalMinutos);
     const timeLeft = endDate.getTime() - now.getTime();
@@ -147,8 +147,31 @@ const handleWebhookEvent = (data) => {
     }
 };
 
-onMounted(() => {
+// Function to get timer update interval from API and store in localStorage
+const getTimerUpdateInterval = async () => {
+  try {
+    const response = await axiosClient.get('/GetTimerUpdateInterval');
+    const intervalMinutes = response.data?.interval || 10;
+    localStorage.setItem('timerUpdateInterval', intervalMinutes.toString());
+    console.log('Timer interval set to:', intervalMinutes, 'minutes');
+    return intervalMinutes;
+  } catch (error) {
+    if (error.response?.status === 404) {
+      console.log('Timer interval API not implemented yet, using default value');
+    } else {
+      console.error('Error fetching timer update interval:', error);
+    }
+    // Set default value if API fails or doesn't exist
+    const defaultInterval = 10;
+    localStorage.setItem('timerUpdateInterval', defaultInterval.toString());
+    console.log('Timer interval set to default:', defaultInterval, 'minutes');
+    return defaultInterval;
+  }
+};
+
+onMounted(async () => {
     fetchHabitaciones();
+    await getTimerUpdateInterval(); // Get timer interval when entering rooms view
     console.log("🔹 Registering WebSocket event listener in RoomComponent");
     websocketStore.registerEventCallback("RoomComponent", handleWebhookEvent);
 });

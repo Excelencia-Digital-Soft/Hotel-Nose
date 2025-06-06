@@ -1,6 +1,6 @@
 <template>
   <Teleport to="body" class="overflow-hidden">
-    <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center">
+    <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[60]">
       <div class="relative bg-white rounded-lg p-8 w-1/3 h-auto">
         <button @click="emit('close')" class="absolute top-2 right-2 btn-danger p-4 rounded-md">X</button>
 

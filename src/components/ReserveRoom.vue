@@ -59,15 +59,15 @@
                 <div class="flex flex-col gap-3 min-h-0">
                   
                   <!-- Customer Information - Compacto -->
-                  <div class="flex-1 relative drop-shadow-xl overflow-hidden rounded-xl bg-[#691660]">
-                    <div class="absolute flex flex-col text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] p-3 h-full">
+                  <div class="flex-1 grid grid-cols-1 gap-2 relative drop-shadow-xl overflow-hidden rounded-xl bg-[#691660]">
+                    <div class="flex flex-col text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] p-3 h-full">
                       <h3 class="text-sm font-semibold text-white flex items-center gap-2 mb-2">
                         <span class="material-symbols-outlined text-sm">person</span>
                         Info Cliente
                       </h3>
 
                       <!-- Customer Fields Grid 2x2 -->
-                      <div class="grid grid-cols-1 gap-2 flex-1">
+                      <div class="grid grid-cols-2 gap-2 flex-1">
                         <!-- Identificador -->
                         <div class="flex flex-col space-y-1">
                           <label class="text-xs font-semibold text-white flex items-center gap-1">
@@ -113,18 +113,15 @@
                         </div>
                       </div>
                     </div>
-                    <div class="absolute w-full h-full bg-white opacity-5 blur-[50px] -left-1/2 -top-1/2"></div>
-                  </div>
 
-                  <!-- Promotions Section - Compacto -->
-                  <div class="relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/30">
-                    <div class="absolute flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-3">
+                    <!-- Promotions Section - Compacto -->
+                    <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-3">
                       <div class="flex items-center gap-2 mb-2">
                         <span class="material-symbols-outlined text-purple-400 text-sm">local_offer</span>
                         <h3 class="text-white font-semibold text-sm">Promociones</h3>
                       </div>
                       <select v-model="selectedPromocion" 
-                        class="w-full text-xs p-2 rounded-lg border border-purple-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 transition bg-white">
+                        class="w-full text-xs text-gray-900 p-2 rounded-lg border border-purple-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 transition bg-white">
                         <option :value="null">Sin Promoción</option>
                         <option v-for="promo in promociones" :key="promo.promocionID" :value="promo">
                           {{ promo.detalle }}
@@ -132,6 +129,8 @@
                         <option v-if="promociones.length === 0" disabled>Sin promociones</option>
                       </select>
                     </div>
+
+                    <div class="absolute w-full h-full bg-white opacity-5 blur-[50px] -left-1/2 -top-1/2"></div>
                   </div>
                 </div>
 
@@ -207,12 +206,12 @@
 
                     <!-- Consumption buttons -->
                     <div class="mt-3 flex gap-2 border-t border-accent-400/30 pt-3">
-                      <button type="button" @click="toggleModalConsumo(false)"
+                      <button type="button" @click.stop="toggleModalConsumo(false)"
                         class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-3 py-2 rounded-lg font-medium text-xs transition-all duration-200 flex items-center justify-center gap-1 shadow-lg">
                         <span class="material-symbols-outlined text-sm">inventory_2</span>
                         General
                       </button>
-                      <button type="button" @click="toggleModalConsumo(true)"
+                      <button type="button" @click.stop="toggleModalConsumo(true)"
                         class="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white px-3 py-2 rounded-lg font-medium text-xs transition-all duration-200 flex items-center justify-center gap-1 shadow-lg">
                         <span class="material-symbols-outlined text-sm">hotel</span>
                         Habitación
@@ -313,13 +312,13 @@
 
             <!-- Modals -->
             <ModalPagar v-if="modalPayment" 
-              :periodo="Number(periodoCost)" 
-              :consumo="consumos.reduce((sum, consumo) => sum + consumo.total, 0)" 
-              :total="totalAmount" 
-              :adicional="Number(adicional)"
+              :periodo="Number(periodoCost) || 0" 
+              :consumo="consumos.reduce((sum, consumo) => sum + (consumo.total || 0), 0)" 
+              :total="Number(totalAmount) || 0" 
+              :adicional="Number(adicional) || 0"
               :habitacionId="selectedRoom.HabitacionID" 
               :visitaId="selectedRoom.VisitaID" 
-              :pausa="Pausa"
+              :pausa="Boolean(Pausa)"
               @close="modalPayment = false" 
               @confirm-payment="handlePaymentConfirmation" />
 
@@ -333,7 +332,7 @@
               :habitacionID="selectedRoom.HabitacionID" 
               :consumoHabitacion="esConsumoHabitacion"
               @confirmaAccion="confirmAndSend" 
-              @close="toggleModalConsumo" />
+              @close="modalConsumo = false" />
               
             <ModalExtenderOcupacion v-if="modalExtender" 
               :name="selectedRoom.Identificador"
@@ -453,6 +452,9 @@ onMounted(() => {
   console.log(selectedRoom.value)
   actualizarConsumos();
 
+  // Initialize timer interval from localStorage
+  getTimerUpdateInterval();
+
 })
 
 let selectedRoom = ref({
@@ -473,12 +475,6 @@ let selectedRoom = ref({
   esReserva: true,
 })
 
-
-
-
-
-
-
 // Objeto con los valores de la tabla
 const tableData = ref({
   descuento: 0,
@@ -488,11 +484,8 @@ const tableData = ref({
   total: 0,
 });
 
-let modalConsumo = ref(false);
-let modalExtender = ref(false);
-
-
-
+const modalConsumo = ref(false);
+const modalExtender = ref(false);
 const pizza = ref();
 const ignorarTiempo = ref(false)
 const products = ref();
@@ -503,26 +496,26 @@ const selectedTags = ref([]);
 const consumos = ref([]);
 const Pausa = ref(false)
 let editTagRel = {}
-let cheatRefresh = ref(false);
-let idNewTag = ref(0);
-let numeroError = ref('');
+const cheatRefresh = ref(false);
+const idNewTag = ref(0);
+const numeroError = ref('');
 const esConsumoHabitacion = ref(false)
 const verconsumo = () => {
   console.log(selectedRoom.value.VisitaID)
   console.log("Consumos", consumos.value)
 }
 const agregarConsumos = (selectedItems) => {
-  console.log(selectedItems);
+  console.log("📦 agregarConsumos called with:", selectedItems);
   axiosClient.post(
     `/ConsumoGeneral?habitacionId=${selectedRoom.value.HabitacionID}&visitaId=${selectedRoom.value.VisitaID}`,
     selectedItems // Send selectedItems directly as the body
   )
     .then(response => {
+      console.log('✅ Consumo general agregado exitosamente:', response.data);
       actualizarConsumos();
-      console.log('Consumo agregado exitosamente:', response.data);
     })
     .catch(error => {
-      console.error('Error al agregar consumo:', error);
+      console.error('❌ Error al agregar consumo general:', error);
     });
 };
 
@@ -569,17 +562,17 @@ const anularConsumo = (consumoId) => {
   });
 };
 const agregarConsumosHabitacion = (selectedItems) => {
-  console.log("itemsselec", selectedItems);
+  console.log("🏠 agregarConsumosHabitacion called with:", selectedItems);
   axiosClient.post(
     `/ConsumoHabitacion?habitacionId=${selectedRoom.value.HabitacionID}&visitaId=${selectedRoom.value.VisitaID}`,
     selectedItems // Send selectedItems directly as the body
   )
     .then(response => {
+      console.log('✅ Consumo habitación agregado exitosamente:', response.data);
       actualizarConsumos();
-      console.log('Consumo agregado exitosamente:', response.data);
     })
     .catch(error => {
-      console.error('Error al agregar consumo:', error);
+      console.error('❌ Error al agregar consumo habitación:', error);
     });
 };
 
@@ -617,9 +610,24 @@ const actualizarConsumos = () => {
       console.error('Error al obtener los consumos:', error);
     });
 };
+let isToggling = false;
 const toggleModalConsumo = (esHabitacion) => {
-  esConsumoHabitacion.value = esHabitacion
+  if (isToggling) return;
+  isToggling = true;
+  
+  console.log('toggleModalConsumo called with esHabitacion:', esHabitacion);
+  console.log('modalConsumo before toggle:', modalConsumo.value);
+  
+  esConsumoHabitacion.value = esHabitacion;
   modalConsumo.value = !modalConsumo.value;
+  
+  console.log('modalConsumo after toggle:', modalConsumo.value);
+  console.log('selectedRoom.HabitacionID:', selectedRoom.value.HabitacionID);
+  console.log('selectedRoom.Identificador:', selectedRoom.value.Identificador);
+  
+  setTimeout(() => {
+    isToggling = false;
+  }, 300);
 }
 const toggleModalExtender = () => {
   modalExtender.value = !modalExtender.value;
@@ -627,21 +635,27 @@ const toggleModalExtender = () => {
 const agregarTiempoExtra = (horas, minutos) => {
   selectedRoom.value.TotalHoras = selectedRoom.value.TotalHoras + horas;
   selectedRoom.value.TotalMinutos = selectedRoom.value.TotalMinutos + minutos;
-  // Room time updated, reload to refresh data
+  // Update local time calculation
   calculateRemainingTime()
   modalExtender.value = false;
-  setTimeout(() => {
-    window.location.reload();
-  }, 500);
+  // No need to reload immediately, just update local state
 }
 const toggleAnularOcupacionModal = () => {
   modalAnular.value = !modalAnular.value;
 }
 
 const confirmAndSend = (ConfirmedArticles) => {
-
-  console.log(JSON.stringify(ConfirmedArticles) + " Llegamos al ReserveROOM");
-  agregarConsumos(ConfirmedArticles)
+  console.log("📦 confirmAndSend called with:", JSON.stringify(ConfirmedArticles));
+  console.log("🏠 esConsumoHabitacion:", esConsumoHabitacion.value);
+  
+  if (esConsumoHabitacion.value) {
+    console.log("📦 Calling agregarConsumosHabitacion");
+    agregarConsumosHabitacion(ConfirmedArticles);
+  } else {
+    console.log("📦 Calling agregarConsumos");
+    agregarConsumos(ConfirmedArticles);
+  }
+  modalConsumo.value = false;
 }
 
 const confirmAndSendHabitacion = (ConfirmedArticles) => {
@@ -711,7 +725,7 @@ const endRoomReserve = () => {
         life: 10000
       });
       setTimeout(() => {
-        emits('room-checkout', selectedRoom.value.HabitacionID);
+        window.location.reload();
       }, 1500);
     })
     .catch(error => {
@@ -722,8 +736,10 @@ const endRoomReserve = () => {
 // LOGICA TIMER
 const formattedTime = ref('');
 let timerInterval = null;
+let additionalCalculationInterval = null;
+const timerUpdateInterval = ref(10); // Default 10 minutes
 
-// Timer calculation logic, kept separate
+// Timer calculation logic for display only
 function calculateRemainingTime() {
   if (!modalPayment.value) {
     if (selectedRoom.value.PausaHoras == 0 && selectedRoom.value.PausaMinutos == 0) {
@@ -733,28 +749,55 @@ function calculateRemainingTime() {
       const now = dayjs();
       const diffInMinutes = endTime.diff(now, 'minute');
       const isOvertime = diffInMinutes < 0;
+      
+      const hours = Math.floor(Math.abs(diffInMinutes) / 60);
+      const minutes = Math.abs(diffInMinutes) % 60;
+      
       if (isOvertime && ignorarTiempo.value == false) {
-          overtime.value = diffInMinutes * (-1);
-          
-     
-        const hours = Math.floor(Math.abs(diffInMinutes) / 60);
-        const minutes = Math.abs(diffInMinutes) % 60;
-        if (isOvertime) formattedTime.value = `-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-        else formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-
-
+        formattedTime.value = `-${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
       } else if (isOvertime) {
-        formattedTime.value = `00:00`
-        overtime.value = 0
-      }
-      else {
-        const hours = Math.floor(Math.abs(diffInMinutes) / 60);
-        const minutes = Math.abs(diffInMinutes) % 60;
+        formattedTime.value = `00:00`;
+      } else {
         formattedTime.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
       }
+    } else {
+      const absolutePausaHoras = Math.abs(selectedRoom.value.PausaHoras);
+      const absolutePausaMinutos = Math.abs(selectedRoom.value.PausaMinutos);
 
+      if (selectedRoom.value.PausaHoras < 0 || selectedRoom.value.PausaMinutos < 0) {
+        Pausa.value = true;
+        if (ignorarTiempo.value == false) {
+          formattedTime.value = `-${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`;
+        } else {
+          formattedTime.value = `00:00`;
+        }
+      } else if (selectedRoom.value.PausaHoras > 0 || selectedRoom.value.PausaMinutos > 0) {
+        Pausa.value = true;
+        formattedTime.value = `${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`;
+      }
     }
-    else {
+  }
+}
+
+// Separate function to calculate overtime for billing (runs every N minutes)
+function calculateOvertimeForBilling() {
+  if (!modalPayment.value) {
+    if (selectedRoom.value.PausaHoras == 0 && selectedRoom.value.PausaMinutos == 0) {
+      const endTime = dayjs(selectedRoom.value.FechaReserva)
+        .add(selectedRoom.value.TotalHoras, 'hour')
+        .add(selectedRoom.value.TotalMinutos, 'minute');
+      const now = dayjs();
+      const diffInMinutes = endTime.diff(now, 'minute');
+      const isOvertime = diffInMinutes < 0;
+      
+      if (isOvertime && ignorarTiempo.value == false) {
+        overtime.value = diffInMinutes * (-1);
+      } else if (isOvertime) {
+        overtime.value = 0;
+      } else {
+        overtime.value = 0;
+      }
+    } else {
       const absolutePausaHoras = Math.abs(selectedRoom.value.PausaHoras);
       const absolutePausaMinutos = Math.abs(selectedRoom.value.PausaMinutos);
 
@@ -762,17 +805,9 @@ function calculateRemainingTime() {
         Pausa.value = true;
         if (ignorarTiempo.value == false) {
           overtime.value = absolutePausaHoras * 60 + absolutePausaMinutos;
-          formattedTime.value = `-${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`
+        } else {
+          overtime.value = 0;
         }
-        else {
-          formattedTime.value = `00:00`
-          overtime.value = 0
-        }
-      }
-      else if (selectedRoom.value.PausaHoras > 0 || selectedRoom.value.PausaMinutos > 0) {
-        Pausa.value = true;
-        formattedTime.value = `${String(absolutePausaHoras).padStart(2, '0')}:${String(absolutePausaMinutos).padStart(2, '0')}`
-
       }
     }
   }
@@ -780,21 +815,49 @@ function calculateRemainingTime() {
 
 function ignorarTiempoExtra() {
   ignorarTiempo.value = !ignorarTiempo.value;
-  calculateRemainingTime()
+  calculateRemainingTime();
+  calculateOvertimeForBilling();
+}
+
+// Function to get timer update interval from localStorage only
+function getTimerUpdateInterval() {
+  const storedInterval = localStorage.getItem('timerUpdateInterval');
+  const intervalMinutes = storedInterval ? parseInt(storedInterval) : 10;
+  timerUpdateInterval.value = intervalMinutes;
+  console.log('Timer interval retrieved from localStorage:', intervalMinutes, 'minutes');
+  return intervalMinutes;
+}
+
+// Function to start timer intervals
+function startTimerIntervals() {
+  // Clear any existing intervals
+  if (timerInterval) clearInterval(timerInterval);
+  if (additionalCalculationInterval) clearInterval(additionalCalculationInterval);
+  
+  // Start display timer (every second)
+  timerInterval = setInterval(calculateRemainingTime, 1000);
+  
+  // Start additional cost calculation (every N minutes)
+  const intervalMs = timerUpdateInterval.value * 60 * 1000; // Convert minutes to milliseconds
+  additionalCalculationInterval = setInterval(calculateOvertimeForBilling, intervalMs);
+  
+  // Initial calculations
+  calculateRemainingTime();
+  calculateOvertimeForBilling();
 }
 // Watch for changes in selectedRoom
 watch(() => selectedRoom.value, (newValue) => {
   if (newValue.FechaReserva && newValue.TotalHoras !== undefined && newValue.TotalMinutos !== undefined) {
-    // Start the timer only when selectedRoom data is available
-    if (timerInterval) clearInterval(timerInterval); // Clear any previous interval
-    timerInterval = setInterval(calculateRemainingTime, 1000); // Update every second
-    calculateRemainingTime(); // Initial call to avoid waiting for the first interval
+    // Get timer update interval from localStorage and start timers
+    getTimerUpdateInterval();
+    startTimerIntervals();
   }
 }, { deep: true });
 
-// Clean up the interval when the component is unmounted
+// Clean up the intervals when the component is unmounted
 onUnmounted(() => {
   if (timerInterval) clearInterval(timerInterval);
+  if (additionalCalculationInterval) clearInterval(additionalCalculationInterval);
 });
 
 
@@ -802,13 +865,19 @@ onUnmounted(() => {
 
 // States
 const modalPayment = ref(false);
-const totalAmount = ref(null);
+const totalAmount = ref(0);
 const modalAnular = ref(false);
 const isProcessingPayment = ref(false);
+
+// Debug watcher
+watch(modalPayment, (newVal) => {
+  console.log("🔍 modalPayment changed to:", newVal);
+});
 // Props from your existing data, for example:
 
 // Methods
 const openPaymentModal = async () => {
+  console.log("🔄 openPaymentModal called");
   // Prevent multiple clicks
   if (modalPayment.value || isProcessingPayment.value) {
     console.warn("Modal de pago ya está abierto o procesándose");
@@ -938,6 +1007,21 @@ const continuePaymentProcess = () => {
   // Open the modal
   modalPayment.value = true;
   isProcessingPayment.value = false;
+  console.log("Opening payment modal with:", {
+    modalPayment: modalPayment.value,
+    totalAmount: totalAmount.value,
+    habitacionID: selectedRoom.value.HabitacionID,
+    visitaID: selectedRoom.value.VisitaID,
+    pausa: Pausa.value,
+    periodo: Number(periodoCost.value) || 0,
+    consumo: consumos.value.reduce((sum, consumo) => sum + (consumo.total || 0), 0),
+    adicional: Number(adicional.value) || 0
+  });
+  
+  // Debug: Check if modal gets closed immediately
+  setTimeout(() => {
+    console.log("🔍 Modal status after 100ms:", modalPayment.value);
+  }, 100);
 };
 
 const handlePaymentConfirmation = (paymentDetails) => {
@@ -983,7 +1067,6 @@ onMounted(async () => {
   } catch (error) {
     console.error('Error fetching promociones:', error);
   }
-  console.log("Puede no haber nada")
 
   if (selectedRoom.value.PromocionID != null) {
 
@@ -1001,7 +1084,6 @@ onMounted(async () => {
 
 
 watch(selectedPromocion, (newVal) => {
-  console.log("a")
   promocionActiva.value = newVal !== null; // True if a promo is selected
   if(promocionActiva.value)
   props.room.visita.reservaActiva.promocionId = selectedPromocion.value.promocionID;
@@ -1015,7 +1097,7 @@ const actualizarPromocion = () => {
     return;
   }
 
-  const reservaId = selectedRoom.value.ReservaID; // Example property, replace with the actual one holding reservaId
+  const reservaId = selectedRoom.value.ReservaID;
   const promocionId = selectedPromocion.value ? selectedPromocion.value.promocionID : null;
 
   // PUT request to update the promotion for the reservation
@@ -1028,12 +1110,13 @@ const actualizarPromocion = () => {
     })
     .then((response) => {
       console.log("Promoción actualizada correctamente:", response.data);
+      
+      // Update the room object to reflect the change
+      const updatedRoom = { ...props.room, promocionID: promocionId }; // Use the correct promocionID
+      emits('update-room', updatedRoom); // Emit the updated room to the parent
 
-      // Promotion updated, reload to refresh data
+      // Optionally: You can reset or set some local state here
       promocionActiva.value = promocionId !== null; // Set the promocionActiva flag accordingly
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
     })
     .catch((error) => {
       console.error("Error actualizando la promoción:", error);
