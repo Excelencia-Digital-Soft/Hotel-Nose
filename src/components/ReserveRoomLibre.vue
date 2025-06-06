@@ -24,137 +24,135 @@
               </div>
             </div>
 
-            <!-- Content Area - Sin Scroll -->
-            <div class="flex-1 flex flex-col p-6 min-h-0">
-              <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
+            <!-- Content Area -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-2 p-4 min-h-0">
+
+              <!-- Promociones -->
+              <div class="flex col-span-1 md:col-span-2 w-full justify-center m-1">
+                  <div class="flex flex-row w-full text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-2">
+                    <div class="hidden md:flex items-center gap-2 mb-3 pb-2 border-b border-purple-500/30">
+                      <span class="material-symbols-outlined text-purple-400">local_offer</span>
+                      <h3 class="text-white font-semibold">Promociones Disponibles</h3>
+                    </div>
+                    <select v-model="selectedPromocion" 
+                      class="w-full text-sm p-3 rounded-xl border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition duration-200 bg-white text-gray-900">
+                      <option :value="null">Sin Promoción</option>
+                      <option v-if="promociones.length > 0" v-for="promo in promociones" :key="promo.promocionID" :value="promo">
+                        {{ promo.detalle }}
+                      </option>
+                      <option v-if="promociones.length === 0" disabled>Sin promociones disponibles</option>
+                    </select>
+                  </div>
+              </div>
+              
+              <!-- Column 1: Tiempo -->
+              <div class="flex flex-col gap-4">
                 
-                <!-- Column 1: Tiempo y Promociones -->
-                <div class="flex grid grid-cols-1 gap-4">
-                  
-                  <!-- Tiempo de Reserva -->
-                  <section v-if="selectedRoom.Disponible" class="flex-1 relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-primary-900/40 to-secondary-900/40 border border-primary-500/30">
-                    <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4 h-full">
-                      <div class="flex items-center gap-2 mb-4 pb-2 border-b border-primary-500/30">
-                        <span class="material-symbols-outlined text-primary-400">schedule</span>
-                        <h3 class="text-white font-semibold">Tiempo de Reserva</h3>
+                <!-- Tiempo de Reserva -->
+                <section v-if="selectedRoom.Disponible" class="drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-primary-900/40 to-secondary-900/40 border border-primary-500/30">
+                  <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4 h-full">
+                    <div class="flex items-center gap-2 mb-4 pb-2 border-b border-primary-500/30">
+                      <span class="material-symbols-outlined text-primary-400">schedule</span>
+                      <h3 class="text-white font-semibold">Tiempo de Reserva</h3>
+                    </div>
+                    
+                    <div class="flex-1 flex flex-col justify-center space-y-4">
+                      <!-- Horas -->
+                      <div class="flex flex-col space-y-2">
+                        <label class="text-sm font-semibold text-white flex items-center gap-2">
+                          <span class="material-symbols-outlined text-sm">schedule</span>
+                          Horas
+                        </label>
+                        <div class="bg-white rounded-lg p-1">
+                          <InputNumber v-model="hours" :min="0" :max="99" showButtons 
+                            class="w-full [&_.p-inputnumber-input]:text-center [&_.p-inputnumber-input]:font-bold [&_.p-inputnumber-input]:text-lg [&_.p-inputnumber-input]:text-gray-900" />
+                        </div>
                       </div>
                       
-                      <div class="flex-1 flex flex-col justify-center space-y-4">
-                        <!-- Horas -->
-                        <div class="flex flex-col space-y-2">
-                          <label class="text-sm font-semibold text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm">schedule</span>
-                            Horas
-                          </label>
-                          <div class="bg-white rounded-lg p-1">
-                            <InputNumber v-model="hours" :min="0" :max="99" showButtons 
-                              class="w-full [&_.p-inputnumber-input]:text-center [&_.p-inputnumber-input]:font-bold [&_.p-inputnumber-input]:text-lg [&_.p-inputnumber-input]:text-gray-900" />
-                          </div>
-                        </div>
-                        
-                        <!-- Minutos -->
-                        <div class="flex flex-col space-y-2">
-                          <label class="text-sm font-semibold text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm">timer</span>
-                            Minutos
-                          </label>
-                          <div class="bg-white rounded-lg p-1">
-                            <InputNumber v-model="minutes" :min="0" :max="59" showButtons 
-                              class="w-full [&_.p-inputnumber-input]:text-center [&_.p-inputnumber-input]:font-bold [&_.p-inputnumber-input]:text-lg [&_.p-inputnumber-input]:text-gray-900" />
-                          </div>
-                        </div>
-
-                        <!-- Precio de reserva -->
-                        <div class="flex justify-between items-center p-4 bg-gradient-to-r from-green-600/30 to-emerald-600/30 rounded-xl border border-green-500/40 mt-4">
-                          <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-green-400">paid</span>
-                            <span class="font-bold text-lg text-white">Precio Total:</span>
-                          </div>
-                          <span class="font-bold text-2xl text-green-300">${{ periodoCost }}</span>
+                      <!-- Minutos -->
+                      <div class="flex flex-col space-y-2">
+                        <label class="text-sm font-semibold text-white flex items-center gap-2">
+                          <span class="material-symbols-outlined text-sm">timer</span>
+                          Minutos
+                        </label>
+                        <div class="bg-white rounded-lg p-1">
+                          <InputNumber v-model="minutes" :min="0" :max="59" showButtons 
+                            class="w-full [&_.p-inputnumber-input]:text-center [&_.p-inputnumber-input]:font-bold [&_.p-inputnumber-input]:text-lg [&_.p-inputnumber-input]:text-gray-900" />
                         </div>
                       </div>
-                    </div>
-                  </section>
-                </div>
 
-                <!-- Column 2: Información del Cliente -->
-                <div class="flex flex-col">
-                  <section v-if="isSpecificRoute" class="flex-1 relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-green-900/40 to-teal-900/40 border border-green-500/30">
-                    <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4 h-full">
-                      <div class="flex items-center gap-2 mb-4 pb-2 border-b border-green-500/30">
-                        <span class="material-symbols-outlined text-green-400">person</span>
-                        <h3 class="text-white font-semibold">Información del Cliente</h3>
-                      </div>
-
-                      <div class="flex-1 flex flex-col justify-center space-y-4">
-                        <!-- Identificador -->
-                        <div class="flex flex-col space-y-2">
-                          <label for="nombre" class="text-sm font-semibold leading-6 text-white flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm">badge</span>
-                            Identificador
-                          </label>
-                          <input type="text" v-model="selectedRoom.Identificador" maxlength="40"
-                            class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-3 px-4 transition duration-150 ease-out md:ease-in text-lg text-gray-900 bg-white"
-                            placeholder="Nombre o identificador del cliente">
+                      <!-- Precio de reserva -->
+                      <div class="flex justify-between items-center p-4 bg-gradient-to-r from-green-600/30 to-emerald-600/30 rounded-xl border border-green-500/40 mt-4">
+                        <div class="flex items-center gap-2">
+                          <span class="material-symbols-outlined text-green-400">paid</span>
+                          <span class="font-bold text-lg text-white">Precio Total:</span>
                         </div>
-
-                        <!-- Grid para Teléfono y Patente -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <!-- Teléfono -->
-                          <div class="flex flex-col space-y-2">
-                            <label for="telefono" class="text-sm font-semibold leading-6 text-white flex items-center gap-2">
-                              <span class="material-symbols-outlined text-sm">phone</span>
-                              Teléfono
-                            </label>
-                            <input type="text" v-model="selectedRoom.NumeroTelefono" maxlength="11"
-                              class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-3 px-4 transition duration-150 ease-out md:ease-in text-gray-900 bg-white"
-                              placeholder="264 123-4567">
-                          </div>
-
-                          <!-- Patente -->
-                          <div class="flex flex-col space-y-2">
-                            <label for="patente" class="text-sm font-semibold leading-6 text-white flex items-center gap-2">
-                              <span class="material-symbols-outlined text-sm">directions_car</span>
-                              Patente
-                            </label>
-                            <input type="text" v-model="selectedRoom.PatenteVehiculo" maxlength="11"
-                              class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-3 px-4 transition duration-150 ease-out md:ease-in text-gray-900 bg-white"
-                              placeholder="ABC123">
-                          </div>
-                        </div>
+                        <span class="font-bold text-2xl text-green-300">${{ periodoCost }}</span>
                       </div>
-                    </div>
-                  </section>
-
-                  <!-- Placeholder cuando no es ruta específica -->
-                  <div v-else class="flex-1 flex items-center justify-center">
-                    <div class="text-center text-white/60">
-                      <span class="material-symbols-outlined text-6xl mb-4 block">hotel</span>
-                      <p class="text-lg">Información del cliente disponible en vista detallada</p>
                     </div>
                   </div>
-                </div>
+                </section>
               </div>
-              <div class="flex justify-center mt-2">
-                <!-- Promociones -->
-                  <section class="relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/30">
-                    <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4">
-                      <div class="flex items-center gap-2 mb-3 pb-2 border-b border-purple-500/30">
-                        <span class="material-symbols-outlined text-purple-400">local_offer</span>
-                        <h3 class="text-white font-semibold">Promociones Disponibles</h3>
-                      </div>
-                      <select v-model="selectedPromocion" 
-                        class="w-full text-sm p-3 rounded-xl border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition duration-200 bg-white text-gray-900">
-                        <option :value="null">Sin Promoción</option>
-                        <option v-if="promociones.length > 0" v-for="promo in promociones" :key="promo.promocionID" :value="promo">
-                          {{ promo.detalle }}
-                        </option>
-                        <option v-if="promociones.length === 0" disabled>Sin promociones disponibles</option>
-                      </select>
+
+              <!-- Column 2: Información del Cliente -->
+              <div class="flex flex-col">
+                <section v-if="isSpecificRoute" class="drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-green-900/40 to-teal-900/40 border border-green-500/30">
+                  <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4 h-full">
+                    <div class="flex items-center gap-2 mb-4 pb-2 border-b border-green-500/30">
+                      <span class="material-symbols-outlined text-green-400">person</span>
+                      <h3 class="text-white font-semibold">Información del Cliente</h3>
                     </div>
-                    <div class="absolute w-full h-full bg-purple-400/5 blur-[50px] -left-1/2 -top-1/2"></div>
-                  </section>
+
+                    <div class="flex-1 flex flex-col justify-center space-y-4">
+                      <!-- Identificador -->
+                      <div class="flex flex-col space-y-2">
+                        <label for="nombre" class="text-sm font-semibold leading-6 text-white flex items-center gap-2">
+                          <span class="material-symbols-outlined text-sm">badge</span>
+                          Identificador
+                        </label>
+                        <input type="text" v-model="selectedRoom.Identificador" maxlength="40"
+                          class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-3 px-4 transition duration-150 ease-out md:ease-in text-lg text-gray-900 bg-white"
+                          placeholder="Nombre o identificador del cliente">
+                      </div>
+
+                      <!-- Grid para Teléfono y Patente -->
+                      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- Teléfono -->
+                        <div class="flex flex-col space-y-2">
+                          <label for="telefono" class="text-sm font-semibold leading-6 text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">phone</span>
+                            Teléfono
+                          </label>
+                          <input type="text" v-model="selectedRoom.NumeroTelefono" maxlength="11"
+                            class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-3 px-4 transition duration-150 ease-out md:ease-in text-gray-900 bg-white"
+                            placeholder="264 123-4567">
+                        </div>
+
+                        <!-- Patente -->
+                        <div class="flex flex-col space-y-2">
+                          <label for="patente" class="text-sm font-semibold leading-6 text-white flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm">directions_car</span>
+                            Patente
+                          </label>
+                          <input type="text" v-model="selectedRoom.PatenteVehiculo" maxlength="11"
+                            class="focus:ring-purple-500 border-2 w-full focus hover:shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-xl py-3 px-4 transition duration-150 ease-out md:ease-in text-gray-900 bg-white"
+                            placeholder="ABC123">
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+
+                <!-- Placeholder cuando no es ruta específica -->
+                <div v-else class="flex-1 flex items-center justify-center">
+                  <div class="text-center text-white/60">
+                    <span class="material-symbols-outlined text-6xl mb-4 block">hotel</span>
+                    <p class="text-lg">Información del cliente disponible en vista detallada</p>
+                  </div>
+                </div>
+
               </div>
+
             </div>
 
             <!-- Footer: Botón de Acción -->
