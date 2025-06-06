@@ -2,9 +2,11 @@
   <Teleport to="body" class="overflow-hidden">
     <Transition name="modal-outer" appear>
       <div
-        class="fixed w-full h-full overflow-auto z-20 bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center px-8">
+        class="fixed w-full h-full overflow-auto z-50 bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center px-8"
+        @click.self="emits('close')">
         <Transition name="modal-inner">
-          <div class="w-11/12 md:w-4/6 h-[90%] bg-neutral-800 fixed top-6 flex flex-col bg-opacity-60 backdrop-blur-lg justify-evenly items-start p-8 pb-12 rounded-3xl self-start mt-0 border-y-4 border-accent-400">
+          <div class="w-11/12 md:w-4/6 h-[90%] bg-neutral-800 fixed top-6 flex flex-col bg-opacity-60 backdrop-blur-lg justify-evenly items-start p-8 pb-12 rounded-3xl self-start mt-0 border-y-4 border-accent-400 z-50"
+            @click.stop>
             
             <section class="flex space-x-1 mb-4 ">
               <div class="pr-4">
@@ -196,10 +198,6 @@ const fetchArticulos = async () => {
     } else {
       console.warn('Datos de la API no válidos, usando lista vacía:', response.data);
       productos.value = []; // Initialize with empty array to prevent errors
-      // Mostrar mensaje al usuario
-      if (response.data && response.data.message) {
-        alert(response.data.message);
-      }
     }
   } catch (error) {
     console.error('Error al obtener los artículos:', error);

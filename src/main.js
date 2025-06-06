@@ -7,7 +7,8 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import PrimeVue from 'primevue/config';
 import Lara from './presets/lara';      //import preset 
 import ToastService from 'primevue/toastservice';
-import ConfirmationService from 'primevue/confirmationservice'; 
+import ConfirmationService from 'primevue/confirmationservice';
+import Tooltip from 'primevue/tooltip';
 import 'primevue/resources/primevue.min.css';
 import 'primeicons/primeicons.css';
 import { useWebSocketStore } from "./store/websocket";
@@ -25,6 +26,9 @@ websocketStore.connect();
 app.use(router)
    .use(PrimeVue, { unstyled: true, pt: Lara })
    .use(ToastService)
-   .use(ConfirmationService)
-   .mount("#app");
+   .use(ConfirmationService);
+
+app.directive('tooltip', Tooltip);
+
+app.mount("#app");
 

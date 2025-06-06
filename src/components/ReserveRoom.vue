@@ -158,7 +158,8 @@
                     <div class="flex-1 min-h-0 overflow-y-auto lg:max-h-[calc(100vh-400px)]">
                       <ul class="space-y-1 pr-1">
                         <li v-for="consumo in consumos" :key="consumo.consumoId"
-                          class="grid grid-cols-[2fr_50px_50px_50px_60px_30px_30px] gap-2 bg-gradient-to-r from-neutral-600 to-neutral-700 p-2 rounded-lg text-white items-center hover:from-neutral-500 hover:to-neutral-600 transition-all duration-200 border border-neutral-500/50">
+                          v-tooltip.left="consumo.articleName"
+                          class="grid grid-cols-[2fr_50px_50px_50px_60px_30px_30px] gap-2 bg-gradient-to-r from-neutral-600 to-neutral-700 p-2 rounded-lg text-white items-center hover:from-neutral-500 hover:to-neutral-600 transition-all duration-200 border border-neutral-500/50 cursor-help">
                           
                           <span class="text-xs font-medium truncate" :title="consumo.articleName">{{ consumo.articleName }}</span>
 
@@ -172,7 +173,8 @@
                           </template>
 
                           <span class="text-xs text-center text-green-300 font-medium">${{ consumo.precioUnitario }}</span>
-                          <span class="text-xs text-center px-1 py-1 rounded font-medium"
+                          <span class="text-xs text-center px-1 py-1 rounded font-medium cursor-help"
+                            v-tooltip.top="consumo.esHabitacion ? 'Consumo de Habitación' : 'Consumo de Inventario General'"
                             :class="consumo.esHabitacion ? 'bg-purple-500/30 text-purple-200' : 'bg-blue-500/30 text-blue-200'">
                             {{ consumo.esHabitacion ? 'H' : 'I' }}
                           </span>
@@ -181,23 +183,26 @@
                           <!-- Edit/Cancel/Delete Buttons -->
                           <template v-if="editingConsumoId !== consumo.consumoId">
                             <button type="button" 
+                              v-tooltip.top="'Editar cantidad'"
                               class="bg-blue-600 hover:bg-blue-500 rounded text-xs h-6 w-6 text-white flex justify-center items-center transition-colors material-symbols-outlined"
-                              @click="startEditConsumo(consumo.consumoId)" title="Editar">
+                              @click="startEditConsumo(consumo.consumoId)">
                               edit
                             </button>
                           </template>
                           <template v-else>
                             <button type="button" 
+                              v-tooltip.top="'Cancelar edición'"
                               class="bg-gray-600 hover:bg-gray-500 rounded text-xs h-6 w-6 text-white flex justify-center items-center transition-colors material-symbols-outlined"
-                              @click="cancelEditConsumo()" title="Cancelar">
+                              @click="cancelEditConsumo()">
                               close
                             </button>
                           </template>
 
                           <!-- Delete button -->
                           <button type="button"
+                            v-tooltip.top="'Eliminar consumo'"
                             class="bg-red-600 hover:bg-red-500 rounded text-xs h-6 w-6 text-white flex justify-center items-center transition-colors material-symbols-outlined"
-                            @click="anularConsumo(consumo.consumoId)" title="Eliminar">
+                            @click="anularConsumo(consumo.consumoId)">
                             delete
                           </button>
                         </li>
@@ -207,11 +212,13 @@
                     <!-- Consumption buttons -->
                     <div class="mt-3 flex gap-2 border-t border-accent-400/30 pt-3">
                       <button type="button" @click.stop="toggleModalConsumo(false)"
+                        v-tooltip.top="'Agregar productos del inventario general'"
                         class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white px-3 py-2 rounded-lg font-medium text-xs transition-all duration-200 flex items-center justify-center gap-1 shadow-lg">
                         <span class="material-symbols-outlined text-sm">inventory_2</span>
                         General
                       </button>
                       <button type="button" @click.stop="toggleModalConsumo(true)"
+                        v-tooltip.top="'Agregar productos del inventario de la habitación'"
                         class="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-500 hover:to-purple-600 text-white px-3 py-2 rounded-lg font-medium text-xs transition-all duration-200 flex items-center justify-center gap-1 shadow-lg">
                         <span class="material-symbols-outlined text-sm">hotel</span>
                         Habitación
@@ -349,7 +356,7 @@
 <script setup>
 
 import { computed, toRaw } from 'vue';
-import { onMounted, ref, watch, onUnmounted } from 'vue';
+import { onMounted, ref, watch, onUnmounted, nextTick } from 'vue';
 import axiosClient from '../axiosClient';
 import InputNumber from 'primevue/inputnumber';
 import Checkbox from 'primevue/checkbox';
@@ -611,15 +618,22 @@ const actualizarConsumos = () => {
     });
 };
 let isToggling = false;
-const toggleModalConsumo = (esHabitacion) => {
+const toggleModalConsumo = async (esHabitacion) => {
   if (isToggling) return;
   isToggling = true;
   
   console.log('toggleModalConsumo called with esHabitacion:', esHabitacion);
   console.log('modalConsumo before toggle:', modalConsumo.value);
   
+  // Asegurar que el modal esté cerrado antes de cambiar el tipo
+  if (modalConsumo.value) {
+    modalConsumo.value = false;
+    await nextTick();
+  }
+  
   esConsumoHabitacion.value = esHabitacion;
-  modalConsumo.value = !modalConsumo.value;
+  await nextTick();
+  modalConsumo.value = true;
   
   console.log('modalConsumo after toggle:', modalConsumo.value);
   console.log('selectedRoom.HabitacionID:', selectedRoom.value.HabitacionID);

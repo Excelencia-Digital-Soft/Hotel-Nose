@@ -75,31 +75,12 @@
                       </div>
                     </div>
                   </section>
-
-                  <!-- Promociones -->
-                  <section class="relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/30">
-                    <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4">
-                      <div class="flex items-center gap-2 mb-3 pb-2 border-b border-purple-500/30">
-                        <span class="material-symbols-outlined text-purple-400">local_offer</span>
-                        <h3 class="text-white font-semibold">Promociones Disponibles</h3>
-                      </div>
-                      <select v-model="selectedPromocion" 
-                        class="w-full text-sm p-3 rounded-xl border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition duration-200 bg-white text-gray-900">
-                        <option :value="null">Sin Promoción</option>
-                        <option v-if="promociones.length > 0" v-for="promo in promociones" :key="promo.promocionID" :value="promo">
-                          {{ promo.detalle }}
-                        </option>
-                        <option v-if="promociones.length === 0" disabled>Sin promociones disponibles</option>
-                      </select>
-                    </div>
-                    <div class="absolute w-full h-full bg-purple-400/5 blur-[50px] -left-1/2 -top-1/2"></div>
-                  </section>
                 </div>
 
                 <!-- Column 2: Información del Cliente -->
                 <div class="flex flex-col">
                   <section v-if="isSpecificRoute" class="flex-1 relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-green-900/40 to-teal-900/40 border border-green-500/30">
-                    <div class="absolute flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4 h-full">
+                    <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4 h-full">
                       <div class="flex items-center gap-2 mb-4 pb-2 border-b border-green-500/30">
                         <span class="material-symbols-outlined text-green-400">person</span>
                         <h3 class="text-white font-semibold">Información del Cliente</h3>
@@ -143,7 +124,6 @@
                         </div>
                       </div>
                     </div>
-                    <div class="absolute w-full h-full bg-green-400/5 blur-[50px] -left-1/2 -top-1/2"></div>
                   </section>
 
                   <!-- Placeholder cuando no es ruta específica -->
@@ -154,6 +134,26 @@
                     </div>
                   </div>
                 </div>
+              </div>
+              <div class="flex justify-center mt-2">
+                <!-- Promociones -->
+                  <section class="relative drop-shadow-xl overflow-hidden rounded-xl bg-gradient-to-br from-purple-900/40 to-blue-900/40 border border-purple-500/30">
+                    <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-4">
+                      <div class="flex items-center gap-2 mb-3 pb-2 border-b border-purple-500/30">
+                        <span class="material-symbols-outlined text-purple-400">local_offer</span>
+                        <h3 class="text-white font-semibold">Promociones Disponibles</h3>
+                      </div>
+                      <select v-model="selectedPromocion" 
+                        class="w-full text-sm p-3 rounded-xl border-2 border-purple-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition duration-200 bg-white text-gray-900">
+                        <option :value="null">Sin Promoción</option>
+                        <option v-if="promociones.length > 0" v-for="promo in promociones" :key="promo.promocionID" :value="promo">
+                          {{ promo.detalle }}
+                        </option>
+                        <option v-if="promociones.length === 0" disabled>Sin promociones disponibles</option>
+                      </select>
+                    </div>
+                    <div class="absolute w-full h-full bg-purple-400/5 blur-[50px] -left-1/2 -top-1/2"></div>
+                  </section>
               </div>
             </div>
 
