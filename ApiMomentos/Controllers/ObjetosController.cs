@@ -426,9 +426,6 @@ namespace ApiObjetos.Controllers
             }
         }
 
-        [HttpPost]
-        [Route("ReservarHabitacion")] // Crea un nuevo paciente
-
         private object ConvertJsonElement(JsonElement jsonElement, Type targetType)
         {
             if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))

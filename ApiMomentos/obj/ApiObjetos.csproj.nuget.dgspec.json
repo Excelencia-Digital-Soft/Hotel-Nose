@@ -1,37 +1,30 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\EXCELENCIA\\source\\repos\\Hotel-Nose\\ApiMomentos\\ApiObjetos.csproj": {}
+    "/Users/Jorge/Documents/GitHub/Hotel-Nose/ApiMomentos/ApiObjetos.csproj": {}
   },
   "projects": {
-    "C:\\Users\\EXCELENCIA\\source\\repos\\Hotel-Nose\\ApiMomentos\\ApiObjetos.csproj": {
+    "/Users/Jorge/Documents/GitHub/Hotel-Nose/ApiMomentos/ApiObjetos.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\EXCELENCIA\\source\\repos\\Hotel-Nose\\ApiMomentos\\ApiObjetos.csproj",
+        "projectUniqueName": "/Users/Jorge/Documents/GitHub/Hotel-Nose/ApiMomentos/ApiObjetos.csproj",
         "projectName": "ApiObjetos",
-        "projectPath": "C:\\Users\\EXCELENCIA\\source\\repos\\Hotel-Nose\\ApiMomentos\\ApiObjetos.csproj",
-        "packagesPath": "C:\\Users\\EXCELENCIA\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\EXCELENCIA\\source\\repos\\Hotel-Nose\\ApiMomentos\\obj\\",
+        "projectPath": "/Users/Jorge/Documents/GitHub/Hotel-Nose/ApiMomentos/ApiObjetos.csproj",
+        "packagesPath": "/Users/Jorge/.nuget/packages/",
+        "outputPath": "/Users/Jorge/Documents/GitHub/Hotel-Nose/ApiMomentos/obj/",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\EXCELENCIA\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/Jorge/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
-          "net6.0"
+          "net9.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
-          "net6.0": {
-            "targetAlias": "net6.0",
+          "net9.0": {
+            "targetAlias": "net9.0",
             "projectReferences": {}
           }
         },
@@ -44,11 +37,12 @@
           "enableAudit": "true",
           "auditLevel": "low",
           "auditMode": "direct"
-        }
+        },
+        "SdkAnalysisLevel": "9.0.200"
       },
       "frameworks": {
-        "net6.0": {
-          "targetAlias": "net6.0",
+        "net9.0": {
+          "targetAlias": "net9.0",
           "dependencies": {
             "AutoMapper.Extensions.Microsoft.DependencyInjection": {
               "target": "Package",
@@ -72,7 +66,7 @@
             },
             "Microsoft.Data.SqlClient": {
               "target": "Package",
-              "version": "[5.0.1, )"
+              "version": "[6.0.2, )"
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",
@@ -94,7 +88,7 @@
             },
             "RestSharp": {
               "target": "Package",
-              "version": "[106.6.10, )"
+              "version": "[112.1.0, )"
             },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
@@ -124,7 +118,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.303\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.202/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

@@ -21,76 +21,10 @@ namespace ApiObjetos.Controllers
             _db = db;
             _movimiento = new MovimientosController(db);
             _visita =  new VisitasController(db);
-            _serviceProvider = serviceProvider;
-            _reservationMonitorService = reservationMonitorService;
 
         }
         #region Reservas
-        /*    [HttpPost]
-            [Route("ReservarHabitacion")]
-            [AllowAnonymous]
-            public async Task<Respuesta> ReservarHabitacion([FromBody] ReservaRequest request)
-            {
-                Respuesta res = new Respuesta();
-                try
-                {
-                    // Step 1: Create a new VisitaID based on the provided vehicle, phone number, and identifier
-                    var VisitaID = await _visita.CrearVisita(request.EsReserva, request.PatenteVehiculo, request.NumeroTelefono, request.Identificador);
-
-                    // Step 2: Retrieve the room details
-                    var habitacion = await GetHabitacionById(request.HabitacionID);
-                    if (habitacion == null)
-                    {
-                        res.Message = "Habitación no encontrada.";
-                        res.Ok = false;
-                        return res;
-                    }
-
-                    // Step 3: Retrieve free time slots for the specified day
-                    var horariosLibres = await HorariosLibres(request.HabitacionID, request.FechaReserva.Date);
-
-                    // Step 4: Check if the requested reservation time falls within any of the free slots
-                    bool isValidReservation = horariosLibres.Any(horario =>
-                        request.FechaReserva.TimeOfDay >= horario.Start && request.FechaFin.TimeOfDay <= horario.End);
-
-                    if (!isValidReservation)
-                    {
-                        res.Message = "El horario solicitado no está disponible.";
-                        res.Ok = false;
-                        return res;
-                    }
-
-                    // Step 5: If the reservation is valid, proceed with creating the reservation
-                    Reservas nuevaReserva = new Reservas
-                    {
-                        VisitaId = VisitaID,
-                        HabitacionId = request.HabitacionID,
-                        FechaReserva = request.FechaReserva,
-                        FechaFin = request.FechaFin,
-                        TotalHoras = request.TotalHoras,
-                        UsuarioId = request.UsuarioID,
-                        FechaRegistro = DateTime.Now,
-                        Anulado = false,
-                        Habitacion = habitacion
-                    };
-
-                    _db.Add(nuevaReserva);
-                    await _movimiento.CrearMovimientoHabitacion(VisitaID, (int)habitacion.Categoria.PrecioNormal, request.HabitacionID, habitacion);
-                    await _db.SaveChangesAsync();
-
-                    res.Message = "La reserva se grabó correctamente";
-                    res.Ok = true;
-                }
-                catch (Exception ex)
-                {
-                    res.Message = $"Error: {ex.Message} {ex.InnerException}";
-                    res.Ok = false;
-                }
-
-                return res;
-            }
-        */
-
+        
         [HttpPost]
         [Route("ReservarHabitacion")]
         [AllowAnonymous]
@@ -200,14 +134,17 @@ namespace ApiObjetos.Controllers
                     foreach (var movimiento in Movimientos)
                     {
                         var Consumos = await _db.Consumo.Where(c => c.MovimientosId == movimiento.MovimientosId).ToListAsync();
-                        foreach(var consumo in Consumos)
+                        foreach (var consumo in Consumos)
                         {
                             consumo.Anulado = true;
-                            if (consumo.EsHabitacion == true) { 
+                            if (consumo.EsHabitacion == true)
+                            {
                                 var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == reserva.HabitacionId);
                                 inventario.Cantidad += consumo.Cantidad;
                             }
-                            else { var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i => i.ArticuloId == consumo.ArticuloId);
+                            else
+                            {
+                                var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i => i.ArticuloId == consumo.ArticuloId);
                                 inventarioGeneral.Cantidad += consumo.Cantidad;
                             }
                         }
@@ -225,13 +162,14 @@ namespace ApiObjetos.Controllers
                     _db.Registros.Add(registro);
                     await _db.SaveChangesAsync();
                 }
-                else{
+                else
+                {
                     res.Message = "Reserva no encontrada.";
                     res.Ok = false;
                     return res;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 res.Message = $"Error: {ex.Message} {ex.InnerException}";
                 res.Ok = false;
@@ -266,6 +204,51 @@ namespace ApiObjetos.Controllers
             res.Message = "El timer se pausó a las " + reserva.PausaHoras + ":" + reserva.PausaMinutos;
             res.Ok = true;
             return res;
+        }
+
+
+        [HttpPut]
+        [Route("ContinuarOcupacion")]
+        [AllowAnonymous]
+        public async Task<Respuesta> ContinuarOcupacion(int visitaId)
+        {
+            Respuesta res = new Respuesta();
+            var reserva = await _db.Reservas.FirstOrDefaultAsync(r => r.VisitaId == visitaId);
+
+            if (reserva == null)
+            {
+                res.Message = "No se encontró la reserva con el ID especificado.";
+                res.Ok = false;
+                return res;
+            }
+
+            try
+            {
+                // Verificar si la reserva está pausada
+                if (reserva.PausaHoras == null && reserva.PausaMinutos == null)
+                {
+                    res.Message = "La reserva no está pausada.";
+                    res.Ok = false;
+                    return res;
+                }
+
+                // Establecer PausaHoras y PausaMinutos a NULL
+                reserva.PausaHoras = null;
+                reserva.PausaMinutos = null;
+
+                // Guardar los cambios en la base de datos
+                await _db.SaveChangesAsync();
+
+                res.Message = "El timer se reanudó correctamente.";
+                res.Ok = true;
+                return res;
+            }
+            catch (Exception ex)
+            {
+                res.Message = "Error al reanudar el timer: " + ex.InnerException?.Message ?? ex.Message;
+                res.Ok = false;
+                return res;
+            }
         }
 
         [HttpPut]
@@ -583,11 +566,11 @@ namespace ApiObjetos.Controllers
 
                 if (habitacion != null)
                 {
-                        
-                        // Update the room's availability to true
-                        habitacion.Disponible = true;
-                        habitacion.VisitaID = null;
-                        reserva.FechaFin = DateTime.Now;
+
+                    // Update the room's availability to true
+                    habitacion.Disponible = true;
+                    habitacion.VisitaID = null;
+                    reserva.FechaFin = DateTime.Now;
 
                     // Save the changes to the database
                     await _db.SaveChangesAsync();
@@ -612,9 +595,9 @@ namespace ApiObjetos.Controllers
 
         private async Task<Habitaciones?> GetHabitacionById(int habitacionId)
         {
-                var a = await _db.Habitaciones
-                .Include(h => h.Categoria) // Include Categoria if needed
-                .FirstOrDefaultAsync(h => h.HabitacionId == habitacionId);
+            var a = await _db.Habitaciones
+            .Include(h => h.Categoria) // Include Categoria if needed
+            .FirstOrDefaultAsync(h => h.HabitacionId == habitacionId);
 
             return a;
         }
@@ -711,14 +694,15 @@ namespace ApiObjetos.Controllers
                                     .Where(r => r.HabitacionId == idHabitacion &&
                                                 r.FechaReserva.Value.Date <= dia.Date &&
                                                 r.FechaFin.Value.Date >= dia.Date)
-                                    .Select(r => new {
+                                    .Select(r => new
+                                    {
                                         FechaReserva = r.FechaReserva.Value,
                                         FechaFin = r.FechaFin.Value
                                     })
                                     .OrderBy(r => r.FechaReserva)
                                     .ToListAsync();
 
-                List<TimeRange> availablePeriods = new List<TimeRange>();
+            List<TimeRange> availablePeriods = new List<TimeRange>();
 
             if (!reservas.Any())
             {
@@ -734,7 +718,7 @@ namespace ApiObjetos.Controllers
                 var reservaStart = reserva.FechaReserva.TimeOfDay;
                 var reservaEnd = reserva.FechaFin.TimeOfDay;
 
-                if ((reserva.FechaFin > reserva.FechaReserva.Date ) && (reserva.FechaFin.Date > reserva.FechaReserva.Date))
+                if ((reserva.FechaFin > reserva.FechaReserva.Date) && (reserva.FechaFin.Date > reserva.FechaReserva.Date))
                 {
                     // Reservation spans across days, adjust times for the specific day
                     if (reserva.FechaReserva.Date == dia.Date)

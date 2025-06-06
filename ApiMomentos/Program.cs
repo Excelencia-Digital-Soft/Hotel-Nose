@@ -13,6 +13,9 @@ using ApiObjetos.Jobs;
 using ApiObjetos.Auth;
 using System.IO;
 using ApiObjetos.Mapping;
+using ApiObjetos.Interfaces;
+using ApiObjetos.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -106,6 +109,8 @@ builder.Services.AddHostedService<ReservationMonitorService>(); // Add backgroun
 
 builder.Services.AddSingleton<ReservationMonitorService>();
 builder.Services.AddHostedService<ReservationMonitorService>();
+
+builder.Services.AddScoped<IStatisticsService, StatisticsService>();
 
 var app = builder.Build();
 
