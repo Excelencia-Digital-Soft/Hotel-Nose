@@ -58,6 +58,22 @@
                 </div>
               </div>
               
+              <!-- Filtro solo ocupadas -->
+              <div class="relative group">
+                <div class="absolute inset-0 bg-gradient-to-r from-red-500/20 to-rose-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-3 flex items-center gap-3 hover:bg-white/15 transition-all duration-300">
+                  <span class="material-symbols-outlined text-red-300">hotel</span>
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      v-model="soloOcupadas" 
+                      class="w-4 h-4 text-red-500 bg-transparent border-2 border-red-400 rounded focus:ring-red-500 focus:ring-2"
+                    >
+                    <span class="text-white text-sm font-medium">Solo ocupadas</span>
+                  </label>
+                </div>
+              </div>
+              
               <!-- Toggle de vista -->
               <button 
                 @click="toggleView" 
@@ -401,11 +417,15 @@ const websocketStore = useWebSocketStore();
 // Nuevos estados para mejoras visuales
 const searchTerm = ref('');
 const filtroCategoria = ref('');
+const soloOcupadas = ref(false);
 const viewMode = ref('grid');
 const ingresosDiarios = ref(15420); // Mock data
 
 // Computed properties existentes (mantener)
 const habitacionesLibresFiltradas = computed(() => {
+  if (soloOcupadas.value) {
+    return [];
+  }
   return habitacionesLibres.value.filter(habitacion => {
     const matchesSearch = habitacion.nombreHabitacion.toLowerCase().includes(searchTerm.value.toLowerCase());
     const matchesCategory = !filtroCategoria.value || habitacion.nombreHabitacion.includes(filtroCategoria.value);
@@ -478,6 +498,14 @@ const getRoomIcon = (nombreHabitacion) => {
 
 const toggleView = () => {
   viewMode.value = viewMode.value === 'grid' ? 'list' : 'grid';
+  localStorage.setItem('roomsViewMode', viewMode.value);
+};
+
+const loadViewPreference = () => {
+  const savedViewMode = localStorage.getItem('roomsViewMode');
+  if (savedViewMode && (savedViewMode === 'grid' || savedViewMode === 'list')) {
+    viewMode.value = savedViewMode;
+  }
 };
 
 // Funciones de tiempo y estado (mantener las existentes)
@@ -617,6 +645,7 @@ const getTimerUpdateInterval = async () => {
 };
 
 onMounted(async () => {
+  loadViewPreference();
   fetchHabitaciones();
   await getTimerUpdateInterval();
   console.log("🔹 Registering WebSocket event listener in RoomComponent");
