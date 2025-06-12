@@ -1,7 +1,7 @@
 import * as signalR from "@microsoft/signalr";
 
 const connection = new signalR.HubConnectionBuilder()
-  .withUrl(`${import.meta.env.VITE_API_BASE_URL}notifications`) // Your backend URL
+  .withUrl(`${import.meta.env.VITE_API_BASE_URL}/notifications`) // Your backend URL
   .withAutomaticReconnect()
   .build();
 
