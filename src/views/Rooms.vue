@@ -10,33 +10,38 @@
     <div class="relative z-10 p-6">
       <!-- Header premium con glassmorphism -->
       <div class="mb-8">
-        <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl">
-          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+        <div class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl transition-all duration-300" :class="compactMode ? 'p-4' : 'p-6'">
+          <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center" :class="compactMode ? 'gap-3' : 'gap-6'">
             <!-- Título principal -->
-            <div class="flex items-center gap-4">
-              <div class="w-16 h-16 bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 rounded-2xl flex items-center justify-center shadow-lg">
-                <span class="material-symbols-outlined text-white text-2xl">hotel</span>
+            <div class="flex items-center" :class="compactMode ? 'gap-3' : 'gap-4'">
+              <div class="bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300" :class="compactMode ? 'w-12 h-12' : 'w-16 h-16'">
+                <span class="material-symbols-outlined text-white" :class="compactMode ? 'text-xl' : 'text-2xl'">hotel</span>
               </div>
-              <div>
+              <div v-if="!compactMode">
                 <h1 class="text-4xl font-bold bg-gradient-to-r from-primary-300 via-secondary-300 to-accent-300 bg-clip-text text-transparent lexend-exa">
                   Panel de Habitaciones
                 </h1>
                 <p class="text-gray-400 text-sm mt-1">Gestión completa de alojamiento</p>
               </div>
+              <div v-else>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-primary-300 via-secondary-300 to-accent-300 bg-clip-text text-transparent lexend-exa">
+                  Habitaciones
+                </h1>
+              </div>
             </div>
             
             <!-- Controles mejorados -->
-            <div class="flex flex-wrap gap-3">
+            <div class="flex flex-wrap" :class="compactMode ? 'gap-2' : 'gap-3'">
               <!-- Búsqueda con efecto glassmorphism -->
               <div class="relative group">
                 <div class="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-secondary-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-3 flex items-center gap-3 hover:bg-white/15 transition-all duration-300">
-                  <span class="material-symbols-outlined text-primary-300">search</span>
+                <div class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center hover:bg-white/15 transition-all duration-300" :class="compactMode ? 'px-3 py-2 gap-2' : 'px-4 py-3 gap-3'">
+                  <span class="material-symbols-outlined text-primary-300" :class="compactMode ? 'text-lg' : ''">search</span>
                   <input 
                     v-model="searchTerm" 
                     type="text" 
-                    placeholder="Buscar habitación..." 
-                    class="bg-transparent text-white placeholder-gray-400 border-none outline-none w-40 text-sm"
+                    :placeholder="compactMode ? 'Buscar...' : 'Buscar habitación...'" 
+                    class="bg-transparent text-white placeholder-gray-400 border-none outline-none text-sm" :class="compactMode ? 'w-32' : 'w-40'"
                   >
                 </div>
               </div>
@@ -44,10 +49,10 @@
               <!-- Filtro de categoría -->
               <div class="relative group">
                 <div class="absolute inset-0 bg-gradient-to-r from-secondary-500/20 to-accent-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-3 flex items-center gap-3 hover:bg-white/15 transition-all duration-300">
-                  <span class="material-symbols-outlined text-secondary-300">filter_list</span>
+                <div class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center hover:bg-white/15 transition-all duration-300" :class="compactMode ? 'px-3 py-2 gap-2' : 'px-4 py-3 gap-3'">
+                  <span class="material-symbols-outlined text-secondary-300" :class="compactMode ? 'text-lg' : ''">filter_list</span>
                   <select v-model="filtroCategoria" class="bg-transparent text-gray-800 border-none outline-none text-sm cursor-pointer">
-                    <option value="">Todas las categorías</option>
+                    <option value="">{{ compactMode ? 'Todas' : 'Todas las categorías' }}</option>
                     <option value="CLASICA">Clásica</option>
                     <option value="SUITE">Suite</option>
                     <option value="MASTER SUITE">Master Suite</option>
@@ -61,15 +66,15 @@
               <!-- Filtro solo ocupadas -->
               <div class="relative group">
                 <div class="absolute inset-0 bg-gradient-to-r from-red-500/20 to-rose-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-3 flex items-center gap-3 hover:bg-white/15 transition-all duration-300">
-                  <span class="material-symbols-outlined text-red-300">hotel</span>
+                <div class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center hover:bg-white/15 transition-all duration-300" :class="compactMode ? 'px-3 py-2 gap-2' : 'px-4 py-3 gap-3'">
+                  <span class="material-symbols-outlined text-red-300" :class="compactMode ? 'text-lg' : ''">hotel</span>
                   <label class="flex items-center gap-2 cursor-pointer">
                     <input 
                       type="checkbox" 
                       v-model="soloOcupadas" 
                       class="w-4 h-4 text-red-500 bg-transparent border-2 border-red-400 rounded focus:ring-red-500 focus:ring-2"
                     >
-                    <span class="text-white text-sm font-medium">Solo ocupadas</span>
+                    <span class="text-white text-sm font-medium">{{ compactMode ? 'Ocupadas' : 'Filtrar habitaciones ocupadas' }}</span>
                   </label>
                 </div>
               </div>
@@ -77,16 +82,26 @@
               <!-- Toggle de vista -->
               <button 
                 @click="toggleView" 
-                class="relative group bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-400 hover:to-secondary-400 px-6 py-3 rounded-2xl flex items-center gap-3 transition-all duration-300 shadow-lg hover:shadow-primary-500/25 hover:scale-105"
+                class="relative group bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-400 hover:to-secondary-400 rounded-2xl flex items-center transition-all duration-300 shadow-lg hover:shadow-primary-500/25 hover:scale-105" :class="compactMode ? 'px-4 py-2 gap-2' : 'px-6 py-3 gap-3'"
               >
-                <span class="material-symbols-outlined text-white">{{ viewMode === 'grid' ? 'view_list' : 'grid_view' }}</span>
-                <span class="text-white font-medium">{{ viewMode === 'grid' ? 'Lista' : 'Grid' }}</span>
+                <span class="material-symbols-outlined text-white" :class="compactMode ? 'text-lg' : ''">{{ viewMode === 'grid' ? 'view_list' : 'grid_view' }}</span>
+                <span v-if="!compactMode" class="text-white font-medium">{{ viewMode === 'grid' ? 'Lista' : 'Grid' }}</span>
+              </button>
+              
+              <!-- Toggle modo compacto -->
+              <button 
+                @click="toggleCompact" 
+                class="relative group bg-gradient-to-r from-purple-500 to-violet-500 hover:from-purple-400 hover:to-violet-400 rounded-2xl flex items-center transition-all duration-300 shadow-lg hover:shadow-purple-500/25 hover:scale-105" :class="compactMode ? 'px-4 py-2 gap-2' : 'px-6 py-3 gap-3'"
+              >
+                <span class="material-symbols-outlined text-white" :class="compactMode ? 'text-lg' : ''">{{ compactMode ? 'unfold_more' : 'unfold_less' }}</span>
+                <span v-if="!compactMode" class="text-white font-medium">{{ compactMode ? 'Expandir' : 'Compacto' }}</span>
               </button>
             </div>
           </div>
 
           <!-- Dashboard de estadísticas mejorado -->
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
+          <div v-if="!compactMode" class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-8">
+            <!-- Estadísticas normales -->
             <div class="group relative">
               <div class="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div class="relative bg-white/5 backdrop-blur-md border border-green-500/20 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
@@ -131,7 +146,33 @@
                 </div>
               </div>
             </div>
+          </div>
+          
+          <!-- Dashboard compacto -->
+          <div v-else class="flex flex-wrap gap-3 mt-4">
+            <div class="bg-white/5 backdrop-blur-md border border-green-500/20 rounded-xl px-4 py-2 flex items-center gap-3">
+              <span class="material-symbols-outlined text-green-300 text-lg">hotel_class</span>
+              <div>
+                <span class="text-xl font-bold text-green-300">{{ habitacionesLibres.length }}</span>
+                <span class="text-green-200/70 text-xs ml-1">Libres</span>
+              </div>
+            </div>
             
+            <div class="bg-white/5 backdrop-blur-md border border-red-500/20 rounded-xl px-4 py-2 flex items-center gap-3">
+              <span class="material-symbols-outlined text-red-300 text-lg">hotel</span>
+              <div>
+                <span class="text-xl font-bold text-red-300">{{ habitacionesOcupadas.length }}</span>
+                <span class="text-red-200/70 text-xs ml-1">Ocupadas</span>
+              </div>
+            </div>
+            
+            <div class="bg-white/5 backdrop-blur-md border border-yellow-500/20 rounded-xl px-4 py-2 flex items-center gap-3">
+              <span class="material-symbols-outlined text-yellow-300 text-lg">schedule</span>
+              <div>
+                <span class="text-xl font-bold text-yellow-300">{{ habitacionesProximasVencer.length }}</span>
+                <span class="text-yellow-200/70 text-xs ml-1">Por Vencer</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -151,7 +192,7 @@
               </div>
             </div>
             
-            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-4 min-h-[100px] overflow-y-auto pr-2 custom-scrollbar">
               <div 
                 v-for="habitacion in habitacionesLibresFiltradas" 
                 :key="habitacion.habitacionId"
@@ -222,7 +263,7 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-3 gap-4 min-h-[100px] overflow-y-auto pr-2 custom-scrollbar">
               <div 
                 v-for="habitacion in habitacionesOcupadasFiltradas" 
                 :key="habitacion.habitacionId" 
@@ -347,7 +388,7 @@
             </h3>
           </div>
           <div class="p-6">
-            <div class="space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar">
+            <div class="space-y-3 overflow-y-auto custom-scrollbar">
               <div 
                 v-for="habitacion in habitacionesOcupadasFiltradas" 
                 :key="habitacion.habitacionId" 
@@ -419,33 +460,58 @@ const searchTerm = ref('');
 const filtroCategoria = ref('');
 const soloOcupadas = ref(false);
 const viewMode = ref('grid');
+const compactMode = ref(false);
 const ingresosDiarios = ref(15420); // Mock data
 
-// Computed properties existentes (mantener)
+// Computed properties con nueva lógica de filtrado
 const habitacionesLibresFiltradas = computed(() => {
-  if (soloOcupadas.value) {
-    return [];
+  // Si no hay filtros activos, mostrar todas las habitaciones libres
+  const hayFiltros = searchTerm.value.trim() !== '' || filtroCategoria.value !== '';
+  
+  if (!hayFiltros) {
+    return habitacionesLibres.value;
   }
+  
+  // Si hay filtros, aplicar según el estado del checkbox
   return habitacionesLibres.value.filter(habitacion => {
-    const matchesSearch = habitacion.nombreHabitacion.toLowerCase().includes(searchTerm.value.toLowerCase());
+    const matchesSearch = searchTerm.value === '' || habitacion.nombreHabitacion.toLowerCase().includes(searchTerm.value.toLowerCase());
     const matchesCategory = !filtroCategoria.value || habitacion.nombreHabitacion.includes(filtroCategoria.value);
     return matchesSearch && matchesCategory;
   });
 });
 
 const habitacionesOcupadasFiltradas = computed(() => {
+  // Si el checkbox NO está marcado, mostrar todas las ocupadas sin filtrar
+  if (!soloOcupadas.value) {
+    return habitacionesOcupadas.value;
+  }
+  
+  // Si el checkbox SÍ está marcado, aplicar filtros a las ocupadas
   return habitacionesOcupadas.value.filter(habitacion => {
-    const matchesSearch = habitacion.nombreHabitacion.toLowerCase().includes(searchTerm.value.toLowerCase());
+    const matchesSearch = searchTerm.value === '' || habitacion.nombreHabitacion.toLowerCase().includes(searchTerm.value.toLowerCase());
     const matchesCategory = !filtroCategoria.value || habitacion.nombreHabitacion.includes(filtroCategoria.value);
     return matchesSearch && matchesCategory;
   });
 });
 
 const habitacionesProximasVencer = computed(() => {
-  return habitacionesOcupadas.value.filter(habitacion => {
+  // Filtrar habitaciones próximas a vencer
+  const proximasVencer = habitacionesOcupadas.value.filter(habitacion => {
     if (!habitacion.reservaActiva) return false;
     const timeLeft = getTimeLeftInMinutes(habitacion);
     return timeLeft > 0 && timeLeft <= 15;
+  });
+  
+  // Si el checkbox NO está marcado, mostrar todas las próximas a vencer sin filtrar
+  if (!soloOcupadas.value) {
+    return proximasVencer;
+  }
+  
+  // Si el checkbox SÍ está marcado, aplicar filtros a las próximas a vencer
+  return proximasVencer.filter(habitacion => {
+    const matchesSearch = searchTerm.value === '' || habitacion.nombreHabitacion.toLowerCase().includes(searchTerm.value.toLowerCase());
+    const matchesCategory = !filtroCategoria.value || habitacion.nombreHabitacion.includes(filtroCategoria.value);
+    return matchesSearch && matchesCategory;
   });
 });
 
@@ -501,10 +567,22 @@ const toggleView = () => {
   localStorage.setItem('roomsViewMode', viewMode.value);
 };
 
+const toggleCompact = () => {
+  compactMode.value = !compactMode.value;
+  localStorage.setItem('roomsCompactMode', compactMode.value.toString());
+};
+
 const loadViewPreference = () => {
   const savedViewMode = localStorage.getItem('roomsViewMode');
   if (savedViewMode && (savedViewMode === 'grid' || savedViewMode === 'list')) {
     viewMode.value = savedViewMode;
+  }
+};
+
+const loadCompactPreference = () => {
+  const savedCompactMode = localStorage.getItem('roomsCompactMode');
+  if (savedCompactMode !== null) {
+    compactMode.value = savedCompactMode === 'true';
   }
 };
 
@@ -646,6 +724,7 @@ const getTimerUpdateInterval = async () => {
 
 onMounted(async () => {
   loadViewPreference();
+  loadCompactPreference();
   fetchHabitaciones();
   await getTimerUpdateInterval();
   console.log("🔹 Registering WebSocket event listener in RoomComponent");
