@@ -1,0 +1,10 @@
+﻿namespace hotel.DTOs
+{
+    public class EncargoRequestDTO
+    {
+        public int Cantidad { get; set; }
+        public int ArticuloId { get; set; }
+        public int VisitaId { get; set; }
+        public string Comentario { get; set; }
+    }
+}

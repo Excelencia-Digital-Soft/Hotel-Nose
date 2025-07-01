@@ -1,0 +1,32 @@
+﻿using System.Text.Json.Serialization;
+
+namespace hotel.Models;
+
+public partial class Reservas
+{
+    public int ReservaId { get; set; }
+
+    public int? VisitaId { get; set; }
+
+    public int? HabitacionId { get; set; }
+
+    public DateTime? FechaReserva { get; set; }
+
+    public DateTime? FechaFin { get; set; }
+
+    public int? TotalHoras { get; set; }
+    public int? TotalMinutos { get; set; }
+    public int? MovimientoId { get; set; }
+    public int? PromocionId { get; set; }
+    public int? UsuarioId { get; set; }
+    public int? PausaHoras { get; set; }
+    public int? PausaMinutos { get; set; }
+    public DateTime? FechaRegistro { get; set; }
+    public int InstitucionID { get; set; }
+    public DateTime? FechaAnula { get; set; }
+
+    [JsonIgnore]
+    public virtual Visitas? Visita { get; set; }
+    public virtual Promociones? Promocion { get; set; }
+    public virtual Habitaciones? Habitacion { get; set; }
+}

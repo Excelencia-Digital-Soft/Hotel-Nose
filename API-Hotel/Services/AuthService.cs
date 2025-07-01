@@ -1,0 +1,289 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using hotel.DTOs.Auth;
+using hotel.DTOs.Common;
+using hotel.Models.Identity;
+using hotel.Data;
+using hotel.Auth;
+using hotel.Interfaces;
+using hotel.Services;
+
+namespace hotel.Services;
+
+public class AuthService : IAuthService
+{
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly JwtService _jwtService;
+    private readonly HotelDbContext _context;
+    private readonly ILogger<AuthService> _logger;
+
+    public AuthService(
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        JwtService jwtService,
+        HotelDbContext context,
+        ILogger<AuthService> logger)
+    {
+        _userManager = userManager;
+        _signInManager = signInManager;
+        _jwtService = jwtService;
+        _context = context;
+        _logger = logger;
+    }
+
+    public async Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginRequestDto loginRequest)
+    {
+        try
+        {
+            // If input doesn't contain @, append @hotel.fake for legacy username support
+            string emailToSearch = loginRequest.Email.Contains("@") 
+                ? loginRequest.Email 
+                : $"{loginRequest.Email}@hotel.fake";
+                
+            var user = await _userManager.FindByEmailAsync(emailToSearch);
+            if (user == null || !user.IsActive)
+            {
+                return ApiResponse<LoginResponseDto>.Failure("Invalid email or password", "Authentication failed");
+            }
+
+            // Verify password using our custom hasher
+            var passwordHasher = new BCryptPasswordHasher();
+            var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash!, loginRequest.Password);
+            
+            if (verificationResult == PasswordVerificationResult.Failed)
+            {
+                return ApiResponse<LoginResponseDto>.Failure("Invalid email or password", "Authentication failed");
+            }
+
+            // If password needs rehashing (BCrypt to Identity format), do it now
+            if (verificationResult == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                var newHash = passwordHasher.HashPassword(user, loginRequest.Password);
+                user.PasswordHash = newHash;
+                _logger.LogInformation($"Migrated password hash for user {user.Email} from BCrypt to Identity format");
+            }
+
+            // Update last login and save any password hash changes
+            user.LastLoginAt = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+
+            // Generate token
+            var token = await _jwtService.GenerateTokenAsync(user);
+            var tokenExpiration = DateTime.UtcNow.AddHours(24);
+
+            var userInfo = await MapToUserInfoDto(user);
+
+            var loginResponse = new LoginResponseDto
+            {
+                Token = token,
+                TokenExpiration = tokenExpiration,
+                User = userInfo
+            };
+
+            return ApiResponse<LoginResponseDto>.Success(loginResponse, "Login successful");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during login for user {Email}", loginRequest.Email);
+            return ApiResponse<LoginResponseDto>.Failure("An error occurred during login", "Login failed");
+        }
+    }
+
+    public async Task<ApiResponse<LoginResponseDto>> RegisterAsync(RegisterRequestDto registerRequest)
+    {
+        try
+        {
+            // Check if user already exists
+            var existingUser = await _userManager.FindByEmailAsync(registerRequest.Email);
+            if (existingUser != null)
+            {
+                return ApiResponse<LoginResponseDto>.Failure("User with this email already exists", "Registration failed");
+            }
+
+            // Create new user
+            var user = new ApplicationUser
+            {
+                Email = registerRequest.Email,
+                UserName = registerRequest.UserName ?? registerRequest.Email,
+                FirstName = registerRequest.FirstName,
+                LastName = registerRequest.LastName,
+                PhoneNumber = registerRequest.PhoneNumber,
+                InstitucionId = registerRequest.InstitucionId,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true,
+                EmailConfirmed = true // Auto-confirm for now
+            };
+
+            var result = await _userManager.CreateAsync(user, registerRequest.Password);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return ApiResponse<LoginResponseDto>.Failure(errors, "Registration failed");
+            }
+
+            // Assign default role
+            await _userManager.AddToRoleAsync(user, "User");
+
+            // Generate token
+            var token = await _jwtService.GenerateTokenAsync(user);
+            var tokenExpiration = DateTime.UtcNow.AddHours(24);
+
+            var userInfo = await MapToUserInfoDto(user);
+
+            var loginResponse = new LoginResponseDto
+            {
+                Token = token,
+                TokenExpiration = tokenExpiration,
+                User = userInfo
+            };
+
+            return ApiResponse<LoginResponseDto>.Success(loginResponse, "User registered successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during registration for user {Email}", registerRequest.Email);
+            return ApiResponse<LoginResponseDto>.Failure("An error occurred during registration", "Registration failed");
+        }
+    }
+
+    public async Task<ApiResponse> ChangePasswordAsync(string userId, ChangePasswordRequestDto changePasswordRequest)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return ApiResponse.Failure("User not found", "Password change failed");
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, changePasswordRequest.CurrentPassword, changePasswordRequest.NewPassword);
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return ApiResponse.Failure(errors, "Password change failed");
+            }
+
+            return ApiResponse.Success("Password changed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error changing password for user {UserId}", userId);
+            return ApiResponse.Failure("An error occurred while changing password", "Password change failed");
+        }
+    }
+
+    public async Task<ApiResponse<LoginResponseDto>> ForceChangePasswordAsync(string userId, ForceChangePasswordRequestDto forceChangePasswordRequest)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return ApiResponse<LoginResponseDto>.Failure("User not found", "Password change failed");
+            }
+
+            // For forced password change, we don't require the current password
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var result = await _userManager.ResetPasswordAsync(user, token, forceChangePasswordRequest.NewPassword);
+
+            if (!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                return ApiResponse<LoginResponseDto>.Failure(errors, "Password change failed");
+            }
+
+            // Mark the user as no longer requiring password change
+            user.ForcePasswordChange = false;
+            await _userManager.UpdateAsync(user);
+
+            // Generate new token with updated claims
+            var newToken = await _jwtService.GenerateTokenAsync(user);
+            var tokenExpiration = DateTime.UtcNow.AddHours(24);
+
+            var userInfo = await MapToUserInfoDto(user);
+
+            var loginResponse = new LoginResponseDto
+            {
+                Token = newToken,
+                TokenExpiration = tokenExpiration,
+                User = userInfo
+            };
+
+            return ApiResponse<LoginResponseDto>.Success(loginResponse, "Password changed successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during forced password change for user {UserId}", userId);
+            return ApiResponse<LoginResponseDto>.Failure("An error occurred during password change", "Password change failed");
+        }
+    }
+
+    public async Task<ApiResponse<UserInfoDto>> GetCurrentUserAsync(string userId)
+    {
+        try
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null)
+            {
+                return ApiResponse<UserInfoDto>.Failure("User not found");
+            }
+
+            var userInfo = await MapToUserInfoDto(user);
+            return ApiResponse<UserInfoDto>.Success(userInfo);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting current user {UserId}", userId);
+            return ApiResponse<UserInfoDto>.Failure("An error occurred while retrieving user information");
+        }
+    }
+
+    public async Task<ApiResponse> LogoutAsync()
+    {
+        try
+        {
+            await _signInManager.SignOutAsync();
+            return ApiResponse.Success("Logged out successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during logout");
+            return ApiResponse.Failure("An error occurred during logout");
+        }
+    }
+
+    private async Task<UserInfoDto> MapToUserInfoDto(ApplicationUser user)
+    {
+        var roles = await _userManager.GetRolesAsync(user);
+        
+        // Temporalmente comentamos el acceso a Instituciones debido a un problema de esquema
+        // TODO: Arreglar el esquema de la tabla Instituciones
+        string? institucionName = null;
+        /*
+        var institucion = user.InstitucionId.HasValue
+            ? await _context.Instituciones.FindAsync(user.InstitucionId.Value)
+            : null;
+        institucionName = institucion?.Nombre;
+        */
+
+        return new UserInfoDto
+        {
+            Id = user.Id,
+            Email = user.Email!,
+            UserName = user.UserName,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            PhoneNumber = user.PhoneNumber,
+            InstitucionId = user.InstitucionId,
+            InstitucionName = institucionName,
+            CreatedAt = user.CreatedAt,
+            LastLoginAt = user.LastLoginAt,
+            IsActive = user.IsActive,
+            ForcePasswordChange = user.ForcePasswordChange,
+            Roles = roles
+        };
+    }
+}
