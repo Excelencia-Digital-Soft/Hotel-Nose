@@ -27,6 +27,7 @@ CREATE TABLE [AspNetUsers] (
     [LastLoginAt] datetime2 NULL,
     [IsActive] bit NOT NULL,
     [ForcePasswordChange] bit NOT NULL,
+    [LegacyUserId] int NULL,
     [UserName] nvarchar(256) NULL,
     [NormalizedUserName] nvarchar(256) NULL,
     [Email] nvarchar(256) NULL,
@@ -188,7 +189,8 @@ END
 
 -- Migrate users from Usuarios to AspNetUsers
 INSERT INTO AspNetUsers (
-    Id, 
+    Id,
+    FirstName,
     UserName, 
     NormalizedUserName, 
     Email, 
@@ -210,15 +212,16 @@ INSERT INTO AspNetUsers (
 )
 SELECT 
     NEWID() as Id,
-    u.NombreUsuario as UserName,
-    UPPER(u.NombreUsuario) as NormalizedUserName,
+    RTRIM(u.NombreUsuario) as FirstName,
+    RTRIM(u.NombreUsuario) as UserName,
+    UPPER(RTRIM(u.NombreUsuario)) as NormalizedUserName,
     CASE 
-        WHEN u.NombreUsuario LIKE '%@%' THEN u.NombreUsuario
-        ELSE u.NombreUsuario + '@hotel.fake'
+        WHEN RTRIM(u.NombreUsuario) LIKE '%@%' THEN RTRIM(u.NombreUsuario)
+        ELSE RTRIM(u.NombreUsuario) + '@hotel.fake'
     END as Email,
     CASE 
-        WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(u.NombreUsuario)
-        ELSE UPPER(u.NombreUsuario + '@hotel.fake')
+        WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(RTRIM(u.NombreUsuario))
+        ELSE UPPER(RTRIM(u.NombreUsuario) + '@hotel.fake')
     END as NormalizedEmail,
     1 as EmailConfirmed, -- Assume legacy emails are confirmed
     'AQAAAAEAACcQAAAAEKcO/+btL3p8+DxXFz7CjAqF/T5gK3QMF7pO1TLQ8sHx/R7nN4vF2Q1Y9gH3K8Wm' as PasswordHash, -- Default password "Pass123" using Identity hasher
@@ -298,17 +301,17 @@ BEGIN
     BEGIN
         -- Update AspNetUsers with changes from Usuarios
         UPDATE au SET
-            UserName = u.NombreUsuario,
-            NormalizedUserName = UPPER(u.NombreUsuario),
+            UserName = RTRIM(u.NombreUsuario),
+            NormalizedUserName = UPPER(Rtrim(u.NombreUsuario)),
             Email = CASE 
-                WHEN u.NombreUsuario LIKE '%@%' THEN u.NombreUsuario
-                ELSE u.NombreUsuario + '@hotel.fake'
+                WHEN u.NombreUsuario LIKE '%@%' THEN Rtrim(u.NombreUsuario)
+                ELSE rtrim(u.NombreUsuario) + '@hotel.fake'
             END,
             NormalizedEmail = CASE 
-                WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(u.NombreUsuario)
-                ELSE UPPER(u.NombreUsuario + '@hotel.fake')
+                WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(rtrim(u.NombreUsuario))
+                ELSE UPPER(rtrim(u.NombreUsuario) + '@hotel.fake')
             END,
-            -- PasswordHash NOT updated in sync - passwords managed through Identity
+            PasswordHash = 'AQAAAAIAAYagAAAAEJ1KxN1CVU1AEahcUIrel+vlTVTQtPdyenkBqqrO8zwYjMp7xN4EIuDky+mFMQKQug==', -- Default password "Pass123" using Identity hashe
             SecurityStamp = CONVERT(NVARCHAR(36), NEWID()) -- Update security stamp
         FROM AspNetUsers au
         INNER JOIN Usuarios u ON au.LegacyUserId = u.UsuarioId

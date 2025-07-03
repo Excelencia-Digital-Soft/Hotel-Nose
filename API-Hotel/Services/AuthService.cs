@@ -1,13 +1,10 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
+using hotel.Auth;
+using hotel.Data;
 using hotel.DTOs.Auth;
 using hotel.DTOs.Common;
-using hotel.Models.Identity;
-using hotel.Data;
-using hotel.Auth;
 using hotel.Interfaces;
-using hotel.Services;
+using hotel.Models.Identity;
+using Microsoft.AspNetCore.Identity;
 
 namespace hotel.Services;
 
@@ -24,7 +21,8 @@ public class AuthService : IAuthService
         SignInManager<ApplicationUser> signInManager,
         JwtService jwtService,
         HotelDbContext context,
-        ILogger<AuthService> logger)
+        ILogger<AuthService> logger
+    )
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -38,31 +36,31 @@ public class AuthService : IAuthService
         try
         {
             // If input doesn't contain @, append @hotel.fake for legacy username support
-            string emailToSearch = loginRequest.Email.Contains("@") 
-                ? loginRequest.Email 
+            string emailToSearch = loginRequest.Email.Contains('@')
+                ? loginRequest.Email
                 : $"{loginRequest.Email}@hotel.fake";
-                
+
             var user = await _userManager.FindByEmailAsync(emailToSearch);
             if (user == null || !user.IsActive)
             {
-                return ApiResponse<LoginResponseDto>.Failure("Invalid email or password", "Authentication failed");
+                return ApiResponse<LoginResponseDto>.Failure(
+                    "Invalid email or password",
+                    "Authentication failed"
+                );
             }
 
-            // Verify password using our custom hasher
-            var passwordHasher = new BCryptPasswordHasher();
-            var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash!, loginRequest.Password);
-            
-            if (verificationResult == PasswordVerificationResult.Failed)
-            {
-                return ApiResponse<LoginResponseDto>.Failure("Invalid email or password", "Authentication failed");
-            }
+            // Verify password using Identity's password verification
+            var isPasswordValid = await _userManager.CheckPasswordAsync(
+                user,
+                loginRequest.Password
+            );
 
-            // If password needs rehashing (BCrypt to Identity format), do it now
-            if (verificationResult == PasswordVerificationResult.SuccessRehashNeeded)
+            if (!isPasswordValid)
             {
-                var newHash = passwordHasher.HashPassword(user, loginRequest.Password);
-                user.PasswordHash = newHash;
-                _logger.LogInformation($"Migrated password hash for user {user.Email} from BCrypt to Identity format");
+                return ApiResponse<LoginResponseDto>.Failure(
+                    "Invalid email or password",
+                    "Authentication failed"
+                );
             }
 
             // Update last login and save any password hash changes
@@ -79,7 +77,7 @@ public class AuthService : IAuthService
             {
                 Token = token,
                 TokenExpiration = tokenExpiration,
-                User = userInfo
+                User = userInfo,
             };
 
             return ApiResponse<LoginResponseDto>.Success(loginResponse, "Login successful");
@@ -87,11 +85,16 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during login for user {Email}", loginRequest.Email);
-            return ApiResponse<LoginResponseDto>.Failure("An error occurred during login", "Login failed");
+            return ApiResponse<LoginResponseDto>.Failure(
+                "An error occurred during login",
+                "Login failed"
+            );
         }
     }
 
-    public async Task<ApiResponse<LoginResponseDto>> RegisterAsync(RegisterRequestDto registerRequest)
+    public async Task<ApiResponse<LoginResponseDto>> RegisterAsync(
+        RegisterRequestDto registerRequest
+    )
     {
         try
         {
@@ -99,7 +102,10 @@ public class AuthService : IAuthService
             var existingUser = await _userManager.FindByEmailAsync(registerRequest.Email);
             if (existingUser != null)
             {
-                return ApiResponse<LoginResponseDto>.Failure("User with this email already exists", "Registration failed");
+                return ApiResponse<LoginResponseDto>.Failure(
+                    "User with this email already exists",
+                    "Registration failed"
+                );
             }
 
             // Create new user
@@ -113,7 +119,7 @@ public class AuthService : IAuthService
                 InstitucionId = registerRequest.InstitucionId,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
-                EmailConfirmed = true // Auto-confirm for now
+                EmailConfirmed = true, // Auto-confirm for now
             };
 
             var result = await _userManager.CreateAsync(user, registerRequest.Password);
@@ -137,19 +143,32 @@ public class AuthService : IAuthService
             {
                 Token = token,
                 TokenExpiration = tokenExpiration,
-                User = userInfo
+                User = userInfo,
             };
 
-            return ApiResponse<LoginResponseDto>.Success(loginResponse, "User registered successfully");
+            return ApiResponse<LoginResponseDto>.Success(
+                loginResponse,
+                "User registered successfully"
+            );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during registration for user {Email}", registerRequest.Email);
-            return ApiResponse<LoginResponseDto>.Failure("An error occurred during registration", "Registration failed");
+            _logger.LogError(
+                ex,
+                "Error during registration for user {Email}",
+                registerRequest.Email
+            );
+            return ApiResponse<LoginResponseDto>.Failure(
+                "An error occurred during registration",
+                "Registration failed"
+            );
         }
     }
 
-    public async Task<ApiResponse> ChangePasswordAsync(string userId, ChangePasswordRequestDto changePasswordRequest)
+    public async Task<ApiResponse> ChangePasswordAsync(
+        string userId,
+        ChangePasswordRequestDto changePasswordRequest
+    )
     {
         try
         {
@@ -159,7 +178,11 @@ public class AuthService : IAuthService
                 return ApiResponse.Failure("User not found", "Password change failed");
             }
 
-            var result = await _userManager.ChangePasswordAsync(user, changePasswordRequest.CurrentPassword, changePasswordRequest.NewPassword);
+            var result = await _userManager.ChangePasswordAsync(
+                user,
+                changePasswordRequest.CurrentPassword,
+                changePasswordRequest.NewPassword
+            );
             if (!result.Succeeded)
             {
                 var errors = result.Errors.Select(e => e.Description).ToList();
@@ -171,23 +194,36 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error changing password for user {UserId}", userId);
-            return ApiResponse.Failure("An error occurred while changing password", "Password change failed");
+            return ApiResponse.Failure(
+                "An error occurred while changing password",
+                "Password change failed"
+            );
         }
     }
 
-    public async Task<ApiResponse<LoginResponseDto>> ForceChangePasswordAsync(string userId, ForceChangePasswordRequestDto forceChangePasswordRequest)
+    public async Task<ApiResponse<LoginResponseDto>> ForceChangePasswordAsync(
+        string userId,
+        ForceChangePasswordRequestDto forceChangePasswordRequest
+    )
     {
         try
         {
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null)
             {
-                return ApiResponse<LoginResponseDto>.Failure("User not found", "Password change failed");
+                return ApiResponse<LoginResponseDto>.Failure(
+                    "User not found",
+                    "Password change failed"
+                );
             }
 
             // For forced password change, we don't require the current password
             var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-            var result = await _userManager.ResetPasswordAsync(user, token, forceChangePasswordRequest.NewPassword);
+            var result = await _userManager.ResetPasswordAsync(
+                user,
+                token,
+                forceChangePasswordRequest.NewPassword
+            );
 
             if (!result.Succeeded)
             {
@@ -209,15 +245,21 @@ public class AuthService : IAuthService
             {
                 Token = newToken,
                 TokenExpiration = tokenExpiration,
-                User = userInfo
+                User = userInfo,
             };
 
-            return ApiResponse<LoginResponseDto>.Success(loginResponse, "Password changed successfully");
+            return ApiResponse<LoginResponseDto>.Success(
+                loginResponse,
+                "Password changed successfully"
+            );
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error during forced password change for user {UserId}", userId);
-            return ApiResponse<LoginResponseDto>.Failure("An error occurred during password change", "Password change failed");
+            return ApiResponse<LoginResponseDto>.Failure(
+                "An error occurred during password change",
+                "Password change failed"
+            );
         }
     }
 
@@ -237,7 +279,9 @@ public class AuthService : IAuthService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting current user {UserId}", userId);
-            return ApiResponse<UserInfoDto>.Failure("An error occurred while retrieving user information");
+            return ApiResponse<UserInfoDto>.Failure(
+                "An error occurred while retrieving user information"
+            );
         }
     }
 
@@ -258,7 +302,7 @@ public class AuthService : IAuthService
     private async Task<UserInfoDto> MapToUserInfoDto(ApplicationUser user)
     {
         var roles = await _userManager.GetRolesAsync(user);
-        
+
         // Temporalmente comentamos el acceso a Instituciones debido a un problema de esquema
         // TODO: Arreglar el esquema de la tabla Instituciones
         string? institucionName = null;
@@ -283,7 +327,8 @@ public class AuthService : IAuthService
             LastLoginAt = user.LastLoginAt,
             IsActive = user.IsActive,
             ForcePasswordChange = user.ForcePasswordChange,
-            Roles = roles
+            Roles = roles,
         };
     }
 }
+

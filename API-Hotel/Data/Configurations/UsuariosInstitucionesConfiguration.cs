@@ -18,6 +18,11 @@ namespace hotel.Data.Configurations
             builder.Property(e => e.UsuarioId).HasColumnName("UsuarioId");
             builder.Property(e => e.InstitucionID).HasColumnName("InstitucionID");
             
+            // Configure UserId property for AspNetUsers relationship
+            builder.Property(e => e.UserId)
+                .HasMaxLength(450) // Standard length for AspNetUsers.Id
+                .IsRequired(false);
+            
             // Configure relationships with explicit navigation properties
             builder.HasOne(e => e.Usuario)
                 .WithMany(u => u.UsuariosInstituciones)
@@ -28,6 +33,17 @@ namespace hotel.Data.Configurations
                 .WithMany(i => i.UsuariosInstituciones)
                 .HasForeignKey(e => e.InstitucionID)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure relationship with ApplicationUser (AspNetUsers)
+            builder.HasOne(e => e.ApplicationUser)
+                .WithMany(au => au.UsuariosInstituciones)
+                .HasForeignKey(e => e.UserId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Add index for ApplicationUser relationship
+            builder.HasIndex(e => e.UserId)
+                .HasDatabaseName("IX_UsuariosInstituciones_UserId");
         }
     }
 }

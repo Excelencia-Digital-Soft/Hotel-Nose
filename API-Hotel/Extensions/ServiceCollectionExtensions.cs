@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
         // Register V1 services
         services.AddScoped<IHabitacionesService, HabitacionesService>();
         services.AddScoped<IStatisticsService, StatisticsService>();
+        services.AddScoped<IUserManagementService, UserManagementService>();
 
         return services;
     }
