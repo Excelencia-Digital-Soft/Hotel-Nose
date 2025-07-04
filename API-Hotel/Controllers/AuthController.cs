@@ -1,16 +1,18 @@
+using System.Security.Claims;
+using hotel.Auth;
+using hotel.Data;
+using hotel.DTOs.Identity;
+using hotel.Models.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using hotel.DTOs.Identity;
-using hotel.Models.Identity;
-using hotel.Data;
-using hotel.Auth;
 
 namespace hotel.Controllers;
 
+/// <summary>
+/// DEPRECATED: Use Controllers/V1/AuthenticationController en su lugar
+/// </summary>
+[Obsolete("Este controlador está deprecated. Use V1/AuthenticationController en su lugar.", true)]
 [ApiController]
 [Route("api/[controller]")]
 public class AuthController : ControllerBase
@@ -26,7 +28,8 @@ public class AuthController : ControllerBase
         SignInManager<ApplicationUser> signInManager,
         RoleManager<ApplicationRole> roleManager,
         JwtService jwtService,
-        HotelDbContext context)
+        HotelDbContext context
+    )
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -40,35 +43,35 @@ public class AuthController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new AuthResponseDto
-            {
-                Success = false,
-                Message = "Invalid model state"
-            });
+            return BadRequest(
+                new AuthResponseDto { Success = false, Message = "Invalid model state" }
+            );
         }
 
         // Check if user already exists
         var existingUser = await _userManager.FindByEmailAsync(registerDto.Email);
         if (existingUser != null)
         {
-            return BadRequest(new AuthResponseDto
-            {
-                Success = false,
-                Message = "User with this email already exists"
-            });
+            return BadRequest(
+                new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "User with this email already exists",
+                }
+            );
         }
 
         // Create new user with fake email if username provided
         string email = registerDto.Email;
         string userName = registerDto.UserName ?? registerDto.Email;
-        
+
         // If email doesn't contain @, treat it as username and create fake email
         if (!email.Contains("@"))
         {
             userName = email;
             email = $"{userName}@hotel.fake";
         }
-        
+
         var user = new ApplicationUser
         {
             Email = email,
@@ -78,18 +81,21 @@ public class AuthController : ControllerBase
             PhoneNumber = registerDto.PhoneNumber,
             InstitucionId = registerDto.InstitucionId,
             CreatedAt = DateTime.UtcNow,
-            IsActive = true
+            IsActive = true,
+            ForcePasswordChange = false
         };
 
         var result = await _userManager.CreateAsync(user, registerDto.Password);
 
         if (!result.Succeeded)
         {
-            return BadRequest(new AuthResponseDto
-            {
-                Success = false,
-                Message = string.Join(", ", result.Errors.Select(e => e.Description))
-            });
+            return BadRequest(
+                new AuthResponseDto
+                {
+                    Success = false,
+                    Message = string.Join(", ", result.Errors.Select(e => e.Description)),
+                }
+            );
         }
 
         // Assign default role (you can modify this logic)
@@ -101,14 +107,16 @@ public class AuthController : ControllerBase
 
         var userDto = await MapToUserDto(user);
 
-        return Ok(new AuthResponseDto
-        {
-            Success = true,
-            Message = "User registered successfully",
-            Token = token,
-            TokenExpiration = tokenExpiration,
-            User = userDto
-        });
+        return Ok(
+            new AuthResponseDto
+            {
+                Success = true,
+                Message = "User registered successfully",
+                Token = token,
+                TokenExpiration = tokenExpiration,
+                User = userDto,
+            }
+        );
     }
 
     [HttpPost("login")]
@@ -116,15 +124,13 @@ public class AuthController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new AuthResponseDto
-            {
-                Success = false,
-                Message = "Invalid model state"
-            });
+            return BadRequest(
+                new AuthResponseDto { Success = false, Message = "Invalid model state" }
+            );
         }
 
         ApplicationUser? user = null;
-        
+
         // Detect if input contains @ symbol (email) or not (username)
         if (loginDto.Email.Contains("@"))
         {
@@ -135,7 +141,7 @@ public class AuthController : ControllerBase
         {
             // Login with username - first try to find by UserName
             user = await _userManager.FindByNameAsync(loginDto.Email);
-            
+
             // If not found by username, try to find by fake email format
             if (user == null)
             {
@@ -143,24 +149,24 @@ public class AuthController : ControllerBase
                 user = await _userManager.FindByEmailAsync(fakeEmail);
             }
         }
-        
+
         if (user == null || !user.IsActive)
         {
-            return Unauthorized(new AuthResponseDto
-            {
-                Success = false,
-                Message = "Invalid username/email or password"
-            });
+            return Unauthorized(
+                new AuthResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid username/email or password",
+                }
+            );
         }
 
         var result = await _signInManager.CheckPasswordSignInAsync(user, loginDto.Password, false);
         if (!result.Succeeded)
         {
-            return Unauthorized(new AuthResponseDto
-            {
-                Success = false,
-                Message = "Invalid email or password"
-            });
+            return Unauthorized(
+                new AuthResponseDto { Success = false, Message = "Invalid email or password" }
+            );
         }
 
         // Update last login
@@ -173,14 +179,16 @@ public class AuthController : ControllerBase
 
         var userDto = await MapToUserDto(user);
 
-        return Ok(new AuthResponseDto
-        {
-            Success = true,
-            Message = "Login successful",
-            Token = token,
-            TokenExpiration = tokenExpiration,
-            User = userDto
-        });
+        return Ok(
+            new AuthResponseDto
+            {
+                Success = true,
+                Message = "Login successful",
+                Token = token,
+                TokenExpiration = tokenExpiration,
+                User = userDto,
+            }
+        );
     }
 
     [HttpPost("logout")]
@@ -213,15 +221,15 @@ public class AuthController : ControllerBase
 
     [HttpPost("change-password")]
     [Authorize]
-    public async Task<ActionResult<AuthResponseDto>> ChangePassword(ChangePasswordDto changePasswordDto)
+    public async Task<ActionResult<AuthResponseDto>> ChangePassword(
+        ChangePasswordDto changePasswordDto
+    )
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new AuthResponseDto
-            {
-                Success = false,
-                Message = "Invalid model state"
-            });
+            return BadRequest(
+                new AuthResponseDto { Success = false, Message = "Invalid model state" }
+            );
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -233,41 +241,41 @@ public class AuthController : ControllerBase
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
         {
-            return NotFound(new AuthResponseDto
-            {
-                Success = false,
-                Message = "User not found"
-            });
+            return NotFound(new AuthResponseDto { Success = false, Message = "User not found" });
         }
 
-        var result = await _userManager.ChangePasswordAsync(user, changePasswordDto.CurrentPassword, changePasswordDto.NewPassword);
+        var result = await _userManager.ChangePasswordAsync(
+            user,
+            changePasswordDto.CurrentPassword,
+            changePasswordDto.NewPassword
+        );
         if (!result.Succeeded)
         {
-            return BadRequest(new AuthResponseDto
-            {
-                Success = false,
-                Message = string.Join(", ", result.Errors.Select(e => e.Description))
-            });
+            return BadRequest(
+                new AuthResponseDto
+                {
+                    Success = false,
+                    Message = string.Join(", ", result.Errors.Select(e => e.Description)),
+                }
+            );
         }
 
-        return Ok(new AuthResponseDto
-        {
-            Success = true,
-            Message = "Password changed successfully"
-        });
+        return Ok(
+            new AuthResponseDto { Success = true, Message = "Password changed successfully" }
+        );
     }
 
     [HttpPost("force-password-change")]
     [Authorize]
-    public async Task<ActionResult<AuthResponseDto>> ForcePasswordChange(ForcePasswordChangeDto forcePasswordChangeDto)
+    public async Task<ActionResult<AuthResponseDto>> ForcePasswordChange(
+        ForcePasswordChangeDto forcePasswordChangeDto
+    )
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(new AuthResponseDto
-            {
-                Success = false,
-                Message = "Invalid model state"
-            });
+            return BadRequest(
+                new AuthResponseDto { Success = false, Message = "Invalid model state" }
+            );
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -279,25 +287,27 @@ public class AuthController : ControllerBase
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null)
         {
-            return NotFound(new AuthResponseDto
-            {
-                Success = false,
-                Message = "User not found"
-            });
+            return NotFound(new AuthResponseDto { Success = false, Message = "User not found" });
         }
 
         // For forced password change, we don't require the current password
         // Generate a random token for password reset
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var result = await _userManager.ResetPasswordAsync(user, token, forcePasswordChangeDto.NewPassword);
-        
+        var result = await _userManager.ResetPasswordAsync(
+            user,
+            token,
+            forcePasswordChangeDto.NewPassword
+        );
+
         if (!result.Succeeded)
         {
-            return BadRequest(new AuthResponseDto
-            {
-                Success = false,
-                Message = string.Join(", ", result.Errors.Select(e => e.Description))
-            });
+            return BadRequest(
+                new AuthResponseDto
+                {
+                    Success = false,
+                    Message = string.Join(", ", result.Errors.Select(e => e.Description)),
+                }
+            );
         }
 
         // Mark the user as no longer requiring password change
@@ -310,14 +320,16 @@ public class AuthController : ControllerBase
 
         var userDto = await MapToUserDto(user);
 
-        return Ok(new AuthResponseDto
-        {
-            Success = true,
-            Message = "Password changed successfully",
-            Token = newToken,
-            TokenExpiration = tokenExpiration,
-            User = userDto
-        });
+        return Ok(
+            new AuthResponseDto
+            {
+                Success = true,
+                Message = "Password changed successfully",
+                Token = newToken,
+                TokenExpiration = tokenExpiration,
+                User = userDto,
+            }
+        );
     }
 
     private async Task<UserDto> MapToUserDto(ApplicationUser user)
@@ -342,7 +354,8 @@ public class AuthController : ControllerBase
             LastLoginAt = user.LastLoginAt,
             IsActive = user.IsActive,
             ForcePasswordChange = user.ForcePasswordChange,
-            Roles = roles
+            Roles = roles,
         };
     }
 }
+

@@ -9,7 +9,7 @@ namespace hotel.Controllers.V1;
 
 [ApiController]
 [Route("api/v1/user-management")]
-[Authorize(Roles = "Administrator, Director")]
+[Authorize(Policy = "AdminOrDirector")]
 [Produces("application/json")]
 public class UserManagementController : ControllerBase
 {

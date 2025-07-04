@@ -213,18 +213,24 @@ INSERT INTO AspNetUsers (
 SELECT 
     NEWID() as Id,
     RTRIM(u.NombreUsuario) as FirstName,
-    RTRIM(u.NombreUsuario) as UserName,
-    UPPER(RTRIM(u.NombreUsuario)) as NormalizedUserName,
     CASE 
         WHEN RTRIM(u.NombreUsuario) LIKE '%@%' THEN RTRIM(u.NombreUsuario)
-        ELSE RTRIM(u.NombreUsuario) + '@hotel.fake'
+        ELSE RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos')
+    END as UserName,
+    CASE 
+        WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(RTRIM(u.NombreUsuario))
+        ELSE UPPER(RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos'))
+    END as NormalizedUserName,
+    CASE 
+        WHEN RTRIM(u.NombreUsuario) LIKE '%@%' THEN RTRIM(u.NombreUsuario)
+        ELSE RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos')
     END as Email,
     CASE 
         WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(RTRIM(u.NombreUsuario))
-        ELSE UPPER(RTRIM(u.NombreUsuario) + '@hotel.fake')
+        ELSE UPPER(RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos'))
     END as NormalizedEmail,
     1 as EmailConfirmed, -- Assume legacy emails are confirmed
-    'AQAAAAEAACcQAAAAEKcO/+btL3p8+DxXFz7CjAqF/T5gK3QMF7pO1TLQ8sHx/R7nN4vF2Q1Y9gH3K8Wm' as PasswordHash, -- Default password "Pass123" using Identity hasher
+    'AQAAAAIAAYagAAAAEJ1KxN1CVU1AEahcUIrel+vlTVTQtPdyenkBqqrO8zwYjMp7xN4EIuDky+mFMQKQug==' as PasswordHash, -- Default password "Pass123" using Identity hasher
     CONVERT(NVARCHAR(36), NEWID()) as SecurityStamp,
     CONVERT(NVARCHAR(36), NEWID()) as ConcurrencyStamp,
     NULL as PhoneNumber,
@@ -234,13 +240,12 @@ SELECT
     0 as AccessFailedCount,
     u.UsuarioId as LegacyUserId,
     -- Get InstitucionId from UsuariosInstituciones (take first one if multiple)
-    (SELECT TOP 1 ui.InstitucionID 
-     FROM UsuariosInstituciones ui 
-     WHERE ui.UsuarioId = u.UsuarioId) as InstitucionId,
+    ui.InstitucionID as InstitucionId,
     GETDATE() as CreatedAt,
     1 as IsActive,
     1 as ForcePasswordChange -- Force password change on first login since all users get default password
 FROM Usuarios u
+INNER JOIN UsuariosInstituciones ui ON u.UsuarioId = ui.UsuarioId
 WHERE NOT EXISTS (
     SELECT 1 FROM AspNetUsers au WHERE au.LegacyUserId = u.UsuarioId
 );
@@ -301,16 +306,23 @@ BEGIN
     BEGIN
         -- Update AspNetUsers with changes from Usuarios
         UPDATE au SET
-            UserName = RTRIM(u.NombreUsuario),
-            NormalizedUserName = UPPER(Rtrim(u.NombreUsuario)),
-            Email = CASE 
-                WHEN u.NombreUsuario LIKE '%@%' THEN Rtrim(u.NombreUsuario)
-                ELSE rtrim(u.NombreUsuario) + '@hotel.fake'
-            END,
-            NormalizedEmail = CASE 
-                WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(rtrim(u.NombreUsuario))
-                ELSE UPPER(rtrim(u.NombreUsuario) + '@hotel.fake')
-            END,
+            FirstName = RTRIM(u.NombreUsuario),
+            CASE 
+                WHEN RTRIM(u.NombreUsuario) LIKE '%@%' THEN RTRIM(u.NombreUsuario)
+                ELSE RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos')
+            END as UserName,
+            CASE 
+                WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(RTRIM(u.NombreUsuario))
+                ELSE UPPER(RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos'))
+            END as NormalizedUserName,
+            CASE 
+                WHEN RTRIM(u.NombreUsuario) LIKE '%@%' THEN RTRIM(u.NombreUsuario)
+                ELSE RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos')
+            END as Email,
+            CASE 
+                WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(RTRIM(u.NombreUsuario))
+                ELSE UPPER(RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos'))
+            END as NormalizedEmail,
             PasswordHash = 'AQAAAAIAAYagAAAAEJ1KxN1CVU1AEahcUIrel+vlTVTQtPdyenkBqqrO8zwYjMp7xN4EIuDky+mFMQKQug==', -- Default password "Pass123" using Identity hashe
             SecurityStamp = CONVERT(NVARCHAR(36), NEWID()) -- Update security stamp
         FROM AspNetUsers au

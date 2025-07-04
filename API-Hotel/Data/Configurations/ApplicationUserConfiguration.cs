@@ -34,9 +34,11 @@ public class ApplicationUserConfiguration : IEntityTypeConfiguration<Application
             .IsRequired(false);
 
         builder.Property(u => u.IsActive)
+            .IsRequired()
             .HasDefaultValue(true);
 
         builder.Property(u => u.ForcePasswordChange)
+            .IsRequired()
             .HasDefaultValue(false);
 
         // Configurar relación con Institucion

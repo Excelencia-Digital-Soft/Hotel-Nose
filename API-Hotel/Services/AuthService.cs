@@ -35,12 +35,7 @@ public class AuthService : IAuthService
     {
         try
         {
-            // If input doesn't contain @, append @hotel.fake for legacy username support
-            string emailToSearch = loginRequest.Email.Contains('@')
-                ? loginRequest.Email
-                : $"{loginRequest.Email}@hotel.fake";
-
-            var user = await _userManager.FindByEmailAsync(emailToSearch);
+            var user = await _userManager.FindByEmailAsync(loginRequest.Email);
             if (user == null || !user.IsActive)
             {
                 return ApiResponse<LoginResponseDto>.Failure(
@@ -120,6 +115,7 @@ public class AuthService : IAuthService
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
                 EmailConfirmed = true, // Auto-confirm for now
+                ForcePasswordChange = false,
             };
 
             var result = await _userManager.CreateAsync(user, registerRequest.Password);
@@ -331,4 +327,3 @@ public class AuthService : IAuthService
         };
     }
 }
-

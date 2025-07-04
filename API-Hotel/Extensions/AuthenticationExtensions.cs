@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using hotel.Models.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,13 +17,8 @@ public static class AuthenticationExtensions
     /// </summary>
     public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
             options.TokenValidationParameters = new TokenValidationParameters
             {
@@ -35,7 +31,9 @@ public static class AuthenticationExtensions
                 IssuerSigningKey = new SymmetricSecurityKey(
                     Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!)
                 ),
-                ClockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.Zero,
+                RoleClaimType = ClaimTypes.Role,
+                NameClaimType = ClaimTypes.Name
             };
 
             // Configure events to prevent redirects and return proper HTTP status codes
@@ -75,11 +73,24 @@ public static class AuthenticationExtensions
                     var logger = context.HttpContext.RequestServices.GetService<ILogger<Program>>();
                     logger?.LogWarning("JWT Authentication failed: {Exception}", context.Exception.Message);
                     return Task.CompletedTask;
+                },
+                OnTokenValidated = context =>
+                {
+                    var logger = context.HttpContext.RequestServices.GetService<ILogger<Program>>();
+                    logger?.LogInformation("JWT Token validated successfully for user: {UserName}", 
+                        context.Principal?.Identity?.Name);
+                    return Task.CompletedTask;
                 }
             };
         });
 
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            // Policy that allows either Administrator OR Director role
+            options.AddPolicy("AdminOrDirector", policy =>
+                policy.RequireRole("Administrator", "Director")
+                      .AddAuthenticationSchemes(JwtBearerDefaults.AuthenticationScheme));
+        });
 
         return services;
     }
@@ -110,29 +121,6 @@ public static class AuthenticationExtensions
         })
         .AddEntityFrameworkStores<hotel.Data.HotelDbContext>()
         .AddDefaultTokenProviders();
-
-        // Override Identity's authentication configuration to ensure JWT takes precedence
-        services.ConfigureApplicationCookie(options =>
-        {
-            options.Events.OnRedirectToLogin = context =>
-            {
-                if (context.Request.Path.StartsWithSegments("/api"))
-                {
-                    context.Response.StatusCode = 401;
-                    return Task.CompletedTask;
-                }
-                return Task.CompletedTask;
-            };
-            options.Events.OnRedirectToAccessDenied = context =>
-            {
-                if (context.Request.Path.StartsWithSegments("/api"))
-                {
-                    context.Response.StatusCode = 403;
-                    return Task.CompletedTask;
-                }
-                return Task.CompletedTask;
-            };
-        });
 
         return services;
     }

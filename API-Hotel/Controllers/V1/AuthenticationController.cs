@@ -27,6 +27,7 @@ public class AuthenticationController : ControllerBase
     /// <param name="loginRequest">Login credentials</param>
     /// <returns>Authentication result with token</returns>
     [HttpPost("login")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status401Unauthorized)]
@@ -58,6 +59,7 @@ public class AuthenticationController : ControllerBase
     /// <param name="registerRequest">Registration data</param>
     /// <returns>Registration result with token</returns>
     [HttpPost("register")]
+    [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<ApiResponse<LoginResponseDto>>> Register([FromBody] RegisterRequestDto registerRequest)
