@@ -443,6 +443,7 @@ import ReserveRoom from '../components/ReserveRoom.vue';
 import ReserveRoomLibre from '../components/ReserveRoomLibre.vue';
 import { useAuthStore } from '../store/auth.js';
 import { useWebSocketStore } from '../store/websocket.js';
+import { configurationService } from '../services/configurationService.js';
 import dayjs from 'dayjs';
 
 // Estados existentes (mantener todos)
@@ -703,22 +704,20 @@ const handleWebhookEvent = (data) => {
 };
 
 const getTimerUpdateInterval = async () => {
-  try {
-    const response = await axiosClient.get('/GetTimerUpdateInterval');
-    const intervalMinutes = response.data?.interval || 10;
-    localStorage.setItem('timerUpdateInterval', intervalMinutes.toString());
-    console.log('Timer interval set to:', intervalMinutes, 'minutes');
-    return intervalMinutes;
-  } catch (error) {
-    if (error.response?.status === 404) {
-      console.log('Timer interval API not implemented yet, using default value');
-    } else {
-      console.error('Error fetching timer update interval:', error);
-    }
-    const defaultInterval = 10;
-    localStorage.setItem('timerUpdateInterval', defaultInterval.toString());
-    console.log('Timer interval set to default:', defaultInterval, 'minutes');
-    return defaultInterval;
+  const result = await configurationService.getTimerUpdateInterval();
+  
+  if (result.isSuccess) {
+    localStorage.setItem('timerUpdateInterval', result.data.toString());
+    console.log('Timer interval set to:', result.data, 'minutes');
+    return result.data;
+  } else {
+    // Log errors but still use the default value provided
+    console.log(result.message);
+    result.errors.forEach(error => console.error('Timer interval error:', error));
+    
+    localStorage.setItem('timerUpdateInterval', result.data.toString());
+    console.log('Timer interval set to default:', result.data, 'minutes');
+    return result.data;
   }
 };
 

@@ -141,7 +141,7 @@ const fetchVisitaId = () => {
         console.log('VisitaID:', visitaId.value);
         if (!response.data.ok) {
           alert('Esta habitacion no tiene permitido hacer pedidos')
-          router.push({ name: 'home' });
+          router.push({ name: 'Home' });
         }
       })
       .catch(error => {
@@ -151,7 +151,7 @@ const fetchVisitaId = () => {
 
   } else {
     alert('Esta habitacion no tiene permitido hacer pedidos')
-    router.push({ name: 'home' });
+    router.push({ name: 'Home' });
   }
 };
 

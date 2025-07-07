@@ -297,7 +297,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted, onBeforeMount } from 'vue';
+import { ref, onMounted, onBeforeMount } from 'vue';
 import InfoPago from './InfoPago.vue';
 import axiosClient from '../axiosClient';
 import CerrarCajaModal from './CerrarCajaModal.vue';

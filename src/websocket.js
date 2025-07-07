@@ -1,7 +1,8 @@
 import * as signalR from "@microsoft/signalr";
+import { buildWebSocketUrl } from "./utils/url-helpers.js";
 
 const connection = new signalR.HubConnectionBuilder()
-  .withUrl(`${import.meta.env.VITE_API_BASE_URL}/notifications`) // Your backend URL
+  .withUrl(buildWebSocketUrl(import.meta.env.VITE_API_BASE_URL)) // Properly formatted URL
   .withAutomaticReconnect()
   .build();
 

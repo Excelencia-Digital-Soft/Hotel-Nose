@@ -2,6 +2,8 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
 import "./style.css";
+import "./styles/auth.css";
+import "./utils/console-filters.js";
 import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import PrimeVue from 'primevue/config';
@@ -20,8 +22,7 @@ const app = createApp(App);
 app.use(pinia);  // ✅ Install Pinia before using stores
 pinia.use(piniaPluginPersistedstate);  // ✅ Add persistence after installing Pinia
 
-const websocketStore = useWebSocketStore(); // ✅ Now Pinia is active
-websocketStore.connect();
+// WebSocket will connect automatically when user authenticates and selects institution
 
 app.use(router)
    .use(PrimeVue, { unstyled: true, pt: Lara })

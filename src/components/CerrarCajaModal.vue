@@ -37,7 +37,7 @@
   </template>
   
   <script setup>
-  import { ref, defineEmits, onMounted } from 'vue';
+  import { ref, onMounted } from 'vue';
   import axiosClient from '../axiosClient';
   import ProgressSpinner from 'primevue/progressspinner';
   // Emit to close the modal

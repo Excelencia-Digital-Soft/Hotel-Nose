@@ -73,7 +73,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, onMounted, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import axiosClient from '../axiosClient';
 
 // Image service to fetch images

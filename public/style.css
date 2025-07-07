@@ -127,6 +127,69 @@
   background-color: #f531ca;
 }
 
+/* Enhanced menu styles */
+.menu-button {
+  @apply hover:shadow-lg hover:shadow-white/10 transition-all duration-200;
+}
+
+.menu-button:hover .menu-label {
+  @apply text-white;
+}
+
+.dropdown-menu {
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.menu-item:hover {
+  @apply bg-gradient-to-r from-primary-50 to-secondary-50 text-primary-700;
+}
+
+.menu-item:hover .item-icon {
+  @apply text-primary-600;
+}
+
+/* Mobile menu enhancements */
+.mobile-menu-content {
+  backdrop-filter: blur(12px);
+  border-top: 2px solid rgba(139, 92, 246, 0.3);
+}
+
+.mobile-group-header:hover {
+  @apply bg-gradient-to-r from-primary-50 to-secondary-50;
+}
+
+.mobile-menu-item:hover {
+  @apply bg-gradient-to-r from-primary-50 to-secondary-50 text-primary-700;
+}
+
+/* Material symbols icons */
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  .menu-button,
+  .dropdown-arrow,
+  .mobile-menu-trigger,
+  .expand-icon {
+    @apply transition-none;
+  }
+}
+
+/* Focus styles for better accessibility */
+.menu-button:focus-visible,
+.mobile-menu-trigger:focus-visible,
+.mobile-group-header:focus-visible,
+.mobile-menu-item:focus-visible {
+  @apply ring-2 ring-white/30 ring-offset-2 ring-offset-transparent;
+}
+
 body {
   font-family: var(--font-primary);
 }

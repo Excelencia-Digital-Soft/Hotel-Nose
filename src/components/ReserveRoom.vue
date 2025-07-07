@@ -5,16 +5,16 @@
     <ConfirmDialog />
     
     <Transition name="modal-outer" appear>
-      <div class="fixed w-full h-full bg-black bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-4 py-4 z-50">
+      <div class="fixed w-full h-full bg-black/60 backdrop-blur-xl top-0 left-0 flex justify-center items-center px-4 py-4 z-50">
         <Transition name="modal-inner">
-          <div class="relative w-full max-w-7xl h-[95vh] flex flex-col bg-neutral-800 border-x-4 border-fuchsia-900 rounded-3xl overflow-hidden">
+          <div class="relative w-full max-w-7xl h-[95vh] flex flex-col bg-white/5 backdrop-blur-2xl border border-white/20 rounded-3xl overflow-hidden shadow-2xl">
             
             <!-- Header Compacto -->
-            <div class="flex-shrink-0 px-4 py-3 bg-neutral-800 border-b border-neutral-700">
+            <div class="flex-shrink-0 px-4 py-3 bg-white/5 backdrop-blur-md border-b border-white/10">
               <div class="flex justify-between items-center">
                 <!-- Timer Section Compacto -->
-                <div class="timer-container flex items-center bg-black bg-clip-padding backdrop-filter backdrop-blur-md bg-opacity-40 rounded-xl shadow-lg">
-                  <div class="timer flex items-center border-x-2 border-primary-500 rounded-xl shadow-lg px-3 py-2">
+                <div class="timer-container flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg">
+                  <div class="timer flex items-center border border-primary-400/50 rounded-xl shadow-lg px-3 py-2 bg-white/5 backdrop-blur-sm">
                     <p class="text-primary-400 text-xs font-semibold mr-2">Tiempo:</p>
                     <p class="time mr-2 text-lg font-bold">
                       <span v-for="(char, index) in formattedTime" :key="index" class="digit">{{ char }}</span>
@@ -23,16 +23,16 @@
                     <div class="flex gap-1">
                       <button @click="ignorarTiempoExtra" type="button" 
                         :class="[
-                          'w-8 h-8 font-semibold text-white text-xs rounded-lg transition-all flex items-center justify-center',
+                          'w-8 h-8 font-semibold text-white text-xs rounded-lg transition-all flex items-center justify-center backdrop-blur-sm',
                           {
-                            'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 transform scale-95': ignorarTiempo,
-                            'bg-neutral-600 hover:bg-neutral-500': !ignorarTiempo
+                            'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 transform scale-95 border border-white/30': ignorarTiempo,
+                            'bg-white/10 hover:bg-white/20 border border-white/20': !ignorarTiempo
                           }
                         ]">
                         <span class="material-symbols-outlined text-sm">block</span>
                       </button>
                       <button @click="toggleModalExtender" type="button" 
-                        class="px-2 py-1 font-semibold text-white text-xs bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 hover:from-primary-500 hover:via-secondary-500 hover:to-accent-500 rounded-lg transition-all">
+                        class="px-2 py-1 font-semibold text-white text-xs bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 hover:from-primary-500 hover:via-secondary-500 hover:to-accent-500 rounded-lg transition-all backdrop-blur-sm border border-white/30">
                         +Tiempo
                       </button>
                     </div>
@@ -45,7 +45,7 @@
                 </h1>
 
                 <!-- Close Button -->
-                <button class="text-xl w-10 h-10 text-white btn-danger rounded-full transition duration-150 flex items-center justify-center" @click="$emit('close-modal')">
+                <button class="text-xl w-10 h-10 text-white bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500/70 rounded-full transition-all duration-300 flex items-center justify-center backdrop-blur-sm" @click="$emit('close-modal')">
                   ✕
                 </button>
               </div>
@@ -59,8 +59,8 @@
                 <div class="flex flex-col gap-3 min-h-0">
                   
                   <!-- Customer Information - Compacto -->
-                  <div class="flex-1 grid grid-cols-1 gap-2 relative drop-shadow-xl overflow-hidden rounded-xl bg-[#691660]">
-                    <div class="flex flex-col text-white z-[1] opacity-90 rounded-xl inset-0.5 bg-[#323132] p-3 h-full">
+                  <div class="flex-1 grid grid-cols-1 gap-2 relative drop-shadow-xl overflow-hidden rounded-xl bg-white/5 backdrop-blur-md border border-white/20">
+                    <div class="flex flex-col text-white z-[1] rounded-xl p-3 h-full">
                       <h3 class="text-sm font-semibold text-white flex items-center gap-2 mb-2">
                         <span class="material-symbols-outlined text-sm">person</span>
                         Info Cliente
@@ -75,7 +75,7 @@
                             Identificador
                           </label>
                           <input type="text"
-                            class="text-xs text-neutral-900 border border-purple-200 rounded-lg py-1 px-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                            class="text-xs text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg py-1 px-2 focus:ring-primary-400 focus:border-primary-400 transition placeholder-gray-300"
                             v-model="selectedRoom.Identificador" placeholder="Cliente" maxlength="40">
                         </div>
 
@@ -86,7 +86,7 @@
                             Entrada
                           </label>
                           <input type="datetime-local"
-                            class="text-xs text-neutral-900 border border-purple-200 rounded-lg py-1 px-2 bg-gray-50"
+                            class="text-xs text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg py-1 px-2"
                             v-model="horaEntrada" readonly>
                         </div>
 
@@ -97,7 +97,7 @@
                             Patente
                           </label>
                           <input type="text"
-                            class="text-xs text-neutral-900 border border-purple-200 rounded-lg py-1 px-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                            class="text-xs text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg py-1 px-2 focus:ring-primary-400 focus:border-primary-400 transition placeholder-gray-300"
                             v-model="selectedRoom.PatenteVehiculo" placeholder="ABC123">
                         </div>
 
@@ -108,14 +108,14 @@
                             Teléfono
                           </label>
                           <input type="text"
-                            class="text-xs text-neutral-900 border border-purple-200 rounded-lg py-1 px-2 focus:ring-purple-500 focus:border-purple-500 transition"
+                            class="text-xs text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg py-1 px-2 focus:ring-primary-400 focus:border-primary-400 transition placeholder-gray-300"
                             maxlength="11" v-model="selectedRoom.NumeroTelefono" placeholder="264 123-4567">
                         </div>
                       </div>
                     </div>
 
                     <!-- Promotions Section - Compacto -->
-                    <div class="flex flex-col text-white z-[1] opacity-95 rounded-xl inset-0.5 bg-gradient-to-br from-neutral-800 to-neutral-900 p-3">
+                    <div class="flex flex-col text-white z-[1] rounded-xl bg-white/5 backdrop-blur-md border border-white/20 p-3">
                       <div class="flex items-center gap-2 mb-2">
                         <span class="material-symbols-outlined text-purple-400 text-sm">local_offer</span>
                         <h3 class="text-white font-semibold text-sm">Promociones</h3>
@@ -342,7 +342,6 @@
               @close="modalConsumo = false" />
               
             <ModalExtenderOcupacion v-if="modalExtender" 
-              :name="selectedRoom.Identificador"
               :reservaID="selectedRoom.ReservaID"
               @confirmExtension="agregarTiempoExtra" 
               @close-modal="modalExtender = false" />
@@ -368,6 +367,7 @@ import ModalConsumo from './ModalConsumo.vue';
 import ModalExtenderOcupacion from './ExtenderOcupacionModal.vue';
 import AnularOcupacionModal from './AnularOcupacionModal.vue';
 import ModalPagar from './ModalPagar.vue';
+import { configurationService } from '../services/configurationService.js';
 import dayjs from 'dayjs';
 
 const emits = defineEmits(['close-modal', 'update-room', 'update-tiempo', 'room-checkout']);
@@ -430,38 +430,41 @@ const adicional = computed(() => {
 });
 
 onMounted(() => {
-  console.log(props.room);
+  console.log('Room data (new format):', props.room);
+  
+  // Adapt to new API format
   selectedRoom.value.nombreHabitacion = props.room.nombreHabitacion;
   selectedRoom.value.HabitacionID = props.room.habitacionId;
   selectedRoom.value.Disponible = props.room.disponible;
-  selectedRoom.value.TotalHoras = props.room.reservaActiva.totalHoras;
-  selectedRoom.value.TotalMinutos = props.room.reservaActiva.totalMinutos;
-  selectedRoom.value.FechaReserva = props.room.reservaActiva.fechaReserva;
+  selectedRoom.value.TotalHoras = props.room.reservaActiva?.totalHoras || 0;
+  selectedRoom.value.TotalMinutos = props.room.reservaActiva?.totalMinutos || 0;
+  selectedRoom.value.FechaReserva = props.room.reservaActiva?.fechaInicio; // Changed from fechaReserva to fechaInicio
   selectedRoom.value.Precio = props.room.precio;
-  selectedRoom.value.PromocionID = props.room.visita.reservaActiva.promocionId;
-  selectedRoom.value.pedidosPendientes = props.room.pedidosPendientes,
-    selectedRoom.value.ReservaID = props.room.visita.reservaActiva.reservaId;
-  selectedRoom.value.VisitaID = props.room.visitaID; // Safe access
-  selectedRoom.value.Identificador = props.room.visita?.identificador; // Safe access
-  selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono; // Safe access
-  selectedRoom.value.PatenteVehiculo = props.room.visita?.patenteVehiculo; // Safe access
-  selectedRoom.value.PausaHoras = props.room.reservaActiva.pausaHoras ?? 0;
-  selectedRoom.value.PausaMinutos = props.room.reservaActiva.pausaMinutos ?? 0;
+  selectedRoom.value.PromocionID = props.room.reservaActiva?.promocionId || 0;
+  selectedRoom.value.pedidosPendientes = props.room.pedidosPendientes;
+  selectedRoom.value.ReservaID = props.room.reservaActiva?.reservaId || 0;
+  selectedRoom.value.VisitaID = props.room.visitaID;
+  
+  // Updated to match new format
+  selectedRoom.value.Identificador = props.room.visita?.nombreCompleto || ''; // Changed from identificador to nombreCompleto
+  selectedRoom.value.NumeroTelefono = props.room.visita?.numeroTelefono || '';
+  selectedRoom.value.PatenteVehiculo = props.room.visita?.patenteVehiculo || '';
+  selectedRoom.value.PausaHoras = props.room.reservaActiva?.pausaHoras ?? 0;
+  selectedRoom.value.PausaMinutos = props.room.reservaActiva?.pausaMinutos ?? 0;
 
-  // Formatear la fecha de reserva para el input datetime-local (horario Argentina UTC-3)
+  // Format reservation date for datetime-local input (Argentina timezone UTC-3)
   if (selectedRoom.value.FechaReserva) {
     const fecha = new Date(selectedRoom.value.FechaReserva);
-    // Restar 3 horas para horario de Argentina
+    // Subtract 3 hours for Argentina timezone
     fecha.setHours(fecha.getHours() - 3);
     horaEntrada.value = fecha.toISOString().slice(0, 16);
   }
 
-  console.log(selectedRoom.value)
+  console.log('Processed room data:', selectedRoom.value);
   actualizarConsumos();
 
   // Initialize timer interval from localStorage
   getTimerUpdateInterval();
-
 })
 
 let selectedRoom = ref({
@@ -1076,10 +1079,24 @@ const promocionActiva = ref(false);
 onMounted(async () => {
   try {
     const response = await axiosClient.get(`/api/Promociones/GetPromocionesCategoria?categoriaID=${props.room.categoriaId}`);
-    promociones.value = response.data.data || [];
-    console.log(promociones.value)
+    
+    // Handle new API format
+    if (response.data?.isSuccess && response.data?.data) {
+      promociones.value = response.data.data;
+    } else if (response.data?.data) {
+      // Fallback for legacy format
+      promociones.value = response.data.data;
+    } else if (Array.isArray(response.data)) {
+      // Direct array response
+      promociones.value = response.data;
+    } else {
+      promociones.value = [];
+    }
+    
+    console.log('Promociones loaded:', promociones.value);
   } catch (error) {
     console.error('Error fetching promociones:', error);
+    promociones.value = [];
   }
 
   if (selectedRoom.value.PromocionID != null) {
@@ -1099,9 +1116,16 @@ onMounted(async () => {
 
 watch(selectedPromocion, (newVal) => {
   promocionActiva.value = newVal !== null; // True if a promo is selected
-  if(promocionActiva.value)
-  props.room.visita.reservaActiva.promocionId = selectedPromocion.value.promocionID;
-  else props.room.visita.reservaActiva.promocionId = null
+  
+  // Update promotion ID using the new API format - check if reservaActiva exists
+  if (props.room?.reservaActiva) {
+    if (promocionActiva.value && selectedPromocion.value?.promocionID) {
+      props.room.reservaActiva.promocionId = selectedPromocion.value.promocionID;
+    } else {
+      props.room.reservaActiva.promocionId = null;
+    }
+  }
+  
   actualizarPromocion();
 });
 

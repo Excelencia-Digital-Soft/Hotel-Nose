@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { useAuthStore } from "./auth.js";
 import * as signalR from "@microsoft/signalr";
+import { buildWebSocketUrl } from "../utils/url-helpers.js";
 
 export const useWebSocketStore = defineStore("websocket", {
   state: () => ({
@@ -14,15 +15,15 @@ export const useWebSocketStore = defineStore("websocket", {
       const authStore = useAuthStore();
       const institucionID = authStore.institucionID;
 
-      if (!institucionID) {
-        console.error("No InstitucionID found, cannot connect to WebSocket.");
+      if (!authStore.isAuthenticated || !institucionID) {
+        console.log("WebSocket connection skipped - user not authenticated or no institution selected");
         return;
       }
 
       console.log("Connecting to WebSocket with InstitucionID:", institucionID);
 
       this.connection = new signalR.HubConnectionBuilder()
-        .withUrl(`${import.meta.env.VITE_API_BASE_URL}/notifications`)
+        .withUrl(buildWebSocketUrl(import.meta.env.VITE_API_BASE_URL))
         .withAutomaticReconnect()
         .build();
 
