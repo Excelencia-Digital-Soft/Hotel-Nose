@@ -1,4 +1,6 @@
 using System.Reflection;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.OpenApi.Models;
 
 namespace hotel.Extensions;
@@ -21,6 +23,13 @@ public static class SwaggerExtensions
                 Title = "Hotel Management API", 
                 Version = "v1",
                 Description = "API para gestión hotelera con autenticación JWT"
+            });
+
+            // Configure Swagger to work with API versioning
+            c.DocInclusionPredicate((docName, apiDesc) =>
+            {
+                // Include all APIs for now - we can refine this later
+                return true;
             });
 
             // Configure JWT authentication in Swagger

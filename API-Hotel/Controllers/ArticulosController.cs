@@ -8,6 +8,7 @@ namespace hotel.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Obsolete("This controller is deprecated. Use /api/v1/articulos instead.")]
     public class ArticulosController : ControllerBase
     {
         private readonly HotelDbContext _db;
@@ -21,6 +22,7 @@ namespace hotel.Controllers
         // Method to get all articulos
         [HttpGet]
         [Route("GetArticulos")]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/articulos instead.")]
         public async Task<Respuesta> GetArticulos(int institucionID, int? categoriaID)
         {
             Respuesta res = new Respuesta();
@@ -70,6 +72,7 @@ namespace hotel.Controllers
         // Method to get a specific articulo by ID
         [HttpGet]
         [Route("GetArticulo/{id}")]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/articulos/{id} instead.")]
         public async Task<Respuesta> GetArticulo(int id)
         {
             Respuesta res = new Respuesta();
@@ -101,6 +104,7 @@ namespace hotel.Controllers
 
         [HttpPut]
         [Route("UpdateArticulo")]
+        [Obsolete("This endpoint is deprecated. Use PUT /api/v1/articulos/{id} instead.")]
         public async Task<Respuesta> UpdateArticulo(
             int id,
             string? nombre,
@@ -173,6 +177,7 @@ namespace hotel.Controllers
 
         [HttpPost]
         [Route("CreateArticulo")]
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/articulos instead.")]
         public async Task<Respuesta> CreateArticulo(
             int institucionID,
             string nombre,
@@ -319,6 +324,7 @@ namespace hotel.Controllers
 
         [HttpPost]
         [Route("CreateArticuloWithImage")]
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/articulos/with-image instead.")]
         public async Task<Respuesta> CreateArticuloWithImage(
             int InstitucionID,
             [FromForm] string nombre,
@@ -508,6 +514,7 @@ namespace hotel.Controllers
 
         [HttpDelete]
         [Route("AnularArticulo")]
+        [Obsolete("This endpoint is deprecated. Use PATCH /api/v1/articulos/{id}/status instead.")]
         public async Task<Respuesta> AnularArticulo(int id, bool estado)
         {
             Respuesta res = new Respuesta();

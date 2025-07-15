@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace hotel.Models;
 
@@ -18,9 +16,10 @@ public partial class Consumo
     public bool? EsHabitacion { get; set; }
 
     public bool? Anulado { get; set; }
+
     [JsonIgnore]
     public virtual Articulos? Articulo { get; set; }
-    [JsonIgnore]
 
+    [JsonIgnore]
     public virtual Movimientos? Movimientos { get; set; }
 }

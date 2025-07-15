@@ -6,6 +6,8 @@ using hotel.Mapping;
 using hotel.Models.Identity;
 using hotel.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.EntityFrameworkCore;
 
 namespace hotel.Extensions;
@@ -33,9 +35,37 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IAuthService, AuthService>();
 
         // Register V1 services
+        services.AddScoped<IArticulosService, ArticulosService>();
+        services.AddScoped<ICategoriasService, CategoriasService>();
+        services.AddScoped<IConsumosService, ConsumosService>();
         services.AddScoped<IHabitacionesService, HabitacionesService>();
+        services.AddScoped<IPromocionesService, PromocionesService>();
+        services.AddScoped<IReservasService, ReservasService>();
         services.AddScoped<IStatisticsService, StatisticsService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
+        services.AddScoped<IUserConsumptionService, UserConsumptionService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configure API versioning
+    /// </summary>
+    public static IServiceCollection AddApiVersioningConfiguration(this IServiceCollection services)
+    {
+        services.AddApiVersioning(options =>
+        {
+            options.DefaultApiVersion = new ApiVersion(1, 0);
+            options.AssumeDefaultVersionWhenUnspecified = true;
+            options.ReportApiVersions = true;
+            options.ApiVersionReader = new UrlSegmentApiVersionReader();
+        });
+
+        services.AddVersionedApiExplorer(options =>
+        {
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
 
         return services;
     }
@@ -43,7 +73,10 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Register database context
     /// </summary>
-    public static IServiceCollection AddDatabaseServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddDatabaseServices(
+        this IServiceCollection services,
+        IConfiguration configuration
+    )
     {
         services.AddDbContext<HotelDbContext>(options =>
             options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"))
@@ -79,3 +112,4 @@ public static class ServiceCollectionExtensions
         return services;
     }
 }
+

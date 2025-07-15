@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace hotel.Models;
+﻿namespace hotel.Models;
 
 public partial class CategoriasHabitaciones
 {
@@ -26,6 +23,5 @@ public partial class CategoriasHabitaciones
 
     public virtual ICollection<Tarifas> Tarifas { get; } = new List<Tarifas>();
 
-    public ICollection<Promociones> Promociones { get; set; } // Navigation property
-
+    public ICollection<Promociones> Promociones { get; set; } = []; // Navigation property
 }

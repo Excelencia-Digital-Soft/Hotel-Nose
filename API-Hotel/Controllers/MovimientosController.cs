@@ -47,6 +47,7 @@ namespace hotel.Controllers
         [HttpPost]
         [Route("ConsumoHabitacion")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/room instead.")]
         public async Task<Respuesta> ConsumirArticulos([FromBody] List<ArticuloConsumoDTO> articulos, int habitacionId, int visitaId)
         {
             Respuesta res = new Respuesta();
@@ -172,6 +173,7 @@ namespace hotel.Controllers
         [HttpPost]
         [Route("ConsumoGeneral")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/general instead.")]
         public async Task<Respuesta> ConsumirArticulosGeneral([FromBody] List<ArticuloConsumoDTO> articulos, int habitacionId, int visitaId)
         {
             Respuesta res = new Respuesta();
@@ -300,6 +302,7 @@ namespace hotel.Controllers
         [HttpDelete]
         [Route("AnularConsumo")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/{id} DELETE instead.")]
         public async Task<Respuesta> AnularConsumo(int idConsumo)
         {
             Respuesta res = new Respuesta();
@@ -348,6 +351,7 @@ namespace hotel.Controllers
         [HttpPut]
         [Route("UpdateConsumo")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/{id} PUT instead.")]
         public async Task<Respuesta> UpdateConsumo(int idConsumo, int Cantidad)
         {
             Respuesta res = new Respuesta();
@@ -400,6 +404,7 @@ namespace hotel.Controllers
         [HttpGet]
         [Route("GetConsumosVisita")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/visita/{id} instead.")]
         public async Task<Respuesta> GetConsumosVisita(int VisitaID)
         {
             Respuesta res = new Respuesta();

@@ -11,6 +11,7 @@ namespace hotel.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Obsolete("This controller is deprecated. Use /api/v1/categorias instead.")]
     public class CategoriaArticulosController : ControllerBase
     {
         private readonly HotelDbContext _db;
@@ -22,6 +23,7 @@ namespace hotel.Controllers
 
         [HttpPost]
         [Route("CrearCategoria")]
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/categorias instead.")]
         public async Task<Respuesta> CrearCategoria([FromBody] CrearCategoriaDTO categoriaCreada)
         {
             Respuesta res = new Respuesta();
@@ -79,6 +81,7 @@ namespace hotel.Controllers
 
         [HttpPut]
         [Route("ActualizarCategoria")]
+        [Obsolete("This endpoint is deprecated. Use PUT /api/v1/categorias/{id} instead.")]
         public async Task<Respuesta> ActualizarCategoria(int id, [FromBody] CategoriasArticulos categoria)
         {
             Respuesta res = new Respuesta();
@@ -118,6 +121,7 @@ namespace hotel.Controllers
 
         [HttpGet]
         [Route("GetCategorias")]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/categorias instead.")]
         public async Task<Respuesta> GetCategorias(int InstitucionID)
         {
             Respuesta res = new Respuesta();
@@ -154,6 +158,7 @@ namespace hotel.Controllers
 
         [HttpDelete]
         [Route("AnularCategoria")]
+        [Obsolete("This endpoint is deprecated. Use PATCH /api/v1/categorias/{id}/status instead.")]
         public async Task<Respuesta> AnularCategoria(int id, bool estado)
         {
             Respuesta res = new Respuesta();

@@ -1,7 +1,5 @@
 -- Create Identity tables manually
 -- These tables are needed for ASP.NET Core Identity
--- NOTE: This script creates tables manually since no EF migrations exist
--- For future changes, consider using Entity Framework migrations instead
 
 -- Create AspNetRoles table
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='AspNetRoles' AND xtype='U')
@@ -25,8 +23,8 @@ CREATE TABLE [AspNetUsers] (
     [InstitucionId] int NULL,
     [CreatedAt] datetime2 NOT NULL,
     [LastLoginAt] datetime2 NULL,
-    [IsActive] bit NOT NULL,
-    [ForcePasswordChange] bit NOT NULL,
+    [IsActive] bit NOT NULL DEFAULT 1,
+    [ForcePasswordChange] bit NOT NULL DEFAULT 0,
     [LegacyUserId] int NULL,
     [UserName] nvarchar(256) NULL,
     [NormalizedUserName] nvarchar(256) NULL,
@@ -44,6 +42,30 @@ CREATE TABLE [AspNetUsers] (
     [AccessFailedCount] int NOT NULL,
     CONSTRAINT [PK_AspNetUsers] PRIMARY KEY ([Id])
 );
+
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.COLUMNS 
+               WHERE TABLE_NAME = 'AspNetUsers' AND COLUMN_NAME = 'InstitucionId')
+BEGIN
+    ALTER TABLE AspNetUsers
+    ADD InstitucionId INT NULL;
+END
+
+-- 2. Crear la foreign key constraint hacia la tabla Instituciones
+IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS 
+               WHERE CONSTRAINT_NAME = 'FK_AspNetUsers_Instituciones_InstitucionId')
+BEGIN
+    ALTER TABLE AspNetUsers
+    ADD CONSTRAINT FK_AspNetUsers_Instituciones_InstitucionId
+    FOREIGN KEY (InstitucionId) REFERENCES Instituciones(InstitucionId);
+END
+
+-- 3. Crear índice para mejorar rendimiento en consultas por institución
+IF NOT EXISTS (SELECT * FROM sys.indexes 
+               WHERE name = 'IX_AspNetUsers_InstitucionId' AND object_id = OBJECT_ID('AspNetUsers'))
+BEGIN
+    CREATE INDEX IX_AspNetUsers_InstitucionId 
+    ON AspNetUsers (InstitucionId);
+END
 
 -- Create AspNetUserRoles table
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='AspNetUserRoles' AND xtype='U')
@@ -307,22 +329,22 @@ BEGIN
         -- Update AspNetUsers with changes from Usuarios
         UPDATE au SET
             FirstName = RTRIM(u.NombreUsuario),
-            CASE 
+            UserName = CASE 
                 WHEN RTRIM(u.NombreUsuario) LIKE '%@%' THEN RTRIM(u.NombreUsuario)
-                ELSE RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos')
-            END as UserName,
-            CASE 
+                ELSE RTRIM(u.NombreUsuario) + IIF((SELECT TOP 1 InstitucionID FROM UsuariosInstituciones WHERE UsuarioId = u.UsuarioId) = 1, '@hotel.nose', '@hotel.taos')
+            END,
+            NormalizedUserName = CASE 
                 WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(RTRIM(u.NombreUsuario))
-                ELSE UPPER(RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos'))
-            END as NormalizedUserName,
-            CASE 
+                ELSE UPPER(RTRIM(u.NombreUsuario) + IIF((SELECT TOP 1 InstitucionID FROM UsuariosInstituciones WHERE UsuarioId = u.UsuarioId) = 1, '@hotel.nose', '@hotel.taos'))
+            END,
+            Email = CASE 
                 WHEN RTRIM(u.NombreUsuario) LIKE '%@%' THEN RTRIM(u.NombreUsuario)
-                ELSE RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos')
-            END as Email,
-            CASE 
+                ELSE RTRIM(u.NombreUsuario) + IIF((SELECT TOP 1 InstitucionID FROM UsuariosInstituciones WHERE UsuarioId = u.UsuarioId) = 1, '@hotel.nose', '@hotel.taos')
+            END,
+            NormalizedEmail = CASE 
                 WHEN u.NombreUsuario LIKE '%@%' THEN UPPER(RTRIM(u.NombreUsuario))
-                ELSE UPPER(RTRIM(u.NombreUsuario) + IIF(ui.InstitucionID = 1, '@hotel.nose', '@hotel.taos'))
-            END as NormalizedEmail,
+                ELSE UPPER(RTRIM(u.NombreUsuario) + IIF((SELECT TOP 1 InstitucionID FROM UsuariosInstituciones WHERE UsuarioId = u.UsuarioId) = 1, '@hotel.nose', '@hotel.taos'))
+            END,
             PasswordHash = 'AQAAAAIAAYagAAAAEJ1KxN1CVU1AEahcUIrel+vlTVTQtPdyenkBqqrO8zwYjMp7xN4EIuDky+mFMQKQug==', -- Default password "Pass123" using Identity hashe
             SecurityStamp = CONVERT(NVARCHAR(36), NEWID()) -- Update security stamp
         FROM AspNetUsers au

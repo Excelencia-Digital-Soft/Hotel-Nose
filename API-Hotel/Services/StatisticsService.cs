@@ -17,7 +17,8 @@ namespace hotel.Services
         public async Task<List<RoomRankingDto>> GetRoomRankingAsync(DateRangeDto dateRange)
         {
             return await _context
-                .Reservas.Where(r =>
+                .Reservas.AsNoTracking()
+                .Where(r =>
                     r.FechaReserva >= dateRange.FechaInicio
                     && r.FechaReserva <= dateRange.FechaFin
                     && !r.FechaAnula.HasValue
@@ -55,7 +56,8 @@ namespace hotel.Services
         public async Task<List<RoomRevenueDto>> GetRoomRevenueAsync(DateRangeDto dateRange)
         {
             var reservaIngresos = await _context
-                .Reservas.Where(r =>
+                .Reservas.AsNoTracking()
+                .Where(r =>
                     r.FechaReserva >= dateRange.FechaInicio
                     && r.FechaReserva <= dateRange.FechaFin
                     && !r.FechaAnula.HasValue
@@ -113,7 +115,8 @@ namespace hotel.Services
                 .ToListAsync();
 
             var consumoIngresos = await _context
-                .Consumo.Where(c => c.MovimientosId.HasValue && (c.Anulado == false))
+                .Consumo.AsNoTracking()
+                .Where(c => c.MovimientosId.HasValue && (c.Anulado == false))
                 .Join(
                     _context.Movimientos,
                     c => c.MovimientosId,
@@ -201,7 +204,8 @@ namespace hotel.Services
             var totalHorasPeriodo = (dateRange.FechaFin - dateRange.FechaInicio).TotalHours;
 
             var ocupacion = await _context
-                .Reservas.Where(r =>
+                .Reservas.AsNoTracking()
+                .Where(r =>
                     r.FechaReserva >= dateRange.FechaInicio
                     && r.FechaReserva <= dateRange.FechaFin
                     && !r.FechaAnula.HasValue
@@ -235,7 +239,8 @@ namespace hotel.Services
                 .ToListAsync();
 
             var totalHabitacionesPorCategoria = await _context
-                .Habitaciones.Where(h => h.InstitucionID == dateRange.InstitucionID)
+                .Habitaciones.AsNoTracking()
+                .Where(h => h.InstitucionID == dateRange.InstitucionID)
                 .GroupBy(h => h.CategoriaId)
                 .Select(g => new { CategoriaId = g.Key, TotalHabitaciones = g.Count() })
                 .ToListAsync();
@@ -260,7 +265,8 @@ namespace hotel.Services
         public async Task<List<RoomConsumptionDto>> GetRoomConsumptionAsync(DateRangeDto dateRange)
         {
             var consumos = await _context
-                .Consumo.Where(c =>
+                .Consumo.AsNoTracking()
+                .Where(c =>
                     c.MovimientosId.HasValue && (c.Anulado == false || c.Anulado == null)
                 )
                 .Join(

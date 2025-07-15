@@ -228,6 +228,7 @@ namespace hotel.Controllers
         [HttpPut]
         [Route("PausarOcupacion")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/reservas/{id}/pause instead.")]
         public async Task<Respuesta> PausarOcupacion(int visitaId)
         {
             Respuesta res = new Respuesta();
@@ -329,6 +330,7 @@ namespace hotel.Controllers
         [HttpPut]
         [Route("ActualizarReservaPromocion")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/reservas/{id}/promotion PUT instead.")]
         public async Task<Respuesta> ActualizarReservaPromocion(int reservaId, int? promocionId)
         {
             Respuesta res = new Respuesta();
@@ -563,6 +565,7 @@ namespace hotel.Controllers
         [HttpPut]
         [Route("FinalizarReserva")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/reservas/finalize instead.")]
         public async Task<Respuesta> FinalizarReserva(int idHabitacion)
         {
             Respuesta res = new Respuesta();

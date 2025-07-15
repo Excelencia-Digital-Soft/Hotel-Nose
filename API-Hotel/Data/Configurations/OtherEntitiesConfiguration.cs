@@ -53,11 +53,57 @@ namespace hotel.Data.Configurations
         {
             builder.HasKey(e => e.ArticuloId);
             
-            // Configurar relación con Imagen
+            // Configurar precisión del campo Precio - DECIMAL(18,2)
+            builder.Property(e => e.Precio)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
+            
+            // Configurar relación OPCIONAL con Imagen (LEFT JOIN)
             builder.HasOne(d => d.Imagen)
                 .WithMany()
                 .HasForeignKey(d => d.imagenID)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .IsRequired(false); // OPCIONAL - genera LEFT JOIN
+            
+            // Configurar relación OPCIONAL con Usuario Creador (LEFT JOIN)
+            builder.HasOne(d => d.CreadoPor)
+                .WithMany()
+                .HasForeignKey(d => d.CreadoPorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .IsRequired(false); // OPCIONAL - genera LEFT JOIN
+            
+            // Configurar relación OPCIONAL con Usuario Modificador (LEFT JOIN)
+            builder.HasOne(d => d.ModificadoPor)
+                .WithMany()
+                .HasForeignKey(d => d.ModificadoPorId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .IsRequired(false); // OPCIONAL - genera LEFT JOIN
+        }
+    }
+
+    public class ConsumoConfiguration : IEntityTypeConfiguration<Consumo>
+    {
+        public void Configure(EntityTypeBuilder<Consumo> builder)
+        {
+            builder.HasKey(e => e.ConsumoId);
+            
+            // Configurar precisión del campo PrecioUnitario - DECIMAL(18,2)
+            builder.Property(e => e.PrecioUnitario)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired(false); // Nullable
+        }
+    }
+
+    public class PromocionesConfiguration : IEntityTypeConfiguration<Promociones>
+    {
+        public void Configure(EntityTypeBuilder<Promociones> builder)
+        {
+            builder.HasKey(e => e.PromocionID);
+            
+            // Configurar precisión del campo Tarifa - DECIMAL(18,2)
+            builder.Property(e => e.Tarifa)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
         }
     }
 }

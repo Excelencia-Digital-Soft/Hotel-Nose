@@ -6,6 +6,7 @@ namespace hotel.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Obsolete("This controller is deprecated. Use V1/StatisticsController instead.")]
     public class StatisticsController : ControllerBase
     {
         private readonly IStatisticsService _statisticsService;
@@ -17,6 +18,7 @@ namespace hotel.Controllers
         }
 
         [HttpPost("Rankinghabitaciones")]
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/statistics/room-ranking instead.")]
         public async Task<IActionResult> GetRoomRanking([FromBody] DateRangeDto dateRange)
         {
             if (
@@ -33,6 +35,7 @@ namespace hotel.Controllers
         }
 
         [HttpPost("MonetizacionHabitaciones")]
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/statistics/room-revenue instead.")]
         public async Task<IActionResult> GetRoomRevenue([FromBody] DateRangeDto dateRange)
         {
             if (
@@ -49,6 +52,7 @@ namespace hotel.Controllers
         }
 
         [HttpPost("TasaOcupacion")]
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/statistics/category-occupancy instead.")]
         public async Task<IActionResult> GetCategoryOccupancy([FromBody] DateRangeDto dateRange)
         {
             if (
@@ -65,6 +69,7 @@ namespace hotel.Controllers
         }
 
         [HttpPost("ConsumosAsociados")]
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/statistics/room-consumption instead.")]
         public async Task<IActionResult> GetRoomConsumption([FromBody] DateRangeDto dateRange)
         {
             if (

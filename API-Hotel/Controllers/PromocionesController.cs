@@ -95,6 +95,7 @@ namespace hotel.Controllers
 
         [HttpGet]
         [Route("GetPromocionesCategoria")]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/promociones/categoria/{id} instead.")]
         public async Task<Respuesta> GetPromocionesCategoria(int categoriaID)
         {
             Respuesta res = new Respuesta();

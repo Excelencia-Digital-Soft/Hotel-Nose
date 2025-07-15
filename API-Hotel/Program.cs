@@ -9,6 +9,7 @@ builder.Services.AddControllers();
 builder.Services.AddCorsConfiguration();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddIdentityConfiguration();
+builder.Services.AddApiVersioningConfiguration();
 builder.Services.AddSwaggerConfiguration();
 builder.Services.AddDatabaseServices(builder.Configuration);
 builder.Services.AddApplicationServices();
