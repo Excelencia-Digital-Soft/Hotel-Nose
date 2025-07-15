@@ -5,6 +5,8 @@ import UsuariosManager from "../../views/UsuariosManager.vue";
 import UsersManagement from "../../views/UsersManagement.vue";
 import MediosPagoManager from "../../views/MediosPagoManager.vue";
 import CaracteristicasManager from "../../views/CaracteristicasManager.vue";
+import StatisticsManager from "../../views/StatisticsManager.vue";
+import UserConsumptionManager from "../../views/UserConsumptionManager.vue";
 import { ROLE_GROUPS } from "../../utils/role-mapping.js";
 
 /**
@@ -81,6 +83,28 @@ export const adminRoutes = [
       roles: ROLE_GROUPS.ADMIN_ACCESS,
       description: "Manage room characteristics",
       category: "Room Management"
+    }
+  },
+  {
+    path: "/StatisticsManager",
+    name: "StatisticsManager",
+    component: StatisticsManager,
+    meta: {
+      requireAuth: true,
+      roles: ROLE_GROUPS.ADMIN_ACCESS,
+      description: "View detailed statistics and analytics",
+      category: "Analytics"
+    }
+  },
+  {
+    path: "/UserConsumptionManager",
+    name: "UserConsumptionManager",
+    component: UserConsumptionManager,
+    meta: {
+      requireAuth: true,
+      roles: [...ROLE_GROUPS.STAFF_ACCESS, ...ROLE_GROUPS.ADMIN_ACCESS],
+      description: "Manage and view user consumption data",
+      category: "Financial"
     }
   }
 ];

@@ -1,12 +1,12 @@
 import Home from "../../views/Home.vue";
 import RoomsNew from "../../views/RoomsNew.vue";
-import ArticuloCreate from "../../views/ArticuloCreate.vue";
+import ArticleCreate from "../../views/ArticleCreate.vue";
 import SubmitOrder from "../../views/SubmitOrder.vue";
 import ReceptionOrder from "../../views/ReceptionOrder.vue";
 import InventoryManager from "../../views/InventoryManager.vue";
 import CierresManager from "../../views/CierresManager.vue";
 import Egresos from "../../views/Egresos.vue";
-import EmpeñosManager from "../../views/EmpeñosManager.vue";
+import PawnManager from "../../views/PawnManager.vue";
 import { ROLE_GROUPS } from "../../utils/role-mapping.js";
 
 /**
@@ -38,7 +38,7 @@ export const managementRoutes = [
   {
     path: "/ArticleCreate",
     name: "ArticleCreate",
-    component: ArticuloCreate,
+    component: ArticleCreate,
     meta: {
       requireAuth: true,
       roles: ROLE_GROUPS.ADMIN_ACCESS,
@@ -90,15 +90,20 @@ export const managementRoutes = [
     }
   },
   {
-    path: "/EmpenosManager",
-    name: "EmpenosManager",
-    component: EmpeñosManager,
+    path: "/PawnManager",
+    name: "PawnManager",
+    component: PawnManager,
     meta: {
       requireAuth: true,
       roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
       description: "Manage pawning operations",
       category: "Financial"
     }
+  },
+  // Redirect old EmpenosManager route to new PawnManager
+  {
+    path: "/EmpenosManager",
+    redirect: "/PawnManager"
   },
   {
     path: "/Egresos",

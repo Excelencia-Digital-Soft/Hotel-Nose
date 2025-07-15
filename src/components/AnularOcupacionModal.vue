@@ -3,7 +3,7 @@
     <!-- PrimeVue Toast for notifications -->
     <Toast position="top-right" />
     
-    <div class="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50">
+    <div class="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-[60]">
     <div class="bg-white p-6 rounded-lg w-96 relative">
       <!-- Close Button -->
       <button 

@@ -2,7 +2,7 @@
   <Teleport to="body">
     <Transition name="modal-outer" appear>
       <div
-        class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+        class="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
         @click.self="emits('close')">
         
         <Transition name="modal-inner">
@@ -243,7 +243,7 @@ import { onMounted, ref, computed } from 'vue';
 import { useAuthStore } from '../store/auth.js';
 import axiosClient from '../axiosClient';
 import { fetchImage } from '../services/imageService';
-import defaultProductImage from '../assets/image59.svg';
+import defaultProductImage from '../assets/sin-imagen.png';
 import TableRow from './TableRow.vue';
 
 const authStore = useAuthStore();

@@ -72,7 +72,7 @@ export const menuConfig = [
       },
       {
         label: 'Empeños',
-        route: { name: 'EmpenosManager' },
+        route: { name: 'PawnManager' },
         icon: 'handshake',
         roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS]
       }
@@ -107,6 +107,18 @@ export const menuConfig = [
         route: { name: 'Egresos' },
         icon: 'money_off',
         roles: ROLE_GROUPS.ADMIN_ACCESS
+      },
+      {
+        label: 'Estadísticas',
+        route: { name: 'StatisticsManager' },
+        icon: 'analytics',
+        roles: ROLE_GROUPS.ADMIN_ACCESS
+      },
+      {
+        label: 'Consumo Usuario',
+        route: { name: 'UserConsumptionManager' },
+        icon: 'receipt_long',
+        roles: [...ROLE_GROUPS.STAFF_ACCESS, ...ROLE_GROUPS.ADMIN_ACCESS]
       }
     ]
   }

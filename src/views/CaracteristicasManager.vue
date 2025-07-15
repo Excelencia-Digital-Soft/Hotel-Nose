@@ -1,248 +1,418 @@
 <template>
-  <div class="m-8 w-1/2">
-    <h2 class="text-xl text-white font-semibold mt-6 mb-2">Manejador de Características</h2>
-    <div class="grid grid-cols-3 gap-2 border-2 border-primary-500 p-4 rounded-2xl">
-      <div class="flex flex-col col-span-2 justify-between">
-        <input v-model="nuevaCaracteristica.nombre" placeholder="Nombre" class="p-2 border rounded text-neutral-900">
-        <input v-model="nuevaCaracteristica.descripcion" placeholder="Descripción"
-          class="p-2 border rounded text-neutral-900">
-        <input type="file" @change="handleFileUpload" class="p-2 border rounded text-white">
-        <button 
-          @click="modoEdicion ? actualizarCaracteristica() : crearCaracteristica()" 
-          class="btn-third text-white px-4 py-2 rounded mt-2 hover:bg-blue-600"
-        >
-          {{ modoEdicion ? 'Actualizar' : 'Crear' }} Característica
-        </button>
-        <button 
-          v-if="modoEdicion"
-          @click="cancelarEdicion"
-          class="bg-gray-500 text-white px-4 py-2 rounded mt-2 hover:bg-gray-600"
-        >
-          Cancelar
-        </button>
+  <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
+    <!-- Glass Container -->
+    <div class="max-w-6xl mx-auto">
+      <!-- Header -->
+      <div class="glass-card mb-8">
+        <h1 class="text-3xl font-bold text-white lexend-exa mb-2">
+          Gestor de Características
+        </h1>
+        <p class="text-white/70">Crear y administrar características para las habitaciones</p>
       </div>
-      <div class="col-span-1">
-        <img class="w-full h-52 object-contain rounded-3xl shadow-neutral-900 shadow-lg" :src="imagePreview"
-          alt="SET IMAGE" />
-      </div>
-    </div>
-    <div>
-      <h2 class="text-xl text-white font-semibold mt-6 mb-2">Listado de Características</h2>
-      <ul class="mt-1 w-3/4">
-        <li v-for="tipo in listaCaracteristicas" :key="tipo.caracteristicaId" class="text-white mb-2">
-          <div class="flex items-center justify-between hover:bg-neutral-800 px-4 py-2 rounded-2xl">
-            <div class="flex items-center">
-              <img v-if="tipo.icono" :src="tipo.icono" alt="Icono" class="w-6 h-6 mr-2" />
-              <span class="font-normal ml-2">{{ tipo.nombre }}</span>
-            </div>
-            <div class ="flex">
-              <button 
-                @click="editarCaracteristica(tipo)"
-                class="btn-secondary rounded-xl text-sm h-10 w-10 text-white  mr-2 material-symbols-outlined"
-              >
-                Edit
-              </button>
-              <button 
-                @click="eliminarCaracteristica(tipo.caracteristicaId)"
-                class="btn-danger rounded-xl text-xl h-10 w-10 text-white  material-symbols-outlined"
-              >
-                delete
-              </button>
+
+      <!-- Main Content Grid -->
+      <div class="grid lg:grid-cols-2 gap-8 mb-8">
+        <!-- Form Section -->
+        <div class="glass-card">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-white lexend-exa">
+              {{ isEditMode ? 'Editar Característica' : 'Nueva Característica' }}
+            </h2>
+            <div v-if="isEditMode" class="text-sm text-white/70">
+              ID: {{ formData.caracteristicaId }}
             </div>
           </div>
-        </li>
-      </ul>
+
+          <form @submit.prevent="submitForm" class="space-y-6">
+            <!-- Name Input -->
+            <div class="space-y-2">
+              <label class="block text-white font-medium text-sm">
+                Nombre de la Característica *
+              </label>
+              <input 
+                v-model="formData.nombre"
+                type="text" 
+                placeholder="Ej: WiFi, Aire Acondicionado, TV"
+                class="glass-input w-full"
+                :class="{ 'border-red-400': isNameDuplicate && formData.nombre }"
+                required
+              />
+              <p v-if="isNameDuplicate && formData.nombre" class="text-red-400 text-sm">
+                Ya existe una característica con este nombre
+              </p>
+            </div>
+
+            <!-- Description Input -->
+            <div class="space-y-2">
+              <label class="block text-white font-medium text-sm">
+                Descripción
+              </label>
+              <textarea 
+                v-model="formData.descripcion"
+                placeholder="Descripción opcional de la característica"
+                rows="3"
+                class="glass-input w-full resize-none"
+              ></textarea>
+            </div>
+
+            <!-- Icon Upload -->
+            <div class="space-y-3">
+              <label class="block text-white font-medium text-sm">
+                Ícono de la Característica
+              </label>
+              <div class="glass-upload-area">
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  @change="handleImageUploadEvent" 
+                  class="hidden" 
+                  ref="fileInput"
+                  id="iconUpload"
+                />
+                <label for="iconUpload" class="cursor-pointer block">
+                  <div class="text-center py-4">
+                    <i class="pi pi-image text-2xl text-white/70 mb-2 block"></i>
+                    <p class="text-white/90 font-medium text-sm">Subir ícono</p>
+                    <p class="text-white/60 text-xs mt-1">PNG, JPG, SVG hasta 5MB</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 pt-4">
+              <button 
+                type="submit" 
+                :disabled="!isFormValid || isSubmitting || isNameDuplicate"
+                class="flex-1 glass-button-primary py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                <i v-if="isSubmitting" class="pi pi-spin pi-spinner mr-2"></i>
+                {{ isEditMode ? 'Actualizar Característica' : 'Crear Característica' }}
+              </button>
+              <button 
+                v-if="isEditMode" 
+                @click.prevent="cancelEdit"
+                type="button"
+                class="glass-button py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:scale-105"
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Image Preview Section -->
+        <div class="glass-card">
+          <h3 class="text-lg font-bold text-white lexend-exa mb-4">
+            Vista Previa
+          </h3>
+          <div class="aspect-square w-full max-w-sm mx-auto">
+            <div class="glass-image-preview">
+              <img 
+                :src="imagePreview" 
+                alt="Vista previa del ícono" 
+                class="w-full h-full object-contain rounded-xl"
+              />
+            </div>
+          </div>
+          <div v-if="formData.nombre" class="mt-4 text-center">
+            <div class="glass-badge inline-block">
+              <i class="pi pi-tag mr-2"></i>
+              {{ formData.nombre }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Características List -->
+      <div class="glass-card">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl text-white lexend-exa font-bold">
+            Características Registradas ({{ caracteristicas.length }})
+          </h2>
+          <div class="text-sm text-white/70">
+            Total: {{ caracteristicas.length }} característica{{ caracteristicas.length !== 1 ? 's' : '' }}
+          </div>
+        </div>
+        
+        <div v-if="caracteristicas.length === 0" class="text-center py-12">
+          <i class="pi pi-star text-4xl text-white/50 mb-4 block"></i>
+          <p class="text-white/70 text-lg">No hay características registradas</p>
+          <p class="text-white/50 text-sm">Crea la primera característica usando el formulario</p>
+        </div>
+        
+        <div v-else class="space-y-3">
+          <div v-for="caracteristica in caracteristicas" :key="caracteristica.caracteristicaId"
+            class="glass-caracteristica-card group">
+            <div class="flex items-center justify-between p-4">
+              <!-- Característica Info -->
+              <div class="flex items-center space-x-4 flex-1">
+                <div class="flex-shrink-0">
+                  <div class="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center overflow-hidden">
+                    <img 
+                      v-if="caracteristica.icono" 
+                      :src="caracteristica.icono" 
+                      :alt="caracteristica.nombre"
+                      class="w-8 h-8 object-contain"
+                    />
+                    <i v-else class="pi pi-star text-white/60 text-lg"></i>
+                  </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-white font-semibold text-lg truncate">
+                    {{ caracteristica.nombre }}
+                  </h3>
+                  <p v-if="caracteristica.descripcion" class="text-white/70 text-sm truncate">
+                    {{ caracteristica.descripcion }}
+                  </p>
+                  <p v-else class="text-white/50 text-sm italic">
+                    Sin descripción
+                  </p>
+                  <p class="text-white/40 text-xs mt-1">
+                    ID: {{ caracteristica.caracteristicaId }}
+                  </p>
+                </div>
+              </div>
+              
+              <!-- Action Buttons -->
+              <div class="flex items-center space-x-2 flex-shrink-0">
+                <button 
+                  @click="startEdit(caracteristica)"
+                  class="glass-action-button text-blue-400 hover:text-blue-300 w-10 h-10"
+                  title="Editar característica"
+                >
+                  <i class="pi pi-pencil text-sm"></i>
+                </button>
+                <button 
+                  @click="deleteCaracteristica(caracteristica)"
+                  class="glass-action-button text-red-400 hover:text-red-300 w-10 h-10"
+                  title="Eliminar característica"
+                >
+                  <i class="pi pi-trash text-sm"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import axiosClient from '../axiosClient';
+import { ref, onMounted, onUnmounted } from 'vue'
+import { useCaracteristicas } from '../composables/useCaracteristicas.js'
+import { CaracteristicasService } from '../services/caracteristicasService.js'
 
-const nuevaCaracteristica = ref({ 
-  nombre: '', 
-  descripcion: '', 
-  icono: '',
-  caracteristicaId: null 
-});
-const imagePreview = ref('https://static.vecteezy.com/system/resources/previews/004/141/669/original/no-photo-or-blank-image-icon-loading-images-or-missing-image-mark-image-not-available-or-image-coming-soon-sign-simple-nature-silhouette-in-frame-isolated-illustration-vector.jpg');
-const listaCaracteristicas = ref([]);
-const modoEdicion = ref(false);
-const fileInput = ref(null);
+// Feature flag for V1 API (set to false to use legacy endpoints)
+const USE_V1_API = false
 
+// Composable
+const {
+  formData,
+  isEditMode,
+  isSubmitting,
+  isLoadingImage,
+  imagePreview,
+  caracteristicas,
+  isFormValid,
+  isNameDuplicate,
+  resetForm,
+  handleImageUpload,
+  startEdit,
+  cancelEdit,
+  validateForm,
+  showSuccess,
+  showError,
+  confirmDelete
+} = useCaracteristicas()
+
+// Refs
+const fileInput = ref(null)
+
+// Lifecycle
 onMounted(() => {
-  fetchCaracteristicas();
-});
+  fetchCaracteristicas()
+})
 
-const verificaNombreEnLista = computed(() => {
-  if (!listaCaracteristicas.value || !nuevaCaracteristica.value.nombre) return false;
-  
-  return listaCaracteristicas.value.some((i) =>
-    i.nombre.toLowerCase() === nuevaCaracteristica.value.nombre.toLowerCase() &&
-    i.caracteristicaId !== nuevaCaracteristica.value.caracteristicaId
-  );
-});
+onUnmounted(() => {
+  // Cleanup blob URLs to prevent memory leaks
+  CaracteristicasService.cleanupBlobUrls(caracteristicas.value)
+})
 
-const validarNombre = () => {
-  if (verificaNombreEnLista.value) {
-    alert("Ya existe una característica con este nombre");
-    return false;
-  }
-  return true;
-};
-
-const handleFileUpload = (event) => {
-  const file = event.target.files[0];
+// Methods
+const handleImageUploadEvent = (event) => {
+  const file = event.target.files[0]
   if (file) {
-    nuevaCaracteristica.value.icono = file;
-    imagePreview.value = URL.createObjectURL(file);
-  }
-};
-
-const editarCaracteristica = (caracteristica) => {
-  modoEdicion.value = true;
-  nuevaCaracteristica.value = {
-    caracteristicaId: caracteristica.caracteristicaId,
-    nombre: caracteristica.nombre,
-    descripcion: caracteristica.descripcion || '',
-    icono: null // No asignamos el blob directamente
-  };
-  imagePreview.value = caracteristica.icono || imagePreview.value;
-};
-
-const cancelarEdicion = () => {
-  modoEdicion.value = false;
-  resetForm();
-};
-
-const resetForm = () => {
-  nuevaCaracteristica.value = { 
-    nombre: '', 
-    descripcion: '', 
-    icono: '',
-    caracteristicaId: null 
-  };
-  imagePreview.value = 'https://static.vecteezy.com/system/resources/previews/004/141/669/original/no-photo-or-blank-image-icon-loading-images-or-missing-image-mark-image-not-available-or-image-coming-soon-sign-simple-nature-silhouette-in-frame-isolated-illustration-vector.jpg';
-  if (fileInput.value) {
-    fileInput.value.value = '';
-  }
-};
-
-const crearCaracteristica = async () => {
-  if (!validarNombre()) return;
-  
-  try {
-    const formData = new FormData();
-    formData.append('nombre', nuevaCaracteristica.value.nombre);
-    formData.append('descripcion', nuevaCaracteristica.value.descripcion);
-    if (nuevaCaracteristica.value.icono) {
-      formData.append('icono', nuevaCaracteristica.value.icono);
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      showError('El archivo es demasiado grande. Máximo 5MB permitido.')
+      return
     }
-
-    const response = await axiosClient.post('/api/Caracteristicas/CrearCaracteristica', formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-
-    if (response.status >= 200 && response.status < 300) {
-      alert('Característica creada');
-      resetForm();
-      await fetchCaracteristicas();
-    } else {
-      alert(response.data.message);
-    }
-  } catch (error) {
-    alert('Error al crear característica');
-    console.error(error);
-  }
-};
-
-const actualizarCaracteristica = async () => {
-  if (!validarNombre()) return;
-  
-  try {
-    const formData = new FormData();
-    formData.append('nombre', nuevaCaracteristica.value.nombre);
-    formData.append('descripcion', nuevaCaracteristica.value.descripcion);
-    if (nuevaCaracteristica.value.icono instanceof File) {
-      formData.append('icono', nuevaCaracteristica.value.icono);
-    }
-
-    const response = await axiosClient.put(
-      `/api/Caracteristicas/ActualizarCaracteristica/${nuevaCaracteristica.value.caracteristicaId}`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      }
-    );
-
-    if (response.status >= 200 && response.status < 300) {
-      alert('Característica actualizada');
-      resetForm();
-      modoEdicion.value = false;
-      await fetchCaracteristicas();
-    } else {
-      alert(response.data.message);
-    }
-  } catch (error) {
-    alert('Error al actualizar característica');
-    console.error(error);
-  }
-};
-
-const eliminarCaracteristica = async (id) => {
-  if (!confirm('¿Estás seguro de eliminar esta característica?')) return;
-  
-  try {
-    const response = await axiosClient.delete(`/api/Caracteristicas/EliminarCaracteristica/${id}`);
     
-    if (response.data.ok) {
-      alert('Característica eliminada');
-      await fetchCaracteristicas();
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      showError('Solo se permiten archivos de imagen.')
+      return
+    }
+    
+    handleImageUpload(file)
+  }
+}
+
+const resetFormAndClear = () => {
+  resetForm()
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+
+// Form submission
+const submitForm = async () => {
+  if (!validateForm()) return
+  
+  isSubmitting.value = true
+  
+  try {
+    if (isEditMode.value) {
+      await updateCaracteristica()
     } else {
-      alert(response.data.message);
+      await createCaracteristica()
     }
   } catch (error) {
-    alert('Error al eliminar característica');
-    console.error(error);
+    console.error('Error in form submission:', error)
+  } finally {
+    isSubmitting.value = false
   }
-};
+}
 
+// Create característica
+const createCaracteristica = async () => {
+  try {
+    const caracteristicaData = {
+      nombre: formData.value.nombre,
+      descripcion: formData.value.descripcion,
+      icono: formData.value.icono
+    }
+
+    let response
+    if (USE_V1_API) {
+      response = await CaracteristicasService.createCaracteristica(caracteristicaData)
+    } else {
+      response = await CaracteristicasService.legacyCreateCaracteristica(caracteristicaData)
+    }
+
+    if (response && (response.ok !== false)) {
+      showSuccess('Característica creada exitosamente')
+      resetFormAndClear()
+      await fetchCaracteristicas()
+    } else {
+      showError(response?.message || 'Error al crear la característica')
+    }
+  } catch (error) {
+    console.error('Error creating característica:', error)
+    showError('Error al crear la característica')
+  }
+}
+
+// Update característica
+const updateCaracteristica = async () => {
+  try {
+    const caracteristicaData = {
+      nombre: formData.value.nombre,
+      descripcion: formData.value.descripcion,
+      icono: formData.value.icono
+    }
+
+    let response
+    if (USE_V1_API) {
+      response = await CaracteristicasService.updateCaracteristica(formData.value.caracteristicaId, caracteristicaData)
+    } else {
+      response = await CaracteristicasService.legacyUpdateCaracteristica(formData.value.caracteristicaId, caracteristicaData)
+    }
+
+    if (response && (response.ok !== false)) {
+      showSuccess('Característica actualizada exitosamente')
+      resetFormAndClear()
+      await fetchCaracteristicas()
+    } else {
+      showError(response?.message || 'Error al actualizar la característica')
+    }
+  } catch (error) {
+    console.error('Error updating característica:', error)
+    showError('Error al actualizar la característica')
+  }
+}
+
+// Delete característica
+const deleteCaracteristica = async (caracteristica) => {
+  const confirmed = await confirmDelete(caracteristica)
+  if (!confirmed) return
+  
+  try {
+    let response
+    if (USE_V1_API) {
+      response = await CaracteristicasService.deleteCaracteristica(caracteristica.caracteristicaId)
+    } else {
+      response = await CaracteristicasService.legacyDeleteCaracteristica(caracteristica.caracteristicaId)
+    }
+    
+    if (response && response.ok !== false) {
+      showSuccess('Característica eliminada exitosamente')
+      await fetchCaracteristicas()
+    } else {
+      showError(response?.message || 'Error al eliminar la característica')
+    }
+  } catch (error) {
+    console.error('Error deleting característica:', error)
+    showError('Error al eliminar la característica')
+  }
+}
+
+// Fetch características
 const fetchCaracteristicas = async () => {
   try {
-    const { data } = await axiosClient.get("/api/Caracteristicas/GetCaracteristicas");
+    // Cleanup previous blob URLs
+    CaracteristicasService.cleanupBlobUrls(caracteristicas.value)
 
-    // Liberar URLs de objetos previos si existen
-    if (listaCaracteristicas.value) {
-      listaCaracteristicas.value.forEach(c => {
-        if (c.icono && c.icono.startsWith('blob:')) {
-          URL.revokeObjectURL(c.icono);
-        }
-      });
+    let response
+    if (USE_V1_API) {
+      response = await CaracteristicasService.getCaracteristicas()
+    } else {
+      response = await CaracteristicasService.legacyGetCaracteristicas()
     }
 
-    const caracteristicasConIconos = await Promise.all(
-      data.data.map(async (caracteristica) => {
-        if (caracteristica.icono) {
-          try {
-            const response = await axiosClient.get(
-              `/api/Caracteristicas/GetImage/${caracteristica.caracteristicaId}`,
-              { responseType: 'blob' }
-            );
-            caracteristica.icono = URL.createObjectURL(response.data);
-          } catch (error) {
-            console.error(`Error al cargar el icono de ${caracteristica.nombre}:`, error);
-            caracteristica.icono = null;
-          }
-        }
-        return caracteristica;
-      })
-    );
-
-    listaCaracteristicas.value = caracteristicasConIconos;
+    if (response && response.data) {
+      const caracteristicasWithImages = await CaracteristicasService.processCaracteristicasWithImages(
+        response.data, 
+        USE_V1_API
+      )
+      caracteristicas.value = caracteristicasWithImages
+    } else {
+      showError('Error al cargar las características')
+    }
   } catch (error) {
-    console.error("Error al obtener las características:", error);
-    alert('Error al cargar características');
+    console.error('Error fetching características:', error)
+    showError('Error al cargar las características')
   }
-};
+}
 </script>
+
+<style scoped>
+.glass-image-preview {
+  @apply bg-white/5 backdrop-blur-sm border border-white/20 rounded-xl p-4 aspect-square flex items-center justify-center;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.glass-caracteristica-card {
+  @apply bg-neutral-900/90 backdrop-blur-xl rounded-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(20px);
+}
+
+.glass-caracteristica-card:hover {
+  border-color: rgba(244, 63, 184, 0.3);
+  box-shadow: 0 8px 32px rgba(244, 63, 184, 0.15);
+}
+</style>

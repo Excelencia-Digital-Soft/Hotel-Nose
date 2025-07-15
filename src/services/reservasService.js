@@ -1,0 +1,127 @@
+import axiosClient from '../axiosClient'
+
+export class ReservasService {
+  // Get reserva by ID
+  static async getReserva(reservaId) {
+    try {
+      const response = await axiosClient.get(`/api/v1/reservas/${reservaId}`)
+      return response.data
+    } catch (error) {
+      console.error('Error fetching reserva:', error)
+      throw error
+    }
+  }
+
+  // Get active reservas
+  static async getActiveReservas() {
+    try {
+      const response = await axiosClient.get('/api/v1/reservas/active')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching active reservas:', error)
+      throw error
+    }
+  }
+
+  // Finalize reserva
+  static async finalizeReserva(reservaData) {
+    try {
+      const response = await axiosClient.post('/api/v1/reservas/finalize', reservaData)
+      return response.data
+    } catch (error) {
+      console.error('Error finalizing reserva:', error)
+      throw error
+    }
+  }
+
+  // Pause ocupacion
+  static async pauseOcupacion(visitaId) {
+    try {
+      const response = await axiosClient.post(`/api/v1/reservas/${visitaId}/pause`)
+      return response.data
+    } catch (error) {
+      console.error('Error pausing ocupacion:', error)
+      throw error
+    }
+  }
+
+  // Resume ocupacion
+  static async resumeOcupacion(visitaId) {
+    try {
+      const response = await axiosClient.post(`/api/v1/reservas/${visitaId}/resume`)
+      return response.data
+    } catch (error) {
+      console.error('Error resuming ocupacion:', error)
+      throw error
+    }
+  }
+
+  // Update promotion
+  static async updatePromotion(reservaId, promocionId) {
+    try {
+      const response = await axiosClient.put(`/api/v1/reservas/${reservaId}/promotion`, { promocionId })
+      return response.data
+    } catch (error) {
+      console.error('Error updating promotion:', error)
+      throw error
+    }
+  }
+
+  // Extend time
+  static async extendTime(reservaId, extensionData) {
+    try {
+      const response = await axiosClient.put(`/api/v1/reservas/${reservaId}/extend`, extensionData)
+      return response.data
+    } catch (error) {
+      console.error('Error extending time:', error)
+      throw error
+    }
+  }
+
+  // Cancel reserva
+  static async cancelReserva(reservaId) {
+    try {
+      const response = await axiosClient.delete(`/api/v1/reservas/${reservaId}`)
+      return response.data
+    } catch (error) {
+      console.error('Error canceling reserva:', error)
+      throw error
+    }
+  }
+
+  // Legacy methods for backward compatibility
+  static async legacyFinalizeReserva(habitacionId) {
+    try {
+      const response = await axiosClient.put(`/FinalizarReserva?idHabitacion=${habitacionId}`)
+      return response.data
+    } catch (error) {
+      console.error('Error finalizing legacy reserva:', error)
+      throw error
+    }
+  }
+
+  static async legacyPauseOcupacion(visitaId) {
+    try {
+      const response = await axiosClient.put(`/PausarOcupacion?visitaId=${visitaId}`)
+      return response.data
+    } catch (error) {
+      console.error('Error pausing legacy ocupacion:', error)
+      throw error
+    }
+  }
+
+  static async legacyUpdatePromotion(reservaId, promocionId) {
+    try {
+      const response = await axiosClient.put('/ActualizarReservaPromocion', null, {
+        params: {
+          reservaId,
+          promocionId,
+        },
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error updating legacy promotion:', error)
+      throw error
+    }
+  }
+}
