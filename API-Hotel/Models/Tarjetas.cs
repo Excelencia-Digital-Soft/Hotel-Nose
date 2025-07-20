@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace hotel.Models;
+﻿namespace hotel.Models;
 
 public partial class Tarjetas
 {
     public int TarjetaID { get; set; }
 
-    public string Nombre { get; set; }
+    public string Nombre { get; set; } = string.Empty;
     public int MontoPorcentual { get; set; }
 
     public int InstitucionID { get; set; }
-    
 }

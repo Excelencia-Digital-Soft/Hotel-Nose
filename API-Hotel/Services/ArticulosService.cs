@@ -12,17 +12,21 @@ public class ArticulosService : IArticulosService
     private readonly HotelDbContext _context;
     private readonly ILogger<ArticulosService> _logger;
     private readonly IWebHostEnvironment _environment;
+    private readonly IRegistrosService _registrosService;
     private const string UPLOADS_FOLDER = "uploads";
 
     public ArticulosService(
         HotelDbContext context,
         ILogger<ArticulosService> logger,
-        IWebHostEnvironment environment
+        IWebHostEnvironment environment,
+        IRegistrosService registrosService
     )
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _environment = environment ?? throw new ArgumentNullException(nameof(environment));
+        _registrosService =
+            registrosService ?? throw new ArgumentNullException(nameof(registrosService));
     }
 
     public async Task<ApiResponse<IEnumerable<ArticuloDto>>> GetAllAsync(
@@ -163,6 +167,28 @@ public class ArticulosService : IArticulosService
 
             _context.Articulos.Add(articulo);
             await _context.SaveChangesAsync(cancellationToken);
+
+            // Registrar auditoría de creación
+            await _registrosService.LogAuditAsync(
+                $"Artículo creado: {createDto.NombreArticulo} (ID: {articulo.ArticuloId})",
+                ModuloSistema.INVENTARIO,
+                institucionId,
+                creadoPorId,
+                null, // direccionIP se puede obtener del contexto HTTP si es necesario
+                System.Text.Json.JsonSerializer.Serialize(
+                    new
+                    {
+                        ArticuloId = articulo.ArticuloId,
+                        Nombre = createDto.NombreArticulo,
+                        Precio = createDto.Precio,
+                        CategoriaId = createDto.CategoriaId,
+                        FechaCreacion = DateTime.Now,
+                    }
+                ),
+                null,
+                cancellationToken
+            );
+
             await transaction.CommitAsync(cancellationToken);
 
             // Retrieve with includes for response
@@ -704,7 +730,6 @@ public class ArticulosService : IArticulosService
                     : null,
         };
     }
-
 
     private async Task<ApiResponse<Imagenes>> SaveImageAsync(
         IFormFile image,

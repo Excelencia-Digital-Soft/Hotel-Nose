@@ -3,6 +3,7 @@ using hotel.Data;
 using hotel.DTOs.Auth;
 using hotel.DTOs.Common;
 using hotel.Interfaces;
+using hotel.Models;
 using hotel.Models.Identity;
 using Microsoft.AspNetCore.Identity;
 
@@ -15,13 +16,15 @@ public class AuthService : IAuthService
     private readonly JwtService _jwtService;
     private readonly HotelDbContext _context;
     private readonly ILogger<AuthService> _logger;
+    private readonly IRegistrosService _registrosService;
 
     public AuthService(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         JwtService jwtService,
         HotelDbContext context,
-        ILogger<AuthService> logger
+        ILogger<AuthService> logger,
+        IRegistrosService registrosService
     )
     {
         _userManager = userManager;
@@ -29,6 +32,7 @@ public class AuthService : IAuthService
         _jwtService = jwtService;
         _context = context;
         _logger = logger;
+        _registrosService = registrosService;
     }
 
     public async Task<ApiResponse<LoginResponseDto>> LoginAsync(LoginRequestDto loginRequest)
@@ -38,6 +42,23 @@ public class AuthService : IAuthService
             var user = await _userManager.FindByEmailAsync(loginRequest.Email);
             if (user == null || !user.IsActive)
             {
+                // Registrar auditoría de intento de login con usuario inexistente o inactivo
+                await _registrosService.LogSecurityAsync(
+                    $"Intento de login fallido para email: {loginRequest.Email} - Usuario no encontrado o inactivo",
+                    ModuloSistema.USUARIOS,
+                    1, // Institución por defecto ya que no tenemos usuario
+                    null,
+                    null, // direccionIP se puede obtener del contexto HTTP si es necesario
+                    System.Text.Json.JsonSerializer.Serialize(
+                        new
+                        {
+                            Email = loginRequest.Email,
+                            FailedLoginTime = DateTime.UtcNow,
+                            Reason = user == null ? "User not found" : "User inactive",
+                        }
+                    )
+                );
+
                 return ApiResponse<LoginResponseDto>.Failure(
                     "Invalid email or password",
                     "Authentication failed"
@@ -52,6 +73,26 @@ public class AuthService : IAuthService
 
             if (!isPasswordValid)
             {
+                // Registrar auditoría de login fallido
+                await _registrosService.LogSecurityAsync(
+                    $"Intento de login fallido para usuario: {user.UserName} ({user.Email}) - Contraseña incorrecta",
+                    ModuloSistema.USUARIOS,
+                    user.InstitucionId ?? 1,
+                    user.Id,
+                    null, // direccionIP se puede obtener del contexto HTTP si es necesario
+                    System.Text.Json.JsonSerializer.Serialize(
+                        new
+                        {
+                            UserId = user.Id,
+                            UserName = user.UserName,
+                            Email = user.Email,
+                            FailedLoginTime = DateTime.UtcNow,
+                            Reason = "Invalid password",
+                            InstitucionId = user.InstitucionId,
+                        }
+                    )
+                );
+
                 return ApiResponse<LoginResponseDto>.Failure(
                     "Invalid email or password",
                     "Authentication failed"
@@ -61,6 +102,25 @@ public class AuthService : IAuthService
             // Update last login and save any password hash changes
             user.LastLoginAt = DateTime.UtcNow;
             await _userManager.UpdateAsync(user);
+
+            // Registrar auditoría de login exitoso
+            await _registrosService.LogSecurityAsync(
+                $"Login exitoso para usuario: {user.UserName} ({user.Email})",
+                ModuloSistema.USUARIOS,
+                user.InstitucionId ?? 1,
+                user.Id,
+                null, // direccionIP se puede obtener del contexto HTTP si es necesario
+                System.Text.Json.JsonSerializer.Serialize(
+                    new
+                    {
+                        UserId = user.Id,
+                        UserName = user.UserName,
+                        Email = user.Email,
+                        LoginTime = DateTime.UtcNow,
+                        InstitucionId = user.InstitucionId,
+                    }
+                )
+            );
 
             // Generate token
             var token = await _jwtService.GenerateTokenAsync(user);

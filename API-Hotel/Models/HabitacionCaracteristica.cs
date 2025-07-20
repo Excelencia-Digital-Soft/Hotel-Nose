@@ -6,7 +6,8 @@
         public int CaracteristicaId { get; set; } // ID de la característica
 
         // Relaciones
-        public virtual Habitaciones Habitacion { get; set; }
-        public virtual Caracteristica Caracteristica { get; set; }
+        public virtual Habitaciones Habitacion { get; set; } = null!;
+        public virtual Caracteristica Caracteristica { get; set; } = null!;
     }
 }
+

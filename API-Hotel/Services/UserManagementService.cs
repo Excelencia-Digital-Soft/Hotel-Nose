@@ -14,18 +14,21 @@ public class UserManagementService : IUserManagementService
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly HotelDbContext _context;
     private readonly ILogger<UserManagementService> _logger;
+    private readonly IRegistrosService _registrosService;
 
     public UserManagementService(
         UserManager<ApplicationUser> userManager,
         RoleManager<ApplicationRole> roleManager,
         HotelDbContext context,
-        ILogger<UserManagementService> logger
+        ILogger<UserManagementService> logger,
+        IRegistrosService registrosService
     )
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _context = context;
         _logger = logger;
+        _registrosService = registrosService;
     }
 
     public async Task<ApiResponse<List<UserManagementDto>>> GetAllUsersAsync(string currentUserId)

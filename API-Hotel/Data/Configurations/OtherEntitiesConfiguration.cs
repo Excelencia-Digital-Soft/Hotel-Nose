@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using hotel.Models;
+using hotel.Models.Identity;
 
 namespace hotel.Data.Configurations
 {
@@ -9,6 +10,20 @@ namespace hotel.Data.Configurations
         public void Configure(EntityTypeBuilder<Visitas> builder)
         {
             builder.HasKey(e => e.VisitaId);
+            
+            // Configurar relación OPCIONAL con ApplicationUser (LEFT JOIN)
+            builder.HasOne(d => d.Usuario)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .IsRequired(false); // OPCIONAL - genera LEFT JOIN
+            
+            // Configurar relación OPCIONAL con Institucion (LEFT JOIN)
+            builder.HasOne(d => d.Institucion)
+                .WithMany()
+                .HasForeignKey(d => d.InstitucionID)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .IsRequired(false); // OPCIONAL - genera LEFT JOIN
             
             // La relación OneToOne entre Visitas.Habitacion y Habitaciones.Visita
             // ya está configurada en HabitacionesConfiguration
@@ -22,10 +37,25 @@ namespace hotel.Data.Configurations
         {
             builder.HasKey(e => e.ReservaId);
             
+            // Configurar relación OPCIONAL con Habitacion
             builder.HasOne(d => d.Habitacion)
                 .WithMany(p => p.Reservas)
                 .HasForeignKey(d => d.HabitacionId)
                 .OnDelete(DeleteBehavior.ClientSetNull);
+            
+            // Configurar relación OPCIONAL con ApplicationUser (LEFT JOIN)
+            builder.HasOne(d => d.Usuario)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .IsRequired(false); // OPCIONAL - genera LEFT JOIN
+            
+            // Configurar relación OPCIONAL con Institucion (LEFT JOIN)
+            builder.HasOne(d => d.Institucion)
+                .WithMany()
+                .HasForeignKey(d => d.InstitucionID)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .IsRequired(false); // OPCIONAL - genera LEFT JOIN
         }
     }
 

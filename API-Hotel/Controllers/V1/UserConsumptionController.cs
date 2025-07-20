@@ -279,6 +279,53 @@ public class UserConsumptionController : ControllerBase
         return StatusCode(500, result);
     }
 
+    [HttpPost("admin/create-for-user")]
+    [ProducesResponseType(typeof(ApiResponse<UserConsumptionDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
+    [Authorize(Roles = "Administrator,Director")]
+    public async Task<ActionResult<ApiResponse<UserConsumptionDto>>> AdminCreateConsumptionForUser(
+        [FromBody] AdminUserConsumptionCreateDto createDto,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            return BadRequest(ApiResponse.Failure(errors));
+        }
+
+        var adminUserId = GetCurrentUserId();
+        if (string.IsNullOrEmpty(adminUserId))
+        {
+            return BadRequest(ApiResponse.Failure("Admin user ID not found"));
+        }
+
+        var institucionId = GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var result = await _userConsumptionService.AdminCreateConsumptionForUserAsync(
+            createDto,
+            institucionId.Value,
+            adminUserId,
+            cancellationToken
+        );
+
+        if (result.IsSuccess)
+        {
+            return CreatedAtAction(nameof(GetUserConsumption), new { userId = createDto.UserId }, result);
+        }
+
+        return StatusCode(500, result);
+    }
+
     [HttpGet("health")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]

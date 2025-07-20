@@ -1,16 +1,16 @@
-﻿using hotel.Models.Sistema;
-using hotel.Models;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using hotel.Data;
-using Microsoft.AspNetCore.Authorization;
 using hotel.DTOs;
+using hotel.Models;
+using hotel.Models.Sistema;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
+using Microsoft.EntityFrameworkCore;
 
 namespace hotel.Controllers
 {
@@ -31,13 +31,13 @@ namespace hotel.Controllers
             Respuesta res = new Respuesta();
             try
             {
-                var caracteristicas = await _db.Caracteristicas
-                    .Select(c => new
+                var caracteristicas = await _db
+                    .Caracteristicas.Select(c => new
                     {
                         c.CaracteristicaId,
                         c.Nombre,
                         Descripcion = c.Descripcion ?? string.Empty,
-                        Icono = c.Icono ?? string.Empty
+                        Icono = c.Icono ?? string.Empty,
                     })
                     .ToListAsync();
 
@@ -51,6 +51,7 @@ namespace hotel.Controllers
             }
             return res;
         }
+
         [HttpPost]
         [Route("CrearCaracteristica")]
         [AllowAnonymous]
@@ -70,7 +71,8 @@ namespace hotel.Controllers
                 string iconoPath = string.Empty;
                 if (request.Icono != null && request.Icono.Length > 0)
                 {
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(request.Icono.FileName);
+                    var fileName =
+                        Guid.NewGuid().ToString() + Path.GetExtension(request.Icono.FileName);
                     var filePath = Path.Combine("wwwroot/uploads", fileName);
                     Directory.CreateDirectory("wwwroot/uploads");
                     using (var stream = new FileStream(filePath, FileMode.Create))
@@ -84,7 +86,7 @@ namespace hotel.Controllers
                 {
                     Nombre = request.Nombre,
                     Descripcion = request.Descripcion ?? string.Empty,
-                    Icono = iconoPath
+                    Icono = iconoPath,
                 };
                 _db.Caracteristicas.Add(nuevaCaracteristica);
                 await _db.SaveChangesAsync();
@@ -100,9 +102,13 @@ namespace hotel.Controllers
             }
             return res;
         }
+
         [HttpPut("ActualizarCaracteristica/{id}")]
         [AllowAnonymous]
-        public async Task<Respuesta> ActualizarCaracteristica(int id, [FromForm] CaracteristicaDTO request)
+        public async Task<Respuesta> ActualizarCaracteristica(
+            int id,
+            [FromForm] CaracteristicaDTO request
+        )
         {
             Respuesta res = new Respuesta();
             try
@@ -131,13 +137,17 @@ namespace hotel.Controllers
                 if (request.Icono != null && request.Icono.Length > 0)
                 {
                     // Eliminar imagen anterior si existe
-                    if (!string.IsNullOrEmpty(caracteristica.Icono) && System.IO.File.Exists(caracteristica.Icono))
+                    if (
+                        !string.IsNullOrEmpty(caracteristica.Icono)
+                        && System.IO.File.Exists(caracteristica.Icono)
+                    )
                     {
                         System.IO.File.Delete(caracteristica.Icono);
                     }
 
                     // Guardar nueva imagen
-                    var fileName = Guid.NewGuid().ToString() + Path.GetExtension(request.Icono.FileName);
+                    var fileName =
+                        Guid.NewGuid().ToString() + Path.GetExtension(request.Icono.FileName);
                     var filePath = Path.Combine("wwwroot/uploads", fileName);
                     Directory.CreateDirectory("wwwroot/uploads");
 
@@ -162,6 +172,7 @@ namespace hotel.Controllers
             }
             return res;
         }
+
         [HttpDelete("EliminarCaracteristica/{id}")]
         public async Task<Respuesta> EliminarCaracteristica(int id)
         {
@@ -191,16 +202,18 @@ namespace hotel.Controllers
 
         [HttpPost("AsignarCaracteristicasAHabitacion")]
         public async Task<Respuesta> AsignarCaracteristicasAHabitacion(
-        int habitacionId,
-        [FromBody] List<int>? caracteristicaIds)
+            int habitacionId,
+            [FromBody] List<int>? caracteristicaIds
+        )
         {
             var res = new Respuesta();
 
             try
             {
                 // Validar habitación primero (evita operaciones innecesarias)
-                var habitacionExiste = await _db.Habitaciones
-                    .AnyAsync(h => h.HabitacionId == habitacionId);
+                var habitacionExiste = await _db.Habitaciones.AnyAsync(h =>
+                    h.HabitacionId == habitacionId
+                );
 
                 if (!habitacionExiste)
                 {
@@ -214,8 +227,8 @@ namespace hotel.Controllers
                     try
                     {
                         // Paso 1: Eliminar relaciones existentes (si las hay)
-                        await _db.HabitacionCaracteristicas
-                            .Where(hc => hc.HabitacionId == habitacionId)
+                        await _db
+                            .HabitacionCaracteristicas.Where(hc => hc.HabitacionId == habitacionId)
                             .ExecuteDeleteAsync();
 
                         // Paso 2: Si se enviaron características, crear nuevas relaciones
@@ -223,8 +236,8 @@ namespace hotel.Controllers
                         {
                             // Validar existencia de características (en una sola consulta)
                             var idsUnicos = caracteristicaIds.Distinct().ToList();
-                            var countCaracteristicas = await _db.Caracteristicas
-                                .Where(c => idsUnicos.Contains(c.CaracteristicaId))
+                            var countCaracteristicas = await _db
+                                .Caracteristicas.Where(c => idsUnicos.Contains(c.CaracteristicaId))
                                 .CountAsync();
 
                             if (countCaracteristicas != idsUnicos.Count)
@@ -235,12 +248,13 @@ namespace hotel.Controllers
                             }
 
                             // Crear relaciones
-                            var nuevasRelaciones = idsUnicos.Select(cid =>
-                                new HabitacionCaracteristica
+                            var nuevasRelaciones = idsUnicos
+                                .Select(cid => new HabitacionCaracteristica
                                 {
                                     HabitacionId = habitacionId,
-                                    CaracteristicaId = cid
-                                }).ToList();
+                                    CaracteristicaId = cid,
+                                })
+                                .ToList();
 
                             await _db.HabitacionCaracteristicas.AddRangeAsync(nuevasRelaciones);
                         }
@@ -249,16 +263,17 @@ namespace hotel.Controllers
                         await transaction.CommitAsync();
 
                         res.Ok = true;
-                        res.Message = caracteristicaIds?.Any() == true
-                            ? "Características actualizadas correctamente"
-                            : "Todas las características fueron removidas";
+                        res.Message =
+                            caracteristicaIds?.Any() == true
+                                ? "Características actualizadas correctamente"
+                                : "Todas las características fueron removidas";
                     }
                     catch (Exception ex)
                     {
                         await transaction.RollbackAsync();
                         // Log.Error(ex, "Error en transacción");
                         res.Ok = false;
-                        res.Message = "Error interno al asignar características";
+                        res.Message = "Error interno al asignar características," + ex.Message;
                     }
                 }
             }
@@ -266,18 +281,21 @@ namespace hotel.Controllers
             {
                 // Log.Error(ex, "Error general");
                 res.Ok = false;
-                res.Message = "Error procesando la solicitud";
+                res.Message = "Error procesando la solicitud, " + ex.Message;
             }
 
             return res;
         }
+
         [HttpGet("GetImage/{idCaracteristica}")]
         public IActionResult GetImage(int idCaracteristica)
         {
             try
             {
                 // Buscar la característica en la base de datos
-                var caracteristica = _db.Caracteristicas.FirstOrDefault(c => c.CaracteristicaId == idCaracteristica);
+                var caracteristica = _db.Caracteristicas.FirstOrDefault(c =>
+                    c.CaracteristicaId == idCaracteristica
+                );
 
                 if (caracteristica == null || string.IsNullOrEmpty(caracteristica.Icono))
                 {
@@ -300,7 +318,10 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error al obtener la imagen: " + ex.Message });
+                return StatusCode(
+                    500,
+                    new { message = "Error al obtener la imagen: " + ex.Message }
+                );
             }
         }
 

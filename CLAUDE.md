@@ -82,6 +82,50 @@ return NotFound(ApiResponse.Failure("Resource not found"));
 
 ## 🛠️ **Development Standards**
 
+### **👤 User Identity Guidelines**
+
+**🔑 IMPORTANTE: Sistema de Identity Moderno**
+
+Este proyecto usa **ASP.NET Core Identity** donde los UserIds son **strings (GUIDs)**, no integers.
+
+**❌ CÓDIGO LEGACY INCORRECTO:**
+```csharp
+// ❌ MAL: Intenta parsear UserId como int
+var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+if (!int.TryParse(userIdClaim, out int userId))
+{
+    return BadRequest(ApiResponse.Failure("User ID is required"));
+}
+```
+
+**✅ CÓDIGO CORRECTO:**
+```csharp
+// ✅ CORRECTO: UserId como string
+var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+if (string.IsNullOrEmpty(userId))
+{
+    return BadRequest(ApiResponse.Failure("User ID is required"));
+}
+
+// ✅ MEJOR: Usando extension methods
+var currentUser = this.GetCurrentUserInfo();
+if (currentUser == null)
+{
+    return BadRequest(ApiResponse.Failure("Authentication required"));
+}
+```
+
+**📊 Extension Methods Disponibles:**
+- `this.GetCurrentUserId()` → `string?` (GUID de AspNetUsers)
+- `this.GetCurrentUserName()` → `string?` (nombre de usuario)
+- `this.GetCurrentInstitucionId()` → `int?` (ID de institución)
+- `this.GetClientIpAddress()` → `string?` (IP del cliente)
+- `this.GetCurrentUserInfo()` → `CurrentUserInfo?` (información completa)
+
+**🔄 Campos de Usuario en Modelos:**
+- **Legacy**: `UsuarioId` (int) - Marcado como `[Obsolete]`
+- **Nuevo**: `UserId` (string) - Referencia a `AspNetUsers.Id`
+
 ### **🏛️ Clean Architecture Structure**
 
 ```
@@ -292,6 +336,33 @@ public async Task<Respuesta> OldMethod()
 ---
 
 ## 🗄️ **Database Guidelines**
+
+### **🚫 IMPORTANT: No EF Migrations - Use SQL Scripts**
+
+**❌ DO NOT USE Entity Framework Migrations:**
+- EF Migrations are **disabled** in this project
+- Database changes must be done via **SQL Scripts** in the `/Scripts/` folder
+- Each script should be numbered sequentially (e.g., `1-AddMissingImageFields.sql`, `2-create_users_identity_tables.sql`)
+
+**✅ Database Change Process:**
+1. **Create SQL Script**: Add new numbered script in `/Scripts/` folder
+2. **Include Safety Checks**: Use `IF EXISTS` and `IF NOT EXISTS` checks
+3. **Add Documentation**: Include comments explaining the changes
+4. **Test Locally**: Verify script works on development database
+5. **Coordinate Deployment**: Ensure scripts are run in order on production
+
+**📁 Script Naming Convention:**
+```
+/Scripts/
+├── 1-AddMissingImageFields.sql
+├── 2-create_users_identity_tables.sql
+├── 3-create_configuracion_table.sql
+├── 4-Add_Missing_Columns_Instituciones.sql
+├── 5-Add_Audit_Fields_Articulos.sql
+├── 6-Add_Audit_Fields_CategoriasArticulos.sql
+├── 7-Fix_Decimal_Precision_Articulos.sql
+└── 8-Improve_Registros_Table_Structure.sql
+```
 
 ### **🔍 Entity Relationship Patterns**
 

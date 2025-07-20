@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace hotel.Models;
 
@@ -21,8 +20,8 @@ public partial class Egresos
     public int? CierreID { get; set; }
 
     [JsonIgnore]
-    public virtual TipoEgreso TipoEgreso { get; set; }
+    public virtual TipoEgreso TipoEgreso { get; set; } = null!;
 
     [JsonIgnore]
-    public virtual Movimientos Movimiento { get; set; }
+    public virtual Movimientos Movimiento { get; set; } = null!;
 }

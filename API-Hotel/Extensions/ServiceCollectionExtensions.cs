@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IConsumosService, ConsumosService>();
         services.AddScoped<IHabitacionesService, HabitacionesService>();
         services.AddScoped<IPromocionesService, PromocionesService>();
+        services.AddScoped<IRegistrosService, RegistrosService>();
         services.AddScoped<IReservasService, ReservasService>();
         services.AddScoped<IStatisticsService, StatisticsService>();
         services.AddScoped<IUserManagementService, UserManagementService>();

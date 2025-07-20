@@ -1,4 +1,5 @@
 ﻿using hotel.Data;
+using hotel.Interfaces;
 using hotel.Models;
 using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Authorization;
@@ -14,17 +15,20 @@ namespace hotel.Controllers
         private readonly VisitasController _visita;
         private readonly IServiceProvider _serviceProvider;
         private readonly ReservationMonitorService _reservationMonitorService;
+        private readonly IRegistrosService _registrosService;
 
         public ReservasController(
             HotelDbContext db,
             IServiceProvider serviceProvider,
             IConfiguration configuration,
-            ReservationMonitorService reservationMonitorService
+            ReservationMonitorService reservationMonitorService,
+            IRegistrosService registrosService
         )
         {
             _db = db;
             _movimiento = new MovimientosController(db);
             _visita = new VisitasController(db);
+            _registrosService = registrosService;
         }
 
         #region Reservas
@@ -32,6 +36,7 @@ namespace hotel.Controllers
         [HttpPost]
         [Route("ReservarHabitacion")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/reservas instead.")]
         public async Task<Respuesta> ReservarHabitacion(
             int InstitucionID,
             int UsuarioID,
@@ -144,6 +149,9 @@ namespace hotel.Controllers
         [HttpDelete]
         [Route("AnularOcupacion")]
         [AllowAnonymous]
+        [Obsolete(
+            "This endpoint is deprecated. Use POST /api/v1/reservas/{reservaId}/comprehensive-cancel instead."
+        )]
         public async Task<Respuesta> AnularOcupacion(int reservaId, string motivo)
         {
             Respuesta res = new Respuesta();
@@ -196,16 +204,7 @@ namespace hotel.Controllers
                     var visita = await _db.Visitas.FirstAsync(v => v.VisitaId == reserva.VisitaId);
                     visita.Anulado = true;
                     string formattedDate = DateTime.Now.ToString("d/M/yyyy HH:mm");
-                    Registros registro = new Registros();
-                    registro.Contenido =
-                        "Se anuló la visita a la habitación "
-                        + habitacion.NombreHabitacion
-                        + " a las "
-                        + formattedDate
-                        + " por el motivo de: "
-                        + motivo;
-                    registro.ReservaId = reserva.ReservaId;
-                    _db.Registros.Add(registro);
+
                     await _db.SaveChangesAsync();
                 }
                 else
@@ -804,4 +803,3 @@ public class ReservaRequest
     public string? NumeroTelefono { get; set; }
     public string? Identificador { get; set; }
 }
-

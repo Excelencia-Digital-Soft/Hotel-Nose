@@ -14,11 +14,16 @@ public class ConsumosService : IConsumosService
 {
     private readonly HotelDbContext _context;
     private readonly ILogger<ConsumosService> _logger;
+    private readonly IRegistrosService _registrosService;
 
-    public ConsumosService(HotelDbContext context, ILogger<ConsumosService> logger)
+    public ConsumosService(
+        HotelDbContext context, 
+        ILogger<ConsumosService> logger,
+        IRegistrosService registrosService)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _registrosService = registrosService ?? throw new ArgumentNullException(nameof(registrosService));
     }
 
     /// <inheritdoc/>

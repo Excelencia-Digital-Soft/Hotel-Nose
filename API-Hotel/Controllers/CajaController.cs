@@ -1,5 +1,6 @@
 ﻿using System.Data.SqlTypes;
 using hotel.Data;
+using hotel.Interfaces;
 using hotel.Models;
 using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Mvc;
@@ -12,10 +13,12 @@ namespace hotel.Controllers
     public class CajaController : ControllerBase
     {
         private readonly HotelDbContext _db;
+        private readonly IRegistrosService _registrosService;
 
-        public CajaController(HotelDbContext db)
+        public CajaController(HotelDbContext db, IRegistrosService registrosService)
         {
             _db = db;
+            _registrosService = registrosService;
         }
 
         private async Task<bool> CrearCaja(int montoInicial, int institucionID, string? observacion)
@@ -96,7 +99,7 @@ namespace hotel.Controllers
                 foreach (var e in egresos)
                 {
                     e.CierreID = ultimoCierre.CierreId;
-                    ultimoCierre.Egresos.Add(e);
+                    ultimoCierre.Egresos!.Add(e);
                     ultimoCierre.TotalIngresosEfectivo =
                         ultimoCierre.TotalIngresosEfectivo - (e.Precio * e.Cantidad);
                 }
@@ -174,7 +177,7 @@ namespace hotel.Controllers
                 var movimientos = await _db
                     .Movimientos.Where(c => c.InstitucionID == institucionID)
                     .Include(m => m.Visita)
-                    .ThenInclude(v => v.Reservas)
+                    .ThenInclude(v => v!.Reservas)
                     .ToListAsync();
 
                 var habitaciones = await _db.Habitaciones.Include(h => h.Categoria).ToListAsync();
@@ -224,7 +227,7 @@ namespace hotel.Controllers
                                         .FirstOrDefault(h =>
                                             h.HabitacionId == ultimaReserva.HabitacionId
                                         )
-                                        ?.Categoria.NombreCategoria
+                                        ?.Categoria!.NombreCategoria
                                     : null;
                             decimal? Periodo = 0;
                             if (movimiento != null)
@@ -328,7 +331,7 @@ namespace hotel.Controllers
                                     .FirstOrDefault(h =>
                                         h.HabitacionId == ultimaReserva.HabitacionId
                                     )
-                                    ?.Categoria.NombreCategoria
+                                    ?.Categoria!.NombreCategoria
                                 : null;
                         decimal? Periodo = 0;
                         if (movimiento != null)
@@ -337,7 +340,7 @@ namespace hotel.Controllers
                             new
                             {
                                 pago.PagoId,
-                                HabitacionID = ultimaReserva.HabitacionId ?? null,
+                                HabitacionID = ultimaReserva!.HabitacionId ?? null,
                                 Periodo,
                                 categoriaNombre,
                                 TarjetaNombre = tarjeta?.Nombre ?? null,
@@ -462,7 +465,7 @@ namespace hotel.Controllers
                     .ToListAsync();
                 var movimientos = await _db
                     .Movimientos.Include(m => m.Visita)
-                    .ThenInclude(v => v.Reservas)
+                    .ThenInclude(v => v!.Reservas)
                     .ToListAsync();
                 var consumos = await _db.Consumo.ToListAsync();
                 var tarjetas = await _db.Tarjetas.ToListAsync();
@@ -503,7 +506,7 @@ namespace hotel.Controllers
                             new
                             {
                                 pago.PagoId,
-                                CategoriaNombre = habitacion?.Categoria.NombreCategoria,
+                                CategoriaNombre = habitacion?.Categoria!.NombreCategoria,
                                 Periodo = periodo,
                                 TarjetaNombre = tarjeta?.Nombre ?? null,
                                 Fecha = pago.fechaHora,
@@ -545,16 +548,31 @@ namespace hotel.Controllers
                 }
 
                 // Agregar reservas anuladas
-                foreach (var reserva in anulados)
+                foreach (var reserva in anulados!)
                 {
                     var nombreHabitacion = habitaciones
                         .Where(h => h.HabitacionId == reserva.HabitacionId)
                         .Select(h => h.NombreHabitacion)
                         .FirstOrDefault();
 
-                    var reservaAnulada = await _db.Registros.FirstOrDefaultAsync(r =>
-                        r.ReservaId == reserva.ReservaId
+                    // Obtener el registro de anulación usando el servicio
+                    var registrosResult = await _registrosService.GetRegistrosAsync(
+                        habitaciones.FirstOrDefault()?.InstitucionID ?? 1,
+                        null,
+                        ModuloSistema.RESERVAS,
+                        null,
+                        null,
+                        null,
+                        1,
+                        1
                     );
+
+                    var reservaAnulada =
+                        registrosResult.IsSuccess && registrosResult.Data?.Registros.Any() == true
+                            ? registrosResult.Data.Registros.FirstOrDefault(r =>
+                                r.ReservaId == reserva.ReservaId
+                            )
+                            : null;
 
                     pagosConDetalle.Add(
                         new
@@ -660,7 +678,7 @@ namespace hotel.Controllers
 
                 var movimientos = await _db
                     .Movimientos.Include(m => m.Visita)
-                    .ThenInclude(v => v.Reservas)
+                    .ThenInclude(v => v!.Reservas)
                     .ToListAsync();
                 var ultimocierre =
                     cierres.Where(c => c.InstitucionID == InstitucionID).LastOrDefault()
@@ -675,7 +693,7 @@ namespace hotel.Controllers
 
                 var habitaciones = await _db
                     .Habitaciones.Include(h => h.Categoria)
-                    .Where(h => h.Categoria.InstitucionID == InstitucionID)
+                    .Where(h => h.Categoria!.InstitucionID == InstitucionID)
                     .ToListAsync();
                 var consumos = await _db.Consumo.ToListAsync();
                 var tarjetas = await _db.Tarjetas.ToListAsync();
@@ -721,7 +739,7 @@ namespace hotel.Controllers
                                     .FirstOrDefault(h =>
                                         h.HabitacionId == ultimaReserva.HabitacionId
                                     )
-                                    ?.Categoria.NombreCategoria
+                                    ?.Categoria!.NombreCategoria
                                 : null;
                         decimal? Periodo = 0;
                         if (movimiento != null)
@@ -730,7 +748,7 @@ namespace hotel.Controllers
                             new
                             {
                                 pago.PagoId,
-                                HabitacionID = ultimaReserva.HabitacionId ?? null,
+                                HabitacionID = ultimaReserva!.HabitacionId ?? null,
                                 TarjetaNombre = tarjeta?.Nombre ?? null,
                                 Periodo,
                                 categoriaNombre,
@@ -780,9 +798,25 @@ namespace hotel.Controllers
                             .Select(r => r.NombreHabitacion)
                             .FirstOrDefault();
 
-                        var reservaAnulada = await _db.Registros.FirstOrDefaultAsync(r =>
-                            r.ReservaId == row.ReservaId
+                        // Obtener el registro de anulación usando el servicio
+                        var registrosAnuladoResult = await _registrosService.GetRegistrosAsync(
+                            habitaciones.FirstOrDefault()?.InstitucionID ?? 1,
+                            null,
+                            ModuloSistema.RESERVAS,
+                            null,
+                            null,
+                            null,
+                            1,
+                            1
                         );
+
+                        var reservaAnulada =
+                            registrosAnuladoResult.IsSuccess
+                            && registrosAnuladoResult.Data?.Registros.Any() == true
+                                ? registrosAnuladoResult.Data.Registros.FirstOrDefault(r =>
+                                    r.ReservaId == row.ReservaId
+                                )
+                                : null;
                         PagosSinCierreReturn.Add(
                             new
                             {

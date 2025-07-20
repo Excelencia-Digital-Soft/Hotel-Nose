@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using hotel.DTOs.Common;
 using hotel.DTOs.Reservas;
 using hotel.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace hotel.Controllers.V1;
 
@@ -20,11 +20,10 @@ public class ReservasController : ControllerBase
     private readonly IReservasService _reservasService;
     private readonly ILogger<ReservasController> _logger;
 
-    public ReservasController(
-        IReservasService reservasService,
-        ILogger<ReservasController> logger)
+    public ReservasController(IReservasService reservasService, ILogger<ReservasController> logger)
     {
-        _reservasService = reservasService ?? throw new ArgumentNullException(nameof(reservasService));
+        _reservasService =
+            reservasService ?? throw new ArgumentNullException(nameof(reservasService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -40,7 +39,8 @@ public class ReservasController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<ReservaDto>>> GetReservation(
         int reservaId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         _logger.LogInformation("Getting reservation {ReservaId}", reservaId);
 
@@ -63,7 +63,8 @@ public class ReservasController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<ReservaDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<IEnumerable<ReservaDto>>>> GetActiveReservations(
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var institucionId = GetCurrentInstitucionId();
         if (!institucionId.HasValue)
@@ -71,9 +72,15 @@ public class ReservasController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        _logger.LogInformation("Getting active reservations for institution {InstitucionId}", institucionId.Value);
+        _logger.LogInformation(
+            "Getting active reservations for institution {InstitucionId}",
+            institucionId.Value
+        );
 
-        var result = await _reservasService.GetActiveReservationsAsync(institucionId.Value, cancellationToken);
+        var result = await _reservasService.GetActiveReservationsAsync(
+            institucionId.Value,
+            cancellationToken
+        );
 
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
     }
@@ -90,11 +97,18 @@ public class ReservasController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse>> FinalizeReservation(
         [FromQuery] int habitacionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
-        _logger.LogInformation("Finalizing reservation for habitacion {HabitacionId}", habitacionId);
+        _logger.LogInformation(
+            "Finalizing reservation for habitacion {HabitacionId}",
+            habitacionId
+        );
 
-        var result = await _reservasService.FinalizeReservationAsync(habitacionId, cancellationToken);
+        var result = await _reservasService.FinalizeReservationAsync(
+            habitacionId,
+            cancellationToken
+        );
 
         if (!result.IsSuccess)
         {
@@ -116,7 +130,8 @@ public class ReservasController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse>> PauseOccupation(
         int visitaId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         _logger.LogInformation("Pausing occupation for visita {VisitaId}", visitaId);
 
@@ -142,7 +157,8 @@ public class ReservasController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse>> ResumeOccupation(
         int visitaId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         _logger.LogInformation("Resuming occupation for visita {VisitaId}", visitaId);
 
@@ -171,23 +187,30 @@ public class ReservasController : ControllerBase
     public async Task<ActionResult<ApiResponse<ReservaDto>>> UpdateReservationPromotion(
         int reservaId,
         [FromBody] ReservaPromocionUpdateDto updateDto,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         if (!ModelState.IsValid)
         {
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
 
             return BadRequest(ApiResponse.Failure(errors, "Invalid request data"));
         }
 
-        _logger.LogInformation("Updating promotion for reservation {ReservaId} to {PromocionId}", 
-            reservaId, updateDto.PromocionId);
+        _logger.LogInformation(
+            "Updating promotion for reservation {ReservaId} to {PromocionId}",
+            reservaId,
+            updateDto.PromocionId
+        );
 
         var result = await _reservasService.UpdateReservationPromotionAsync(
-            reservaId, updateDto.PromocionId, cancellationToken);
+            reservaId,
+            updateDto.PromocionId,
+            cancellationToken
+        );
 
         if (!result.IsSuccess)
         {
@@ -214,23 +237,32 @@ public class ReservasController : ControllerBase
     public async Task<ActionResult<ApiResponse<ReservaDto>>> ExtendReservation(
         int reservaId,
         [FromBody] ReservaExtensionDto extensionDto,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         if (!ModelState.IsValid)
         {
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
 
             return BadRequest(ApiResponse.Failure(errors, "Invalid request data"));
         }
 
-        _logger.LogInformation("Extending reservation {ReservaId} by {Hours}h {Minutes}m", 
-            reservaId, extensionDto.AdditionalHours, extensionDto.AdditionalMinutes);
+        _logger.LogInformation(
+            "Extending reservation {ReservaId} by {Hours}h {Minutes}m",
+            reservaId,
+            extensionDto.AdditionalHours,
+            extensionDto.AdditionalMinutes
+        );
 
         var result = await _reservasService.ExtendReservationAsync(
-            reservaId, extensionDto.AdditionalHours, extensionDto.AdditionalMinutes, cancellationToken);
+            reservaId,
+            extensionDto.AdditionalHours,
+            extensionDto.AdditionalMinutes,
+            cancellationToken
+        );
 
         if (!result.IsSuccess)
         {
@@ -257,23 +289,30 @@ public class ReservasController : ControllerBase
     public async Task<ActionResult<ApiResponse>> CancelReservation(
         int reservaId,
         [FromBody] ReservaCancelDto cancelDto,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         if (!ModelState.IsValid)
         {
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
 
             return BadRequest(ApiResponse.Failure(errors, "Invalid request data"));
         }
 
-        _logger.LogInformation("Cancelling reservation {ReservaId} with reason: {Reason}", 
-            reservaId, cancelDto.Reason);
+        _logger.LogInformation(
+            "Cancelling reservation {ReservaId} with reason: {Reason}",
+            reservaId,
+            cancelDto.Reason
+        );
 
         var result = await _reservasService.CancelReservationAsync(
-            reservaId, cancelDto.Reason, cancellationToken);
+            reservaId,
+            cancelDto.Reason,
+            cancellationToken
+        );
 
         if (!result.IsSuccess)
         {
@@ -286,6 +325,135 @@ public class ReservasController : ControllerBase
     }
 
     /// <summary>
+    /// Comprehensive cancellation of an occupation including movements, consumptions, and inventory restoration
+    /// </summary>
+    /// <param name="reservaId">Reservation ID to cancel</param>
+    /// <param name="cancelDto">Cancellation details including reason</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Success response</returns>
+    [HttpPost("{reservaId:int}/comprehensive-cancel")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse>> ComprehensiveCancelOccupation(
+        int reservaId,
+        [FromBody] ReservaCancelDto cancelDto,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            return BadRequest(ApiResponse.Failure(errors, "Validation failed"));
+        }
+
+        var institucionId = GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return BadRequest(ApiResponse.Failure("User ID is required"));
+        }
+
+        _logger.LogInformation(
+            "Comprehensive cancellation of reservation {ReservaId} in institution {InstitucionId} by user {UserId} with reason: {Reason}",
+            reservaId,
+            institucionId.Value,
+            userId,
+            cancelDto.Reason
+        );
+
+        var result = await _reservasService.ComprehensiveCancelOccupationAsync(
+            reservaId,
+            cancelDto.Reason,
+            institucionId.Value,
+            userId,
+            cancellationToken
+        );
+
+        if (!result.IsSuccess)
+        {
+            return result.Errors?.Any(e => e.Contains("not found")) == true
+                ? NotFound(result)
+                : BadRequest(result);
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Create a new reservation
+    /// </summary>
+    /// <param name="createDto">Reservation creation details</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Created reservation details</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(ApiResponse<ReservaDto>), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<ReservaDto>>> CreateReservation(
+        [FromBody] ReservaCreateDto createDto,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            return BadRequest(ApiResponse.Failure(errors, "Validation failed"));
+        }
+
+        var institucionId = GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            return BadRequest(ApiResponse.Failure("User ID is required"));
+        }
+
+        _logger.LogInformation(
+            "Creating reservation for room {HabitacionId} in institution {InstitucionId} by user {UserId}",
+            createDto.HabitacionId,
+            institucionId.Value,
+            userId
+        );
+
+        var result = await _reservasService.CreateReservationAsync(
+            createDto,
+            institucionId.Value,
+            userId,
+            cancellationToken
+        );
+
+        if (!result.IsSuccess)
+        {
+            return result.Errors?.Any(e => e.Contains("not found")) == true
+                ? NotFound(result)
+                : BadRequest(result);
+        }
+
+        return CreatedAtAction(
+            nameof(GetReservation),
+            new { reservaId = result.Data!.ReservaId },
+            result
+        );
+    }
+
+    /// <summary>
     /// Health check endpoint for the reservas service
     /// </summary>
     /// <returns>Service health status</returns>
@@ -294,13 +462,15 @@ public class ReservasController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public IActionResult Health()
     {
-        return Ok(new
-        {
-            service = "ReservasService V1",
-            status = "healthy",
-            timestamp = DateTime.UtcNow,
-            version = "1.0.0"
-        });
+        return Ok(
+            new
+            {
+                service = "ReservasService V1",
+                status = "healthy",
+                timestamp = DateTime.UtcNow,
+                version = "1.0.0",
+            }
+        );
     }
 
     #region Private Methods
@@ -312,16 +482,22 @@ public class ReservasController : ControllerBase
     private int? GetCurrentInstitucionId()
     {
         var institucionIdClaim = User.FindFirstValue("InstitucionId");
-        if (!string.IsNullOrEmpty(institucionIdClaim) && int.TryParse(institucionIdClaim, out int institucionId))
+        if (
+            !string.IsNullOrEmpty(institucionIdClaim)
+            && int.TryParse(institucionIdClaim, out int institucionId)
+        )
         {
             return institucionId;
         }
 
-        _logger.LogWarning("Institution ID not found in user claims for user {UserId}",
-            User.FindFirstValue(ClaimTypes.NameIdentifier));
+        _logger.LogWarning(
+            "Institution ID not found in user claims for user {UserId}",
+            User.FindFirstValue(ClaimTypes.NameIdentifier)
+        );
 
         return null;
     }
 
     #endregion
 }
+

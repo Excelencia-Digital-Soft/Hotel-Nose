@@ -15,8 +15,9 @@ public interface IReservasService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success response</returns>
     Task<ApiResponse> FinalizeReservationAsync(
-        int habitacionId, 
-        CancellationToken cancellationToken = default);
+        int habitacionId,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Pause an active occupation
@@ -25,8 +26,9 @@ public interface IReservasService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success response</returns>
     Task<ApiResponse> PauseOccupationAsync(
-        int visitaId, 
-        CancellationToken cancellationToken = default);
+        int visitaId,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Resume a paused occupation
@@ -35,8 +37,9 @@ public interface IReservasService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success response</returns>
     Task<ApiResponse> ResumeOccupationAsync(
-        int visitaId, 
-        CancellationToken cancellationToken = default);
+        int visitaId,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Update reservation promotion
@@ -46,9 +49,10 @@ public interface IReservasService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Updated reservation</returns>
     Task<ApiResponse<ReservaDto>> UpdateReservationPromotionAsync(
-        int reservaId, 
-        int? promocionId, 
-        CancellationToken cancellationToken = default);
+        int reservaId,
+        int? promocionId,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Cancel/void a reservation
@@ -58,9 +62,27 @@ public interface IReservasService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success response</returns>
     Task<ApiResponse> CancelReservationAsync(
-        int reservaId, 
-        string reason, 
-        CancellationToken cancellationToken = default);
+        int reservaId,
+        string reason,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Comprehensive cancellation of an occupation including movements, consumptions, and inventory restoration
+    /// </summary>
+    /// <param name="reservaId">Reservation ID to cancel</param>
+    /// <param name="reason">Cancellation reason (max 150 characters)</param>
+    /// <param name="institucionId">Institution ID</param>
+    /// <param name="userId">User ID performing the cancellation</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Success response</returns>
+    Task<ApiResponse> ComprehensiveCancelOccupationAsync(
+        int reservaId,
+        string reason,
+        int institucionId,
+        string userId,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Extend reservation time
@@ -71,10 +93,11 @@ public interface IReservasService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Updated reservation</returns>
     Task<ApiResponse<ReservaDto>> ExtendReservationAsync(
-        int reservaId, 
-        int additionalHours, 
-        int additionalMinutes, 
-        CancellationToken cancellationToken = default);
+        int reservaId,
+        int additionalHours,
+        int additionalMinutes,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Get reservation by ID
@@ -83,8 +106,9 @@ public interface IReservasService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Reservation details</returns>
     Task<ApiResponse<ReservaDto>> GetReservationByIdAsync(
-        int reservaId, 
-        CancellationToken cancellationToken = default);
+        int reservaId,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Get active reservations for an institution
@@ -93,6 +117,23 @@ public interface IReservasService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of active reservations</returns>
     Task<ApiResponse<IEnumerable<ReservaDto>>> GetActiveReservationsAsync(
-        int institucionId, 
-        CancellationToken cancellationToken = default);
+        int institucionId,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Create a new reservation for a room
+    /// </summary>
+    /// <param name="createDto">Reservation creation details</param>
+    /// <param name="institucionId">Institution ID</param>
+    /// <param name="userId">User ID creating the reservation</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Created reservation details</returns>
+    Task<ApiResponse<ReservaDto>> CreateReservationAsync(
+        ReservaCreateDto createDto,
+        int institucionId,
+        string userId,
+        CancellationToken cancellationToken = default
+    );
 }
+

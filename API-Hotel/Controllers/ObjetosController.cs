@@ -1,49 +1,50 @@
-﻿using hotel.Data;
-using hotel.Models;
-using hotel.Models.Sistema;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
-using System.Linq;
-using System.Runtime.ConstrainedExecution;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.IdentityModel.Tokens;
+﻿using System;
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.ConstrainedExecution;
 using System.Security.Claims;
 using System.Text;
-using hotel.Auth;
-using Newtonsoft.Json.Linq;
-using System.Reflection;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Text.Json;
-using Microsoft.AspNetCore.SignalR;
+using System.Threading.Tasks;
+using hotel.Auth;
+using hotel.Data;
+using hotel.Models;
+using hotel.Models.Sistema;
 using hotel.NotificacionesHub;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Linq;
 
 namespace hotel.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [AllowAnonymous] // Aplica la seguridad a todos los metodos globalmente
-
     public class ObjetosController : ControllerBase
     {
         private readonly HotelDbContext _db;
         private readonly IConfiguration _configuration;
         private readonly IHubContext<NotificationsHub> _hubContext;
 
-        public ObjetosController(HotelDbContext db, IConfiguration configuration, IHubContext<NotificationsHub> hubContext)
+        public ObjetosController(
+            HotelDbContext db,
+            IConfiguration configuration,
+            IHubContext<NotificationsHub> hubContext
+        )
         {
             _db = db;
             _configuration = configuration;
             _hubContext = hubContext;
         }
-
-
 
         [HttpGet("sendTestNotification")]
         public async Task<IActionResult> SendTestNotification(string testMessage)
@@ -52,25 +53,32 @@ namespace hotel.Controllers
             return Ok(new { message = "Test notification sent!" });
         }
 
-
         [HttpGet("sendTestNotificationInstitucion")]
-        public async Task<IActionResult> SendTestNotificationInstitucion(string testMessage, string type, int institucionID)
+        public async Task<IActionResult> SendTestNotificationInstitucion(
+            string testMessage,
+            string type,
+            int institucionID
+        )
         {
-            await _hubContext.Clients.Group($"institution-{institucionID}").SendAsync("ReceiveNotification", new
-            {
-                type = type,
-                message = testMessage,
-            }); return Ok(new { message = "Test notification sent!" });
+            await _hubContext
+                .Clients.Group($"institution-{institucionID}")
+                .SendAsync("ReceiveNotification", new { type = type, message = testMessage });
+            return Ok(new { message = "Test notification sent!" });
         }
-
 
         #region Categorias
 
         [HttpPost]
         [Route("CrearCategoria")] // Crea un nuevo paciente
         [AllowAnonymous]
-
-        public async Task<Respuesta> CrearCategoria(string nombreCategoria, int UsuarioID, int InstitucionID, int Precio, int? capacidadMaxima, int? Porcentaje)
+        public async Task<Respuesta> CrearCategoria(
+            string nombreCategoria,
+            int UsuarioID,
+            int InstitucionID,
+            int Precio,
+            int? capacidadMaxima,
+            int? Porcentaje
+        )
         {
             Respuesta res = new Respuesta();
             try
@@ -86,7 +94,7 @@ namespace hotel.Controllers
                     PrecioNormal = Precio,
                     CapacidadMaxima = capacidad,
                     PorcentajeXPersona = porc,
-                    FechaRegistro = DateTime.Now
+                    FechaRegistro = DateTime.Now,
                 };
 
                 _db.Add(nuevaCategoria);
@@ -105,26 +113,20 @@ namespace hotel.Controllers
             return res;
         }
 
-
         [HttpGet]
         [Route("GetCategoria")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
-
         public async Task<Respuesta> GetCategoria(int id)
         {
             Respuesta res = new Respuesta();
             try
             {
-
-                var Objeto = await _db.CategoriasHabitaciones.Where(
-                t => t.CategoriaId == id
-                ).ToListAsync();
+                var Objeto = await _db
+                    .CategoriasHabitaciones.Where(t => t.CategoriaId == id)
+                    .ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto[0];
                 return res;
-
-
-
             }
             catch (Exception ex)
             {
@@ -137,23 +139,20 @@ namespace hotel.Controllers
         [HttpGet]
         [Route("GetCategorias")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
-
         public async Task<Respuesta> GetCategorias(int InstitucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
-
-                var Objeto = await _db.CategoriasHabitaciones.
-                    Where(c => c.Anulado != true && c.InstitucionID == InstitucionID)
+                var Objeto = await _db
+                    .CategoriasHabitaciones.Where(c =>
+                        c.Anulado != true && c.InstitucionID == InstitucionID
+                    )
                     .ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto;
                 return res;
-
-
-
-            }   
+            }
             catch (Exception ex)
             {
                 res.Message = ex.ToString();
@@ -163,9 +162,16 @@ namespace hotel.Controllers
         }
 
         [HttpPut]
-        [Route("ActualizarCategoria")] // Hace un update a un paciente en especifico segun los datos que se le brinden. 
+        [Route("ActualizarCategoria")] // Hace un update a un paciente en especifico segun los datos que se le brinden.
         [AllowAnonymous]
-        public async Task<Respuesta> ActualizarCategoria(int id, string? nuevoNombre, int nuevaCapacidad, int Precio,int? Porcentaje, int? UsuarioID)
+        public async Task<Respuesta> ActualizarCategoria(
+            int id,
+            string? nuevoNombre,
+            int nuevaCapacidad,
+            int Precio,
+            int? Porcentaje,
+            int? UsuarioID
+        )
         {
             Respuesta res = new Respuesta();
             try
@@ -188,22 +194,16 @@ namespace hotel.Controllers
                             new SqlParameter("@Id", id)
                         );
                     }
-                    if (nuevaCapacidad != null)
-                    {
-                        _db.Database.ExecuteSqlRaw(
-                            "UPDATE CategoriasHabitaciones SET CapacidadMaxima = @nuevaCapacidad WHERE CategoriaID = @Id",
-                            new SqlParameter("@nuevaCapacidad", nuevaCapacidad),
-                            new SqlParameter("@Id", id)
-                        );
-                    }
-                    if (Precio != null)
-                    {
-                        _db.Database.ExecuteSqlRaw(
-                            "UPDATE CategoriasHabitaciones SET PrecioNormal = @Precio WHERE CategoriaID = @Id",
-                            new SqlParameter("@Precio", Precio),
-                            new SqlParameter("@Id", id)
-                        );
-                    }
+                    _db.Database.ExecuteSqlRaw(
+                        "UPDATE CategoriasHabitaciones SET CapacidadMaxima = @nuevaCapacidad WHERE CategoriaID = @Id",
+                        new SqlParameter("@nuevaCapacidad", nuevaCapacidad),
+                        new SqlParameter("@Id", id)
+                    );
+                    _db.Database.ExecuteSqlRaw(
+                        "UPDATE CategoriasHabitaciones SET PrecioNormal = @Precio WHERE CategoriaID = @Id",
+                        new SqlParameter("@Precio", Precio),
+                        new SqlParameter("@Id", id)
+                    );
                     if (Porcentaje != null)
                     {
                         _db.Database.ExecuteSqlRaw(
@@ -280,33 +280,43 @@ namespace hotel.Controllers
         [HttpPut]
         [Route("Update/{modelName}/{id}")]
         [AllowAnonymous]
-
         public async Task<IActionResult> Update(string modelName, int id, [FromBody] JObject data)
         {
             try
             {
                 // Get the type of the model from its name
-                Type modelType = Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(t => t.Name == modelName);
+                Type modelType = Assembly
+                    .GetExecutingAssembly()
+                    .GetTypes()
+                    .FirstOrDefault(t => t.Name == modelName);
                 if (modelType == null)
                 {
                     return BadRequest($"Model '{modelName}' not found.");
                 }
 
                 // Get the DbSet for the model type using reflection
-                var dbSet = typeof(DbContext).GetMethod("Set", new Type[] { }).MakeGenericMethod(modelType).Invoke(_db, null);
+                var dbSet = typeof(DbContext)
+                    .GetMethod("Set", new Type[] { })
+                    .MakeGenericMethod(modelType)
+                    .Invoke(_db, null);
                 if (dbSet == null)
                 {
                     return BadRequest("Invalid model type.");
                 }
 
                 // Find the entity by ID using reflection
-                var findMethod = dbSet.GetType().GetMethod("FindAsync", new Type[] { typeof(object[]) });
-                var entityTask = (Task)findMethod.Invoke(dbSet, new object[] { new object[] { id } });
+                var findMethod = dbSet
+                    .GetType()
+                    .GetMethod("FindAsync", new Type[] { typeof(object[]) });
+                var entityTask = (Task)
+                    findMethod.Invoke(dbSet, new object[] { new object[] { id } });
                 await entityTask.ConfigureAwait(false);
                 var entity = ((dynamic)entityTask).Result;
                 if (entity == null)
                 {
-                    return NotFound(new { Message = $"{modelName} with ID {id} not found.", Ok = false });
+                    return NotFound(
+                        new { Message = $"{modelName} with ID {id} not found.", Ok = false }
+                    );
                 }
 
                 // Update the entity with new data
@@ -323,53 +333,69 @@ namespace hotel.Controllers
                 _db.Entry(entity).State = EntityState.Modified;
                 await _db.SaveChangesAsync();
 
-                return Ok(new { Message = $"{modelName} with ID {id} updated successfully.", Ok = true });
+                return Ok(
+                    new { Message = $"{modelName} with ID {id} updated successfully.", Ok = true }
+                );
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = $"Error updating {modelName}: {ex.Message}", Ok = false });
+                return BadRequest(
+                    new { Message = $"Error updating {modelName}: {ex.Message}", Ok = false }
+                );
             }
         }
+
         [HttpGet]
         [Route("Get/{modelName}/{id}")]
         [AllowAnonymous]
-
         public async Task<IActionResult> Get(string modelName, int id)
         {
             try
             {
                 // Get the type of the model from its name
-                Type modelType = Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(t => t.Name == modelName);
+                Type modelType = Assembly
+                    .GetExecutingAssembly()
+                    .GetTypes()
+                    .FirstOrDefault(t => t.Name == modelName);
                 if (modelType == null)
                 {
                     return BadRequest($"Model '{modelName}' not found.");
                 }
 
                 // Get the DbSet for the model type using reflection
-                var dbSet = typeof(DbContext).GetMethod("Set", new Type[] { }).MakeGenericMethod(modelType).Invoke(_db, null);
+                var dbSet = typeof(DbContext)
+                    .GetMethod("Set", new Type[] { })
+                    .MakeGenericMethod(modelType)
+                    .Invoke(_db, null);
                 if (dbSet == null)
                 {
                     return BadRequest("Invalid model type.");
                 }
 
                 // Find the entity by ID using reflection
-                var findMethod = dbSet.GetType().GetMethod("FindAsync", new Type[] { typeof(object[]) });
-                var entityTask = (Task)findMethod.Invoke(dbSet, new object[] { new object[] { id } });
+                var findMethod = dbSet
+                    .GetType()
+                    .GetMethod("FindAsync", new Type[] { typeof(object[]) });
+                var entityTask = (Task)
+                    findMethod.Invoke(dbSet, new object[] { new object[] { id } });
                 await entityTask.ConfigureAwait(false);
                 var entity = ((dynamic)entityTask).Result;
                 if (entity == null)
                 {
-                    return NotFound(new { Message = $"{modelName} with ID {id} not found.", Ok = false });
+                    return NotFound(
+                        new { Message = $"{modelName} with ID {id} not found.", Ok = false }
+                    );
                 }
 
                 return Ok(entity);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = $"Error retrieving {modelName}: {ex.Message}", Ok = false });
+                return BadRequest(
+                    new { Message = $"Error retrieving {modelName}: {ex.Message}", Ok = false }
+                );
             }
         }
-
 
         [HttpPost]
         [Route("Create/{modelName}")]
@@ -384,7 +410,10 @@ namespace hotel.Controllers
             try
             {
                 // Get the type of the model from its name
-                Type modelType = Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(t => t.Name == modelName);
+                Type modelType = Assembly
+                    .GetExecutingAssembly()
+                    .GetTypes()
+                    .FirstOrDefault(t => t.Name == modelName);
                 if (modelType == null)
                 {
                     return BadRequest($"Model '{modelName}' not found.");
@@ -422,13 +451,22 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = $"Error creating {modelName}: {ex.Message} + {ex.InnerException}", Ok = false });
+                return BadRequest(
+                    new
+                    {
+                        Message = $"Error creating {modelName}: {ex.Message} + {ex.InnerException}",
+                        Ok = false,
+                    }
+                );
             }
         }
 
         private object ConvertJsonElement(JsonElement jsonElement, Type targetType)
         {
-            if (targetType.IsGenericType && targetType.GetGenericTypeDefinition() == typeof(Nullable<>))
+            if (
+                targetType.IsGenericType
+                && targetType.GetGenericTypeDefinition() == typeof(Nullable<>)
+            )
             {
                 // Get the underlying type
                 var underlyingType = Nullable.GetUnderlyingType(targetType);
@@ -472,33 +510,43 @@ namespace hotel.Controllers
         [HttpDelete]
         [Route("Delete/{modelName}/{id}")]
         [AllowAnonymous]
-
         public async Task<IActionResult> Delete(string modelName, int id)
         {
             try
             {
                 // Get the type of the model from its name
-                Type modelType = Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(t => t.Name == modelName);
+                Type modelType = Assembly
+                    .GetExecutingAssembly()
+                    .GetTypes()
+                    .FirstOrDefault(t => t.Name == modelName);
                 if (modelType == null)
                 {
                     return BadRequest($"Model '{modelName}' not found.");
                 }
 
                 // Get the DbSet for the model type using reflection
-                var dbSet = typeof(DbContext).GetMethod("Set", new Type[] { }).MakeGenericMethod(modelType).Invoke(_db, null);
+                var dbSet = typeof(DbContext)
+                    .GetMethod("Set", new Type[] { })
+                    .MakeGenericMethod(modelType)
+                    .Invoke(_db, null);
                 if (dbSet == null)
                 {
                     return BadRequest("Invalid model type.");
                 }
 
                 // Find the entity by ID using reflection
-                var findMethod = dbSet.GetType().GetMethod("FindAsync", new Type[] { typeof(object[]) });
-                var entityTask = (Task)findMethod.Invoke(dbSet, new object[] { new object[] { id } });
+                var findMethod = dbSet
+                    .GetType()
+                    .GetMethod("FindAsync", new Type[] { typeof(object[]) });
+                var entityTask = (Task)
+                    findMethod.Invoke(dbSet, new object[] { new object[] { id } });
                 await entityTask.ConfigureAwait(false);
                 var entity = ((dynamic)entityTask).Result;
                 if (entity == null)
                 {
-                    return NotFound(new { Message = $"{modelName} with ID {id} not found.", Ok = false });
+                    return NotFound(
+                        new { Message = $"{modelName} with ID {id} not found.", Ok = false }
+                    );
                 }
 
                 // Remove the entity
@@ -507,21 +555,23 @@ namespace hotel.Controllers
 
                 await _db.SaveChangesAsync();
 
-                return Ok(new { Message = $"{modelName} with ID {id} deleted successfully.", Ok = true });
+                return Ok(
+                    new { Message = $"{modelName} with ID {id} deleted successfully.", Ok = true }
+                );
             }
             catch (Exception ex)
             {
-                return BadRequest(new { Message = $"Error deleting {modelName}: {ex.Message}", Ok = false });
+                return BadRequest(
+                    new { Message = $"Error deleting {modelName}: {ex.Message}", Ok = false }
+                );
             }
         }
-
     }
-
-
-        }
+}
 
 public class LoginModel
 {
     public string Username { get; set; }
     public string Password { get; set; }
 }
+

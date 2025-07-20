@@ -1,11 +1,11 @@
-﻿using hotel.Models.Sistema;
+﻿using hotel.Data;
+using hotel.DTOs;
 using hotel.Models;
+using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using hotel.Data;
 using Microsoft.EntityFrameworkCore;
-using hotel.DTOs;
 
 namespace hotel.Controllers
 {
@@ -18,73 +18,72 @@ namespace hotel.Controllers
         {
             _db = db;
         }
-            #region Habitaciones
-            [HttpPost]
-            [Route("CrearHabitacion")] // Crea un nuevo paciente
-            [AllowAnonymous]
 
-            public async Task<Respuesta> CrearHabitacion(int institucionID, string nombreHabitacion, int categoriaID)
+        #region Habitaciones
+        [HttpPost]
+        [Route("CrearHabitacion")] // Crea un nuevo paciente
+        [AllowAnonymous]
+        public async Task<Respuesta> CrearHabitacion(
+            int institucionID,
+            string nombreHabitacion,
+            int categoriaID
+        )
+        {
+            Respuesta res = new Respuesta();
+            try
             {
-                Respuesta res = new Respuesta();
-                try
+                Habitaciones nuevaHabitacion = new Habitaciones
                 {
-                    Habitaciones nuevaHabitacion = new Habitaciones
-                    {
+                    NombreHabitacion = nombreHabitacion,
+                    InstitucionID = institucionID,
+                    CategoriaId = categoriaID,
+                };
 
-                        NombreHabitacion = nombreHabitacion,
-                        InstitucionID = institucionID,
-                        CategoriaId = categoriaID,
-                    };
+                _db.Add(nuevaHabitacion);
+                await _db.SaveChangesAsync();
 
-                    _db.Add(nuevaHabitacion);
-                    await _db.SaveChangesAsync();
-
-                    res.Message = "La habitación se creó correctamente";
-                    res.Ok = true;
-                }
-                catch (Exception ex)
-                {
-                    res.Message = $"Error: {ex.Message} {ex.InnerException}";
-                    res.Ok = false;
-                }
-
-                return res;
+                res.Message = "La habitación se creó correctamente";
+                res.Ok = true;
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                res.Ok = false;
             }
 
+            return res;
+        }
 
-            [HttpGet]
-            [Route("GetHabitacion")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
-            [AllowAnonymous]
-
-            public async Task<Respuesta> GetHabitacion(int idHabitacion)
+        [HttpGet]
+        [Route("GetHabitacion")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
+        [AllowAnonymous]
+        public async Task<Respuesta> GetHabitacion(int idHabitacion)
+        {
+            Respuesta res = new Respuesta();
+            try
             {
-                Respuesta res = new Respuesta();
-                try
-                {
-                var Objeto = await _db.Habitaciones
-                    .Where(t => t.HabitacionId == idHabitacion)
-                    .Include(h => h.Categoria)  // Include Categoria to access PrecioNormal
-                    .Select(h => new {
+                var Objeto = await _db
+                    .Habitaciones.Where(t => t.HabitacionId == idHabitacion)
+                    .Include(h => h.Categoria) // Include Categoria to access PrecioNormal
+                    .Select(h => new
+                    {
                         Habitacion = h,
                         Visita = h.Visita,
-                        Precio = h.Categoria.PrecioNormal,  // Include PrecioNormal from Categoria
-                        ReservaActiva = h.Visita.Reservas.FirstOrDefault(r => r.FechaFin == null) // Only the active reserva
+                        Precio = h.Categoria!.PrecioNormal, // Include PrecioNormal from Categoria
+                        ReservaActiva = h.Visita!.Reservas.FirstOrDefault(r => r.FechaFin == null), // Only the active reserva
                     })
                     .ToListAsync();
                 res.Ok = true;
-                    res.Data = Objeto[0];
-                    return res;
-
-
-
-                }
-                catch (Exception ex)
-                {
-                    res.Message = ex.ToString();
-                    res.Ok = false;
-                }
+                res.Data = Objeto[0];
                 return res;
             }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
 
         [HttpGet]
         [Route("GetHabitaciones")]
@@ -95,10 +94,10 @@ namespace hotel.Controllers
             try
             {
                 // Obtener las habitaciones junto con su visita, verificar pedidos pendientes y incluir imágenes
-                var habitaciones = await _db.Habitaciones
-                    .Include(h => h.Visita)
-                    .ThenInclude(v => v.Reservas) // Include all Reservas
-                    .Include(h => h.Categoria)  // Include Categoria to access PrecioNormal
+                var habitaciones = await _db
+                    .Habitaciones.Include(h => h.Visita)
+                    .ThenInclude(v => v!.Reservas) // Include all Reservas
+                    .Include(h => h.Categoria) // Include Categoria to access PrecioNormal
                     .Include(h => h.HabitacionImagenes) // Include HabitacionImagenes to access ImagenId
                     .Include(h => h.HabitacionCaracteristicas)
                     .ThenInclude(hc => hc.Caracteristica) // Incluye las características
@@ -115,23 +114,26 @@ namespace hotel.Controllers
                         h.Anulado,
                         h.VisitaID,
                         h.Visita,
-                        Precio = h.Categoria.PrecioNormal,  // Directly include PrecioNormal from Categoria
-                        ReservaActiva = h.Visita.Reservas.FirstOrDefault(r => r.FechaFin == null), // Only active reserva
-                        PedidosPendientes = _db.Encargos
-                            .Any(e => e.VisitaId == h.VisitaID && (e.Anulado ?? false) == false && (e.Entregado ?? false) == false),
-                        Imagenes = h.HabitacionImagenes
-                        .Where(hi => hi.Anulado == false) // Filtro para excluir imágenes anuladas    
-                        .Select(hi => hi.ImagenId) // Select ImagenId from HabitacionImagenes
+                        Precio = h.Categoria!.PrecioNormal, // Directly include PrecioNormal from Categoria
+                        ReservaActiva = h.Visita!.Reservas.FirstOrDefault(r => r.FechaFin == null), // Only active reserva
+                        PedidosPendientes = _db.Encargos.Any(e =>
+                            e.VisitaId == h.VisitaID
+                            && (e.Anulado ?? false) == false
+                            && (e.Entregado ?? false) == false
+                        ),
+                        Imagenes = h
+                            .HabitacionImagenes.Where(hi => hi.Anulado == false) // Filtro para excluir imágenes anuladas
+                            .Select(hi => hi.ImagenId) // Select ImagenId from HabitacionImagenes
                             .ToList(),
-                        Caracteristicas = h.HabitacionCaracteristicas
-                            .Select(hc => new {
+                        Caracteristicas = h
+                            .HabitacionCaracteristicas.Select(hc => new
+                            {
                                 caracteristicaId = hc.CaracteristicaId,
                                 nombre = hc.Caracteristica.Nombre,
                                 descripcion = hc.Caracteristica.Descripcion,
-                                icono = hc.Caracteristica.Icono
-
+                                icono = hc.Caracteristica.Icono,
                             })
-                            .ToList()
+                            .ToList(),
                     })
                     .ToListAsync();
 
@@ -155,52 +157,58 @@ namespace hotel.Controllers
             var res = new Respuesta();
             try
             {
-                var categoriasConHabitaciones = await _db.CategoriasHabitaciones
-                    .AsNoTracking()
-                    .Where(c => c.Habitaciones.Any(h =>
-                        (h.Disponible ?? false) &&
-                        !(h.Anulado ?? false) &&
-                        h.InstitucionID == institucionID))
+                var categoriasConHabitaciones = await _db
+                    .CategoriasHabitaciones.AsNoTracking()
+                    .Where(c =>
+                        c.Habitaciones.Any(h =>
+                            (h.Disponible ?? false)
+                            && !(h.Anulado ?? false)
+                            && h.InstitucionID == institucionID
+                        )
+                    )
                     .Select(c => new
                     {
                         CategoriaId = c.CategoriaId,
                         NombreCategoria = c.NombreCategoria,
                         PrecioNormal = c.PrecioNormal,
-                        Habitaciones = c.Habitaciones
-                            .Where(h =>
-                                (h.Disponible ?? false) &&
-                                !(h.Anulado ?? false) &&
-                                h.InstitucionID == institucionID)
+                        Habitaciones = c
+                            .Habitaciones.Where(h =>
+                                (h.Disponible ?? false)
+                                && !(h.Anulado ?? false)
+                                && h.InstitucionID == institucionID
+                            )
                             .Select(h => new
                             {
-                               
                                 h.HabitacionId,
                                 h.NombreHabitacion,
                                 h.Disponible,
                                 CategoriaId = c.CategoriaId,
                                 Precio = c.PrecioNormal,
-                                ReservaActiva = h.Visita != null ?
-                                    h.Visita.Reservas.FirstOrDefault(r => r.FechaFin == null) : null,
-                                PedidosPendientes = h.VisitaID.HasValue ?
-                                    _db.Encargos
-                                        .Any(e => e.VisitaId == h.VisitaID &&
-                                               (e.Anulado == null || e.Anulado == false) &&
-                                               (e.Entregado == null || e.Entregado == false)) : false,
-                                Imagenes = h.HabitacionImagenes
-                                    .Where(hi => hi.Anulado == false)
+                                ReservaActiva = h.Visita != null
+                                    ? h.Visita.Reservas.FirstOrDefault(r => r.FechaFin == null)
+                                    : null,
+                                PedidosPendientes = h.VisitaID.HasValue
+                                    ? _db.Encargos.Any(e =>
+                                        e.VisitaId == h.VisitaID
+                                        && (e.Anulado == null || e.Anulado == false)
+                                        && (e.Entregado == null || e.Entregado == false)
+                                    )
+                                    : false,
+                                Imagenes = h
+                                    .HabitacionImagenes.Where(hi => hi.Anulado == false)
                                     .Select(hi => hi.ImagenId)
                                     .ToList(),
-                                Caracteristicas = h.HabitacionCaracteristicas
-                                    .Select(hc => new
+                                Caracteristicas = h
+                                    .HabitacionCaracteristicas.Select(hc => new
                                     {
                                         hc.CaracteristicaId,
                                         hc.Caracteristica.Nombre,
                                         Descripcion = hc.Caracteristica.Descripcion ?? string.Empty,
-                                        Icono = hc.Caracteristica.Icono ?? string.Empty
+                                        Icono = hc.Caracteristica.Icono ?? string.Empty,
                                     })
-                                    .ToList()
+                                    .ToList(),
                             })
-                            .ToList()
+                            .ToList(),
                     })
                     .ToListAsync();
 
@@ -210,20 +218,20 @@ namespace hotel.Controllers
             catch (Exception ex)
             {
                 res.Ok = false;
-                res.Message = "Error al obtener habitaciones";
+                res.Message = "Error al obtener habitaciones:" + ex.Message;
             }
             return res;
         }
-
 
         [HttpPost]
         [Route("CrearHabitacionConImagenes")]
         [AllowAnonymous]
         public async Task<Respuesta> CrearHabitacionConImagenes(
-        int institucionID,
-        [FromForm] string nombreHabitacion,
-        [FromForm] int categoriaID,
-        [FromForm] IFormFile[] imagenes)
+            int institucionID,
+            [FromForm] string nombreHabitacion,
+            [FromForm] int categoriaID,
+            [FromForm] IFormFile[] imagenes
+        )
         {
             Respuesta res = new Respuesta();
             try
@@ -233,7 +241,7 @@ namespace hotel.Controllers
                     NombreHabitacion = nombreHabitacion,
                     InstitucionID = institucionID,
                     CategoriaId = categoriaID,
-                    FechaRegistro = DateTime.Now
+                    FechaRegistro = DateTime.Now,
                 };
 
                 _db.Habitaciones.Add(nuevaHabitacion);
@@ -249,7 +257,8 @@ namespace hotel.Controllers
                     {
                         if (imagen.Length > 0)
                         {
-                            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
+                            var fileName =
+                                Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
                             var filePath = Path.Combine(UPLOADS_PATH, fileName);
 
                             Directory.CreateDirectory(UPLOADS_PATH);
@@ -263,7 +272,7 @@ namespace hotel.Controllers
                                 NombreArchivo = fileName,
                                 Origen = "habitacion",
                                 FechaSubida = DateTime.Now,
-                                InstitucionID = nuevaHabitacion.InstitucionID
+                                InstitucionID = nuevaHabitacion.InstitucionID,
                             };
 
                             imagenesAAgregar.Add(nuevaImagen);
@@ -277,11 +286,13 @@ namespace hotel.Controllers
                     // Crear relaciones con la habitación
                     foreach (var img in imagenesAAgregar)
                     {
-                        relacionesAAgregar.Add(new HabitacionImagenes
-                        {
-                            HabitacionId = nuevaHabitacion.HabitacionId,
-                            ImagenId = img.ImagenId
-                        });
+                        relacionesAAgregar.Add(
+                            new HabitacionImagenes
+                            {
+                                HabitacionId = nuevaHabitacion.HabitacionId,
+                                ImagenId = img.ImagenId,
+                            }
+                        );
                     }
 
                     // Guardar relaciones en un solo SaveChangesAsync
@@ -297,10 +308,12 @@ namespace hotel.Controllers
                     NombreHabitacion = nuevaHabitacion.NombreHabitacion,
                     InstitucionID = nuevaHabitacion.InstitucionID,
                     CategoriaId = nuevaHabitacion.CategoriaId,
-                    Imagenes = _db.HabitacionImagenes
-                .Where(hi => hi.HabitacionId == nuevaHabitacion.HabitacionId)
-                .Select(hi => hi.Imagen.NombreArchivo)
-                .ToList()
+                    Imagenes = _db
+                        .HabitacionImagenes.Where(hi =>
+                            hi.HabitacionId == nuevaHabitacion.HabitacionId
+                        )
+                        .Select(hi => hi.Imagen.NombreArchivo)
+                        .ToList(),
                 };
             }
             catch (Exception ex)
@@ -315,20 +328,19 @@ namespace hotel.Controllers
         [HttpGet]
         [Route("GetCategorias")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
-
         public async Task<Respuesta> GetCategorias(int institucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
-
-                var Objeto = await _db.CategoriasHabitaciones.Where(c => c.Anulado == false && c.InstitucionID == institucionID).ToListAsync();
+                var Objeto = await _db
+                    .CategoriasHabitaciones.Where(c =>
+                        c.Anulado == false && c.InstitucionID == institucionID
+                    )
+                    .ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto;
                 return res;
-
-
-
             }
             catch (Exception ex)
             {
@@ -346,8 +358,8 @@ namespace hotel.Controllers
             Respuesta res = new Respuesta();
             try
             {
-                var habitacion = await _db.Habitaciones
-                    .Where(h => h.HabitacionId == idHabitacion && h.Anulado == false)
+                var habitacion = await _db
+                    .Habitaciones.Where(h => h.HabitacionId == idHabitacion && h.Anulado == false)
                     .Select(h => h.VisitaID)
                     .FirstOrDefaultAsync();
 
@@ -375,13 +387,14 @@ namespace hotel.Controllers
         [Route("ActualizarHabitacion")]
         [AllowAnonymous]
         public async Task<Respuesta> ActualizarHabitacion(
-    int id,
-    [FromForm] string? nuevoNombre,
-    [FromForm] int nuevaCategoria,
-    [FromForm] string? disponibilidad,
-    [FromForm] DateTime? proximaReserva,
-    [FromForm] int usuarioId,
-    [FromForm] IFormFile[]? nuevasImagenes) // Add this parameter for new images
+            int id,
+            [FromForm] string? nuevoNombre,
+            [FromForm] int nuevaCategoria,
+            [FromForm] string? disponibilidad,
+            [FromForm] DateTime? proximaReserva,
+            [FromForm] int usuarioId,
+            [FromForm] IFormFile[]? nuevasImagenes
+        ) // Add this parameter for new images
         {
             Respuesta res = new Respuesta();
             try
@@ -410,7 +423,11 @@ namespace hotel.Controllers
                     habitacion.Disponible = disponibilidad == "1" ? true : false;
                 }
 
-                if (proximaReserva.HasValue && proximaReserva.Value >= new DateTime(1753, 1, 1) && proximaReserva.Value <= new DateTime(9999, 12, 31))
+                if (
+                    proximaReserva.HasValue
+                    && proximaReserva.Value >= new DateTime(1753, 1, 1)
+                    && proximaReserva.Value <= new DateTime(9999, 12, 31)
+                )
                 {
                     habitacion.ProximaReserva = proximaReserva.Value;
                 }
@@ -433,7 +450,8 @@ namespace hotel.Controllers
                     {
                         if (imagen.Length > 0)
                         {
-                            var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
+                            var fileName =
+                                Guid.NewGuid().ToString() + Path.GetExtension(imagen.FileName);
                             var filePath = Path.Combine(UPLOADS_PATH, fileName);
 
                             Directory.CreateDirectory(UPLOADS_PATH);
@@ -447,7 +465,7 @@ namespace hotel.Controllers
                                 NombreArchivo = fileName,
                                 Origen = "habitacion",
                                 FechaSubida = DateTime.Now,
-                                InstitucionID = habitacion.InstitucionID
+                                InstitucionID = habitacion.InstitucionID,
                             };
 
                             imagenesAAgregar.Add(nuevaImagen);
@@ -461,11 +479,13 @@ namespace hotel.Controllers
                     // Create relationships between the room and the new images
                     foreach (var img in imagenesAAgregar)
                     {
-                        relacionesAAgregar.Add(new HabitacionImagenes
-                        {
-                            HabitacionId = habitacion.HabitacionId,
-                            ImagenId = img.ImagenId
-                        });
+                        relacionesAAgregar.Add(
+                            new HabitacionImagenes
+                            {
+                                HabitacionId = habitacion.HabitacionId,
+                                ImagenId = img.ImagenId,
+                            }
+                        );
                     }
 
                     // Save relationships
@@ -494,8 +514,9 @@ namespace hotel.Controllers
             try
             {
                 // Find the relationship to anular
-                var relacion = await _db.HabitacionImagenes
-                    .FirstOrDefaultAsync(hi => hi.ImagenId == imagenId);
+                var relacion = await _db.HabitacionImagenes.FirstOrDefaultAsync(hi =>
+                    hi.ImagenId == imagenId
+                );
 
                 if (relacion == null)
                 {
@@ -521,37 +542,37 @@ namespace hotel.Controllers
         }
 
         [HttpDelete]
-            [Route("AnularHabitacion")] // Encuentra el ID del paciente para luego eliminarlo
-            [AllowAnonymous]
-            public async Task<Respuesta> AnularHabitacion(int idHabitacion, bool Estado)
+        [Route("AnularHabitacion")] // Encuentra el ID del paciente para luego eliminarlo
+        [AllowAnonymous]
+        public async Task<Respuesta> AnularHabitacion(int idHabitacion, bool Estado)
+        {
+            Respuesta res = new Respuesta();
+            try
             {
-                Respuesta res = new Respuesta();
-                try
-                {
-                    var habitacion = await _db.Habitaciones.FindAsync(idHabitacion);
+                var habitacion = await _db.Habitaciones.FindAsync(idHabitacion);
 
-                    if (habitacion == null)
-                    {
-                        res.Ok = false;
-                        res.Message = $"La habitación con el id {idHabitacion} no se encontró.";
-                    }
-                    else
-                    {
-                        habitacion.Anulado = Estado;
-                        await _db.SaveChangesAsync();
-
-                        res.Ok = true;
-                        res.Message = $"Se anuló la habitación correctamente";
-                    }
-                }
-                catch (Exception ex)
+                if (habitacion == null)
                 {
                     res.Ok = false;
-                    res.Message = $"Ocurrió un error: {ex.Message}";
+                    res.Message = $"La habitación con el id {idHabitacion} no se encontró.";
                 }
+                else
+                {
+                    habitacion.Anulado = Estado;
+                    await _db.SaveChangesAsync();
 
-                return res;
+                    res.Ok = true;
+                    res.Message = $"Se anuló la habitación correctamente";
+                }
             }
+            catch (Exception ex)
+            {
+                res.Ok = false;
+                res.Message = $"Ocurrió un error: {ex.Message}";
+            }
+
+            return res;
+        }
 
         [HttpGet("GetCaracteristicas")]
         public async Task<Respuesta> GetCaracteristicas()
@@ -559,13 +580,13 @@ namespace hotel.Controllers
             Respuesta res = new Respuesta();
             try
             {
-                var caracteristicas = await _db.Caracteristicas
-                    .Select(c => new
+                var caracteristicas = await _db
+                    .Caracteristicas.Select(c => new
                     {
                         c.CaracteristicaId,
                         c.Nombre,
                         Descripcion = c.Descripcion ?? string.Empty,
-                        Icono = c.Icono ?? string.Empty // Incluir el ícono en la respuesta
+                        Icono = c.Icono ?? string.Empty, // Incluir el ícono en la respuesta
                     })
                     .ToListAsync();
 
@@ -581,9 +602,6 @@ namespace hotel.Controllers
             }
         }
 
-
         #endregion
-
     }
-    }
-
+}

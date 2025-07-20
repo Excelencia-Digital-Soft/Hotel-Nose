@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace hotel.Models
 {
@@ -11,8 +10,8 @@ namespace hotel.Models
 
         public decimal? Valor { get; set; }
         public int PagoID { get; set; }
-        [JsonIgnore]
-        public Pagos Pago { get; set; }
 
+        [JsonIgnore]
+        public Pagos Pago { get; set; } = null!;
     }
 }

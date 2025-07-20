@@ -1,6 +1,6 @@
 ﻿using hotel.Data;
-using hotel.Models.Sistema;
 using hotel.Models;
+using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,11 +16,15 @@ namespace hotel.Controllers
             _db = db;
         }
 
-
         [HttpPost]
         [Route("MovimientoHabitacion")]
         [AllowAnonymous]
-        public async Task<int> CrearMovimientoHabitacion(int visitaId, int InstitucionID, decimal totalFacturado, int habitacionId)
+        public async Task<int> CrearMovimientoHabitacion(
+            int visitaId,
+            int InstitucionID,
+            decimal totalFacturado,
+            int habitacionId
+        )
         {
             try
             {
@@ -40,6 +44,7 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex);
                 return 0;
             }
         }
@@ -48,7 +53,11 @@ namespace hotel.Controllers
         [Route("ConsumoHabitacion")]
         [AllowAnonymous]
         [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/room instead.")]
-        public async Task<Respuesta> ConsumirArticulos([FromBody] List<ArticuloConsumoDTO> articulos, int habitacionId, int visitaId)
+        public async Task<Respuesta> ConsumirArticulos(
+            [FromBody] List<ArticuloConsumoDTO> articulos,
+            int habitacionId,
+            int visitaId
+        )
         {
             Respuesta res = new Respuesta();
 
@@ -69,9 +78,9 @@ namespace hotel.Controllers
                     {
                         HabitacionId = habitacionId,
                         VisitaId = visitaId,
-                        InstitucionID = habitacion.InstitucionID,  
+                        InstitucionID = habitacion.InstitucionID,
                         FechaRegistro = DateTime.Now,
-                        Anulado = false
+                        Anulado = false,
                     };
 
                     _db.Movimientos.Add(nuevoMovimiento);
@@ -88,22 +97,22 @@ namespace hotel.Controllers
                             res.Message = $"Articulo with ID {articuloDTO.ArticuloId} not found.";
                             return res;
                         }
-                        if (articulo.Precio == null || articulo.Precio == 0 || articuloDTO.Cantidad == 0)
+                        if (articulo.Precio == 0 || articuloDTO.Cantidad == 0)
                         {
                             res.Ok = false;
                             res.Message = $"Error con el precio del articulo";
                             return res;
                         }
                         // Step 3: Retrieve the Inventario for the specific Articulo and Habitacion
-                        var inventario = await _db.Inventarios
-                            .FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId && i.HabitacionId == habitacionId);
+                        var inventario = await _db.Inventarios.FirstOrDefaultAsync(i =>
+                            i.ArticuloId == articuloDTO.ArticuloId && i.HabitacionId == habitacionId
+                        );
 
                         if (inventario == null || inventario.Cantidad < articuloDTO.Cantidad)
                         {
-                                res.Ok = false;
-                                res.Message = $"No hay suficiente producto";
-                                return res;
-
+                            res.Ok = false;
+                            res.Message = $"No hay suficiente producto";
+                            return res;
                         }
                         else
                         {
@@ -130,7 +139,7 @@ namespace hotel.Controllers
                             PrecioUnitario = articulo.Precio,
                             MovimientosId = nuevoMovimiento.MovimientosId,
                             Anulado = false,
-                            EsHabitacion = true
+                            EsHabitacion = true,
                         };
 
                         consumosToAdd.Add(nuevoConsumo);
@@ -174,7 +183,11 @@ namespace hotel.Controllers
         [Route("ConsumoGeneral")]
         [AllowAnonymous]
         [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/general instead.")]
-        public async Task<Respuesta> ConsumirArticulosGeneral([FromBody] List<ArticuloConsumoDTO> articulos, int habitacionId, int visitaId)
+        public async Task<Respuesta> ConsumirArticulosGeneral(
+            [FromBody] List<ArticuloConsumoDTO> articulos,
+            int habitacionId,
+            int visitaId
+        )
         {
             Respuesta res = new Respuesta();
 
@@ -197,7 +210,7 @@ namespace hotel.Controllers
                         VisitaId = visitaId,
                         InstitucionID = habitacion.InstitucionID,
                         FechaRegistro = DateTime.Now,
-                        Anulado = false
+                        Anulado = false,
                     };
 
                     _db.Movimientos.Add(nuevoMovimiento);
@@ -214,25 +227,25 @@ namespace hotel.Controllers
                             res.Message = $"Articulo with ID {articuloDTO.ArticuloId} not found.";
                             return res;
                         }
-                        if (articulo.Precio == null || articulo.Precio == 0 || articuloDTO.Cantidad == 0)
+                        if (articulo.Precio == 0 || articuloDTO.Cantidad == 0)
                         {
                             res.Ok = false;
                             res.Message = $"Error con el precio del articulo";
                             return res;
                         }
                         // Step 3: Retrieve the Inventario for the specific Articulo and Habitacion
-                        var inventario = await _db.InventarioGeneral
-                            .FirstOrDefaultAsync(i => i.ArticuloId == articuloDTO.ArticuloId);
+                        var inventario = await _db.InventarioGeneral.FirstOrDefaultAsync(i =>
+                            i.ArticuloId == articuloDTO.ArticuloId
+                        );
 
                         if (inventario == null || inventario.Cantidad < articuloDTO.Cantidad)
                         {
-                            if (inventario.Cantidad < 0)
+                            if (inventario!.Cantidad < 0)
                             {
                                 res.Ok = false;
                                 res.Message = $"No hay suficiente producto";
                                 return res;
                             }
-
                         }
                         else
                         {
@@ -241,7 +254,8 @@ namespace hotel.Controllers
                             if (inventario.Cantidad < 0)
                             {
                                 res.Ok = false;
-                                res.Message = $"No hay suficiente producto en el inventario general";
+                                res.Message =
+                                    $"No hay suficiente producto en el inventario general";
                                 return res;
                             }
                             _db.InventarioGeneral.Update(inventario);
@@ -259,7 +273,7 @@ namespace hotel.Controllers
                             PrecioUnitario = articulo.Precio,
                             MovimientosId = nuevoMovimiento.MovimientosId,
                             Anulado = false,
-                            EsHabitacion = false
+                            EsHabitacion = false,
                         };
 
                         consumosToAdd.Add(nuevoConsumo);
@@ -308,24 +322,34 @@ namespace hotel.Controllers
             Respuesta res = new Respuesta();
             try
             {
-                var consumo = await _db.Consumo
-                    .FromSqlRaw("SELECT * FROM Consumo WITH (UPDLOCK, ROWLOCK) WHERE ConsumoId = {0} AND Anulado != 1", idConsumo)
+                var consumo = await _db
+                    .Consumo.FromSqlRaw(
+                        "SELECT * FROM Consumo WITH (UPDLOCK, ROWLOCK) WHERE ConsumoId = {0} AND Anulado != 1",
+                        idConsumo
+                    )
                     .SingleOrDefaultAsync();
 
                 if (consumo != null)
                 {
-                    var movimiento = await _db.Movimientos.FirstAsync(m => m.MovimientosId == consumo.MovimientosId);
+                    var movimiento = await _db.Movimientos.FirstAsync(m =>
+                        m.MovimientosId == consumo.MovimientosId
+                    );
                     consumo.Anulado = true;
                     movimiento.TotalFacturado -= consumo.PrecioUnitario * consumo.Cantidad;
 
                     if (consumo.EsHabitacion == true)
                     {
-                        var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == movimiento.HabitacionId);
+                        var inventario = await _db.Inventarios.FirstAsync(i =>
+                            i.ArticuloId == consumo.ArticuloId
+                            && i.HabitacionId == movimiento.HabitacionId
+                        );
                         inventario.Cantidad += consumo.Cantidad;
                     }
                     else
                     {
-                        var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i => i.ArticuloId == consumo.ArticuloId);
+                        var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i =>
+                            i.ArticuloId == consumo.ArticuloId
+                        );
                         inventarioGeneral.Cantidad += consumo.Cantidad;
                     }
                     await _db.SaveChangesAsync();
@@ -347,7 +371,6 @@ namespace hotel.Controllers
             return res;
         }
 
-
         [HttpPut]
         [Route("UpdateConsumo")]
         [AllowAnonymous]
@@ -357,13 +380,18 @@ namespace hotel.Controllers
             Respuesta res = new Respuesta();
             try
             {
-                var consumo = await _db.Consumo
-                    .FromSqlRaw("SELECT * FROM Consumo WITH (UPDLOCK, ROWLOCK) WHERE ConsumoId = {0} AND Anulado != 1", idConsumo)
+                var consumo = await _db
+                    .Consumo.FromSqlRaw(
+                        "SELECT * FROM Consumo WITH (UPDLOCK, ROWLOCK) WHERE ConsumoId = {0} AND Anulado != 1",
+                        idConsumo
+                    )
                     .SingleOrDefaultAsync();
 
                 if (consumo != null)
                 {
-                    var movimiento = await _db.Movimientos.FirstAsync(m => m.MovimientosId == consumo.MovimientosId);
+                    var movimiento = await _db.Movimientos.FirstAsync(m =>
+                        m.MovimientosId == consumo.MovimientosId
+                    );
                     int? viejaCantidad = consumo.Cantidad;
                     movimiento.TotalFacturado -= consumo.PrecioUnitario * consumo.Cantidad;
                     consumo.Cantidad = Cantidad;
@@ -371,13 +399,18 @@ namespace hotel.Controllers
 
                     if (consumo.EsHabitacion == true)
                     {
-                        var inventario = await _db.Inventarios.FirstAsync(i => i.ArticuloId == consumo.ArticuloId && i.HabitacionId == movimiento.HabitacionId);
+                        var inventario = await _db.Inventarios.FirstAsync(i =>
+                            i.ArticuloId == consumo.ArticuloId
+                            && i.HabitacionId == movimiento.HabitacionId
+                        );
                         inventario.Cantidad -= consumo.Cantidad;
                         inventario.Cantidad += viejaCantidad;
                     }
                     else
                     {
-                        var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i => i.ArticuloId == consumo.ArticuloId);
+                        var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i =>
+                            i.ArticuloId == consumo.ArticuloId
+                        );
                         inventarioGeneral.Cantidad -= consumo.Cantidad;
                         inventarioGeneral.Cantidad += viejaCantidad;
                     }
@@ -400,7 +433,6 @@ namespace hotel.Controllers
             return res;
         }
 
-
         [HttpGet]
         [Route("GetConsumosVisita")]
         [AllowAnonymous]
@@ -411,8 +443,8 @@ namespace hotel.Controllers
             try
             {
                 // Get the Movimientos associated with the given VisitaID
-                var movimientos = await _db.Movimientos
-                    .Where(t => t.VisitaId == VisitaID && t.Anulado == false)
+                var movimientos = await _db
+                    .Movimientos.Where(t => t.VisitaId == VisitaID && t.Anulado == false)
                     .ToListAsync();
 
                 // Check if there are any Movimientos found
@@ -425,21 +457,27 @@ namespace hotel.Controllers
                         .ToList(); // Create a list of IDs
 
                     // Get the Consumos associated with the found MovimientosIDs
-                    var consumos = await _db.Consumo
-                        .Where(c => movimientoIds.Contains(c.MovimientosId.GetValueOrDefault()) && c.Anulado == false)
-                        .Join(_db.Articulos,
-                              c => c.ArticuloId,
-                              a => a.ArticuloId,
-                              (c, a) => new
-                              {
-                                  c.ConsumoId,
-                                  c.ArticuloId,
-                                  ArticleName = a.NombreArticulo, // Assuming 'NombreArticulo' is the name column in Articulos table
-                                  c.Cantidad,
-                                  c.PrecioUnitario,
-                                  c.EsHabitacion,
-                                  Total = c.Cantidad * c.PrecioUnitario
-                              })
+                    var consumos = await _db
+                        .Consumo.Where(c =>
+                            movimientoIds.Contains(c.MovimientosId.GetValueOrDefault())
+                            && c.Anulado == false
+                        )
+                        .Join(
+                            _db.Articulos,
+                            c => c.ArticuloId,
+                            a => a.ArticuloId,
+                            (c, a) =>
+                                new
+                                {
+                                    c.ConsumoId,
+                                    c.ArticuloId,
+                                    ArticleName = a.NombreArticulo, // Assuming 'NombreArticulo' is the name column in Articulos table
+                                    c.Cantidad,
+                                    c.PrecioUnitario,
+                                    c.EsHabitacion,
+                                    Total = c.Cantidad * c.PrecioUnitario,
+                                }
+                        )
                         .ToListAsync();
 
                     res.Ok = true;
@@ -448,7 +486,7 @@ namespace hotel.Controllers
                 else
                 {
                     res.Ok = false;
-                    res.Message= "No se encontraron movimientos para esta visita.";
+                    res.Message = "No se encontraron movimientos para esta visita.";
                 }
             }
             catch (Exception ex)
@@ -460,26 +498,18 @@ namespace hotel.Controllers
             return res;
         }
 
-
         [HttpGet]
         [Route("GetMovimiento")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
-
         public async Task<Respuesta> GetMovimiento(int id)
         {
             Respuesta res = new Respuesta();
             try
             {
-
-                var Objeto = await _db.Movimientos.Where(
-                t => t.MovimientosId == id
-                ).ToListAsync();
+                var Objeto = await _db.Movimientos.Where(t => t.MovimientosId == id).ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto[0];
                 return res;
-
-
-
             }
             catch (Exception ex)
             {
@@ -492,20 +522,17 @@ namespace hotel.Controllers
         [HttpGet]
         [Route("GetMovimientos")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
-
         public async Task<Respuesta> GetMovimientos(int institucionID)
         {
             Respuesta res = new Respuesta();
             try
             {
-
-                var Objeto = await _db.Movimientos.Where(m => m.InstitucionID == institucionID).ToListAsync();
+                var Objeto = await _db
+                    .Movimientos.Where(m => m.InstitucionID == institucionID)
+                    .ToListAsync();
                 res.Ok = true;
                 res.Data = Objeto;
                 return res;
-
-
-
             }
             catch (Exception ex)
             {
@@ -514,7 +541,6 @@ namespace hotel.Controllers
             }
             return res;
         }
-
 
         [HttpDelete]
         [Route("AnularMovimiento")] // Encuentra el ID del paciente para luego eliminarlo
@@ -549,26 +575,18 @@ namespace hotel.Controllers
             return res;
         }
 
-
-
         [HttpGet]
         [Route("GetMovimientosVisita")] // Obtiene un paciente basado en su idPaciente. Se obtiene la l
         [AllowAnonymous]
-
         public async Task<Respuesta> GetMovimientosVisita(int id)
         {
             Respuesta res = new Respuesta();
             try
             {
-
-                var Objeto = await _db.Movimientos.Where(
-                t => t.VisitaId == id
-                ).ToListAsync(); res.Ok = true;
+                var Objeto = await _db.Movimientos.Where(t => t.VisitaId == id).ToListAsync();
+                res.Ok = true;
                 res.Data = Objeto;
                 return res;
-
-
-
             }
             catch (Exception ex)
             {
@@ -577,6 +595,7 @@ namespace hotel.Controllers
             }
             return res;
         }
+
         [HttpGet]
         [Route("GetTotalVisita")] // Obtiene el total facturado para una visita
         [AllowAnonymous]
@@ -586,25 +605,28 @@ namespace hotel.Controllers
             try
             {
                 // Step 1: Retrieve the list of Movimientos for the given VisitaId
-                var movimientos = await _db.Movimientos
-                                           .Where(t => t.VisitaId == id)
-                                           .Include(m => m.Habitacion)
-                                           .ToListAsync();
+                var movimientos = await _db
+                    .Movimientos.Where(t => t.VisitaId == id)
+                    .Include(m => m.Habitacion)
+                    .ToListAsync();
                 var movimiento = new Movimientos();
                 movimiento = movimientos.First();
-                var reserva = await _db.Reservas
-                               .Where(r => r.MovimientoId == movimiento.MovimientosId)
-                               .Include(r => r.Promocion)
-                               .FirstAsync();
+                var reserva = await _db
+                    .Reservas.Where(r => r.MovimientoId == movimiento.MovimientosId)
+                    .Include(r => r.Promocion)
+                    .FirstAsync();
 
                 // Step 2: Calculate the total sum of TotalFacturado
                 var totalFacturado = movimientos.Sum(m => m.TotalFacturado);
                 decimal? facturadoEstadia = 0;
-                if (reserva.Promocion != null) facturadoEstadia = reserva.Promocion.Tarifa * (reserva.TotalHoras + reserva.TotalMinutos / 60);
-                else facturadoEstadia = movimiento.TotalFacturado;
+                if (reserva.Promocion != null)
+                    facturadoEstadia =
+                        reserva.Promocion.Tarifa * (reserva.TotalHoras + reserva.TotalMinutos / 60);
+                else
+                    facturadoEstadia = movimiento.TotalFacturado;
                 // Step 3: Return the result
                 res.Ok = true;
-                res.Data = totalFacturado + facturadoEstadia; // return the total sum
+                res.Data = totalFacturado! + facturadoEstadia!; // return the total sum
                 res.Message = "Total facturado calculado correctamente.";
             }
             catch (Exception ex)
@@ -624,8 +646,10 @@ namespace hotel.Controllers
             Respuesta res = new Respuesta();
             try
             {
-                var egresos = await _db.Egresos
-                    .Where(e => e.TipoEgresoId == tipoEgresoID && e.InstitucionID == institucionID)
+                var egresos = await _db
+                    .Egresos.Where(e =>
+                        e.TipoEgresoId == tipoEgresoID && e.InstitucionID == institucionID
+                    )
                     .ToListAsync();
 
                 res.Ok = true;
@@ -677,7 +701,9 @@ namespace hotel.Controllers
             Respuesta res = new Respuesta();
             try
             {
-                var egreso = await _db.Egresos.Where(e => e.Movimiento.MovimientosId == idMovimiento).FirstOrDefaultAsync();
+                var egreso = await _db
+                    .Egresos.Where(e => e.Movimiento.MovimientosId == idMovimiento)
+                    .FirstOrDefaultAsync();
                 if (egreso != null)
                 {
                     res.Ok = true;
@@ -697,7 +723,6 @@ namespace hotel.Controllers
             return res;
         }
 
-
         // Get all TipoEgresos
         [HttpGet]
         [Route("GetTipoEgresos")]
@@ -707,7 +732,9 @@ namespace hotel.Controllers
             Respuesta res = new Respuesta();
             try
             {
-                var tipoEgresos = await _db.TipoEgreso.Where(t => t.InstitucionID == institucionID).ToListAsync();
+                var tipoEgresos = await _db
+                    .TipoEgreso.Where(t => t.InstitucionID == institucionID)
+                    .ToListAsync();
                 res.Ok = true;
                 res.Data = tipoEgresos;
             }
@@ -743,7 +770,7 @@ namespace hotel.Controllers
                 {
                     InstitucionID = InstitucionID,
                     TotalFacturado = totalFacturado,
-                    FechaRegistro = DateTime.Now // Assuming you have a Fecha field
+                    FechaRegistro = DateTime.Now, // Assuming you have a Fecha field
                 };
 
                 // Add the Movimiento to the database
@@ -770,7 +797,10 @@ namespace hotel.Controllers
         [HttpPost]
         [Route("CreateTipoEgreso")]
         [AllowAnonymous]
-        public async Task<Respuesta> CreateTipoEgreso(int InstitucionID, [FromBody] TipoEgreso newTipoEgreso)
+        public async Task<Respuesta> CreateTipoEgreso(
+            int InstitucionID,
+            [FromBody] TipoEgreso newTipoEgreso
+        )
         {
             Respuesta res = new Respuesta();
             try
@@ -796,6 +826,7 @@ namespace hotel.Controllers
             return res;
         }
     }
+
     public class ArticuloConsumoDTO
     {
         public int ArticuloId { get; set; }

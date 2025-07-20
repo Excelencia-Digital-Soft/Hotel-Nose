@@ -1,10 +1,10 @@
-﻿using hotel.Data;
+﻿using System;
+using System.Threading.Tasks;
+using hotel.Data;
 using hotel.Models;
 using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Threading.Tasks;
 
 namespace hotel.Controllers
 {
@@ -39,7 +39,14 @@ namespace hotel.Controllers
                     else
                     {
                         // Add a failed update result if the item was not found
-                        updateResults.Add(new { update.InventarioId, Success = false, Message = "Item not found" });
+                        updateResults.Add(
+                            new
+                            {
+                                update.InventarioId,
+                                Success = false,
+                                Message = "Item not found",
+                            }
+                        );
                     }
                 }
 
@@ -70,21 +77,23 @@ namespace hotel.Controllers
             {
                 InventarioDTO inventario = new InventarioDTO();
                 // Step 1: Retrieve all Inventarios for the specified habitacionID
-                var inventarioGeneral = await _db.InventarioGeneral
-                    .Where(i => i.Cantidad > 0)
+                var inventarioGeneral = await _db
+                    .InventarioGeneral.Where(i => i.Cantidad > 0)
                     .Include(i => i.Articulo) // Include related Articulo data
                     .ToListAsync();
-                var inventarioHabitacion = await _db.Inventarios
-                    .Where(i => i.HabitacionId == idHabitacion)
+                var inventarioHabitacion = await _db
+                    .Inventarios.Where(i => i.HabitacionId == idHabitacion)
                     .Include(i => i.Articulo)
                     .ToListAsync();
-                var combinedInventarioDict = inventarioGeneral
-                      .ToDictionary(i => i.Articulo.ArticuloId, i => new InventarioDTO
-                      {
-                          InventarioId = i.InventarioId,
-                          ArticuloId = i.Articulo.ArticuloId,
-                          Cantidad = i.Cantidad
-                      });
+                var combinedInventarioDict = inventarioGeneral.ToDictionary(
+                    i => i.Articulo!.ArticuloId,
+                    i => new InventarioDTO
+                    {
+                        InventarioId = i.InventarioId,
+                        ArticuloId = i.Articulo!.ArticuloId,
+                        Cantidad = i.Cantidad,
+                    }
+                );
 
                 // Update quantities from inventarioHabitacion into combinedInventarioDict
                 foreach (var habitacionItem in inventarioHabitacion)
@@ -105,13 +114,13 @@ namespace hotel.Controllers
                             {
                                 InventarioId = habitacionItem.InventarioId,
                                 ArticuloId = articuloId,
-                                Cantidad = habitacionItem.Cantidad
+                                Cantidad = habitacionItem.Cantidad,
                             };
                         }
                     }
                 }
-                    // Step 2: Check if any inventarios were found
-                    if (combinedInventarioDict == null)
+                // Step 2: Check if any inventarios were found
+                if (combinedInventarioDict == null)
                 {
                     res.Ok = false;
                     res.Message = "No se encontraron productos en el inventario.";
@@ -132,7 +141,6 @@ namespace hotel.Controllers
             return res;
         }
 
-
         [HttpGet]
         [Route("GetInventarioGeneral")]
         public async Task<Respuesta> GetInventarioGeneral(int institucionID)
@@ -142,8 +150,8 @@ namespace hotel.Controllers
             try
             {
                 // Step 1: Retrieve all Inventarios for the specified habitacionID
-                var inventario = await _db.InventarioGeneral
-                    .Where(i => i.InstitucionID == institucionID)
+                var inventario = await _db
+                    .InventarioGeneral.Where(i => i.InstitucionID == institucionID)
                     .Include(i => i.Articulo) // Include related Articulo data
                     .Where(i => i.Articulo != null && i.Articulo.Anulado == false)
                     .ToListAsync();
@@ -179,28 +187,37 @@ namespace hotel.Controllers
             try
             {
                 // Step 1: Remove entries in `InventarioGeneral` where the associated `Articulo` has `Anulado = 1`
-                var anuladoInventarios = _db.InventarioGeneral
-                    .Where(i => i.InstitucionID == institucionID)
+                var anuladoInventarios = _db
+                    .InventarioGeneral.Where(i => i.InstitucionID == institucionID)
                     .Include(i => i.Articulo)
                     .Where(i => i.Articulo != null && i.Articulo.Anulado == true);
 
                 _db.InventarioGeneral.RemoveRange(anuladoInventarios);
 
                 // Step 2: Identify `Articulos` that are not in `InventarioGeneral`
-                var existingArticuloIds = await _db.InventarioGeneral.Where(i => i.InstitucionID == institucionID).Select(i => i.ArticuloId).ToListAsync();
-                var missingArticulos = await _db.Articulos
-                    .Where(a => !existingArticuloIds.Contains(a.ArticuloId) && a.Anulado != true && a.InstitucionID == institucionID)
+                var existingArticuloIds = await _db
+                    .InventarioGeneral.Where(i => i.InstitucionID == institucionID)
+                    .Select(i => i.ArticuloId)
+                    .ToListAsync();
+                var missingArticulos = await _db
+                    .Articulos.Where(a =>
+                        !existingArticuloIds.Contains(a.ArticuloId)
+                        && a.Anulado != true
+                        && a.InstitucionID == institucionID
+                    )
                     .ToListAsync();
 
                 // Step 3: Add missing `Articulos` to `InventarioGeneral` with default values
-                var newInventarios = missingArticulos.Select(a => new InventarioGeneral
-                {
-                    ArticuloId = a.ArticuloId,
-                    Cantidad = 0, // Default quantity
-                    FechaRegistro = DateTime.Now,
-                    Anulado = false,
-                    InstitucionID = a.InstitucionID
-                }).ToList();
+                var newInventarios = missingArticulos
+                    .Select(a => new InventarioGeneral
+                    {
+                        ArticuloId = a.ArticuloId,
+                        Cantidad = 0, // Default quantity
+                        FechaRegistro = DateTime.Now,
+                        Anulado = false,
+                        InstitucionID = a.InstitucionID,
+                    })
+                    .ToList();
 
                 _db.InventarioGeneral.AddRange(newInventarios);
 
@@ -212,7 +229,7 @@ namespace hotel.Controllers
                 res.Data = new
                 {
                     RemovedItems = anuladoInventarios.Count(),
-                    AddedItems = newInventarios.Count
+                    AddedItems = newInventarios.Count,
                 };
             }
             catch (Exception ex)
@@ -223,7 +240,6 @@ namespace hotel.Controllers
 
             return res;
         }
-
     }
 
     public class UpdateStockRequest
@@ -239,6 +255,6 @@ namespace hotel.Controllers
         public int? ArticuloId { get; set; }
 
         public int? Cantidad { get; set; }
-
     }
 }
+

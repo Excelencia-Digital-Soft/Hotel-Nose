@@ -1,11 +1,11 @@
-﻿using hotel.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using hotel.Data;
 using hotel.Models;
 using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace hotel.Controllers
 {
@@ -39,8 +39,12 @@ namespace hotel.Controllers
                 }
 
                 // Step 2: Check if the category name is already taken (case-insensitive)
-                if (await _db.CategoriasArticulos
-                    .AnyAsync(c => c.NombreCategoria.ToLower() == categoriaCreada.NombreCategoria.ToLower() && c.InstitucionID == categoriaCreada.InstitucionID))
+                if (
+                    await _db.CategoriasArticulos.AnyAsync(c =>
+                        c.NombreCategoria!.ToLower() == categoriaCreada.NombreCategoria.ToLower()
+                        && c.InstitucionID == categoriaCreada.InstitucionID
+                    )
+                )
                 {
                     res.Ok = false;
                     res.Message = "Ya existe una categoría con este nombre.";
@@ -52,7 +56,7 @@ namespace hotel.Controllers
                 {
                     NombreCategoria = categoriaCreada.NombreCategoria.Trim(),
                     InstitucionID = categoriaCreada.InstitucionID,
-                    Anulado = false
+                    Anulado = false,
                 };
                 _db.CategoriasArticulos.Add(categoria);
                 await _db.SaveChangesAsync();
@@ -64,7 +68,7 @@ namespace hotel.Controllers
                 {
                     categoria.CategoriaId,
                     categoria.InstitucionID,
-                    categoria.NombreCategoria
+                    categoria.NombreCategoria,
                 };
             }
             catch (Exception ex)
@@ -82,7 +86,10 @@ namespace hotel.Controllers
         [HttpPut]
         [Route("ActualizarCategoria")]
         [Obsolete("This endpoint is deprecated. Use PUT /api/v1/categorias/{id} instead.")]
-        public async Task<Respuesta> ActualizarCategoria(int id, [FromBody] CategoriasArticulos categoria)
+        public async Task<Respuesta> ActualizarCategoria(
+            int id,
+            [FromBody] CategoriasArticulos categoria
+        )
         {
             Respuesta res = new Respuesta();
 
@@ -98,7 +105,8 @@ namespace hotel.Controllers
                 }
 
                 // Step 2: Update the category properties
-                existingCategoria.NombreCategoria = categoria.NombreCategoria ?? existingCategoria.NombreCategoria;
+                existingCategoria.NombreCategoria =
+                    categoria.NombreCategoria ?? existingCategoria.NombreCategoria;
                 existingCategoria.Anulado = categoria.Anulado ?? existingCategoria.Anulado;
 
                 // Step 3: Save changes to the database
@@ -128,12 +136,12 @@ namespace hotel.Controllers
 
             try
             {
+                var categorias = await _db
+                    .CategoriasArticulos.Where(a =>
+                        a.Anulado != true && a.InstitucionID == InstitucionID
+                    )
+                    .ToListAsync();
 
-                    var categorias = await _db.CategoriasArticulos.
-                        Where(a => a.Anulado != true && a.InstitucionID == InstitucionID)
-                        .
-                        ToListAsync();
-   
                 // Step 2: Check if any articulos were found
                 if (categorias == null || categorias.Count == 0)
                 {
@@ -183,7 +191,9 @@ namespace hotel.Controllers
 
                 // Set response on success
                 res.Ok = true;
-                res.Message = estado ? "Categoría anulada correctamente." : "Categoría desanulada correctamente.";
+                res.Message = estado
+                    ? "Categoría anulada correctamente."
+                    : "Categoría desanulada correctamente.";
                 res.Data = categoria;
             }
             catch (Exception ex)
@@ -197,8 +207,9 @@ namespace hotel.Controllers
 
         public class CrearCategoriaDTO
         {
-            public string NombreCategoria { get; set; }
+            public string NombreCategoria { get; set; } = null!;
             public int InstitucionID { get; set; }
         }
     }
 }
+

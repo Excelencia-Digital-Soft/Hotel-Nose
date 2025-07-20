@@ -30,24 +30,75 @@ public class ReservaDto
 /// </summary>
 public class ReservaCreateDto
 {
-    [Required]
+    /// <summary>
+    /// Room ID to reserve
+    /// </summary>
+    [Required(ErrorMessage = "Room ID is required")]
     public int HabitacionId { get; set; }
-    
-    [Required]
-    public int VisitaId { get; set; }
-    
-    [Required]
+
+    /// <summary>
+    /// Optional promotion ID to apply
+    /// </summary>
+    public int? PromocionId { get; set; }
+
+    /// <summary>
+    /// Reservation start date and time
+    /// </summary>
+    [Required(ErrorMessage = "Reservation start date is required")]
     public DateTime FechaInicio { get; set; }
-    
-    [Required]
-    [Range(1, 24, ErrorMessage = "Hours must be between 1 and 24")]
+
+    /// <summary>
+    /// Reservation end date and time (optional - if not provided, calculated from duration)
+    /// </summary>
+    public DateTime? FechaFin { get; set; }
+
+    /// <summary>
+    /// Total hours for the reservation
+    /// </summary>
+    [Range(0, 168, ErrorMessage = "Hours must be between 0 and 168 (1 week)")]
     public int TotalHoras { get; set; }
-    
+
+    /// <summary>
+    /// Total minutes for the reservation (additional to hours)
+    /// </summary>
     [Range(0, 59, ErrorMessage = "Minutes must be between 0 and 59")]
     public int TotalMinutos { get; set; }
-    
-    public int? PromocionId { get; set; }
+
+    /// <summary>
+    /// Indicates if this is a reservation (true) or walk-in (false)
+    /// </summary>
     public bool EsReserva { get; set; } = true;
+
+    /// <summary>
+    /// Guest information
+    /// </summary>
+    [Required]
+    public GuestInfoDto Guest { get; set; } = new();
+}
+
+/// <summary>
+/// DTO for guest information
+/// </summary>
+public class GuestInfoDto
+{
+    /// <summary>
+    /// Vehicle license plate (optional)
+    /// </summary>
+    [StringLength(20, ErrorMessage = "License plate cannot exceed 20 characters")]
+    public string? PatenteVehiculo { get; set; }
+
+    /// <summary>
+    /// Guest phone number (optional)
+    /// </summary>
+    [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters")]
+    [Phone(ErrorMessage = "Invalid phone number format")]
+    public string? NumeroTelefono { get; set; }
+
+    /// <summary>
+    /// Guest identifier (document number, name, etc.)
+    /// </summary>
+    [StringLength(100, ErrorMessage = "Identifier cannot exceed 100 characters")]
+    public string? Identificador { get; set; }
 }
 
 /// <summary>

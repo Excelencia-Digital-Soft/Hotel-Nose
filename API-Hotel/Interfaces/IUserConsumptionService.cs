@@ -37,4 +37,10 @@ public interface IUserConsumptionService
         DateTime? startDate = null,
         DateTime? endDate = null,
         CancellationToken cancellationToken = default);
+    
+    Task<ApiResponse<UserConsumptionDto>> AdminCreateConsumptionForUserAsync(
+        AdminUserConsumptionCreateDto createDto,
+        int institucionId,
+        string adminUserId,
+        CancellationToken cancellationToken = default);
 }

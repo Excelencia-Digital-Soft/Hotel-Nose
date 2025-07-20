@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using hotel.Models.Identity;
 
 namespace hotel.Models;
 
@@ -14,7 +15,10 @@ public partial class Visitas
 
     public DateTime? FechaPrimerIngreso { get; set; }
 
-    public int? UsuarioId { get; set; }
+    [Obsolete]
+    public int? UsuarioId { get; set; } // Legacy
+
+    public string? UserId { get; set; } // New with identity
 
     public DateTime? FechaRegistro { get; set; }
 
@@ -29,6 +33,11 @@ public partial class Visitas
 
     public virtual ICollection<Reservas> Reservas { get; } = new List<Reservas>();
 
+    // Navigation properties
     public virtual Habitaciones? Habitacion { get; set; }
+    public virtual ApplicationUser? Usuario { get; set; }
+    public virtual Institucion? Institucion { get; set; }
+    
+    // Computed properties
     public Reservas ReservaActiva => Reservas?.FirstOrDefault(r => r.FechaFin == null) ?? default!;
 }
