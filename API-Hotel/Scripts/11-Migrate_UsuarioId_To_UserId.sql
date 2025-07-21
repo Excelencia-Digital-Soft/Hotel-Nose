@@ -9,7 +9,7 @@
 --             entre los IDs legacy y los nuevos AspNetUsers.Id
 -- =============================================
 
-USE [HotelDB]
+USE [Hotel]
 GO
 
 -- Variables para control del proceso
@@ -121,6 +121,8 @@ PRINT '  Sin usuario asignado: ' + CAST(@ReservasSinId AS VARCHAR(10))
 PRINT ''
 PRINT '=== MIGRANDO TABLA VISITAS ==='
 
+-- DECLARE @LogTable NVARCHAR(128) = 'UsuarioId_Migration_Log_20250720_003654'
+
 BEGIN TRY
     BEGIN TRANSACTION MigrateVisitas
     
@@ -178,6 +180,7 @@ END CATCH
 
 PRINT ''
 PRINT '=== MIGRANDO TABLA RESERVAS ==='
+-- DECLARE @LogTable NVARCHAR(128) = 'UsuarioId_Migration_Log_20250720_003654'
 
 BEGIN TRY
     BEGIN TRANSACTION MigrateReservas

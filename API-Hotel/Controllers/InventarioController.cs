@@ -10,6 +10,7 @@ namespace hotel.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Obsolete("This controller is deprecated. Use /api/v1/inventory endpoints instead.")]
     public class InventarioController : ControllerBase
     {
         private readonly HotelDbContext _db;

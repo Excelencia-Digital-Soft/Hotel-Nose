@@ -19,6 +19,7 @@ namespace hotel.Data.Configurations
 
             // Configurar propiedades
             builder.Property(h => h.HabitacionId)
+                .HasColumnName("HabitacionID")
                 .ValueGeneratedOnAdd();
 
             builder.Property(h => h.NombreHabitacion)
@@ -43,10 +44,15 @@ namespace hotel.Data.Configurations
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Habitaciones_CategoriasHabitaciones");
 
-            // Configurar la relación con Visitas
+            // Configurar propiedades adicionales según estructura de DB
+            builder.Property(h => h.VisitaID)
+                .HasColumnName("VisitaID");
+
+            // Configurar la relación con Visitas (one-to-one for current active visit)
+            // Note: We don't use WithOne() to avoid conflicts with the ignored navigation property
             builder.HasOne(h => h.Visita)
-                .WithOne(v => v.Habitacion)
-                .HasForeignKey<Habitaciones>(h => h.VisitaID)
+                .WithMany() // Don't use navigation property to avoid conflicts
+                .HasForeignKey(h => h.VisitaID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Habitaciones_Visitas");
 

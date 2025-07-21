@@ -73,7 +73,31 @@ namespace hotel.Controllers
                     return res;
                 }
 
-                // Step 4: If the room is available, proceed with creating the reservation
+                // Step 4: Validate promotion BEFORE creating reservation entity
+                decimal? tarifa = habitacion.Categoria.PrecioNormal; // Default price
+                int? validatedPromocionId = null;
+                
+                if (request.PromocionID != null && request.PromocionID != 0)
+                {
+                    // Fetch and validate the promotion from the database FIRST
+                    var promocion = await _db.Promociones
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(p => 
+                            p.PromocionID == request.PromocionID && 
+                            p.InstitucionID == InstitucionID &&
+                            p.Anulado != true);
+                            
+                    if (promocion == null)
+                    {
+                        res.Message = "La promoción no es válida o no pertenece a esta institución.";
+                        res.Ok = false;
+                        return res;
+                    }
+                    tarifa = promocion.Tarifa; // Use the promotional rate
+                    validatedPromocionId = request.PromocionID;
+                }
+
+                // Step 5: Create reservation entity with validated data
                 Reservas nuevaReserva = new Reservas
                 {
                     VisitaId = VisitaID,
@@ -86,25 +110,9 @@ namespace hotel.Controllers
                     UsuarioId = UsuarioID,
                     FechaRegistro = DateTime.Now,
                     FechaAnula = null,
+                    PromocionId = validatedPromocionId, // Use validated PromocionId
                     Habitacion = habitacion,
                 };
-
-                decimal? tarifa = habitacion.Categoria.PrecioNormal; // Default price
-                if (request.PromocionID != null && request.PromocionID != 0)
-                {
-                    nuevaReserva.PromocionId = request.PromocionID;
-                    // Fetch the promotion from the database
-                    var promocion = await _db.Promociones.FindAsync(request.PromocionID);
-                    if (promocion == null)
-                    {
-                        res.Message = "La promoción no es válida.";
-                        res.Ok = false;
-                        return res;
-                    }
-                    tarifa = promocion.Tarifa; // Use the promotional rate
-                }
-                else
-                    nuevaReserva.PromocionId = null;
                 var prueba = Math.Round(
                     (decimal)((int)tarifa * (request.TotalHoras + (request.TotalMinutos / 60.0))),
                     2

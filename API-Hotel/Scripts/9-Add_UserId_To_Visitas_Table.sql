@@ -7,7 +7,7 @@
 -- Version: 1.0
 -- =============================================
 
-USE [HotelDB]
+USE [Hotel]
 GO
 
 -- Verificar si la tabla Visitas existe

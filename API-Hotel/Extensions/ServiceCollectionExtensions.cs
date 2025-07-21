@@ -39,12 +39,15 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICategoriasService, CategoriasService>();
         services.AddScoped<IConsumosService, ConsumosService>();
         services.AddScoped<IHabitacionesService, HabitacionesService>();
+        services.AddScoped<IInventoryService, InventoryUnifiedService>();
+        services.AddScoped<IMovimientosService, MovimientosService>();
         services.AddScoped<IPromocionesService, PromocionesService>();
         services.AddScoped<IRegistrosService, RegistrosService>();
         services.AddScoped<IReservasService, ReservasService>();
         services.AddScoped<IStatisticsService, StatisticsService>();
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IUserConsumptionService, UserConsumptionService>();
+        services.AddScoped<IVisitasService, VisitasService>();
 
         return services;
     }

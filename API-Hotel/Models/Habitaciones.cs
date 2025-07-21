@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace hotel.Models;
 
@@ -24,26 +22,29 @@ public partial class Habitaciones
 
     public int? VisitaID { get; set; }
     public int InstitucionID { get; set; }
+
     [JsonIgnore]
     public virtual CategoriasHabitaciones? Categoria { get; set; }
     public virtual Visitas? Visita { get; set; }
 
-    public virtual ICollection<HabitacionesVirtuales> HabitacionesVirtualesHabitacion1 { get; } = new List<HabitacionesVirtuales>();
+    public virtual ICollection<HabitacionesVirtuales> HabitacionesVirtualesHabitacion1 { get; } =
+        new List<HabitacionesVirtuales>();
 
-    public virtual ICollection<HabitacionesVirtuales> HabitacionesVirtualesHabitacion2 { get; } = new List<HabitacionesVirtuales>();
+    public virtual ICollection<HabitacionesVirtuales> HabitacionesVirtualesHabitacion2 { get; } =
+        new List<HabitacionesVirtuales>();
 
     public virtual ICollection<Inventarios> Inventarios { get; } = new List<Inventarios>();
+
     [JsonIgnore]
     public virtual ICollection<Movimientos> Movimientos { get; } = new List<Movimientos>();
 
     public virtual ICollection<Reservas> Reservas { get; } = new List<Reservas>();
-    
-    public virtual ICollection<Visitas> Visitas { get; } = new List<Visitas>();
 
     public decimal? Precio => Categoria?.PrecioNormal;
 
-    public virtual ICollection<HabitacionImagenes> HabitacionImagenes { get; set; } = new List<HabitacionImagenes>();
+    public virtual ICollection<HabitacionImagenes> HabitacionImagenes { get; set; } =
+        new List<HabitacionImagenes>();
 
-    public virtual ICollection<HabitacionCaracteristica> HabitacionCaracteristicas { get; set; } = new List<HabitacionCaracteristica>();
-    
+    public virtual ICollection<HabitacionCaracteristica> HabitacionCaracteristicas { get; set; } =
+        new List<HabitacionCaracteristica>();
 }

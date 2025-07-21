@@ -87,4 +87,18 @@ public interface IPromocionesService
         int promocionId, 
         int reservaId, 
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Validate and get promotion for reservation creation
+    /// </summary>
+    /// <param name="promocionId">Promotion ID</param>
+    /// <param name="institucionId">Institution ID</param>
+    /// <param name="categoriaId">Room category ID (optional, for compatibility check)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Validation result with promotion data</returns>
+    Task<ApiResponse<PromocionValidationResult>> ValidateAndGetPromocionAsync(
+        int promocionId, 
+        int institucionId, 
+        int? categoriaId = null,
+        CancellationToken cancellationToken = default);
 }

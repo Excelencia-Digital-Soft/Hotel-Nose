@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace hotel.Controllers
 {
+    [Obsolete("This controller is deprecated. Use /api/v1/inventory endpoints instead.")]
     public class InventarioGeneralController
     {
         private readonly HotelDbContext _db;

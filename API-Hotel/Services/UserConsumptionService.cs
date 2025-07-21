@@ -31,7 +31,7 @@ public class UserConsumptionService : IUserConsumptionService
             var query = _context
                 .Consumo.AsNoTracking()
                 .Include(c => c.Articulo)
-                .Include(c => c.Movimientos)
+                .Include(c => c.Movimientos!)
                 .ThenInclude(m => m.Habitacion)
                 .Where(c =>
                     c.Movimientos != null
@@ -42,10 +42,10 @@ public class UserConsumptionService : IUserConsumptionService
                 );
 
             if (startDate.HasValue)
-                query = query.Where(c => c.Movimientos.FechaRegistro >= startDate.Value);
+                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro >= startDate.Value);
 
             if (endDate.HasValue)
-                query = query.Where(c => c.Movimientos.FechaRegistro <= endDate.Value);
+                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro <= endDate.Value);
 
             var consumos = await query
                 .Select(c => new UserConsumptionDto
@@ -63,15 +63,15 @@ public class UserConsumptionService : IUserConsumptionService
                     Cantidad = c.Cantidad ?? 0,
                     PrecioUnitario = c.PrecioUnitario ?? 0,
                     Total = (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0),
-                    FechaConsumo = c.Movimientos.FechaRegistro ?? DateTime.Now,
-                    HabitacionId = c.Movimientos.HabitacionId,
+                    FechaConsumo = c.Movimientos != null ? c.Movimientos.FechaRegistro ?? DateTime.Now : DateTime.Now,
+                    HabitacionId = c.Movimientos != null ? c.Movimientos.HabitacionId : null,
                     HabitacionNumero =
-                        c.Movimientos.Habitacion != null
+                        c.Movimientos != null && c.Movimientos.Habitacion != null
                             ? c.Movimientos.Habitacion.NombreHabitacion
                             : null,
                     ReservaId = null,
                     TipoConsumo = c.EsHabitacion == true ? "Habitacion" : "Servicio",
-                    Observaciones = c.Movimientos.Descripcion,
+                    Observaciones = c.Movimientos != null ? c.Movimientos.Descripcion : null,
                     Anulado = c.Anulado ?? false,
                 })
                 .OrderByDescending(c => c.FechaConsumo)
@@ -200,7 +200,7 @@ public class UserConsumptionService : IUserConsumptionService
             var query = _context
                 .Consumo.AsNoTracking()
                 .Include(c => c.Articulo)
-                .Include(c => c.Movimientos)
+                .Include(c => c.Movimientos!)
                 .ThenInclude(m => m.Habitacion)
                 .Where(c =>
                     c.Movimientos != null
@@ -209,10 +209,10 @@ public class UserConsumptionService : IUserConsumptionService
                 );
 
             if (startDate.HasValue)
-                query = query.Where(c => c.Movimientos.FechaRegistro >= startDate.Value);
+                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro >= startDate.Value);
 
             if (endDate.HasValue)
-                query = query.Where(c => c.Movimientos.FechaRegistro <= endDate.Value);
+                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro <= endDate.Value);
 
             var consumosData = await query.ToListAsync(cancellationToken);
 
@@ -327,29 +327,29 @@ public class UserConsumptionService : IUserConsumptionService
             var result = await _context
                 .Consumo.AsNoTracking()
                 .Include(c => c.Articulo)
-                .Include(c => c.Movimientos)
+                .Include(c => c.Movimientos!)
                 .ThenInclude(m => m.Habitacion)
                 .FirstOrDefaultAsync(c => c.ConsumoId == consumo.ConsumoId, cancellationToken);
 
             var dto = new UserConsumptionDto
             {
-                Id = result.ConsumoId,
+                Id = result?.ConsumoId ?? 0,
                 UserId = userId,
                 UserName = userId,
                 UserFullName = userId,
-                ArticuloId = result.ArticuloId ?? 0,
-                ArticuloNombre = result.Articulo?.NombreArticulo ?? string.Empty,
+                ArticuloId = result?.ArticuloId ?? 0,
+                ArticuloNombre = result?.Articulo?.NombreArticulo ?? string.Empty,
                 ArticuloCodigo = string.Empty,
-                Cantidad = result.Cantidad ?? 0,
-                PrecioUnitario = result.PrecioUnitario ?? 0,
-                Total = (result.Cantidad ?? 0) * (result.PrecioUnitario ?? 0),
-                FechaConsumo = result.Movimientos?.FechaRegistro ?? DateTime.Now,
-                HabitacionId = result.Movimientos?.HabitacionId,
-                HabitacionNumero = result.Movimientos?.Habitacion?.NombreHabitacion,
+                Cantidad = result?.Cantidad ?? 0,
+                PrecioUnitario = result?.PrecioUnitario ?? 0,
+                Total = (result?.Cantidad ?? 0) * (result?.PrecioUnitario ?? 0),
+                FechaConsumo = result?.Movimientos?.FechaRegistro ?? DateTime.Now,
+                HabitacionId = result?.Movimientos?.HabitacionId,
+                HabitacionNumero = result?.Movimientos?.Habitacion?.NombreHabitacion,
                 ReservaId = null,
-                TipoConsumo = result.EsHabitacion == true ? "Habitacion" : "Servicio",
-                Observaciones = result.Movimientos?.Descripcion,
-                Anulado = result.Anulado ?? false,
+                TipoConsumo = result?.EsHabitacion == true ? "Habitacion" : "Servicio",
+                Observaciones = result?.Movimientos?.Descripcion,
+                Anulado = result?.Anulado ?? false,
             };
 
             _logger.LogInformation(
@@ -456,29 +456,29 @@ public class UserConsumptionService : IUserConsumptionService
             var result = await _context
                 .Consumo.AsNoTracking()
                 .Include(c => c.Articulo)
-                .Include(c => c.Movimientos)
+                .Include(c => c.Movimientos!)
                 .ThenInclude(m => m.Habitacion)
                 .FirstOrDefaultAsync(c => c.ConsumoId == consumo.ConsumoId, cancellationToken);
 
             var dto = new UserConsumptionDto
             {
-                Id = result.ConsumoId,
+                Id = result?.ConsumoId ?? 0,
                 UserId = createDto.UserId,
-                UserName = targetUser.UserName ?? createDto.UserId,
-                UserFullName = $"{targetUser.FirstName} {targetUser.LastName}".Trim(),
-                ArticuloId = result.ArticuloId ?? 0,
-                ArticuloNombre = result.Articulo?.NombreArticulo ?? string.Empty,
+                UserName = targetUser?.UserName ?? createDto.UserId,
+                UserFullName = $"{targetUser?.FirstName} {targetUser?.LastName}".Trim(),
+                ArticuloId = result?.ArticuloId ?? 0,
+                ArticuloNombre = result?.Articulo?.NombreArticulo ?? string.Empty,
                 ArticuloCodigo = string.Empty,
-                Cantidad = result.Cantidad ?? 0,
-                PrecioUnitario = result.PrecioUnitario ?? 0,
-                Total = (result.Cantidad ?? 0) * (result.PrecioUnitario ?? 0),
-                FechaConsumo = result.Movimientos?.FechaRegistro ?? DateTime.Now,
-                HabitacionId = result.Movimientos?.HabitacionId,
-                HabitacionNumero = result.Movimientos?.Habitacion?.NombreHabitacion,
+                Cantidad = result?.Cantidad ?? 0,
+                PrecioUnitario = result?.PrecioUnitario ?? 0,
+                Total = (result?.Cantidad ?? 0) * (result?.PrecioUnitario ?? 0),
+                FechaConsumo = result?.Movimientos?.FechaRegistro ?? DateTime.Now,
+                HabitacionId = result?.Movimientos?.HabitacionId,
+                HabitacionNumero = result?.Movimientos?.Habitacion?.NombreHabitacion,
                 ReservaId = createDto.ReservaId,
-                TipoConsumo = result.EsHabitacion == true ? "Habitacion" : "Servicio",
-                Observaciones = result.Movimientos?.Descripcion,
-                Anulado = result.Anulado ?? false,
+                TipoConsumo = result?.EsHabitacion == true ? "Habitacion" : "Servicio",
+                Observaciones = result?.Movimientos?.Descripcion,
+                Anulado = result?.Anulado ?? false,
             };
 
             _logger.LogInformation(
@@ -536,10 +536,10 @@ public class UserConsumptionService : IUserConsumptionService
                 );
 
             if (startDate.HasValue)
-                query = query.Where(c => c.Movimientos.FechaRegistro >= startDate.Value);
+                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro >= startDate.Value);
 
             if (endDate.HasValue)
-                query = query.Where(c => c.Movimientos.FechaRegistro <= endDate.Value);
+                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro <= endDate.Value);
 
             var consumos = await query.ToListAsync(cancellationToken);
 

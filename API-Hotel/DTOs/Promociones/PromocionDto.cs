@@ -99,3 +99,17 @@ public class PromocionSummaryDto
     public int DaysRemaining { get; set; }
     public int UsageCount { get; set; }
 }
+
+/// <summary>
+/// DTO for promotion validation result for reservations
+/// </summary>
+public class PromocionValidationResult
+{
+    public bool IsValid { get; set; }
+    public string? ErrorMessage { get; set; }
+    public int? PromocionId { get; set; }
+    public string? PromocionNombre { get; set; }
+    public decimal? PromocionTarifa { get; set; }
+    public int? CategoriaId { get; set; }
+    public bool IsCompatibleWithCategory { get; set; } = true;
+}

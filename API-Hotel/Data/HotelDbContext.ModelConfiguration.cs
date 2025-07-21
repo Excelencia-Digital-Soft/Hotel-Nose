@@ -39,11 +39,13 @@ public partial class HotelDbContext
         
         modelBuilder.ApplyConfiguration(new VisitasConfiguration());
         modelBuilder.ApplyConfiguration(new ReservasConfiguration());
+        modelBuilder.ApplyConfiguration(new MovimientosConfiguration());
         modelBuilder.ApplyConfiguration(new RolesConfiguration());
         modelBuilder.ApplyConfiguration(new InstitucionConfiguration());
         modelBuilder.ApplyConfiguration(new ArticulosConfiguration());
         modelBuilder.ApplyConfiguration(new ConsumoConfiguration());
         modelBuilder.ApplyConfiguration(new PromocionesConfiguration());
+        modelBuilder.ApplyConfiguration(new InventarioUnificadoConfiguration());
         modelBuilder.ApplyConfiguration(new UsuariosInstitucionesConfiguration());
         
         // Aplicar configuraciones simples

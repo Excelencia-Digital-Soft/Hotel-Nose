@@ -478,5 +478,95 @@ public class PromocionesService : IPromocionesService
             );
         }
     }
+
+    /// <inheritdoc/>
+    public async Task<ApiResponse<PromocionValidationResult>> ValidateAndGetPromocionAsync(
+        int promocionId,
+        int institucionId,
+        int? categoriaId = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var promocion = await _context
+                .Promociones.AsNoTracking()
+                .Include(p => p.Categoria)
+                .FirstOrDefaultAsync(
+                    p => p.PromocionID == promocionId 
+                         && p.InstitucionID == institucionId 
+                         && p.Anulado != true,
+                    cancellationToken
+                );
+
+            if (promocion == null)
+            {
+                var result = new PromocionValidationResult
+                {
+                    IsValid = false,
+                    ErrorMessage = "La promoción no es válida o no pertenece a esta institución."
+                };
+
+                _logger.LogWarning(
+                    "Promotion {PromocionId} not found or invalid for institution {InstitucionId}",
+                    promocionId,
+                    institucionId
+                );
+
+                return ApiResponse<PromocionValidationResult>.Success(result);
+            }
+
+            // Check category compatibility if provided
+            bool isCompatibleWithCategory = true;
+            if (categoriaId.HasValue && promocion.CategoriaID != categoriaId.Value)
+            {
+                isCompatibleWithCategory = false;
+                _logger.LogWarning(
+                    "Promotion {PromocionId} category {PromocionCategoriaId} does not match room category {CategoriaId}",
+                    promocionId,
+                    promocion.CategoriaID,
+                    categoriaId.Value
+                );
+            }
+
+            var validationResult = new PromocionValidationResult
+            {
+                IsValid = isCompatibleWithCategory,
+                ErrorMessage = isCompatibleWithCategory ? null : "La promoción no es válida para esta categoría de habitación.",
+                PromocionId = promocion.PromocionID,
+                PromocionNombre = promocion.Detalle,
+                PromocionTarifa = promocion.Tarifa,
+                CategoriaId = promocion.CategoriaID,
+                IsCompatibleWithCategory = isCompatibleWithCategory
+            };
+
+            _logger.LogInformation(
+                "Validated promotion {PromocionId} for institution {InstitucionId}: IsValid={IsValid}, Compatible={IsCompatible}",
+                promocionId,
+                institucionId,
+                validationResult.IsValid,
+                isCompatibleWithCategory
+            );
+
+            return ApiResponse<PromocionValidationResult>.Success(validationResult);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error validating promotion {PromocionId} for institution {InstitucionId}",
+                promocionId,
+                institucionId
+            );
+
+            var errorResult = new PromocionValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = "Error al validar la promoción. Inténtelo de nuevo."
+            };
+
+            return ApiResponse<PromocionValidationResult>.Success(errorResult);
+        }
+    }
 }
 

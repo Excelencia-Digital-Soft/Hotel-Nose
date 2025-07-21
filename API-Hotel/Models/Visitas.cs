@@ -34,7 +34,6 @@ public partial class Visitas
     public virtual ICollection<Reservas> Reservas { get; } = new List<Reservas>();
 
     // Navigation properties
-    public virtual Habitaciones? Habitacion { get; set; }
     public virtual ApplicationUser? Usuario { get; set; }
     public virtual Institucion? Institucion { get; set; }
     

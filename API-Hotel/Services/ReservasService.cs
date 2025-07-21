@@ -1,6 +1,8 @@
 using hotel.Data;
 using hotel.DTOs.Common;
 using hotel.DTOs.Reservas;
+using hotel.DTOs.Visitas;
+using hotel.DTOs.Movimientos;
 using hotel.Interfaces;
 using hotel.Models;
 using Microsoft.EntityFrameworkCore;
@@ -15,17 +17,26 @@ public class ReservasService : IReservasService
     private readonly HotelDbContext _context;
     private readonly ILogger<ReservasService> _logger;
     private readonly IRegistrosService _registrosService;
+    private readonly IVisitasService _visitasService;
+    private readonly IMovimientosService _movimientosService;
+    private readonly IPromocionesService _promocionesService;
 
     public ReservasService(
         HotelDbContext context,
         ILogger<ReservasService> logger,
-        IRegistrosService registrosService
+        IRegistrosService registrosService,
+        IVisitasService visitasService,
+        IMovimientosService movimientosService,
+        IPromocionesService promocionesService
     )
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _registrosService =
             registrosService ?? throw new ArgumentNullException(nameof(registrosService));
+        _visitasService = visitasService ?? throw new ArgumentNullException(nameof(visitasService));
+        _movimientosService = movimientosService ?? throw new ArgumentNullException(nameof(movimientosService));
+        _promocionesService = promocionesService ?? throw new ArgumentNullException(nameof(promocionesService));
     }
 
     /// <inheritdoc/>
@@ -216,31 +227,30 @@ public class ReservasService : IReservasService
                 );
             }
 
-            // Validate promotion if provided
-            if (promocionId.HasValue)
+            // Validate promotion if provided using PromocionesService
+            if (promocionId.HasValue && promocionId.Value > 0)
             {
-                var promocion = await _context
-                    .Promociones.AsNoTracking()
-                    .Include(p => p.Categoria)
-                    .FirstOrDefaultAsync(
-                        p => p.PromocionID == promocionId.Value && p.Anulado != true,
-                        cancellationToken
-                    );
+                var promocionValidation = await _promocionesService.ValidateAndGetPromocionAsync(
+                    promocionId.Value,
+                    reserva.InstitucionID,
+                    reserva.Habitacion?.CategoriaId,
+                    cancellationToken
+                );
 
-                if (promocion == null)
+                if (!promocionValidation.IsSuccess)
                 {
                     return ApiResponse<ReservaDto>.Failure(
-                        "Promotion not found",
-                        $"No active promotion found with ID {promocionId.Value}"
+                        "Error validating promotion",
+                        "An error occurred while validating the promotion"
                     );
                 }
 
-                // Validate category compatibility
-                if (reserva.Habitacion?.CategoriaId != promocion.CategoriaID)
+                var validationResult = promocionValidation.Data!;
+                if (!validationResult.IsValid)
                 {
                     return ApiResponse<ReservaDto>.Failure(
-                        "Incompatible promotion",
-                        "The promotion is not valid for this room category"
+                        "Invalid promotion",
+                        validationResult.ErrorMessage ?? "The promotion is not valid"
                     );
                 }
             }
@@ -781,12 +791,12 @@ public class ReservasService : IReservasService
     )
     {
         // Input validation
-        var validationResult = ValidateReservationInput(createDto);
-        if (!validationResult.IsValid)
+        var (IsValid, ErrorMessage) = ValidateReservationInput(createDto);
+        if (!IsValid)
         {
             return ApiResponse<ReservaDto>.Failure(
                 "Validation failed",
-                validationResult.ErrorMessage
+                ErrorMessage
             );
         }
 
@@ -833,13 +843,14 @@ public class ReservasService : IReservasService
                 );
             }
 
-            // 2. Calculate pricing
+            // 2. Calculate pricing (with optional promotion validation)
             var pricingResult = await CalculateReservationPricingAsync(
                 habitacion.Categoria.PrecioNormal ?? 0,
                 createDto.PromocionId,
                 createDto.TotalHoras,
                 createDto.TotalMinutos,
                 institucionId,
+                habitacion.CategoriaId, // Pass category for promotion validation
                 cancellationToken
             );
 
@@ -848,33 +859,53 @@ public class ReservasService : IReservasService
                 return ApiResponse<ReservaDto>.Failure("Pricing error", pricingResult.ErrorMessage);
             }
 
-            // 3. Create all entities in memory first (for better transaction handling)
-            var visita = new Visitas
+            // 3. Create Visita using VisitasService
+            var visitaCreateDto = new VisitaCreateDto
             {
-                InstitucionID = institucionId,
-                UserId = userId,
                 PatenteVehiculo = createDto.Guest.PatenteVehiculo?.Trim(),
                 NumeroTelefono = createDto.Guest.NumeroTelefono?.Trim(),
                 Identificador = createDto.Guest.Identificador?.Trim(),
-                FechaRegistro = currentTime,
-                FechaPrimerIngreso = createDto.EsReserva ? null : currentTime,
-                Anulado = false,
                 HabitacionId = createDto.HabitacionId,
+                EsReserva = createDto.EsReserva
             };
 
-            var movimiento = new Movimientos
+            var visitaResult = await _visitasService.CreateVisitaAsync(
+                visitaCreateDto, 
+                institucionId, 
+                userId, 
+                cancellationToken);
+                
+            if (!visitaResult.IsSuccess)
             {
-                Visita = visita, // Use navigation property
-                InstitucionID = institucionId,
-                TotalFacturado = pricingResult.TotalAmount,
-                HabitacionId = createDto.HabitacionId,
-                FechaRegistro = currentTime,
-                Anulado = false,
-            };
+                return ApiResponse<ReservaDto>.Failure(
+                    "Error creating visit", 
+                    visitaResult.Errors.FirstOrDefault() ?? "Failed to create visit");
+            }
 
+            var visita = visitaResult.Data!;
+
+            // 4. Create Movimiento using MovimientosService
+            var movimientoResult = await _movimientosService.CreateMovimientoHabitacionAsync(
+                visita.VisitaId,
+                institucionId,
+                pricingResult.TotalAmount,
+                createDto.HabitacionId,
+                "Movimiento por reserva de habitación",
+                cancellationToken);
+                
+            if (!movimientoResult.IsSuccess)
+            {
+                return ApiResponse<ReservaDto>.Failure(
+                    "Error creating movement", 
+                    movimientoResult.Errors.FirstOrDefault() ?? "Failed to create movement");
+            }
+
+            var movimiento = movimientoResult.Data!;
+
+            // 5. Create Reserva entity directly (as this is the core responsibility)
             var reserva = new Reservas
             {
-                Visita = visita, // Use navigation property
+                VisitaId = visita.VisitaId,
                 HabitacionId = createDto.HabitacionId,
                 FechaReserva = createDto.FechaInicio,
                 InstitucionID = institucionId,
@@ -884,30 +915,21 @@ public class ReservasService : IReservasService
                 UserId = userId,
                 FechaRegistro = currentTime,
                 FechaAnula = null,
-                PromocionId = createDto.PromocionId,
-                MovimientoId = null, // Will be set after SaveChanges
+                PromocionId = createDto.PromocionId == 0 ? null : createDto.PromocionId,
+                MovimientoId = movimiento.MovimientosId,
                 PausaHoras = 0,
                 PausaMinutos = 0,
             };
 
-            // 4. Add all entities to context
-            _context.Visitas.Add(visita);
-            _context.Movimientos.Add(movimiento);
+            // 6. Add reservation and update room status
             _context.Reservas.Add(reserva);
-
-            // 5. Update room status (mark as unavailable)
             habitacion.Disponible = false;
             habitacion.VisitaID = visita.VisitaId;
 
-            // 6. Save all changes in a single operation
+            // 7. Save changes
             await _context.SaveChangesAsync(cancellationToken);
 
-            // Update MovimientoId in Reserva
-            reserva.MovimientoId = movimiento.MovimientosId;
-            _context.Update(reserva);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // 7. Create audit log entry using RegistrosService
+            // 8. Create audit log entry using RegistrosService
             await _registrosService.LogAuditAsync(
                 $"Nueva Reserva - Habitación: {habitacion.HabitacionId} - Huésped: {visita.Identificador ?? "Sin identificación"} - Usuario: {userId}",
                 ModuloSistema.RESERVAS,
@@ -917,7 +939,7 @@ public class ReservasService : IReservasService
                 System.Text.Json.JsonSerializer.Serialize(
                     new
                     {
-                        HabitacionId = habitacion.HabitacionId,
+                        habitacion.HabitacionId,
                         HuespedIdentificador = visita.Identificador,
                         TarifaId = createDto.PromocionId,
                         FechaCreacion = DateTime.UtcNow,
@@ -927,7 +949,7 @@ public class ReservasService : IReservasService
                 cancellationToken
             );
 
-            // 8. Commit transaction
+            // 9. Commit transaction
             await transaction.CommitAsync(cancellationToken);
 
             _logger.LogInformation(
@@ -938,7 +960,7 @@ public class ReservasService : IReservasService
                 pricingResult.TotalAmount
             );
 
-            // 9. Return created reservation as DTO
+            // 10. Return created reservation as DTO
             var reservaDto = new ReservaDto
             {
                 ReservaId = reserva.ReservaId,
@@ -1025,16 +1047,6 @@ public class ReservasService : IReservasService
             return (false, "Guest information is required");
         }
 
-        // At least one form of identification is required
-        if (
-            string.IsNullOrWhiteSpace(createDto.Guest.Identificador)
-            && string.IsNullOrWhiteSpace(createDto.Guest.NumeroTelefono)
-            && string.IsNullOrWhiteSpace(createDto.Guest.PatenteVehiculo)
-        )
-        {
-            return (false, "At least one form of guest identification is required");
-        }
-
         return (true, string.Empty);
     }
 
@@ -1044,7 +1056,8 @@ public class ReservasService : IReservasService
         int hours,
         int minutes,
         int institucionId,
-        CancellationToken cancellationToken
+        int? categoriaId = null,
+        CancellationToken cancellationToken = default
     )
     {
         var result = new PricingResult { IsValid = true };
@@ -1054,30 +1067,50 @@ public class ReservasService : IReservasService
             // Use base price by default
             result.TariffRate = basePrice;
 
-            // Check for promotion
+            // Check for promotion if provided
             if (promocionId.HasValue && promocionId.Value > 0)
             {
-                var promocion = await _context
-                    .Promociones.AsNoTracking()
-                    .FirstOrDefaultAsync(
-                        p =>
-                            p.PromocionID == promocionId.Value
-                            && p.InstitucionID == institucionId
-                            && p.Anulado != true,
-                        cancellationToken
-                    );
+                var promocionValidation = await _promocionesService.ValidateAndGetPromocionAsync(
+                    promocionId.Value,
+                    institucionId,
+                    categoriaId,
+                    cancellationToken
+                );
 
-                if (promocion == null)
+                if (!promocionValidation.IsSuccess)
                 {
                     result.IsValid = false;
-                    result.ErrorMessage =
-                        "The specified promotion is not valid or has been deactivated";
+                    result.ErrorMessage = "Error al validar la promoción. Inténtelo de nuevo.";
                     return result;
                 }
 
-                result.TariffRate = promocion.Tarifa;
-                result.PromocionNombre = promocion.Detalle;
-                result.PromocionTarifa = promocion.Tarifa;
+                var validationResult = promocionValidation.Data!;
+                if (!validationResult.IsValid)
+                {
+                    result.IsValid = false;
+                    result.ErrorMessage = validationResult.ErrorMessage ?? "La promoción no es válida.";
+                    return result;
+                }
+
+                // Use promotion pricing
+                result.TariffRate = validationResult.PromocionTarifa ?? basePrice;
+                result.PromocionNombre = validationResult.PromocionNombre;
+                result.PromocionTarifa = validationResult.PromocionTarifa;
+
+                _logger.LogInformation(
+                    "Applied promotion {PromocionId} with rate {Rate} for institution {InstitucionId}",
+                    promocionId.Value,
+                    result.TariffRate,
+                    institucionId
+                );
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "No promotion applied, using base price {BasePrice} for institution {InstitucionId}",
+                    basePrice,
+                    institucionId
+                );
             }
 
             // Validate tariff
@@ -1091,6 +1124,13 @@ public class ReservasService : IReservasService
             // Calculate total
             var totalHours = hours + (minutes / 60.0m);
             result.TotalAmount = Math.Round(result.TariffRate * totalHours, 2);
+
+            _logger.LogDebug(
+                "Calculated pricing: Rate={Rate}, Hours={Hours}, Total={Total}",
+                result.TariffRate,
+                totalHours,
+                result.TotalAmount
+            );
 
             return result;
         }

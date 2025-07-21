@@ -131,6 +131,7 @@ public class CategoriasService : ICategoriasService
             // Check if category name already exists (case-insensitive)
             var existsWithSameName = await _context.CategoriasArticulos.AnyAsync(
                 c =>
+                    c.NombreCategoria != null && 
                     c.NombreCategoria.ToLower() == createDto.NombreCategoria.ToLower()
                     && c.InstitucionID == institucionId
                     && (c.Anulado == null || c.Anulado == false),
@@ -207,6 +208,7 @@ public class CategoriasService : ICategoriasService
             // Check if category name already exists (case-insensitive)
             var existsWithSameName = await _context.CategoriasArticulos.AnyAsync(
                 c =>
+                    c.NombreCategoria != null && 
                     c.NombreCategoria.ToLower() == createDto.NombreCategoria.ToLower()
                     && c.InstitucionID == institucionId
                     && (c.Anulado == null || c.Anulado == false),
@@ -317,6 +319,7 @@ public class CategoriasService : ICategoriasService
             {
                 var existsWithSameName = await _context.CategoriasArticulos.AnyAsync(
                     c =>
+                        c.NombreCategoria != null && 
                         c.NombreCategoria.ToLower() == updateDto.NombreCategoria.ToLower()
                         && c.InstitucionID == institucionId
                         && c.CategoriaId != id
