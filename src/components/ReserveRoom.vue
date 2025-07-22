@@ -128,8 +128,8 @@
                       <select v-model="selectedPromocion" 
                         class="w-full text-xs text-gray-900 p-2 rounded-lg border border-purple-300 focus:border-purple-500 focus:ring-1 focus:ring-purple-500/20 transition bg-white">
                         <option :value="null">Sin Promoción</option>
-                        <option v-for="promo in promociones" :key="promo.promocionID" :value="promo">
-                          {{ promo.detalle }}
+                        <option v-for="promo in promociones" :key="promo.promocionId" :value="promo">
+                          {{ promo.nombre }}
                         </option>
                         <option v-if="promociones.length === 0" disabled>Sin promociones</option>
                       </select>
@@ -342,8 +342,9 @@
               @close="modalPayment = false" 
               @confirm-payment="handlePaymentConfirmation" />
 
-            <AnularOcupacionModal v-if="modalAnular" 
-              :reservaId="selectedRoom.ReservaID"
+            <AnularOcupacionModal 
+              :visible="modalAnular"
+              :habitacion="selectedRoom"
               @close-modal="modalAnular = false" 
               @ocupacion-anulada="handleOcupacionAnulada" />
               

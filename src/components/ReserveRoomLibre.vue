@@ -191,11 +191,15 @@ import ProgressSpinner from 'primevue/progressspinner';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
 import { useAuthStore } from '../store/auth.js'; // Import the auth store
+import { ReservasService } from '../services/reservasService';
 
 const isSpecificRoute = computed(() => route.path.startsWith('/Rooms'));
 const UsuarioID = ref(null);
 const InstitucionID = ref(null);
 const authStore = useAuthStore();
+
+// Feature flag for V1 API
+const USE_V1_API = true;
 const route = useRoute();
 const toast = useToast();
 let isLoading = ref(false);
@@ -375,9 +379,35 @@ const reserveRoom = () => {
   }
 
   console.log('Enviando reserva:', selectedRoom.value);
-  console.log('InstitucionID:', InstitucionID.value, 'UsuarioID:', UsuarioID.value);
 
-  axiosClient.post(`/ReservarHabitacion?InstitucionID=${InstitucionID.value}&UsuarioID=${UsuarioID.value}`, selectedRoom.value)
+  let reservationPromise;
+
+  if (USE_V1_API) {
+    // Transform to V1 API format
+    const v1ReservaData = {
+      habitacionId: selectedRoom.value.HabitacionID,
+      promocionId: selectedRoom.value.PromocionID || 0,
+      fechaInicio: selectedRoom.value.FechaReserva,
+      fechaFin: selectedRoom.value.FechaFin || selectedRoom.value.FechaReserva,
+      totalHoras: selectedRoom.value.TotalHoras,
+      totalMinutos: selectedRoom.value.TotalMinutos,
+      esReserva: selectedRoom.value.esReserva,
+      guest: {
+        patenteVehiculo: selectedRoom.value.PatenteVehiculo || null,
+        numeroTelefono: selectedRoom.value.NumeroTelefono || null,
+        identificador: selectedRoom.value.Identificador || null
+      }
+    };
+
+    console.log('Using V1 API - Reserva Data:', v1ReservaData);
+    reservationPromise = ReservasService.createReserva(v1ReservaData);
+  } else {
+    // Use legacy API
+    console.log('Using Legacy API - InstitucionID:', InstitucionID.value, 'UsuarioID:', UsuarioID.value);
+    reservationPromise = ReservasService.legacyCreateReserva(InstitucionID.value, UsuarioID.value, selectedRoom.value);
+  }
+
+  reservationPromise
     .then(res => {
       console.log('Reserva exitosa:', res.data);
       toast.add({

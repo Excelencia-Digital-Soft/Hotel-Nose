@@ -1,8 +1,17 @@
 import axiosClient from '../axiosClient'
+import { 
+  ApiResponse, 
+  ConsumoCreateDto,
+  ConsumoGeneralCreateDto,
+  ConsumoRoomCreateDto,
+  ConsumoUpdateDto,
+  ConsumoResponseDto,
+  ConsumoSummaryDto
+} from '../types'
 
 export class ConsumosService {
   // Get consumos by visita ID
-  static async getConsumosByVisita(visitaId) {
+  static async getConsumosByVisita(visitaId: number): Promise<ApiResponse<ConsumoResponseDto[]>> {
     try {
       const response = await axiosClient.get(`/api/v1/consumos/visita/${visitaId}`)
       return response.data
@@ -13,7 +22,7 @@ export class ConsumosService {
   }
 
   // Get consumos summary
-  static async getConsumosSummary(visitaId) {
+  static async getConsumosSummary(visitaId: number): Promise<ApiResponse<ConsumoSummaryDto>> {
     try {
       const response = await axiosClient.get(`/api/v1/consumos/visita/${visitaId}/summary`)
       return response.data
@@ -24,14 +33,22 @@ export class ConsumosService {
   }
 
   // Add general consumos
-  static async addGeneralConsumos(visitaId, habitacionId, consumos) {
+  static async addGeneralConsumos(visitaId: number, habitacionId: number, consumos: any[]): Promise<ApiResponse<ConsumoResponseDto[]>> {
     try {
-      const payload = {
-        visitaId,
-        habitacionId,
-        consumos
-      }
-      const response = await axiosClient.post('/api/v1/consumos/general', payload)
+      // Map component format to DTO format
+      const items: ConsumoCreateDto[] = consumos.map(item => ({
+        articuloId: item.articuloId,
+        cantidad: item.cantidad,
+        precioUnitario: item.precio, // Changed from 'precio' to 'precioUnitario'
+        esHabitacion: false // For general consumos
+      }))
+      
+      // Use query parameters for habitacionId and visitaId
+      const url = `/api/v1/consumos/general?habitacionId=${habitacionId}&visitaId=${visitaId}`
+      
+      console.log('Sending consumos to V1 API:', url, items)
+      // Send items array directly as body
+      const response = await axiosClient.post(url, items)
       return response.data
     } catch (error) {
       console.error('Error adding general consumos:', error)
@@ -40,14 +57,22 @@ export class ConsumosService {
   }
 
   // Add room consumos
-  static async addRoomConsumos(visitaId, habitacionId, consumos) {
+  static async addRoomConsumos(visitaId: number, habitacionId: number, consumos: any[]): Promise<ApiResponse<ConsumoResponseDto[]>> {
     try {
-      const payload = {
-        visitaId,
-        habitacionId,
-        consumos
-      }
-      const response = await axiosClient.post('/api/v1/consumos/room', payload)
+      // Map component format to DTO format
+      const items: ConsumoCreateDto[] = consumos.map(item => ({
+        articuloId: item.articuloId,
+        cantidad: item.cantidad,
+        precioUnitario: item.precio, // Changed from 'precio' to 'precioUnitario'
+        esHabitacion: true // For room consumos
+      }))
+      
+      // Use query parameters for habitacionId and visitaId
+      const url = `/api/v1/consumos/room?habitacionId=${habitacionId}&visitaId=${visitaId}`
+      
+      console.log('Sending room consumos to V1 API:', url, items)
+      // Send items array directly as body
+      const response = await axiosClient.post(url, items)
       return response.data
     } catch (error) {
       console.error('Error adding room consumos:', error)
@@ -56,9 +81,10 @@ export class ConsumosService {
   }
 
   // Update consumo quantity
-  static async updateConsumoQuantity(consumoId, cantidad) {
+  static async updateConsumoQuantity(consumoId: number, cantidad: number): Promise<ApiResponse<ConsumoResponseDto>> {
     try {
-      const response = await axiosClient.put(`/api/v1/consumos/${consumoId}`, { cantidad })
+      const updateData: ConsumoUpdateDto = { cantidad }
+      const response = await axiosClient.put(`/api/v1/consumos/${consumoId}`, updateData)
       return response.data
     } catch (error) {
       console.error('Error updating consumo quantity:', error)
@@ -67,7 +93,7 @@ export class ConsumosService {
   }
 
   // Delete/Cancel consumo
-  static async cancelConsumo(consumoId) {
+  static async cancelConsumo(consumoId: number): Promise<ApiResponse<void>> {
     try {
       const response = await axiosClient.delete(`/api/v1/consumos/${consumoId}`)
       return response.data
@@ -78,7 +104,7 @@ export class ConsumosService {
   }
 
   // Legacy methods for backward compatibility
-  static async getLegacyConsumos(visitaId) {
+  static async getLegacyConsumos(visitaId: number): Promise<any> {
     try {
       const response = await axiosClient.get(`/GetConsumosVisita?VisitaID=${visitaId}`)
       return response.data
@@ -88,7 +114,7 @@ export class ConsumosService {
     }
   }
 
-  static async addLegacyGeneralConsumos(habitacionId, visitaId, selectedItems) {
+  static async addLegacyGeneralConsumos(habitacionId: number, visitaId: number, selectedItems: any[]): Promise<any> {
     try {
       const response = await axiosClient.post(
         `/ConsumoGeneral?habitacionId=${habitacionId}&visitaId=${visitaId}`,
@@ -101,7 +127,7 @@ export class ConsumosService {
     }
   }
 
-  static async addLegacyRoomConsumos(habitacionId, visitaId, selectedItems) {
+  static async addLegacyRoomConsumos(habitacionId: number, visitaId: number, selectedItems: any[]): Promise<any> {
     try {
       const response = await axiosClient.post(
         `/ConsumoHabitacion?habitacionId=${habitacionId}&visitaId=${visitaId}`,
@@ -114,7 +140,7 @@ export class ConsumosService {
     }
   }
 
-  static async updateLegacyConsumo(consumoId, cantidad) {
+  static async updateLegacyConsumo(consumoId: number, cantidad: number): Promise<any> {
     try {
       const response = await axiosClient.put(`/UpdateConsumo?idConsumo=${consumoId}&Cantidad=${cantidad}`)
       return response.data
@@ -124,7 +150,7 @@ export class ConsumosService {
     }
   }
 
-  static async cancelLegacyConsumo(consumoId) {
+  static async cancelLegacyConsumo(consumoId: number): Promise<any> {
     try {
       const response = await axiosClient.delete(`/AnularConsumo?idConsumo=${consumoId}`)
       return response.data

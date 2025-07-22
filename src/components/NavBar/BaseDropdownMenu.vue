@@ -15,13 +15,15 @@
       </div>
     </button>
 
-    <Transition name="dropdown" appear>
-      <ul 
-        v-if="isOpen && hasVisibleItems" 
-        class="dropdown-menu"
-        role="menu"
-        :aria-labelledby="menuId"
-      >
+    <Teleport to="body">
+      <Transition name="dropdown">
+        <ul 
+          v-if="isOpen && hasVisibleItems" 
+          class="dropdown-menu"
+          role="menu"
+          :aria-labelledby="menuId"
+          :style="dropdownStyle"
+        >
         <li 
           v-for="item in visibleItems" 
           :key="item.label"
@@ -48,13 +50,14 @@
             <span class="item-label">{{ item.label }}</span>
           </button>
         </li>
-      </ul>
-    </Transition>
+        </ul>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, inject } from 'vue';
 import { useAuthStore } from '../../store/auth.js';
 import { hasAnyRole } from '../../utils/role-mapping.js';
 
@@ -87,7 +90,11 @@ const emit = defineEmits(['action']);
 const authStore = useAuthStore();
 const menuContainer = ref(null);
 const isOpen = ref(false);
+const dropdownPosition = ref({ top: 0, left: 0, width: 0 });
+let transitionTimer = null;
 
+// Menu coordination
+const menuCoordination = inject('menuCoordination', null);
 const menuId = computed(() => `menu-${props.label.toLowerCase().replace(/\s+/g, '-')}`);
 
 const menuButtonClass = computed(() => [
@@ -119,9 +126,60 @@ const visibleItems = computed(() => {
 
 const hasVisibleItems = computed(() => visibleItems.value.length > 0);
 
+// Calculate dropdown position
+const dropdownStyle = computed(() => ({
+  position: 'fixed',
+  top: `${dropdownPosition.value.top}px`,
+  left: `${dropdownPosition.value.left}px`,
+  minWidth: `${dropdownPosition.value.width}px`,
+  zIndex: 9999
+}));
+
+// Update dropdown position
+const updateDropdownPosition = () => {
+  if (!menuContainer.value) return;
+  
+  const rect = menuContainer.value.getBoundingClientRect();
+  dropdownPosition.value = {
+    top: rect.bottom + window.scrollY,
+    left: rect.left + window.scrollX,
+    width: rect.width
+  };
+};
+
 const toggleMenu = () => {
-  if (hasVisibleItems.value) {
-    isOpen.value = !isOpen.value;
+  if (!hasVisibleItems.value || !menuContainer.value) {
+    return;
+  }
+
+  // Clear any existing timer
+  if (transitionTimer) {
+    clearTimeout(transitionTimer);
+  }
+
+  // If menu is currently closed, open it and close others
+  if (!isOpen.value) {
+    // Update position before opening
+    updateDropdownPosition();
+    
+    // Close all other menus first
+    if (menuCoordination) {
+      menuCoordination.closeAllMenus();
+    }
+    
+    // Then open this one after a short delay
+    setTimeout(() => {
+      if (menuCoordination) {
+        menuCoordination.openMenu(menuId.value);
+      }
+      isOpen.value = true;
+    }, 10);
+  } else {
+    // If menu is open, close it
+    if (menuCoordination) {
+      menuCoordination.closeAllMenus();
+    }
+    isOpen.value = false;
   }
 };
 
@@ -136,14 +194,14 @@ const handleAction = (action) => {
 
 // Handle clicks outside the menu
 const handleClickOutside = (event) => {
-  if (menuContainer.value && !menuContainer.value.contains(event.target)) {
+  if (isOpen.value && menuContainer.value && event.target && !menuContainer.value.contains(event.target)) {
     closeMenu();
   }
 };
 
 // Close menu on escape key
 const handleKeydown = (event) => {
-  if (event.key === 'Escape') {
+  if (event.key === 'Escape' && isOpen.value) {
     closeMenu();
   }
 };
@@ -154,6 +212,16 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  // Clear any pending timers
+  if (transitionTimer) {
+    clearTimeout(transitionTimer);
+    transitionTimer = null;
+  }
+  
+  // Close menu immediately to prevent transition issues
+  isOpen.value = false;
+  
+  // Remove event listeners
   document.removeEventListener('click', handleClickOutside);
   document.removeEventListener('keydown', handleKeydown);
 });
@@ -162,6 +230,16 @@ onUnmounted(() => {
 watch(() => authStore.isAuthenticated, () => {
   closeMenu();
 });
+
+// Watch for menu coordination changes
+if (menuCoordination) {
+  watch(() => menuCoordination.activeMenuId.value, (newActiveId) => {
+    if (newActiveId !== menuId.value && isOpen.value) {
+      // Another menu was opened, close this one immediately
+      isOpen.value = false;
+    }
+  });
+}
 </script>
 
 <style scoped>
@@ -206,10 +284,8 @@ watch(() => authStore.isAuthenticated, () => {
 }
 
 .dropdown-menu {
-  @apply absolute z-30 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden;
+  @apply bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden;
   @apply min-w-[200px] max-w-[280px];
-  top: 100%;
-  right: 0;
 }
 
 .menu-item {
@@ -230,17 +306,20 @@ watch(() => authStore.isAuthenticated, () => {
 }
 
 /* Transition styles */
-.dropdown-enter-active,
+.dropdown-enter-active {
+  @apply transition-all duration-150 ease-out;
+}
+
 .dropdown-leave-active {
-  @apply transition-all duration-200;
+  @apply transition-all duration-100 ease-in;
 }
 
 .dropdown-enter-from {
-  @apply opacity-0 transform scale-95 -translate-y-2;
+  @apply opacity-0 transform scale-95 -translate-y-1;
 }
 
 .dropdown-leave-to {
-  @apply opacity-0 transform scale-95 -translate-y-2;
+  @apply opacity-0 transform scale-95 -translate-y-1;
 }
 
 /* Responsive adjustments */

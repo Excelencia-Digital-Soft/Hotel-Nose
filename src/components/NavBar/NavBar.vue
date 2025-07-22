@@ -5,14 +5,14 @@
       inRoom<img src="../../assets/pin.png" class="h-8 invert" alt="">
     </router-link>
     
-    <!-- New Responsive Menu System -->
-    <ResponsiveMenu v-if="authStore.isAuthenticated" />
+    <!-- Glassmorphism Menu System (Alternative to avoid insertBefore errors) -->
+    <GlassResponsiveMenu v-if="authStore.isAuthenticated" />
 
   </header>
 </template>
 <script setup>
 import { useAuthStore } from "../../store/auth.js";
-import ResponsiveMenu from "./ResponsiveMenu.vue";
+import GlassResponsiveMenu from "./GlassResponsiveMenu.vue";
 
 const authStore = useAuthStore();
 </script>

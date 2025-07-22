@@ -1,8 +1,16 @@
 import axiosClient from '../axiosClient'
+import { 
+  ApiResponse, 
+  PromocionDto, 
+  PromocionCreateDto, 
+  PromocionUpdateDto, 
+  PromocionValidateDto,
+  PromocionValidationResult 
+} from '../types'
 
 export class PromocionesService {
   // Get promociones by categoria
-  static async getPromocionesByCategoria(categoriaId) {
+  static async getPromocionesByCategoria(categoriaId: number): Promise<ApiResponse<PromocionDto[]>> {
     try {
       const response = await axiosClient.get(`/api/v1/promociones/categoria/${categoriaId}`)
       return response.data
@@ -13,7 +21,7 @@ export class PromocionesService {
   }
 
   // Get active promociones
-  static async getActivePromociones() {
+  static async getActivePromociones(): Promise<ApiResponse<PromocionDto[]>> {
     try {
       const response = await axiosClient.get('/api/v1/promociones/active')
       return response.data
@@ -24,7 +32,7 @@ export class PromocionesService {
   }
 
   // Get promocion by ID
-  static async getPromocion(promocionId) {
+  static async getPromocion(promocionId: number): Promise<ApiResponse<PromocionDto>> {
     try {
       const response = await axiosClient.get(`/api/v1/promociones/${promocionId}`)
       return response.data
@@ -35,7 +43,7 @@ export class PromocionesService {
   }
 
   // Create promocion
-  static async createPromocion(promocionData) {
+  static async createPromocion(promocionData: PromocionCreateDto): Promise<ApiResponse<PromocionDto>> {
     try {
       const response = await axiosClient.post('/api/v1/promociones', promocionData)
       return response.data
@@ -46,7 +54,7 @@ export class PromocionesService {
   }
 
   // Update promocion
-  static async updatePromocion(promocionId, promocionData) {
+  static async updatePromocion(promocionId: number, promocionData: PromocionUpdateDto): Promise<ApiResponse<PromocionDto>> {
     try {
       const response = await axiosClient.put(`/api/v1/promociones/${promocionId}`, promocionData)
       return response.data
@@ -57,7 +65,7 @@ export class PromocionesService {
   }
 
   // Delete promocion
-  static async deletePromocion(promocionId) {
+  static async deletePromocion(promocionId: number): Promise<ApiResponse<void>> {
     try {
       const response = await axiosClient.delete(`/api/v1/promociones/${promocionId}`)
       return response.data
@@ -68,7 +76,7 @@ export class PromocionesService {
   }
 
   // Validate promocion
-  static async validatePromocion(promocionId, validationData) {
+  static async validatePromocion(promocionId: number, validationData: PromocionValidateDto): Promise<ApiResponse<PromocionValidationResult>> {
     try {
       const response = await axiosClient.post(`/api/v1/promociones/${promocionId}/validate`, validationData)
       return response.data
@@ -78,14 +86,4 @@ export class PromocionesService {
     }
   }
 
-  // Legacy methods for backward compatibility
-  static async getLegacyPromocionesByCategoria(categoriaId) {
-    try {
-      const response = await axiosClient.get(`/api/Promociones/GetPromocionesCategoria?categoriaID=${categoriaId}`)
-      return response.data
-    } catch (error) {
-      console.error('Error fetching legacy promociones by categoria:', error)
-      throw error
-    }
-  }
 }

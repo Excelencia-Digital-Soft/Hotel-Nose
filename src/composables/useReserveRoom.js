@@ -1,9 +1,7 @@
 import { ref } from 'vue'
-import { useToast } from 'primevue/usetoast'
 
 export function useReserveRoom(props) {
-  const toast = useToast()
-  
+
   // Room data
   const selectedRoom = ref({
     HabitacionID: 0,
@@ -35,7 +33,7 @@ export function useReserveRoom(props) {
   // Initialize room data
   const initializeRoom = () => {
     if (!props.room) return
-    
+
     selectedRoom.value.nombreHabitacion = props.room.nombreHabitacion
     selectedRoom.value.HabitacionID = props.room.habitacionId
     selectedRoom.value.Disponible = props.room.disponible

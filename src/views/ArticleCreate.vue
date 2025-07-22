@@ -261,7 +261,7 @@
                 >
                   <i :class="isLoadingImage ? 'pi pi-spinner pi-spin' : 'pi pi-cloud-upload'" class="mr-2 text-lg"></i>
                   <span class="font-semibold">
-                    {{ isLoadingImage ? '⏳ Cargando...' : (imagePreview.includes('sin-imagen') ? '🎨 Subir Imagen' : '🔄 Cambiar Imagen') }}
+                    {{ isLoadingImage ? '⏳ Cargando...' : (imagePreview.includes('sin-imagen') ? (isEditMode ? '🎨 Agregar Imagen' : '🎨 Subir Imagen') : '🔄 Cambiar Imagen') }}
                   </span>
                 </button>
                 
@@ -436,6 +436,7 @@
               <i class="pi pi-pencil mr-1"></i>
               ✏️ Editar
             </button>
+            
             <button
               @click="handleDelete(article)"
               class="flex-1 glass-button py-2 text-white hover:text-red-300 transform hover:scale-105 transition-all"
@@ -483,6 +484,7 @@
         </div>
       </div>
     </div>
+
 
     <!-- Toast and Confirm Dialog -->
     <Toast />
@@ -552,7 +554,27 @@ const toggleCreateForm = () => {
 const startEditAndShowForm = (article) => {
   startEdit(article)
   showCreateForm.value = true
+  
+  // Scroll to the form smoothly with a slight delay to ensure DOM is updated
+  setTimeout(() => {
+    // Target the create/edit form container more specifically
+    const formElement = document.querySelector('[ref="createFormContainer"]') || 
+                       document.querySelector('.glass-container:has(form)') ||
+                       document.querySelector('.glass-container:nth-of-type(2)')
+    
+    if (formElement) {
+      // Add offset to account for fixed headers
+      const yOffset = -100 
+      const y = formElement.getBoundingClientRect().top + window.pageYOffset + yOffset
+      
+      window.scrollTo({ 
+        top: y, 
+        behavior: 'smooth' 
+      })
+    }
+  }, 150)
 }
+
 
 const handleImageChange = (event) => {
   const file = event.target.files[0]
@@ -774,6 +796,7 @@ onMounted(async () => {
 .animate-bounce {
   animation: bounce 1s infinite;
 }
+
 
 /* Custom scrollbar for better UX */
 ::-webkit-scrollbar {

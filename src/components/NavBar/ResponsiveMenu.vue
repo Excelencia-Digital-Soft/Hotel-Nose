@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, provide } from 'vue';
 import { useAuthStore } from '../../store/auth.js';
 import { useAuth } from '../../composables/useAuth.js';
 import { showLogoutSuccessToast } from '../../utils/toast.js';
@@ -45,6 +45,24 @@ import MobileMenu from './MobileMenu.vue';
 
 const authStore = useAuthStore();
 const { logout } = useAuth();
+
+// Menu coordination
+const activeMenuId = ref(null);
+
+const closeAllMenus = () => {
+  activeMenuId.value = null;
+};
+
+const openMenu = (menuId) => {
+  activeMenuId.value = menuId;
+};
+
+// Provide menu coordination to children
+provide('menuCoordination', {
+  activeMenuId,
+  closeAllMenus,
+  openMenu
+});
 
 // Helper function to check if user has required roles
 const hasUserRole = (allowedRoles) => {

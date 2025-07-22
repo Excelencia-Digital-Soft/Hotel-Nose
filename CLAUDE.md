@@ -77,10 +77,60 @@ src/
 │   ├── useRoom.js     # Room-related logic
 │   ├── useAuth.js     # Authentication logic
 │   └── useTimer.js    # Timer functionality
-└── services/
-    ├── roomService.js    # Room API calls
-    ├── authService.js    # Auth API calls
-    └── consumoService.js # Consumption API calls
+├── services/
+│   ├── roomService.js    # Room API calls
+│   ├── authService.js    # Auth API calls
+│   └── consumoService.js # Consumption API calls
+└── types/
+    ├── api.ts         # Barrel export for all types
+    ├── common.ts      # Shared interfaces (ApiResponse)
+    ├── habitacion.ts  # Room-related types
+    ├── reserva.ts     # Reservation-related types
+    ├── consumo.ts     # Consumption-related types
+    ├── categoria.ts   # Category-related types
+    └── inventory.ts   # Inventory-related types
+```
+
+## 📝 Type System Guidelines
+
+### Universal API Response
+**IMPORTANT**: Always use the existing `ApiResponse<T>` interface from `common.ts` for all API responses. **Never create duplicate response interfaces**.
+
+```ts
+// ✅ CORRECT - Use existing ApiResponse
+import { ApiResponse } from '../types'
+
+// API service method
+static async getData(): Promise<ApiResponse<DataType>> {
+  const response = await axiosClient.get('/api/v1/data')
+  return response.data // Already typed as ApiResponse<DataType>
+}
+
+// ❌ INCORRECT - Don't create new response types
+interface MyApiResponse<T> { // DON'T DO THIS
+  isSuccess: boolean
+  data?: T
+  // ...
+}
+```
+
+### Type Organization by Domain
+Each domain has its own type file following single responsibility:
+- **common.ts**: Shared interfaces used across domains (`ApiResponse`, etc.)
+- **habitacion.ts**: Room/hotel-related interfaces
+- **reserva.ts**: Reservation and booking interfaces  
+- **consumo.ts**: Consumption and billing interfaces
+- **categoria.ts**: Category classification interfaces
+- **inventory.ts**: Inventory and stock management interfaces
+
+### Import Pattern
+```ts
+// ✅ Import from main api.ts (barrel export)
+import { ApiResponse, InventoryDto, ReservaResponseDto } from '../types'
+
+// ✅ Or import specific domain
+import { InventoryDto } from '../types/inventory'
+import { ApiResponse } from '../types/common'
 ```
 
 ## 🎨 Design System: Glassmorphism

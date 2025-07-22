@@ -13,8 +13,6 @@ import ConfirmationService from 'primevue/confirmationservice';
 import Tooltip from 'primevue/tooltip';
 import 'primevue/resources/primevue.min.css';
 import 'primeicons/primeicons.css';
-import { useWebSocketStore } from "./store/websocket";
-
 
 const pinia = createPinia();
 const app = createApp(App);
@@ -22,12 +20,10 @@ const app = createApp(App);
 app.use(pinia);  // ✅ Install Pinia before using stores
 pinia.use(piniaPluginPersistedstate);  // ✅ Add persistence after installing Pinia
 
-// WebSocket will connect automatically when user authenticates and selects institution
-
 app.use(router)
-   .use(PrimeVue, { unstyled: true, pt: Lara })
-   .use(ToastService)
-   .use(ConfirmationService);
+  .use(PrimeVue, { unstyled: true, pt: Lara })
+  .use(ToastService)
+  .use(ConfirmationService);
 
 app.directive('tooltip', Tooltip);
 

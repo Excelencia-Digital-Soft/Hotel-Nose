@@ -1,8 +1,13 @@
-import axiosClient from '../axiosClient'
+import axiosClient from '../axiosClient';
+import { 
+  ApiResponse, 
+  Habitacion, 
+  HabitacionAvailabilityDto
+} from '../types';
 
 export class RoomService {
   // Get all rooms for an institution
-  static async getRooms(institucionId) {
+  static async getRooms(institucionId: number): Promise<ApiResponse<Habitacion[]>> {
     try {
       const response = await axiosClient.get(`/api/v1/rooms?institucionId=${institucionId}`)
       return response.data
@@ -126,6 +131,18 @@ export class RoomService {
       return response.data
     } catch (error) {
       console.error('Error fetching room characteristics:', error)
+      throw error
+    }
+  }
+
+  // Change room availability
+  static async changeAvailability(roomId: number, disponible: boolean): Promise<ApiResponse> {
+    try {
+      const requestData: HabitacionAvailabilityDto = { disponible };
+      const response = await axiosClient.patch(`/api/v1/habitaciones/${roomId}/availability`, requestData)
+      return response.data
+    } catch (error) {
+      console.error('Error changing room availability:', error)
       throw error
     }
   }

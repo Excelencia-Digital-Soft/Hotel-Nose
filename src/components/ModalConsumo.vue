@@ -242,7 +242,6 @@
 import { onMounted, ref, computed } from 'vue';
 import { useAuthStore } from '../store/auth.js';
 import axiosClient from '../axiosClient';
-import { fetchImage } from '../services/imageService';
 import defaultProductImage from '../assets/sin-imagen.png';
 import TableRow from './TableRow.vue';
 
@@ -282,9 +281,9 @@ onMounted(async () => {
     getDatosLogin();
     
     if (!props.consumoHabitacion) {
-      getInv.value = `/GetInventarioGeneral?InstitucionID=${authStore.institucionID}`;
+      getInv.value = `/api/v1/inventory/general`;
     } else {
-      getInv.value = `/api/Inventario/GetInventario?habitacionID=${props.habitacionID}`;
+      getInv.value = `/api/v1/inventory/rooms/${props.habitacionID}`;
     }
     
     await Promise.all([
@@ -296,42 +295,58 @@ onMounted(async () => {
   }
 });
 
+// Efficient image URL function (same as ArticleCreate)
+const getArticleImage = (url) => {
+  try {
+    if (url) {
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
+      return `${baseUrl}/uploads/${url}`
+      
+    }
+  } catch (error) {
+    console.error('Error getting article image:', error)
+  }
+
+  return defaultProductImage
+}
+
 // Funciones de datos
 const fetchArticulos = async () => {
   try {
     const response = await axiosClient.get(getInv.value);
-    if (response.data && response.data.data) {
-      const articlesWithStock = response.data.data.filter(a => a.cantidad > 0);
-      
-      const batchSize = 10;
-      productos.value = [];
-      
-      for (let i = 0; i < articlesWithStock.length; i += batchSize) {
-        const batch = articlesWithStock.slice(i, i + batchSize);
-        const batchResults = await Promise.all(
-          batch.map(async (articulo) => {
-            try {
-              const imageUrl = await fetchImage(articulo.articulo.articuloId);
-              return {
-                ...articulo.articulo,
-                cantidad: articulo.cantidad,
-                imageUrl: imageUrl || null,
-              };
-            } catch (imgError) {
-              console.warn('Error fetching image for article:', articulo.articulo.articuloId, imgError);
-              return {
-                ...articulo.articulo,
-                cantidad: articulo.cantidad,
-                imageUrl: null,
-              };
-            }
-          })
-        );
-        productos.value.push(...batchResults);
-      }
+    
+    // Handle V1 API response structure
+    let inventoryData = [];
+    if (response.data?.isSuccess) {
+      // V1 API response format
+      inventoryData = response.data.data || [];
+    } else if (response.data?.data) {
+      // Legacy API fallback
+      inventoryData = response.data.data || [];
     } else {
-      productos.value = [];
+      inventoryData = response.data || [];
     }
+    
+    // Filter items with stock and map to component format
+    const articlesWithStock = inventoryData.filter(item => item.cantidad > 0);
+    
+    productos.value = articlesWithStock.map(inventoryItem => {
+      // Map V1 InventoryDto to component format
+      const articleData = {
+        articuloId: inventoryItem.articuloId,
+        nombreArticulo: inventoryItem.articuloNombre,
+        image: inventoryItem.articuloImagenUrl,
+        precio: inventoryItem.articuloPrecio,
+        categoriaID: inventoryItem.categoriaId || null,
+        descripcion: inventoryItem.articuloDescripcion
+      };
+      
+      return {
+        ...articleData,
+        cantidad: inventoryItem.cantidad,
+        imageUrl: getArticleImage(articleData.image)
+      };
+    });
   } catch (error) {
     console.error('Error al obtener los artículos:', error);
     productos.value = [];
@@ -340,8 +355,9 @@ const fetchArticulos = async () => {
 
 const fetchCategorias = async () => {
   try {
-    const response = await axiosClient.get(`/api/CategoriaArticulos/GetCategorias?InstitucionID=${authStore.institucionID}`);
-    if (response.data && response.data.data) {
+    const response = await axiosClient.get(`/api/v1/categorias`);
+    console.log(response.data);
+    if (response.data.isSuccess && response.data.data) {
       categorias.value = response.data.data;
     }
   } catch (error) {

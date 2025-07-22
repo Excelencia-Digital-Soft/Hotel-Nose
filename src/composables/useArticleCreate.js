@@ -174,12 +174,8 @@ export function useArticleCreate() {
       image: null
     }
 
-    // If article has an image, show it
-    if (article.imagen) {
-      imagePreview.value = article.imagen
-    } else {
-      imagePreview.value = new URL('../assets/sin-imagen.png', import.meta.url).href
-    }
+    // Set the image preview using the same logic as the article list
+    imagePreview.value = getArticleImage(article)
   }
 
   const cancelEdit = () => {
@@ -187,11 +183,19 @@ export function useArticleCreate() {
   }
 
   const clearImage = () => {
+    // Revoke object URL if it's a blob URL to prevent memory leaks
     if (imagePreview.value && imagePreview.value.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview.value)
     }
+    
+    // Clear the image from form data
     formData.value.image = null
+    
+    // Reset to default image
     imagePreview.value = new URL('../assets/sin-imagen.png', import.meta.url).href
+    
+    // Show feedback
+    showInfo('✅ Imagen removida correctamente')
   }
 
   // Category operations
@@ -234,6 +238,12 @@ export function useArticleCreate() {
     const price = parseFloat(formData.value.price)
     if (isNaN(price) || price <= 0) {
       showError('El precio debe ser un número válido mayor a 0')
+      return false
+    }
+    
+    // Additional validation for edit mode
+    if (isEditMode.value && !formData.value.articuloId) {
+      showError('Error: ID del artículo no encontrado')
       return false
     }
 
@@ -310,15 +320,39 @@ export function useArticleCreate() {
   const getArticleImage = (article) => {
     const urlNoImage = new URL('../assets/sin-imagen.png', import.meta.url).href
 
-    // For V1 API, use the new image URL structure
-    if (article.articuloId && article.imagenUrl) {
-      const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
-      return `${baseUrl}uploads/${article.imagenUrl}`
-    } else if (article.imagenAPI) {
-      return article.imagenAPI
+    try {
+      // For V1 API, check multiple possible image properties
+      if (article.articuloId) {
+        // Try V1 API image URL format
+        if (article.imagenUrl) {
+          const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
+          return `${baseUrl}/uploads/${article.imagenUrl}`
+        }
+        
+        // Try direct API endpoint for image - this is the standard V1 approach
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
+        return `${baseUrl}/api/v1/articulos/${article.articuloId}/image`
+      }
+      
+      // Legacy API support
+      if (article.imagenAPI) {
+        return article.imagenAPI
+      }
+      
+      // Direct image URL
+      if (article.imagen && typeof article.imagen === 'string' && article.imagen.startsWith('http')) {
+        return article.imagen
+      }
+      
+      // Base64 image
+      if (article.imagen && typeof article.imagen === 'string' && article.imagen.startsWith('data:image')) {
+        return article.imagen
+      }
+    } catch (error) {
+      console.error('Error getting article image:', error)
     }
 
-    return article.imagenUrl || urlNoImage
+    return urlNoImage
   }
 
   return {

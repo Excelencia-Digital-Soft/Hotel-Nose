@@ -1,4 +1,5 @@
-import axiosClient from '../axiosClient'
+import axiosClient from '../axiosClient';
+import { ApiResponse, ComprehensiveCancelRequest, CreateReservaRequestDto, ReservaResponseDto } from '../types';
 
 export class ReservasService {
   // Get reserva by ID
@@ -57,7 +58,7 @@ export class ReservasService {
   }
 
   // Update promotion
-  static async updatePromotion(reservaId, promocionId) {
+  static async updatePromotion(reservaId: number, promocionId: number | null): Promise<ApiResponse> {
     try {
       const response = await axiosClient.put(`/api/v1/reservas/${reservaId}/promotion`, { promocionId })
       return response.data
@@ -89,7 +90,40 @@ export class ReservasService {
     }
   }
 
+  // Comprehensive cancel (cancels reserva and all associated consumos)
+  static async comprehensiveCancel(reservaId: number, motivo: string): Promise<ApiResponse> {
+    try {
+      const requestData: ComprehensiveCancelRequest = { motivo };
+      const response = await axiosClient.post(`/api/v1/reservas/${reservaId}/comprehensive-cancel`, requestData)
+      return response.data
+    } catch (error) {
+      console.error('Error in comprehensive cancel:', error)
+      throw error
+    }
+  }
+
+  // Create new reserva (V1)
+  static async createReserva(reservaData: CreateReservaRequestDto): Promise<ApiResponse<ReservaResponseDto>> {
+    try {
+      const response = await axiosClient.post('/api/v1/reservas', reservaData)
+      return response.data
+    } catch (error) {
+      console.error('Error creating reserva:', error)
+      throw error
+    }
+  }
+
   // Legacy methods for backward compatibility
+  static async legacyCreateReserva(institucionId, usuarioId, reservaData) {
+    try {
+      const response = await axiosClient.post(`/ReservarHabitacion?InstitucionID=${institucionId}&UsuarioID=${usuarioId}`, reservaData)
+      return response.data
+    } catch (error) {
+      console.error('Error creating legacy reserva:', error)
+      throw error
+    }
+  }
+
   static async legacyFinalizeReserva(habitacionId) {
     try {
       const response = await axiosClient.put(`/FinalizarReserva?idHabitacion=${habitacionId}`)
