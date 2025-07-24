@@ -42,10 +42,12 @@
                   <td class="rounded-md pl-2 shadow-sm">
                     {{ detalle.precio * detalle.cantidad }}
                   </td>
-                  <button @click="quitarRegistro(index)" type="button"
-                    class="btn-danger rounded-xl text-xl h-12 text-white w-full flex justify-center items-center mt-1 material-symbols-outlined">
-                    delete
-                  </button>
+                  <td>
+                    <button @click="quitarRegistro(index)" type="button"
+                      class="btn-danger rounded-xl text-xl h-12 text-white w-full flex justify-center items-center mt-1 material-symbols-outlined">
+                      delete
+                    </button>
+                  </td>
                 </tr>
               </tbody>
             </table>

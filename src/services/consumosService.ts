@@ -2,8 +2,6 @@ import axiosClient from '../axiosClient'
 import { 
   ApiResponse, 
   ConsumoCreateDto,
-  ConsumoGeneralCreateDto,
-  ConsumoRoomCreateDto,
   ConsumoUpdateDto,
   ConsumoResponseDto,
   ConsumoSummaryDto

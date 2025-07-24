@@ -1,9 +1,11 @@
 import Home from "../../views/Home.vue";
 import RoomsNew from "../../views/RoomsNew.vue";
+import Services from "../../views/Services.vue";
 import ArticleCreate from "../../views/ArticleCreate.vue";
 import SubmitOrder from "../../views/SubmitOrder.vue";
 import ReceptionOrder from "../../views/ReceptionOrder.vue";
 import InventoryManager from "../../views/InventoryManager.vue";
+import RoomInventory from "../../views/RoomInventory.vue";
 import CierresManager from "../../views/CierresManager.vue";
 import Egresos from "../../views/Egresos.vue";
 import PawnManager from "../../views/PawnManager.vue";
@@ -33,6 +35,16 @@ export const managementRoutes = [
       roles: ROLE_GROUPS.FULL_ACCESS,
       description: "View and manage rooms",
       category: "Room Management"
+    }
+  },
+  {
+    path: "/Services",
+    name: "Services",
+    component: Services,
+    meta: {
+      requireAuth: true,
+      description: "View and manage hotel services",
+      category: "Services Management"
     }
   },
   {
@@ -68,6 +80,17 @@ export const managementRoutes = [
     }
   },
   {
+    path: "/OrderHistory",
+    name: "OrderHistory",
+    component: ReceptionOrder, // Using same component for now, can be changed later
+    meta: {
+      requireAuth: true,
+      roles: [...ROLE_GROUPS.CASHIER_ACCESS, ...ROLE_GROUPS.ADMIN_ACCESS],
+      description: "View order history",
+      category: "Orders"
+    }
+  },
+  {
     path: "/InventoryManager",
     name: "InventoryManager",
     component: InventoryManager,
@@ -75,6 +98,17 @@ export const managementRoutes = [
       requireAuth: true,
       roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
       description: "Manage inventory and stock",
+      category: "Inventory Management"
+    }
+  },
+  {
+    path: "/RoomInventory",
+    name: "RoomInventory",
+    component: RoomInventory,
+    meta: {
+      requireAuth: true,
+      roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+      description: "Manage room-specific inventory",
       category: "Inventory Management"
     }
   },

@@ -30,12 +30,15 @@
                   <td class="rounded-md shadow-sm   text-center">
                     {{ detalle.cantidadArt }}
                   </td>
-                  <td><button @click="quitarRegistro(index)" type="button"
+                  <td>
+                    <button @click="quitarRegistro(index)" type="button"
                       class="btn-danger rounded-xl text-xl h-12 text-white w-full  flex justify-center items-center mt-1  material-symbols-outlined">delete</button>
                   </td>
-                  <button @click="entregarRegistro(index)" type="button"
-                    class="btn-primary rounded-xl text-xl h-12 text-white w-full  flex justify-center items-center mt-1 p-2 ">Entregar<span
-                      class="material-symbols-outlined">arrow_forward</span></button>
+                  <td>
+                    <button @click="entregarRegistro(index)" type="button"
+                      class="btn-primary rounded-xl text-xl h-12 text-white w-full  flex justify-center items-center mt-1 p-2 ">Entregar<span
+                        class="material-symbols-outlined">arrow_forward</span></button>
+                  </td>
                 </tr>
 
               </tbody>

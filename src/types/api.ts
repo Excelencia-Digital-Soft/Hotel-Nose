@@ -6,3 +6,6 @@ export * from './consumo';
 export * from './categoria';
 export * from './inventory';
 export * from './promocion';
+export * from './menu';
+export * from './configuration';
+export * from './roomInventory';

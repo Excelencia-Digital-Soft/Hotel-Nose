@@ -6,13 +6,13 @@
  * All possible roles in the system
  */
 export const ROLES = {
-  DIRECTOR: "Director",
-  ADMINISTRATOR: "Administrator",
-  CAJERO: "Cajero",
-  CAJERO_STOCK: "Cajero Stock",
-  MUCAMA: "Mucama",
-  USER: "User"
-};
+  DIRECTOR: 'Director',
+  ADMINISTRATOR: 'Administrator',
+  CAJERO: 'Cajero',
+  CAJERO_STOCK: 'Cajero Stock',
+  MUCAMA: 'Mucama',
+  USER: 'User',
+}
 
 /**
  * Role hierarchy for permissions (higher number = more permissions)
@@ -23,8 +23,8 @@ export const ROLE_HIERARCHY = {
   [ROLES.CAJERO]: 3,
   [ROLES.CAJERO_STOCK]: 4,
   [ROLES.ADMINISTRATOR]: 5,
-  [ROLES.DIRECTOR]: 6
-};
+  [ROLES.DIRECTOR]: 6,
+}
 
 /**
  * Role groups for menu access control
@@ -40,7 +40,14 @@ export const ROLE_GROUPS = {
   ADMIN_ACCESS: [ROLES.ADMINISTRATOR, ROLES.DIRECTOR],
 
   // Full access - combination of all roles
-  FULL_ACCESS: [ROLES.DIRECTOR, ROLES.ADMINISTRATOR, ROLES.CAJERO_STOCK, ROLES.CAJERO, ROLES.MUCAMA, ROLES.USER],
+  FULL_ACCESS: [
+    ROLES.DIRECTOR,
+    ROLES.ADMINISTRATOR,
+    ROLES.CAJERO_STOCK,
+    ROLES.CAJERO,
+    ROLES.MUCAMA,
+    ROLES.USER,
+  ],
 
   // Management access - admin + director
   MANAGEMENT: [ROLES.DIRECTOR, ROLES.ADMINISTRATOR],
@@ -49,8 +56,14 @@ export const ROLE_GROUPS = {
   OPERATIONAL: [ROLES.CAJERO, ROLES.CAJERO_STOCK, ROLES.MUCAMA],
 
   // All staff except basic users
-  STAFF_ACCESS: [ROLES.DIRECTOR, ROLES.ADMINISTRATOR, ROLES.CAJERO_STOCK, ROLES.CAJERO, ROLES.MUCAMA]
-};
+  STAFF_ACCESS: [
+    ROLES.DIRECTOR,
+    ROLES.ADMINISTRATOR,
+    ROLES.CAJERO_STOCK,
+    ROLES.CAJERO,
+    ROLES.MUCAMA,
+  ],
+}
 
 /**
  * Check if user has any of the required roles
@@ -59,13 +72,13 @@ export const ROLE_GROUPS = {
  * @returns {boolean} - True if user has access
  */
 export function hasAnyRole(userRoles, allowedRoles) {
-  if (!userRoles || !allowedRoles || allowedRoles.length === 0) return false;
+  if (!userRoles || !allowedRoles || allowedRoles.length === 0) return false
 
   // Normalize userRoles to array
-  const rolesArray = Array.isArray(userRoles) ? userRoles : [userRoles];
+  const rolesArray = Array.isArray(userRoles) ? userRoles : [userRoles]
 
   // Check if any user role matches any allowed role
-  return rolesArray.some(role => allowedRoles.includes(role));
+  return rolesArray.some((role) => allowedRoles.includes(role))
 }
 
 /**
@@ -75,9 +88,9 @@ export function hasAnyRole(userRoles, allowedRoles) {
  * @returns {boolean} - True if user has sufficient permissions
  */
 export function hasRoleLevel(userRole, requiredRole) {
-  const userLevel = ROLE_HIERARCHY[userRole] || 0;
-  const requiredLevel = ROLE_HIERARCHY[requiredRole] || 0;
-  return userLevel >= requiredLevel;
+  const userLevel = ROLE_HIERARCHY[userRole] || 0
+  const requiredLevel = ROLE_HIERARCHY[requiredRole] || 0
+  return userLevel >= requiredLevel
 }
 
 /**
@@ -86,13 +99,13 @@ export function hasRoleLevel(userRole, requiredRole) {
  * @returns {string} - Highest level role
  */
 export function getHighestRole(userRoles) {
-  if (!userRoles || userRoles.length === 0) return ROLES.USER;
+  if (!userRoles || userRoles.length === 0) return ROLES.USER
 
   return userRoles.reduce((highest, current) => {
-    const currentLevel = ROLE_HIERARCHY[current] || 0;
-    const highestLevel = ROLE_HIERARCHY[highest] || 0;
-    return currentLevel > highestLevel ? current : highest;
-  }, userRoles[0]);
+    const currentLevel = ROLE_HIERARCHY[current] || 0
+    const highestLevel = ROLE_HIERARCHY[highest] || 0
+    return currentLevel > highestLevel ? current : highest
+  }, userRoles[0])
 }
 
 /**
@@ -102,13 +115,13 @@ export function getHighestRole(userRoles) {
  */
 export function getRoleDisplayName(role) {
   const displayNames = {
-    [ROLES.DIRECTOR]: "Director",
-    [ROLES.ADMINISTRATOR]: "Administrador",
-    [ROLES.CAJERO]: "Cajero",
-    [ROLES.CAJERO_STOCK]: "Cajero Stock",
-    [ROLES.MUCAMA]: "Mucama",
-    [ROLES.USER]: "Usuario"
-  };
+    [ROLES.DIRECTOR]: 'Director',
+    [ROLES.ADMINISTRATOR]: 'Administrador',
+    [ROLES.CAJERO]: 'Cajero',
+    [ROLES.CAJERO_STOCK]: 'Cajero Stock',
+    [ROLES.MUCAMA]: 'Mucama',
+    [ROLES.USER]: 'Usuario',
+  }
 
-  return displayNames[role] || role;
+  return displayNames[role] || role
 }
