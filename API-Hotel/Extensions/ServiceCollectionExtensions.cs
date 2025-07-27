@@ -34,8 +34,12 @@ public static class ServiceCollectionExtensions
         // Register authentication service
         services.AddScoped<IAuthService, AuthService>();
 
+        // Register mappers
+        services.AddScoped<ICajaDtoMapper, CajaDtoMapper>();
+
         // Register V1 services
         services.AddScoped<IArticulosService, ArticulosService>();
+        services.AddScoped<ICajaService, CajaService>();
         services.AddScoped<ICategoriasService, CategoriasService>();
         services.AddScoped<IConsumosService, ConsumosService>();
         services.AddScoped<IHabitacionesService, HabitacionesService>();
@@ -48,6 +52,14 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserManagementService, UserManagementService>();
         services.AddScoped<IUserConsumptionService, UserConsumptionService>();
         services.AddScoped<IVisitasService, VisitasService>();
+
+        // Register notification service as singleton (required for background services)
+        services.AddSingleton<INotificationService, SignalRNotificationService>();
+
+        // Register specialized inventory services
+        services.AddScoped<IInventoryMovementService, InventoryMovementService>();
+        services.AddScoped<IInventoryAlertService, InventoryAlertService>();
+        services.AddScoped<IInventoryTransferService, InventoryTransferService>();
 
         return services;
     }

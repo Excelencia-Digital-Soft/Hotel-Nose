@@ -21,6 +21,7 @@ namespace hotel.Controllers
             _registrosService = registrosService;
         }
 
+        [Obsolete("Use ICajaService.CrearCajaAsync instead")]
         private async Task<bool> CrearCaja(int montoInicial, int institucionID, string? observacion)
         {
             Cierre nuevoCierre = new Cierre
@@ -41,6 +42,7 @@ namespace hotel.Controllers
         #region Cerrar caja
         [HttpPost]
         [Route("CierreCaja")] // Paga todos los movimientos de una visita
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/caja for creating new cash registers and other V1 endpoints for cash operations.")]
         public async Task<Respuesta> CierreCaja(
             int montoInicial,
             int institucionID,
@@ -124,6 +126,7 @@ namespace hotel.Controllers
         #region Get Cierres
         [HttpGet]
         [Route("GetCierres")]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/caja for retrieving cash register closures.")]
         public async Task<Respuesta> GetCierres()
         {
             Respuesta res = new Respuesta();
@@ -149,6 +152,7 @@ namespace hotel.Controllers
         #endregion
         [HttpGet]
         [Route("GetCierresConPagos")]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/caja/con-pagos for retrieving cash closures with payment details.")]
         public async Task<Respuesta> GetCierresConPagos(int institucionID)
         {
             Respuesta res = new Respuesta();
@@ -400,6 +404,7 @@ namespace hotel.Controllers
         #region Get Cierre
         [HttpGet]
         [Route("GetCierre")]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/caja/{id} for retrieving a specific cash register closure.")]
         public async Task<Respuesta> GetCierre(int idCierre)
         {
             Respuesta res = new Respuesta();
@@ -426,6 +431,7 @@ namespace hotel.Controllers
 
         [HttpGet]
         [Route("GetDetalleCierre")]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/caja/{id}/detalle for retrieving complete cash register closure details.")]
         public async Task<Respuesta> GetDetalleCierre(int idCierre)
         {
             Respuesta res = new Respuesta();
@@ -647,6 +653,7 @@ namespace hotel.Controllers
         }
 
         [HttpGet("GetCierresyActual")]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/caja/actual for retrieving cash closures and current transactions.")]
         public async Task<Respuesta> GetCierresyActual(int InstitucionID)
         {
             Respuesta res = new Respuesta();

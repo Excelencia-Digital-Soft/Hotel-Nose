@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using hotel.Data;
+using hotel.Interfaces;
 using hotel.Models;
 using hotel.NotificacionesHub;
 using Microsoft.AspNetCore.SignalR;
@@ -9,15 +10,15 @@ public class ReservationMonitorService : BackgroundService
 {
     private readonly ConcurrentDictionary<int, CancellationTokenSource> _activeTimers = new();
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private readonly IHubContext<NotificationsHub> _hubContext;
+    private readonly INotificationService _notificationService;
 
     public ReservationMonitorService(
         IServiceScopeFactory serviceScopeFactory,
-        IHubContext<NotificationsHub> hubContext
+        INotificationService notificationService
     )
     {
         _serviceScopeFactory = serviceScopeFactory;
-        _hubContext = hubContext;
+        _notificationService = notificationService;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -80,36 +81,24 @@ public class ReservationMonitorService : BackgroundService
                     if (timeUntilWarning.TotalMilliseconds > 0)
                     {
                         await Task.Delay(timeUntilWarning, cts.Token);
-                        await _hubContext
-                            .Clients.Group($"institution-{reserva.Visita!.InstitucionID}")
-                            .SendAsync(
-                                "ReceiveNotification",
-                                new
-                                {
-                                    type = "warning",
-                                    roomId = reserva.HabitacionId,
-                                    message = $"⏳ La habitación {reserva.Habitacion!.NombreHabitacion} le quedan 5 minutos!",
-                                },
-                                cts.Token
-                            );
+                        await _notificationService.SendNotificationToInstitutionAsync(
+                            reserva.Visita!.InstitucionID,
+                            "warning",
+                            $"⏳ La habitación {reserva.Habitacion!.NombreHabitacion} le quedan 5 minutos!",
+                            new { roomId = reserva.HabitacionId }
+                        );
                     }
 
                     TimeSpan timeUntilEnd = endTime - DateTime.Now;
                     if (timeUntilEnd.TotalMilliseconds > 0)
                     {
                         await Task.Delay(timeUntilEnd, cts.Token);
-                        await _hubContext
-                            .Clients.Group($"institution-{reserva.Visita!.InstitucionID}")
-                            .SendAsync(
-                                "ReceiveNotification",
-                                new
-                                {
-                                    type = "ended",
-                                    roomId = reserva.HabitacionId,
-                                    message = $"⚠️ La habitación {reserva.Habitacion!.NombreHabitacion} se le acabó el tiempo!",
-                                },
-                                cts.Token
-                            );
+                        await _notificationService.SendNotificationToInstitutionAsync(
+                            reserva.Visita!.InstitucionID,
+                            "ended",
+                            $"⚠️ La habitación {reserva.Habitacion!.NombreHabitacion} se le acabó el tiempo!",
+                            new { roomId = reserva.HabitacionId }
+                        );
                     }
                 }
                 catch (TaskCanceledException)

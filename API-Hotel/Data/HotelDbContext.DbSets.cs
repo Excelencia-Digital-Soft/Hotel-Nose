@@ -65,6 +65,16 @@ public partial class HotelDbContext
 
     public virtual DbSet<InventarioUnificado> InventarioUnificado { get; set; }
 
+    public virtual DbSet<MovimientoInventario> MovimientosInventario { get; set; }
+
+    public virtual DbSet<AlertaInventario> AlertasInventario { get; set; }
+
+    public virtual DbSet<ConfiguracionAlertaInventario> ConfiguracionAlertasInventario { get; set; }
+
+    public virtual DbSet<TransferenciaInventario> TransferenciasInventario { get; set; }
+
+    public virtual DbSet<DetalleTransferenciaInventario> DetallesTransferenciaInventario { get; set; }
+
     public virtual DbSet<MediosPago> MediosPago { get; set; }
 
     public virtual DbSet<Movimientos> Movimientos { get; set; }

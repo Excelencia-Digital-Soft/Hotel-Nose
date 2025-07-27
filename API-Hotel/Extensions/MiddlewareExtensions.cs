@@ -34,8 +34,9 @@ public static class MiddlewareExtensions
         // Controllers
         app.MapControllers();
 
-        // SignalR Hub
-        app.MapHub<NotificationsHub>("/notifications");
+        // SignalR Hub with authentication required
+        app.MapHub<NotificationsHub>("/notifications")
+            .RequireAuthorization();
 
         return app;
     }

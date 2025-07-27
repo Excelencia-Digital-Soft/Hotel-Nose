@@ -46,6 +46,14 @@ public partial class HotelDbContext
         modelBuilder.ApplyConfiguration(new ConsumoConfiguration());
         modelBuilder.ApplyConfiguration(new PromocionesConfiguration());
         modelBuilder.ApplyConfiguration(new InventarioUnificadoConfiguration());
+        
+        // Configuraciones del sistema extendido de inventario
+        modelBuilder.ApplyConfiguration(new MovimientoInventarioConfiguration());
+        modelBuilder.ApplyConfiguration(new AlertaInventarioConfiguration());
+        modelBuilder.ApplyConfiguration(new ConfiguracionAlertaInventarioConfiguration());
+        modelBuilder.ApplyConfiguration(new TransferenciaInventarioConfiguration());
+        modelBuilder.ApplyConfiguration(new DetalleTransferenciaInventarioConfiguration());
+        
         modelBuilder.ApplyConfiguration(new UsuariosInstitucionesConfiguration());
         
         // Aplicar configuraciones simples

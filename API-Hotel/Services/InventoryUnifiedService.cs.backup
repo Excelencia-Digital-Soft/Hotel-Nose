@@ -1,0 +1,1858 @@
+using hotel.Data;
+using hotel.DTOs.Common;
+using hotel.DTOs.Inventory;
+using hotel.Interfaces;
+using hotel.Models;
+using Microsoft.EntityFrameworkCore;
+
+namespace hotel.Services;
+
+/// <summary>
+/// Service implementation for unified inventory management using InventarioUnificado table
+/// </summary>
+public class InventoryUnifiedService : IInventoryService
+{
+    private readonly HotelDbContext _context;
+    private readonly ILogger<InventoryUnifiedService> _logger;
+
+    public InventoryUnifiedService(HotelDbContext context, ILogger<InventoryUnifiedService> logger)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    #region General Inventory Management
+
+    public async Task<ApiResponse<IEnumerable<InventoryDto>>> GetInventoryAsync(
+        int institucionId,
+        InventoryLocationType? locationType = null,
+        int? locationId = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var query = _context
+                .InventarioUnificado.AsNoTracking()
+                .Where(i => i.InstitucionID == institucionId)
+                .Include(i => i.Articulo)
+                .ThenInclude(a => a!.Imagen)
+                .Include(i => i.Habitacion);
+
+            // Apply location type filter
+            if (locationType.HasValue)
+            {
+                query = query
+                    .Where(i => i.TipoUbicacion == (int)locationType.Value)
+                    .Include(i => i.Articulo)
+                    .ThenInclude(a => a!.Imagen)
+                    .Include(i => i.Habitacion);
+            }
+
+            // Apply location ID filter (for room-specific queries)
+            if (locationId.HasValue)
+            {
+                query = query
+                    .Where(i => i.UbicacionId == locationId.Value)
+                    .Include(i => i.Articulo)
+                    .ThenInclude(a => a!.Imagen)
+                    .Include(i => i.Habitacion);
+            }
+
+            var inventories = await query
+                .Select(i => new InventoryDto
+                {
+                    InventoryId = i.InventarioId,
+                    ArticuloId = i.ArticuloId,
+                    ArticuloNombre = i.Articulo!.NombreArticulo ?? string.Empty,
+                    ArticuloDescripcion = null, // No description field in current model
+                    ArticuloImagenUrl =
+                        i.Articulo!.Imagen != null ? i.Articulo.Imagen.NombreArchivo : null,
+                    ArticuloPrecio = i.Articulo.Precio,
+                    Cantidad = i.Cantidad,
+                    LocationType = (InventoryLocationType)i.TipoUbicacion,
+                    LocationId = i.UbicacionId,
+                    LocationName =
+                        i.TipoUbicacion == 1
+                            ? i.Habitacion!.NombreHabitacion
+                            : "Inventario General",
+                    InstitucionId = i.InstitucionID,
+                    FechaRegistro = i.FechaRegistro,
+                    UserId = i.UsuarioRegistro,
+                    UserName = i.CreadoPor != null ? i.CreadoPor.UserName : null,
+                    IsActive = !(i.Anulado ?? false),
+                })
+                .ToListAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Retrieved {Count} inventory items for institution {InstitucionId}",
+                inventories.Count,
+                institucionId
+            );
+
+            return ApiResponse<IEnumerable<InventoryDto>>.Success(inventories);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error retrieving inventory for institution {InstitucionId}",
+                institucionId
+            );
+            return ApiResponse<IEnumerable<InventoryDto>>.Failure(
+                "Error retrieving inventory",
+                "An error occurred while retrieving the inventory"
+            );
+        }
+    }
+
+    public async Task<ApiResponse<InventoryDto>> GetInventoryByIdAsync(
+        int inventoryId,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var inventory = await _context
+                .InventarioUnificado.AsNoTracking()
+                .Where(i => i.InventarioId == inventoryId && i.InstitucionID == institucionId)
+                .Include(i => i.Articulo)
+                .ThenInclude(a => a!.Imagen)
+                .Include(i => i.Habitacion)
+                .Include(i => i.CreadoPor)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (inventory == null)
+            {
+                return ApiResponse<InventoryDto>.Failure(
+                    "Inventory not found",
+                    $"No inventory found with ID {inventoryId}"
+                );
+            }
+
+            var dto = new InventoryDto
+            {
+                InventoryId = inventory.InventarioId,
+                ArticuloId = inventory.ArticuloId,
+                ArticuloNombre = inventory.Articulo?.NombreArticulo ?? string.Empty,
+                ArticuloDescripcion = null,
+                ArticuloImagenUrl = inventory.Articulo?.Imagen?.NombreArchivo,
+                ArticuloPrecio = inventory.Articulo?.Precio ?? 0,
+                Cantidad = inventory.Cantidad,
+                LocationType = (InventoryLocationType)inventory.TipoUbicacion,
+                LocationId = inventory.UbicacionId,
+                LocationName =
+                    inventory.TipoUbicacion == 1
+                        ? inventory.Habitacion?.NombreHabitacion
+                        : "Inventario General",
+                InstitucionId = inventory.InstitucionID,
+                FechaRegistro = inventory.FechaRegistro,
+                UserId = inventory.UsuarioRegistro,
+                UserName = inventory.CreadoPor?.UserName,
+                IsActive = !(inventory.Anulado ?? false),
+            };
+
+            return ApiResponse<InventoryDto>.Success(dto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error retrieving inventory {InventoryId} for institution {InstitucionId}",
+                inventoryId,
+                institucionId
+            );
+            return ApiResponse<InventoryDto>.Failure(
+                "Error retrieving inventory",
+                "An error occurred while retrieving the inventory item"
+            );
+        }
+    }
+
+    public async Task<ApiResponse<IEnumerable<InventoryDto>>> GetInventoryByArticleAsync(
+        int articuloId,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var inventories = await _context
+                .InventarioUnificado.AsNoTracking()
+                .Where(i => i.ArticuloId == articuloId && i.InstitucionID == institucionId)
+                .Include(i => i.Articulo)
+                .ThenInclude(a => a!.Imagen)
+                .Include(i => i.Habitacion)
+                .Include(i => i.CreadoPor)
+                .Select(i => new InventoryDto
+                {
+                    InventoryId = i.InventarioId,
+                    ArticuloId = i.ArticuloId,
+                    ArticuloNombre = i.Articulo!.NombreArticulo ?? string.Empty,
+                    ArticuloDescripcion = null,
+                    ArticuloImagenUrl =
+                        i.Articulo!.Imagen != null ? i.Articulo.Imagen.NombreArchivo : null,
+                    ArticuloPrecio = i.Articulo.Precio,
+                    Cantidad = i.Cantidad,
+                    LocationType = (InventoryLocationType)i.TipoUbicacion,
+                    LocationId = i.UbicacionId,
+                    LocationName =
+                        i.TipoUbicacion == 1
+                            ? i.Habitacion!.NombreHabitacion
+                            : "Inventario General",
+                    InstitucionId = i.InstitucionID,
+                    FechaRegistro = i.FechaRegistro,
+                    UserId = i.UsuarioRegistro,
+                    UserName = i.CreadoPor != null ? i.CreadoPor.UserName : null,
+                    IsActive = !(i.Anulado ?? false),
+                })
+                .ToListAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Retrieved {Count} inventory items for article {ArticuloId} in institution {InstitucionId}",
+                inventories.Count,
+                articuloId,
+                institucionId
+            );
+
+            return ApiResponse<IEnumerable<InventoryDto>>.Success(inventories);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error retrieving inventory for article {ArticuloId} in institution {InstitucionId}",
+                articuloId,
+                institucionId
+            );
+            return ApiResponse<IEnumerable<InventoryDto>>.Failure(
+                "Error retrieving inventory",
+                "An error occurred while retrieving the inventory items"
+            );
+        }
+    }
+
+    #endregion
+
+    #region Room Inventory Management
+
+    public async Task<ApiResponse<IEnumerable<InventoryDto>>> GetRoomInventoryAsync(
+        int habitacionId,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await GetInventoryAsync(
+            institucionId,
+            InventoryLocationType.Room,
+            habitacionId,
+            cancellationToken
+        );
+    }
+
+    public async Task<ApiResponse<InventoryDto>> AddRoomInventoryAsync(
+        int habitacionId,
+        InventoryCreateDto createDto,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            // Validate room exists
+            var roomExists = await _context
+                .Habitaciones.AsNoTracking()
+                .AnyAsync(
+                    h => h.HabitacionId == habitacionId && h.InstitucionID == institucionId,
+                    cancellationToken
+                );
+
+            if (!roomExists)
+            {
+                return ApiResponse<InventoryDto>.Failure(
+                    "Room not found",
+                    $"No room found with ID {habitacionId}"
+                );
+            }
+
+            // Validate article exists
+            var articleExists = await _context
+                .Articulos.AsNoTracking()
+                .AnyAsync(a => a.ArticuloId == createDto.ArticuloId, cancellationToken);
+
+            if (!articleExists)
+            {
+                return ApiResponse<InventoryDto>.Failure(
+                    "Article not found",
+                    $"No article found with ID {createDto.ArticuloId}"
+                );
+            }
+
+            // Check for duplicates
+            var existingInventory = await _context.InventarioUnificado.AnyAsync(
+                i =>
+                    i.ArticuloId == createDto.ArticuloId
+                    && i.TipoUbicacion == 1
+                    && i.UbicacionId == habitacionId
+                    && i.InstitucionID == institucionId,
+                cancellationToken
+            );
+
+            if (existingInventory)
+            {
+                return ApiResponse<InventoryDto>.Failure(
+                    "Duplicate entry",
+                    "This article already exists in the room inventory"
+                );
+            }
+
+            var inventory = new InventarioUnificado
+            {
+                ArticuloId = createDto.ArticuloId,
+                Cantidad = createDto.Cantidad,
+                InstitucionID = institucionId,
+                TipoUbicacion = 1, // Room
+                UbicacionId = habitacionId,
+                FechaRegistro = DateTime.Now,
+                UsuarioRegistro = null, // Will be set by controller from current user context
+                Anulado = false,
+                Notas = createDto.Notes,
+            };
+
+            _context.InventarioUnificado.Add(inventory);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Added room inventory {InventoryId} for article {ArticuloId} in room {HabitacionId}",
+                inventory.InventarioId,
+                createDto.ArticuloId,
+                habitacionId
+            );
+
+            return await GetInventoryByIdAsync(
+                inventory.InventarioId,
+                institucionId,
+                cancellationToken
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error adding room inventory for room {HabitacionId} and article {ArticuloId}",
+                habitacionId,
+                createDto.ArticuloId
+            );
+            return ApiResponse<InventoryDto>.Failure(
+                "Error adding inventory",
+                "An error occurred while adding the inventory item"
+            );
+        }
+    }
+
+    #endregion
+
+    #region General Institution Inventory
+
+    public async Task<ApiResponse<IEnumerable<InventoryDto>>> GetGeneralInventoryAsync(
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return await GetInventoryAsync(
+            institucionId,
+            InventoryLocationType.General,
+            null,
+            cancellationToken
+        );
+    }
+
+    public async Task<ApiResponse<InventoryDto>> AddGeneralInventoryAsync(
+        InventoryCreateDto createDto,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            // Validate article exists
+            var articleExists = await _context
+                .Articulos.AsNoTracking()
+                .AnyAsync(a => a.ArticuloId == createDto.ArticuloId, cancellationToken);
+
+            if (!articleExists)
+            {
+                return ApiResponse<InventoryDto>.Failure(
+                    "Article not found",
+                    $"No article found with ID {createDto.ArticuloId}"
+                );
+            }
+
+            // Check for duplicates
+            var existingInventory = await _context.InventarioUnificado.AnyAsync(
+                i =>
+                    i.ArticuloId == createDto.ArticuloId
+                    && i.TipoUbicacion == 0
+                    && i.InstitucionID == institucionId,
+                cancellationToken
+            );
+
+            if (existingInventory)
+            {
+                return ApiResponse<InventoryDto>.Failure(
+                    "Duplicate entry",
+                    "This article already exists in the general inventory"
+                );
+            }
+
+            var inventory = new InventarioUnificado
+            {
+                ArticuloId = createDto.ArticuloId,
+                Cantidad = createDto.Cantidad,
+                InstitucionID = institucionId,
+                TipoUbicacion = 0, // General
+                UbicacionId = null,
+                FechaRegistro = DateTime.Now,
+                UsuarioRegistro = null, // Will be set by controller from current user context
+                Anulado = false,
+                Notas = createDto.Notes,
+            };
+
+            _context.InventarioUnificado.Add(inventory);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Added general inventory {InventoryId} for article {ArticuloId}",
+                inventory.InventarioId,
+                createDto.ArticuloId
+            );
+
+            return await GetInventoryByIdAsync(
+                inventory.InventarioId,
+                institucionId,
+                cancellationToken
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error adding general inventory for article {ArticuloId}",
+                createDto.ArticuloId
+            );
+            return ApiResponse<InventoryDto>.Failure(
+                "Error adding inventory",
+                "An error occurred while adding the inventory item"
+            );
+        }
+    }
+
+    public async Task<ApiResponse<string>> SynchronizeGeneralInventoryAsync(
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync(
+                cancellationToken
+            );
+
+            var processedCount = 0;
+            var addedCount = 0;
+
+            // Get all active articles
+            var activeArticleIds = await _context
+                .Articulos.Where(a => a.InstitucionID == institucionId && (a.Anulado != true))
+                .Select(a => a.ArticuloId)
+                .ToListAsync(cancellationToken);
+
+            // Get existing general inventory articles
+            var existingInventoryArticleIds = await _context
+                .InventarioUnificado.Where(i =>
+                    i.InstitucionID == institucionId && i.TipoUbicacion == 0
+                )
+                .Select(i => i.ArticuloId)
+                .ToListAsync(cancellationToken);
+
+            // Add missing articles with zero quantity
+            foreach (var articleId in activeArticleIds)
+            {
+                if (!existingInventoryArticleIds.Contains(articleId))
+                {
+                    var newInventory = new InventarioUnificado
+                    {
+                        ArticuloId = articleId,
+                        Cantidad = 0,
+                        InstitucionID = institucionId,
+                        TipoUbicacion = 0, // General
+                        UbicacionId = null,
+                        FechaRegistro = DateTime.Now,
+                        Anulado = false,
+                    };
+
+                    _context.InventarioUnificado.Add(newInventory);
+                    addedCount++;
+                }
+                processedCount++;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            var message =
+                $"Synchronization completed: processed {processedCount} articles, added {addedCount} missing entries";
+
+            _logger.LogInformation(
+                "Synchronized general inventory for institution {InstitucionId}: added {AddedCount} entries",
+                institucionId,
+                addedCount
+            );
+
+            return ApiResponse<string>.Success(message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error synchronizing general inventory for institution {InstitucionId}",
+                institucionId
+            );
+            return ApiResponse<string>.Failure(
+                "Error synchronizing inventory",
+                "An error occurred while synchronizing the inventory"
+            );
+        }
+    }
+
+    #endregion
+
+    #region CRUD Operations
+
+    public async Task<ApiResponse<InventoryDto>> CreateInventoryAsync(
+        InventoryCreateDto createDto,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (createDto.LocationType == InventoryLocationType.Room)
+        {
+            if (!createDto.LocationId.HasValue)
+            {
+                return ApiResponse<InventoryDto>.Failure(
+                    "Location ID required",
+                    "Location ID is required for room inventory"
+                );
+            }
+
+            return await AddRoomInventoryAsync(
+                createDto.LocationId.Value,
+                createDto,
+                institucionId,
+                cancellationToken
+            );
+        }
+        else
+        {
+            return await AddGeneralInventoryAsync(createDto, institucionId, cancellationToken);
+        }
+    }
+
+    public async Task<ApiResponse<InventoryDto>> UpdateInventoryAsync(
+        int inventoryId,
+        InventoryUpdateDto updateDto,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var inventory = await _context.InventarioUnificado.FirstOrDefaultAsync(
+                i => i.InventarioId == inventoryId && i.InstitucionID == institucionId,
+                cancellationToken
+            );
+
+            if (inventory == null)
+            {
+                return ApiResponse<InventoryDto>.Failure(
+                    "Inventory not found",
+                    $"No inventory found with ID {inventoryId}"
+                );
+            }
+
+            inventory.Cantidad = updateDto.Cantidad;
+            inventory.FechaUltimaActualizacion = DateTime.Now;
+            inventory.UsuarioUltimaActualizacion = null; // Will be set by controller from current user context
+            inventory.Notas = updateDto.Notes ?? inventory.Notas;
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Updated inventory {InventoryId} to quantity {Cantidad}",
+                inventoryId,
+                updateDto.Cantidad
+            );
+
+            return await GetInventoryByIdAsync(inventoryId, institucionId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating inventory {InventoryId}", inventoryId);
+            return ApiResponse<InventoryDto>.Failure(
+                "Error updating inventory",
+                "An error occurred while updating the inventory"
+            );
+        }
+    }
+
+    public async Task<ApiResponse<string>> BatchUpdateInventoryAsync(
+        InventoryBatchUpdateDto batchUpdateDto,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync(
+                cancellationToken
+            );
+
+            var updatedCount = 0;
+            var errors = new List<string>();
+
+            foreach (var item in batchUpdateDto.Items)
+            {
+                var inventory = await _context.InventarioUnificado.FirstOrDefaultAsync(
+                    i => i.InventarioId == item.InventoryId && i.InstitucionID == institucionId,
+                    cancellationToken
+                );
+
+                if (inventory != null)
+                {
+                    inventory.Cantidad = item.Cantidad;
+                    inventory.FechaUltimaActualizacion = DateTime.Now;
+                    updatedCount++;
+                }
+                else
+                {
+                    errors.Add($"Inventory with ID {item.InventoryId} not found");
+                }
+            }
+
+            if (errors.Any())
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return ApiResponse<string>.Failure(
+                    "Batch update failed",
+                    string.Join("; ", errors)
+                );
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            var message = $"Successfully updated {updatedCount} inventory items";
+            _logger.LogInformation(
+                "Batch updated {Count} inventory items for institution {InstitucionId}",
+                updatedCount,
+                institucionId
+            );
+
+            return ApiResponse<string>.Success(message);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error performing batch update for institution {InstitucionId}",
+                institucionId
+            );
+            return ApiResponse<string>.Failure(
+                "Error performing batch update",
+                "An error occurred while performing the batch update"
+            );
+        }
+    }
+
+    public async Task<ApiResponse> DeleteInventoryAsync(
+        int inventoryId,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var inventory = await _context.InventarioUnificado.FirstOrDefaultAsync(
+                i => i.InventarioId == inventoryId && i.InstitucionID == institucionId,
+                cancellationToken
+            );
+
+            if (inventory == null)
+            {
+                return ApiResponse.Failure(
+                    "Inventory not found",
+                    $"No inventory found with ID {inventoryId}"
+                );
+            }
+
+            inventory.Anulado = true;
+            inventory.FechaAnulacion = DateTime.Now;
+            inventory.UsuarioAnulacion = null; // Will be set by controller from current user context
+            inventory.MotivoAnulacion = "Deleted via V1 API";
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation("Deleted inventory {InventoryId}", inventoryId);
+            return ApiResponse.Success("Inventory item deleted successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting inventory {InventoryId}", inventoryId);
+            return ApiResponse.Failure(
+                "Error deleting inventory",
+                "An error occurred while deleting the inventory item"
+            );
+        }
+    }
+
+    #endregion
+
+    #region Transfer Operations (Placeholder)
+
+    public async Task<ApiResponse<string>> TransferInventoryAsync(
+        InventoryTransferDto transferDto,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // Placeholder implementation - will be implemented in phase 2
+        await Task.Delay(1, cancellationToken);
+        return ApiResponse<string>.Success(
+            "Transfer functionality will be implemented in phase 2 with movement tracking"
+        );
+    }
+
+    public async Task<ApiResponse<IEnumerable<InventoryMovementDto>>> GetInventoryMovementsAsync(
+        int institucionId,
+        int? articuloId = null,
+        int? locationId = null,
+        DateTime? fromDate = null,
+        DateTime? toDate = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        // Placeholder implementation - will be implemented in phase 2
+        await Task.Delay(1, cancellationToken);
+        var movements = new List<InventoryMovementDto>();
+        return ApiResponse<IEnumerable<InventoryMovementDto>>.Success(movements);
+    }
+
+    #endregion
+
+    #region Reporting and Analysis
+
+    public async Task<ApiResponse<IEnumerable<InventorySummaryDto>>> GetInventorySummaryAsync(
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var inventorySummary = await _context
+                .InventarioUnificado.AsNoTracking()
+                .Where(i => i.InstitucionID == institucionId)
+                .Include(i => i.Articulo)
+                .ThenInclude(a => a!.Imagen)
+                .Include(i => i.Habitacion)
+                .GroupBy(i => new
+                {
+                    i.TipoUbicacion,
+                    i.UbicacionId,
+                    LocationName = i.TipoUbicacion == 1
+                        ? i.Habitacion!.NombreHabitacion
+                        : "Inventario General",
+                })
+                .Select(g => new InventorySummaryDto
+                {
+                    LocationType = (InventoryLocationType)g.Key.TipoUbicacion,
+                    LocationId = g.Key.UbicacionId,
+                    LocationName = g.Key.LocationName,
+                    TotalItems = g.Sum(i => i.Cantidad),
+                    UniqueArticles = g.Count(),
+                    TotalValue = g.Sum(i => i.Cantidad * i.Articulo!.Precio),
+                    Items = g.Select(i => new InventoryItemSummaryDto
+                        {
+                            ArticuloId = i.ArticuloId,
+                            ArticuloNombre = i.Articulo!.NombreArticulo ?? string.Empty,
+                            Cantidad = i.Cantidad,
+                            PrecioUnitario = i.Articulo.Precio,
+                            ValorTotal = i.Cantidad * i.Articulo.Precio,
+                            UltimaActualizacion = i.FechaUltimaActualizacion ?? i.FechaRegistro,
+                        })
+                        .ToList(),
+                })
+                .ToListAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Generated inventory summary with {Count} locations for institution {InstitucionId}",
+                inventorySummary.Count,
+                institucionId
+            );
+
+            return ApiResponse<IEnumerable<InventorySummaryDto>>.Success(inventorySummary);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error generating inventory summary for institution {InstitucionId}",
+                institucionId
+            );
+            return ApiResponse<IEnumerable<InventorySummaryDto>>.Failure(
+                "Error generating summary",
+                "An error occurred while generating the inventory summary"
+            );
+        }
+    }
+
+    public async Task<ApiResponse<IEnumerable<InventoryDto>>> GetCombinedInventoryAsync(
+        int habitacionId,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var roomResult = await GetRoomInventoryAsync(
+                habitacionId,
+                institucionId,
+                cancellationToken
+            );
+            var generalResult = await GetGeneralInventoryAsync(institucionId, cancellationToken);
+
+            if (!roomResult.IsSuccess)
+                return roomResult;
+
+            if (!generalResult.IsSuccess)
+                return generalResult;
+
+            var combinedInventory = roomResult.Data!.Concat(generalResult.Data!);
+
+            _logger.LogInformation(
+                "Retrieved combined inventory for room {HabitacionId}: {RoomCount} room items, {GeneralCount} general items",
+                habitacionId,
+                roomResult.Data!.Count(),
+                generalResult.Data!.Count()
+            );
+
+            return ApiResponse<IEnumerable<InventoryDto>>.Success(combinedInventory);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error retrieving combined inventory for room {HabitacionId}",
+                habitacionId
+            );
+            return ApiResponse<IEnumerable<InventoryDto>>.Failure(
+                "Error retrieving combined inventory",
+                "An error occurred while retrieving the combined inventory"
+            );
+        }
+    }
+
+    #endregion
+
+    #region Stock Validation
+
+    public async Task<ApiResponse<StockValidationDto>> ValidateStockAsync(
+        int articuloId,
+        int requestedQuantity,
+        InventoryLocationType locationType,
+        int? locationId,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var query = _context
+                .InventarioUnificado.Where(i =>
+                    i.ArticuloId == articuloId && i.InstitucionID == institucionId
+                )
+                .Where(i => i.TipoUbicacion == (int)locationType);
+
+            if (locationType == InventoryLocationType.Room && locationId.HasValue)
+            {
+                query = query.Where(i => i.UbicacionId == locationId.Value);
+            }
+
+            var availableQuantity = await query.SumAsync(i => i.Cantidad, cancellationToken);
+
+            var isValid = availableQuantity >= requestedQuantity;
+            var errorMessage = isValid
+                ? null
+                : $"Insufficient stock. Available: {availableQuantity}, Requested: {requestedQuantity}";
+
+            var validation = new StockValidationDto
+            {
+                IsValid = isValid,
+                ErrorMessage = errorMessage,
+                ArticuloId = articuloId,
+                RequestedQuantity = requestedQuantity,
+                AvailableQuantity = availableQuantity,
+                LocationType = locationType,
+                LocationId = locationId,
+            };
+
+            _logger.LogInformation(
+                "Stock validation for article {ArticuloId}: Available={Available}, Requested={Requested}, Valid={Valid}",
+                articuloId,
+                availableQuantity,
+                requestedQuantity,
+                isValid
+            );
+
+            return ApiResponse<StockValidationDto>.Success(validation);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating stock for article {ArticuloId}", articuloId);
+            return ApiResponse<StockValidationDto>.Failure(
+                "Error validating stock",
+                "An error occurred while validating the stock"
+            );
+        }
+    }
+
+    #endregion
+
+    #region New Enhanced Features (Placeholder Implementations)
+
+    public async Task<ApiResponse<MovimientoInventarioDto>> RegisterMovementAsync(
+        MovimientoInventarioCreateDto movementDto,
+        int institucionId,
+        string userId,
+        string? ipAddress = null,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+            // Validar que el inventario existe
+            var inventory = await _context.InventarioUnificado
+                .Include(i => i.Articulo)
+                .Include(i => i.Habitacion)
+                .FirstOrDefaultAsync(i => i.InventarioId == movementDto.InventarioId && 
+                                        i.InstitucionID == institucionId, 
+                                        cancellationToken);
+
+            if (inventory == null)
+            {
+                return ApiResponse<MovimientoInventarioDto>.Failure(
+                    "Inventory not found",
+                    $"No inventory found with ID {movementDto.InventarioId}"
+                );
+            }
+
+            // Calcular nueva cantidad
+            var cantidadAnterior = inventory.Cantidad;
+            var cantidadNueva = cantidadAnterior + movementDto.CantidadCambiada;
+
+            // Validar que la cantidad no sea negativa
+            if (cantidadNueva < 0)
+            {
+                return ApiResponse<MovimientoInventarioDto>.Failure(
+                    "Insufficient stock",
+                    $"Cannot reduce inventory below zero. Available: {cantidadAnterior}, Requested: {Math.Abs(movementDto.CantidadCambiada)}"
+                );
+            }
+
+            // Actualizar inventario
+            inventory.Cantidad = cantidadNueva;
+            inventory.FechaUltimaActualizacion = DateTime.Now;
+            inventory.UsuarioUltimaActualizacion = userId;
+
+            // Crear movimiento
+            var movement = new MovimientoInventario
+            {
+                InventarioId = movementDto.InventarioId,
+                InstitucionID = institucionId,
+                TipoMovimiento = movementDto.TipoMovimiento,
+                CantidadAnterior = cantidadAnterior,
+                CantidadNueva = cantidadNueva,
+                CantidadCambiada = movementDto.CantidadCambiada,
+                Motivo = movementDto.Motivo,
+                NumeroDocumento = movementDto.NumeroDocumento,
+                TipoUbicacionOrigen = movementDto.TipoUbicacionOrigen,
+                UbicacionIdOrigen = movementDto.UbicacionIdOrigen,
+                TipoUbicacionDestino = movementDto.TipoUbicacionDestino,
+                UbicacionIdDestino = movementDto.UbicacionIdDestino,
+                FechaMovimiento = DateTime.Now,
+                UsuarioId = userId,
+                DireccionIP = ipAddress,
+                Metadata = movementDto.Metadata != null ? 
+                    System.Text.Json.JsonSerializer.Serialize(movementDto.Metadata) : null
+            };
+
+            _context.MovimientosInventario.Add(movement);
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            // Mapear a DTO
+            var movementDto = new MovimientoInventarioDto
+            {
+                MovimientoId = movement.MovimientoId,
+                InventarioId = movement.InventarioId,
+                InstitucionId = movement.InstitucionID,
+                TipoMovimiento = movement.TipoMovimiento,
+                CantidadAnterior = movement.CantidadAnterior,
+                CantidadNueva = movement.CantidadNueva,
+                CantidadCambiada = movement.CantidadCambiada,
+                Motivo = movement.Motivo,
+                NumeroDocumento = movement.NumeroDocumento,
+                TipoUbicacionOrigen = movement.TipoUbicacionOrigen,
+                UbicacionIdOrigen = movement.UbicacionIdOrigen,
+                TipoUbicacionDestino = movement.TipoUbicacionDestino,
+                UbicacionIdDestino = movement.UbicacionIdDestino,
+                FechaMovimiento = movement.FechaMovimiento,
+                UsuarioId = movement.UsuarioId,
+                DireccionIP = movement.DireccionIP,
+                ArticuloId = inventory.ArticuloId,
+                ArticuloNombre = inventory.Articulo?.NombreArticulo ?? string.Empty,
+                ArticuloDescripcion = inventory.Articulo?.Descripcion,
+                ArticuloPrecio = inventory.Articulo?.Precio ?? 0
+            };
+
+            _logger.LogInformation(
+                "Movement registered: {MovementType} for inventory {InventoryId}, changed {Quantity} units",
+                movement.TipoMovimiento, movement.InventarioId, movement.CantidadCambiada
+            );
+
+            // Verificar si se deben generar alertas
+            await CheckAndGenerateAlertsAsync(inventory, cancellationToken);
+
+            return ApiResponse<MovimientoInventarioDto>.Success(movementDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error registering movement for inventory {InventoryId}", movementDto.InventarioId);
+            return ApiResponse<MovimientoInventarioDto>.Failure(
+                "Error registering movement",
+                "An error occurred while registering the inventory movement"
+            );
+        }
+    }
+
+    public async Task<ApiResponse<MovimientoInventarioResumenDto>> GetInventoryMovementsAsync(
+        int inventoryId,
+        int institucionId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Verificar que el inventario existe
+            var inventory = await _context.InventarioUnificado
+                .Include(i => i.Articulo)
+                .FirstOrDefaultAsync(i => i.InventarioId == inventoryId && 
+                                        i.InstitucionID == institucionId, 
+                                        cancellationToken);
+
+            if (inventory == null)
+            {
+                return ApiResponse<MovimientoInventarioResumenDto>.Failure(
+                    "Inventory not found",
+                    $"No inventory found with ID {inventoryId}"
+                );
+            }
+
+            // Obtener estadísticas de movimientos
+            var movements = await _context.MovimientosInventario
+                .Where(m => m.InventarioId == inventoryId && m.InstitucionID == institucionId)
+                .Include(m => m.Usuario)
+                .OrderByDescending(m => m.FechaMovimiento)
+                .ToListAsync(cancellationToken);
+
+            var totalMovimientos = movements.Count;
+            var totalEntradas = movements.Where(m => m.CantidadCambiada > 0).Sum(m => m.CantidadCambiada);
+            var totalSalidas = Math.Abs(movements.Where(m => m.CantidadCambiada < 0).Sum(m => m.CantidadCambiada));
+            var ultimoMovimiento = movements.FirstOrDefault();
+
+            // Obtener los últimos 5 movimientos
+            var movimientosRecientes = movements.Take(5).Select(m => new MovimientoInventarioDto
+            {
+                MovimientoId = m.MovimientoId,
+                InventarioId = m.InventarioId,
+                InstitucionId = m.InstitucionID,
+                TipoMovimiento = m.TipoMovimiento,
+                CantidadAnterior = m.CantidadAnterior,
+                CantidadNueva = m.CantidadNueva,
+                CantidadCambiada = m.CantidadCambiada,
+                Motivo = m.Motivo,
+                NumeroDocumento = m.NumeroDocumento,
+                TipoUbicacionOrigen = m.TipoUbicacionOrigen,
+                UbicacionIdOrigen = m.UbicacionIdOrigen,
+                TipoUbicacionDestino = m.TipoUbicacionDestino,
+                UbicacionIdDestino = m.UbicacionIdDestino,
+                FechaMovimiento = m.FechaMovimiento,
+                UsuarioId = m.UsuarioId,
+                UsuarioNombre = m.Usuario?.UserName,
+                DireccionIP = m.DireccionIP,
+                ArticuloId = inventory.ArticuloId,
+                ArticuloNombre = inventory.Articulo?.NombreArticulo ?? string.Empty,
+                ArticuloDescripcion = inventory.Articulo?.Descripcion,
+                ArticuloPrecio = inventory.Articulo?.Precio ?? 0
+            }).ToList();
+
+            var resumen = new MovimientoInventarioResumenDto
+            {
+                InventarioId = inventoryId,
+                ArticuloId = inventory.ArticuloId,
+                ArticuloNombre = inventory.Articulo?.NombreArticulo ?? string.Empty,
+                CantidadActual = inventory.Cantidad,
+                TotalMovimientos = totalMovimientos,
+                TotalEntradas = totalEntradas,
+                TotalSalidas = totalSalidas,
+                UltimoMovimiento = ultimoMovimiento?.FechaMovimiento,
+                TipoUltimoMovimiento = ultimoMovimiento?.TipoMovimiento,
+                MovimientosRecientes = movimientosRecientes
+            };
+
+            _logger.LogInformation(
+                "Retrieved movement summary for inventory {InventoryId}: {Count} movements",
+                inventoryId, totalMovimientos
+            );
+
+            return ApiResponse<MovimientoInventarioResumenDto>.Success(resumen);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving movements for inventory {InventoryId}", inventoryId);
+            return ApiResponse<MovimientoInventarioResumenDto>.Failure(
+                "Error retrieving movements",
+                "An error occurred while retrieving the inventory movements"
+            );
+        }
+    }
+
+    public async Task<ApiResponse<MovimientoAuditoriaResponseDto>> GetMovementAuditAsync(
+        MovimientoAuditoriaRequestDto request,
+        int institucionId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var query = _context.MovimientosInventario
+                .Where(m => m.InstitucionID == institucionId)
+                .Include(m => m.Inventario)
+                    .ThenInclude(i => i!.Articulo)
+                .Include(m => m.Usuario)
+                .AsQueryable();
+
+            // Aplicar filtros
+            if (request.FechaInicio.HasValue)
+                query = query.Where(m => m.FechaMovimiento >= request.FechaInicio.Value);
+
+            if (request.FechaFin.HasValue)
+                query = query.Where(m => m.FechaMovimiento <= request.FechaFin.Value);
+
+            if (!string.IsNullOrEmpty(request.TipoMovimiento))
+                query = query.Where(m => m.TipoMovimiento == request.TipoMovimiento);
+
+            if (request.ArticuloId.HasValue)
+                query = query.Where(m => m.Inventario!.ArticuloId == request.ArticuloId.Value);
+
+            if (request.TipoUbicacion.HasValue)
+                query = query.Where(m => m.Inventario!.TipoUbicacion == request.TipoUbicacion.Value);
+
+            if (request.UbicacionId.HasValue)
+                query = query.Where(m => m.Inventario!.UbicacionId == request.UbicacionId.Value);
+
+            if (!string.IsNullOrEmpty(request.UsuarioId))
+                query = query.Where(m => m.UsuarioId == request.UsuarioId);
+
+            // Contar total de registros
+            var totalRegistros = await query.CountAsync(cancellationToken);
+
+            // Aplicar paginación
+            var movimientos = await query
+                .OrderByDescending(m => m.FechaMovimiento)
+                .Skip((request.Pagina - 1) * request.TamañoPagina)
+                .Take(request.TamañoPagina)
+                .Select(m => new MovimientoInventarioDto
+                {
+                    MovimientoId = m.MovimientoId,
+                    InventarioId = m.InventarioId,
+                    InstitucionId = m.InstitucionID,
+                    TipoMovimiento = m.TipoMovimiento,
+                    CantidadAnterior = m.CantidadAnterior,
+                    CantidadNueva = m.CantidadNueva,
+                    CantidadCambiada = m.CantidadCambiada,
+                    Motivo = m.Motivo,
+                    NumeroDocumento = m.NumeroDocumento,
+                    TipoUbicacionOrigen = m.TipoUbicacionOrigen,
+                    UbicacionIdOrigen = m.UbicacionIdOrigen,
+                    TipoUbicacionDestino = m.TipoUbicacionDestino,
+                    UbicacionIdDestino = m.UbicacionIdDestino,
+                    FechaMovimiento = m.FechaMovimiento,
+                    UsuarioId = m.UsuarioId,
+                    UsuarioNombre = m.Usuario!.UserName,
+                    DireccionIP = m.DireccionIP,
+                    ArticuloId = m.Inventario!.ArticuloId,
+                    ArticuloNombre = m.Inventario.Articulo!.NombreArticulo ?? string.Empty,
+                    ArticuloDescripcion = m.Inventario.Articulo.Descripcion,
+                    ArticuloPrecio = m.Inventario.Articulo.Precio
+                })
+                .ToListAsync(cancellationToken);
+
+            // Calcular estadísticas
+            var allMovements = await _context.MovimientosInventario
+                .Where(m => m.InstitucionID == institucionId)
+                .ToListAsync(cancellationToken);
+
+            var estadisticas = new MovimientoEstadisticasDto
+            {
+                TotalMovimientos = allMovements.Count,
+                TotalEntradas = allMovements.Where(m => m.CantidadCambiada > 0).Sum(m => m.CantidadCambiada),
+                TotalSalidas = Math.Abs(allMovements.Where(m => m.CantidadCambiada < 0).Sum(m => m.CantidadCambiada)),
+                TotalTransferencias = allMovements.Count(m => m.TipoMovimiento == TipoMovimientoInventario.Transferencia),
+                TotalAjustes = allMovements.Count(m => m.TipoMovimiento == TipoMovimientoInventario.Ajuste),
+                MovimientosPorTipo = allMovements
+                    .GroupBy(m => m.TipoMovimiento)
+                    .ToDictionary(g => g.Key, g => g.Count()),
+                MovimientosPorUsuario = allMovements
+                    .GroupBy(m => m.UsuarioId)
+                    .ToDictionary(g => g.Key, g => g.Count()),
+                MovimientosPorDia = allMovements
+                    .GroupBy(m => m.FechaMovimiento.Date)
+                    .ToDictionary(g => g.Key, g => g.Count())
+            };
+
+            var totalPaginas = (int)Math.Ceiling((double)totalRegistros / request.TamañoPagina);
+
+            var response = new MovimientoAuditoriaResponseDto
+            {
+                Movimientos = movimientos,
+                TotalRegistros = totalRegistros,
+                PaginaActual = request.Pagina,
+                TotalPaginas = totalPaginas,
+                TienePaginaAnterior = request.Pagina > 1,
+                TienePaginaSiguiente = request.Pagina < totalPaginas,
+                Estadisticas = estadisticas
+            };
+
+            _logger.LogInformation(
+                "Generated movement audit report: {Count} movements, page {Page} of {TotalPages}",
+                totalRegistros, request.Pagina, totalPaginas
+            );
+
+            return ApiResponse<MovimientoAuditoriaResponseDto>.Success(response);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating movement audit report");
+            return ApiResponse<MovimientoAuditoriaResponseDto>.Failure(
+                "Error generating audit report",
+                "An error occurred while generating the movement audit report"
+            );
+        }
+    }
+
+    public async Task<ApiResponse<MovimientoInventarioDto>> GetMovementByIdAsync(
+        int movementId,
+        int institucionId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var movement = await _context.MovimientosInventario
+                .Include(m => m.Inventario)
+                    .ThenInclude(i => i!.Articulo)
+                .Include(m => m.Usuario)
+                .FirstOrDefaultAsync(m => m.MovimientoId == movementId && 
+                                        m.InstitucionID == institucionId, 
+                                        cancellationToken);
+
+            if (movement == null)
+            {
+                return ApiResponse<MovimientoInventarioDto>.Failure(
+                    "Movement not found",
+                    $"No movement found with ID {movementId}"
+                );
+            }
+
+            var movementDto = new MovimientoInventarioDto
+            {
+                MovimientoId = movement.MovimientoId,
+                InventarioId = movement.InventarioId,
+                InstitucionId = movement.InstitucionID,
+                TipoMovimiento = movement.TipoMovimiento,
+                CantidadAnterior = movement.CantidadAnterior,
+                CantidadNueva = movement.CantidadNueva,
+                CantidadCambiada = movement.CantidadCambiada,
+                Motivo = movement.Motivo,
+                NumeroDocumento = movement.NumeroDocumento,
+                TipoUbicacionOrigen = movement.TipoUbicacionOrigen,
+                UbicacionIdOrigen = movement.UbicacionIdOrigen,
+                TipoUbicacionDestino = movement.TipoUbicacionDestino,
+                UbicacionIdDestino = movement.UbicacionIdDestino,
+                FechaMovimiento = movement.FechaMovimiento,
+                UsuarioId = movement.UsuarioId,
+                UsuarioNombre = movement.Usuario?.UserName,
+                DireccionIP = movement.DireccionIP,
+                ArticuloId = movement.Inventario?.ArticuloId ?? 0,
+                ArticuloNombre = movement.Inventario?.Articulo?.NombreArticulo ?? string.Empty,
+                ArticuloDescripcion = movement.Inventario?.Articulo?.Descripcion,
+                ArticuloPrecio = movement.Inventario?.Articulo?.Precio ?? 0
+            };
+
+            return ApiResponse<MovimientoInventarioDto>.Success(movementDto);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving movement {MovementId}", movementId);
+            return ApiResponse<MovimientoInventarioDto>.Failure(
+                "Error retrieving movement",
+                "An error occurred while retrieving the movement"
+            );
+        }
+    }
+
+    /// <summary>
+    /// Método auxiliar para verificar y generar alertas automáticas después de un movimiento
+    /// </summary>
+    private async Task CheckAndGenerateAlertsAsync(InventarioUnificado inventory, CancellationToken cancellationToken)
+    {
+        try
+        {
+            // Obtener configuración de alertas para este inventario
+            var config = await _context.ConfiguracionAlertasInventario
+                .FirstOrDefaultAsync(c => c.InventarioId == inventory.InventarioId, cancellationToken);
+
+            if (config == null) return; // No hay configuración, no generar alertas
+
+            var alertsToCreate = new List<AlertaInventario>();
+
+            // Verificar stock bajo
+            if (config.AlertasStockBajoActivas && config.UmbralStockBajo.HasValue && 
+                inventory.Cantidad <= config.UmbralStockBajo.Value)
+            {
+                // Verificar si ya existe una alerta activa de este tipo
+                var existingAlert = await _context.AlertasInventario
+                    .AnyAsync(a => a.InventarioId == inventory.InventarioId && 
+                                  a.TipoAlerta == TipoAlertaInventario.StockBajo && 
+                                  a.EsActiva, cancellationToken);
+
+                if (!existingAlert)
+                {
+                    alertsToCreate.Add(new AlertaInventario
+                    {
+                        InventarioId = inventory.InventarioId,
+                        InstitucionID = inventory.InstitucionID,
+                        TipoAlerta = TipoAlertaInventario.StockBajo,
+                        Severidad = SeveridadAlerta.Media,
+                        Mensaje = $"Stock bajo detectado. Cantidad actual: {inventory.Cantidad}, Umbral: {config.UmbralStockBajo}",
+                        CantidadActual = inventory.Cantidad,
+                        UmbralConfigurado = config.UmbralStockBajo,
+                        EsActiva = true,
+                        FueReconocida = false,
+                        FechaCreacion = DateTime.Now
+                    });
+                }
+            }
+
+            // Verificar stock crítico
+            if (config.AlertasStockCriticoActivas && config.UmbralStockCritico.HasValue && 
+                inventory.Cantidad <= config.UmbralStockCritico.Value)
+            {
+                var existingAlert = await _context.AlertasInventario
+                    .AnyAsync(a => a.InventarioId == inventory.InventarioId && 
+                                  a.TipoAlerta == TipoAlertaInventario.StockCritico && 
+                                  a.EsActiva, cancellationToken);
+
+                if (!existingAlert)
+                {
+                    alertsToCreate.Add(new AlertaInventario
+                    {
+                        InventarioId = inventory.InventarioId,
+                        InstitucionID = inventory.InstitucionID,
+                        TipoAlerta = TipoAlertaInventario.StockCritico,
+                        Severidad = SeveridadAlerta.Critica,
+                        Mensaje = $"Stock crítico detectado. Cantidad actual: {inventory.Cantidad}, Umbral: {config.UmbralStockCritico}",
+                        CantidadActual = inventory.Cantidad,
+                        UmbralConfigurado = config.UmbralStockCritico,
+                        EsActiva = true,
+                        FueReconocida = false,
+                        FechaCreacion = DateTime.Now
+                    });
+                }
+            }
+
+            // Verificar stock agotado
+            if (inventory.Cantidad == 0)
+            {
+                var existingAlert = await _context.AlertasInventario
+                    .AnyAsync(a => a.InventarioId == inventory.InventarioId && 
+                                  a.TipoAlerta == TipoAlertaInventario.StockAgotado && 
+                                  a.EsActiva, cancellationToken);
+
+                if (!existingAlert)
+                {
+                    alertsToCreate.Add(new AlertaInventario
+                    {
+                        InventarioId = inventory.InventarioId,
+                        InstitucionID = inventory.InstitucionID,
+                        TipoAlerta = TipoAlertaInventario.StockAgotado,
+                        Severidad = SeveridadAlerta.Critica,
+                        Mensaje = "Stock completamente agotado",
+                        CantidadActual = inventory.Cantidad,
+                        UmbralConfigurado = 0,
+                        EsActiva = true,
+                        FueReconocida = false,
+                        FechaCreacion = DateTime.Now
+                    });
+                }
+            }
+
+            // Crear alertas si hay alguna
+            if (alertsToCreate.Any())
+            {
+                _context.AlertasInventario.AddRange(alertsToCreate);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "Generated {Count} automatic alerts for inventory {InventoryId}",
+                    alertsToCreate.Count, inventory.InventarioId
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking alerts for inventory {InventoryId}", inventory.InventarioId);
+            // No lanzar excepción para no afectar el movimiento principal
+        }
+    }
+
+    public async Task<ApiResponse<AlertasActivasResumenDto>> GetActiveAlertsAsync(
+        AlertaFiltroRequestDto request,
+        int institucionId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var query = _context.AlertasInventario
+                .Where(a => a.InstitucionID == institucionId)
+                .Include(a => a.Inventario)
+                    .ThenInclude(i => i!.Articulo)
+                .Include(a => a.Inventario)
+                    .ThenInclude(i => i!.Habitacion)
+                .AsQueryable();
+
+            // Aplicar filtros
+            if (request.SoloActivas.HasValue && request.SoloActivas.Value)
+                query = query.Where(a => a.EsActiva);
+
+            if (request.SoloNoReconocidas.HasValue && request.SoloNoReconocidas.Value)
+                query = query.Where(a => !a.FueReconocida);
+
+            if (!string.IsNullOrEmpty(request.TipoAlerta))
+                query = query.Where(a => a.TipoAlerta == request.TipoAlerta);
+
+            if (!string.IsNullOrEmpty(request.Severidad))
+                query = query.Where(a => a.Severidad == request.Severidad);
+
+            if (request.TipoUbicacion.HasValue)
+                query = query.Where(a => a.Inventario!.TipoUbicacion == request.TipoUbicacion.Value);
+
+            if (request.UbicacionId.HasValue)
+                query = query.Where(a => a.Inventario!.UbicacionId == request.UbicacionId.Value);
+
+            if (request.ArticuloId.HasValue)
+                query = query.Where(a => a.Inventario!.ArticuloId == request.ArticuloId.Value);
+
+            if (request.FechaInicio.HasValue)
+                query = query.Where(a => a.FechaCreacion >= request.FechaInicio.Value);
+
+            if (request.FechaFin.HasValue)
+                query = query.Where(a => a.FechaCreacion <= request.FechaFin.Value);
+
+            // Aplicar ordenamiento
+            if (!string.IsNullOrEmpty(request.OrdenarPor))
+            {
+                switch (request.OrdenarPor.ToLower())
+                {
+                    case "fechacreacion":
+                        query = request.OrdenDescendente 
+                            ? query.OrderByDescending(a => a.FechaCreacion)
+                            : query.OrderBy(a => a.FechaCreacion);
+                        break;
+                    case "severidad":
+                        query = request.OrdenDescendente 
+                            ? query.OrderByDescending(a => a.Severidad)
+                            : query.OrderBy(a => a.Severidad);
+                        break;
+                    default:
+                        query = query.OrderByDescending(a => a.FechaCreacion);
+                        break;
+                }
+            }
+            else
+            {
+                query = query.OrderByDescending(a => a.FechaCreacion);
+            }
+
+            // Obtener alertas para el resumen
+            var todasLasAlertas = await query.ToListAsync(cancellationToken);
+
+            // Aplicar paginación para las alertas recientes
+            var alertasRecientes = todasLasAlertas
+                .Skip((request.Pagina - 1) * request.TamañoPagina)
+                .Take(request.TamañoPagina)
+                .Take(10) // Máximo 10 para el resumen
+                .Select(a => MapToAlertaDto(a))
+                .ToList();
+
+            // Calcular estadísticas
+            var totalAlertas = todasLasAlertas.Count;
+            var alertasCriticas = todasLasAlertas.Count(a => a.Severidad == SeveridadAlerta.Critica);
+            var alertasAltas = todasLasAlertas.Count(a => a.Severidad == SeveridadAlerta.Alta);
+            var alertasMedias = todasLasAlertas.Count(a => a.Severidad == SeveridadAlerta.Media);
+            var alertasBajas = todasLasAlertas.Count(a => a.Severidad == SeveridadAlerta.Baja);
+            var alertasNoReconocidas = todasLasAlertas.Count(a => !a.FueReconocida);
+
+            var alertasPorTipo = todasLasAlertas
+                .GroupBy(a => a.TipoAlerta)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var alertasPorUbicacion = todasLasAlertas
+                .GroupBy(a => GetUbicacionName(a.Inventario))
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var resumen = new AlertasActivasResumenDto
+            {
+                TotalAlertas = totalAlertas,
+                AlertasCriticas = alertasCriticas,
+                AlertasAltas = alertasAltas,
+                AlertasMedias = alertasMedias,
+                AlertasBajas = alertasBajas,
+                AlertasNoReconocidas = alertasNoReconocidas,
+                AlertasPorTipo = alertasPorTipo,
+                AlertasPorUbicacion = alertasPorUbicacion,
+                AlertasRecientes = alertasRecientes
+            };
+
+            _logger.LogInformation(
+                "Retrieved {Count} active alerts for institution {InstitucionId}",
+                totalAlertas, institucionId
+            );
+
+            return ApiResponse<AlertasActivasResumenDto>.Success(resumen);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving active alerts for institution {InstitucionId}", institucionId);
+            return ApiResponse<AlertasActivasResumenDto>.Failure(
+                "Error retrieving alerts",
+                "An error occurred while retrieving the active alerts"
+            );
+        }
+    }
+
+    private AlertaInventarioDto MapToAlertaDto(AlertaInventario alerta)
+    {
+        return new AlertaInventarioDto
+        {
+            AlertaId = alerta.AlertaId,
+            InventarioId = alerta.InventarioId,
+            InstitucionId = alerta.InstitucionID,
+            TipoAlerta = alerta.TipoAlerta,
+            Severidad = alerta.Severidad,
+            Mensaje = alerta.Mensaje,
+            CantidadActual = alerta.CantidadActual,
+            UmbralConfigurado = alerta.UmbralConfigurado,
+            EsActiva = alerta.EsActiva,
+            FueReconocida = alerta.FueReconocida,
+            FechaCreacion = alerta.FechaCreacion,
+            FechaReconocimiento = alerta.FechaReconocimiento,
+            FechaResolucion = alerta.FechaResolucion,
+            UsuarioReconocimiento = alerta.UsuarioReconocimiento,
+            UsuarioResolucion = alerta.UsuarioResolucion,
+            NotasResolucion = alerta.NotasResolucion,
+            ArticuloId = alerta.Inventario?.ArticuloId ?? 0,
+            ArticuloNombre = alerta.Inventario?.Articulo?.NombreArticulo ?? string.Empty,
+            ArticuloDescripcion = alerta.Inventario?.Articulo?.Descripcion,
+            TipoUbicacion = alerta.Inventario?.TipoUbicacion ?? 0,
+            UbicacionId = alerta.Inventario?.UbicacionId,
+            UbicacionNombre = GetUbicacionName(alerta.Inventario)
+        };
+    }
+
+    private string GetUbicacionName(InventarioUnificado? inventario)
+    {
+        if (inventario == null) return "Desconocida";
+        
+        return inventario.TipoUbicacion switch
+        {
+            1 => inventario.Habitacion?.NombreHabitacion ?? $"Habitación {inventario.UbicacionId}",
+            0 => "Inventario General",
+            2 => $"Almacén {inventario.UbicacionId}",
+            _ => "Ubicación Desconocida"
+        };
+    }
+
+    public async Task<ApiResponse<ConfiguracionAlertaDto>> ConfigureAlertsAsync(
+        ConfiguracionAlertaCreateUpdateDto configDto,
+        int institucionId,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        
+        try
+        {
+            // Validate inventory exists and belongs to institution
+            var inventario = await _context.InventarioUnificado
+                .AsNoTracking()
+                .FirstOrDefaultAsync(i => i.InventarioId == configDto.InventarioId && 
+                                        i.InstitucionID == institucionId, 
+                                        cancellationToken);
+
+            if (inventario == null)
+            {
+                return ApiResponse<ConfiguracionAlertaDto>.Failure("Inventory not found");
+            }
+
+            // Check if configuration already exists
+            var existingConfig = await _context.ConfiguracionAlertasInventario
+                .FirstOrDefaultAsync(c => c.InventarioId == configDto.InventarioId, 
+                                   cancellationToken);
+
+            ConfiguracionAlertaInventario config;
+
+            if (existingConfig != null)
+            {
+                // Update existing configuration
+                existingConfig.StockMinimo = configDto.StockMinimo;
+                existingConfig.StockMaximo = configDto.StockMaximo;
+                existingConfig.StockCritico = configDto.StockCritico;
+                existingConfig.AlertasStockBajoActivas = configDto.AlertasStockBajoActivas;
+                existingConfig.AlertasStockAltoActivas = configDto.AlertasStockAltoActivas;
+                existingConfig.AlertasStockCriticoActivas = configDto.AlertasStockCriticoActivas;
+                existingConfig.NotificacionEmailActiva = configDto.NotificacionEmailActiva;
+                existingConfig.NotificacionSmsActiva = configDto.NotificacionSmsActiva;
+                existingConfig.EmailsNotificacion = configDto.EmailsNotificacion;
+                existingConfig.TelefonosNotificacion = configDto.TelefonosNotificacion;
+                existingConfig.FrecuenciaRevisionMinutos = configDto.FrecuenciaRevisionMinutos;
+                existingConfig.EsActiva = configDto.EsActiva;
+                existingConfig.FechaActualizacion = DateTime.UtcNow;
+                existingConfig.UsuarioActualizacion = userId;
+
+                config = existingConfig;
+            }
+            else
+            {
+                // Create new configuration
+                config = new ConfiguracionAlertaInventario
+                {
+                    InventarioId = configDto.InventarioId,
+                    InstitucionID = institucionId,
+                    StockMinimo = configDto.StockMinimo,
+                    StockMaximo = configDto.StockMaximo,
+                    StockCritico = configDto.StockCritico,
+                    AlertasStockBajoActivas = configDto.AlertasStockBajoActivas,
+                    AlertasStockAltoActivas = configDto.AlertasStockAltoActivas,
+                    AlertasStockCriticoActivas = configDto.AlertasStockCriticoActivas,
+                    NotificacionEmailActiva = configDto.NotificacionEmailActiva,
+                    NotificacionSmsActiva = configDto.NotificacionSmsActiva,
+                    EmailsNotificacion = configDto.EmailsNotificacion,
+                    TelefonosNotificacion = configDto.TelefonosNotificacion,
+                    FrecuenciaRevisionMinutos = configDto.FrecuenciaRevisionMinutos ?? 60,
+                    EsActiva = configDto.EsActiva,
+                    FechaCreacion = DateTime.UtcNow,
+                    UsuarioCreacion = userId
+                };
+
+                _context.ConfiguracionAlertasInventario.Add(config);
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            // Map to DTO
+            var configDto_result = new ConfiguracionAlertaDto
+            {
+                ConfiguracionId = config.ConfiguracionId,
+                InventarioId = config.InventarioId,
+                StockMinimo = config.StockMinimo,
+                StockMaximo = config.StockMaximo,
+                StockCritico = config.StockCritico,
+                AlertasStockBajoActivas = config.AlertasStockBajoActivas,
+                AlertasStockAltoActivas = config.AlertasStockAltoActivas,
+                AlertasStockCriticoActivas = config.AlertasStockCriticoActivas,
+                NotificacionEmailActiva = config.NotificacionEmailActiva,
+                NotificacionSmsActiva = config.NotificacionSmsActiva,
+                EmailsNotificacion = config.EmailsNotificacion,
+                TelefonosNotificacion = config.TelefonosNotificacion,
+                FrecuenciaRevisionMinutos = config.FrecuenciaRevisionMinutos,
+                EsActiva = config.EsActiva,
+                FechaCreacion = config.FechaCreacion,
+                FechaActualizacion = config.FechaActualizacion,
+                NombreUsuarioCreacion = userId,
+                NombreUsuarioActualizacion = config.UsuarioActualizacion
+            };
+
+            _logger.LogInformation("Alert configuration {Action} for inventory {InventarioId} by user {UserId}", 
+                existingConfig != null ? "updated" : "created", configDto.InventarioId, userId);
+
+            return ApiResponse<ConfiguracionAlertaDto>.Success(configDto_result, 
+                $"Alert configuration {(existingConfig != null ? "updated" : "created")} successfully");
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            _logger.LogError(ex, "Error configuring alerts for inventory {InventarioId} in institution {InstitucionId}", 
+                configDto.InventarioId, institucionId);
+            return ApiResponse<ConfiguracionAlertaDto>.Failure(
+                "Error configuring alerts", 
+                "An error occurred while configuring the alert settings");
+        }
+    }
+
+    public async Task<ApiResponse<AlertaInventarioDto>> AcknowledgeAlertAsync(
+        int alertId,
+        AlertaReconocimientoDto acknowledgmentDto,
+        int institucionId,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Find the alert
+            var alerta = await _context.AlertasInventario
+                .Include(a => a.Inventario)
+                .ThenInclude(i => i.Articulo)
+                .FirstOrDefaultAsync(a => a.AlertaId == alertId && 
+                                        a.InstitucionID == institucionId, 
+                                        cancellationToken);
+
+            if (alerta == null)
+            {
+                return ApiResponse<AlertaInventarioDto>.Failure("Alert not found");
+            }
+
+            if (alerta.FueReconocida)
+            {
+                return ApiResponse<AlertaInventarioDto>.Failure("Alert has already been acknowledged");
+            }
+
+            if (!alerta.EsActiva)
+            {
+                return ApiResponse<AlertaInventarioDto>.Failure("Alert is not active");
+            }
+
+            // Update alert
+            alerta.FueReconocida = true;
+            alerta.FechaReconocimiento = DateTime.UtcNow;
+            alerta.UsuarioReconocimiento = userId;
+            alerta.NotasReconocimiento = acknowledgmentDto.Notas;
+
+            // If marked as resolved, update resolution fields
+            if (acknowledgmentDto.MarcarComoResuelto)
+            {
+                alerta.EsActiva = false;
+                alerta.FechaResolucion = DateTime.UtcNow;
+                alerta.UsuarioResolucion = userId;
+                alerta.NotasResolucion = acknowledgmentDto.NotasResolucion;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // Map to DTO
+            var alertaDto = await MapToAlertaDto(alerta);
+
+            _logger.LogInformation("Alert {AlertaId} acknowledged by user {UserId} with resolution: {Resolved}", 
+                alertId, userId, acknowledgmentDto.MarcarComoResuelto);
+
+            return ApiResponse<AlertaInventarioDto>.Success(alertaDto, 
+                $"Alert {(acknowledgmentDto.MarcarComoResuelto ? "acknowledged and resolved" : "acknowledged")} successfully");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error acknowledging alert {AlertaId} in institution {InstitucionId}", 
+                alertId, institucionId);
+            return ApiResponse<AlertaInventarioDto>.Failure(
+                "Error acknowledging alert", 
+                "An error occurred while acknowledging the alert");
+        }
+    }
+
+    public async Task<ApiResponse<ConfiguracionAlertaDto>> GetAlertConfigurationAsync(
+        int inventoryId,
+        int institucionId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement alert configuration retrieval
+        await Task.Delay(1, cancellationToken);
+        throw new NotImplementedException("Alert configuration will be implemented with the new tables");
+    }
+
+    public async Task<ApiResponse<TransferenciaInventarioDto>> CreateTransferAsync(
+        TransferenciaCreateDto transferDto,
+        int institucionId,
+        string userId,
+        string? ipAddress = null,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement enhanced transfer system
+        await Task.Delay(1, cancellationToken);
+        throw new NotImplementedException("Enhanced transfer system will be implemented with the new tables");
+    }
+
+    public async Task<ApiResponse<IEnumerable<TransferenciaInventarioDto>>> CreateBatchTransfersAsync(
+        TransferenciaBatchCreateDto batchDto,
+        int institucionId,
+        string userId,
+        string? ipAddress = null,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement batch transfer system
+        await Task.Delay(1, cancellationToken);
+        throw new NotImplementedException("Batch transfer system will be implemented with the new tables");
+    }
+
+    public async Task<ApiResponse<IEnumerable<TransferenciaInventarioDto>>> GetTransfersAsync(
+        TransferenciaFiltroRequestDto request,
+        int institucionId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement transfer retrieval with filtering
+        await Task.Delay(1, cancellationToken);
+        throw new NotImplementedException("Transfer retrieval will be implemented with the new tables");
+    }
+
+    public async Task<ApiResponse<TransferenciaInventarioDto>> ApproveTransferAsync(
+        int transferId,
+        TransferenciaAprobacionDto approvalDto,
+        int institucionId,
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement transfer approval
+        await Task.Delay(1, cancellationToken);
+        throw new NotImplementedException("Transfer approval will be implemented with the new tables");
+    }
+
+    public async Task<ApiResponse<TransferenciaInventarioDto>> GetTransferByIdAsync(
+        int transferId,
+        int institucionId,
+        CancellationToken cancellationToken = default)
+    {
+        // TODO: Implement transfer by ID retrieval
+        await Task.Delay(1, cancellationToken);
+        throw new NotImplementedException("Transfer retrieval will be implemented with the new tables");
+    }
+
+    #endregion
+}

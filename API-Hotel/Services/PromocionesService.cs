@@ -38,30 +38,32 @@ public class PromocionesService : IPromocionesService
                 .Promociones.AsNoTracking()
                 .Include(p => p.Categoria)
                 .Where(p => p.CategoriaID == categoriaId && p.Anulado != true)
-                .Select(p => new PromocionDto
-                {
-                    PromocionId = p.PromocionID,
-                    Nombre = p.Detalle ?? string.Empty,
-                    Descripcion = p.Detalle,
-                    Tarifa = p.Tarifa,
-                    CategoriaId = p.CategoriaID,
-                    CategoriaNombre = p.Categoria!.NombreCategoria ?? string.Empty,
-                    FechaInicio = DateTime.MinValue, // No hay campos de fecha en la entidad actual
-                    FechaFin = DateTime.MaxValue,
-                    Activo = !(p.Anulado ?? false),
-                    InstitucionId = p.InstitucionID,
-                    CreatedAt = DateTime.MinValue, // No hay campos de auditoría en la entidad actual
-                    UpdatedAt = null,
-                })
                 .ToListAsync(cancellationToken);
+
+            // Map to DTOs after materialization to avoid EF issues
+            var result = promociones.Select(p => new PromocionDto
+            {
+                PromocionId = p.PromocionID,
+                Nombre = p.Detalle ?? string.Empty,
+                Descripcion = p.Detalle,
+                Tarifa = p.Tarifa,
+                CategoriaId = p.CategoriaID,
+                CategoriaNombre = p.Categoria?.NombreCategoria ?? string.Empty,
+                FechaInicio = DateTime.Now.Date, // Default to today
+                FechaFin = DateTime.Now.Date.AddYears(1), // Default to 1 year from now
+                Activo = !(p.Anulado ?? false),
+                InstitucionId = p.InstitucionID,
+                CreatedAt = DateTime.Now, // Default to now
+                UpdatedAt = null,
+            }).ToList();
 
             _logger.LogInformation(
                 "Retrieved {Count} promotions for category {CategoriaId}",
-                promociones.Count,
+                result.Count,
                 categoriaId
             );
 
-            return ApiResponse<IEnumerable<PromocionDto>>.Success(promociones);
+            return ApiResponse<IEnumerable<PromocionDto>>.Success(result);
         }
         catch (Exception ex)
         {
@@ -89,30 +91,32 @@ public class PromocionesService : IPromocionesService
                 .Promociones.AsNoTracking()
                 .Include(p => p.Categoria)
                 .Where(p => p.InstitucionID == institucionId && p.Anulado != true)
-                .Select(p => new PromocionDto
-                {
-                    PromocionId = p.PromocionID,
-                    Nombre = p.Detalle ?? string.Empty,
-                    Descripcion = p.Detalle,
-                    Tarifa = p.Tarifa,
-                    CategoriaId = p.CategoriaID,
-                    CategoriaNombre = p.Categoria!.NombreCategoria ?? string.Empty,
-                    FechaInicio = DateTime.MinValue,
-                    FechaFin = DateTime.MaxValue,
-                    Activo = !(p.Anulado ?? false),
-                    InstitucionId = p.InstitucionID,
-                    CreatedAt = DateTime.MinValue,
-                    UpdatedAt = null,
-                })
                 .ToListAsync(cancellationToken);
+
+            // Map to DTOs after materialization to avoid EF issues
+            var result = promociones.Select(p => new PromocionDto
+            {
+                PromocionId = p.PromocionID,
+                Nombre = p.Detalle ?? string.Empty,
+                Descripcion = p.Detalle,
+                Tarifa = p.Tarifa,
+                CategoriaId = p.CategoriaID,
+                CategoriaNombre = p.Categoria?.NombreCategoria ?? string.Empty,
+                FechaInicio = DateTime.Now.Date,
+                FechaFin = DateTime.Now.Date.AddYears(1),
+                Activo = !(p.Anulado ?? false),
+                InstitucionId = p.InstitucionID,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = null,
+            }).ToList();
 
             _logger.LogInformation(
                 "Retrieved {Count} active promotions for institution {InstitucionId}",
-                promociones.Count,
+                result.Count,
                 institucionId
             );
 
-            return ApiResponse<IEnumerable<PromocionDto>>.Success(promociones);
+            return ApiResponse<IEnumerable<PromocionDto>>.Success(result);
         }
         catch (Exception ex)
         {
@@ -157,11 +161,11 @@ public class PromocionesService : IPromocionesService
                 Tarifa = promocion.Tarifa,
                 CategoriaId = promocion.CategoriaID,
                 CategoriaNombre = promocion.Categoria?.NombreCategoria,
-                FechaInicio = DateTime.MinValue,
-                FechaFin = DateTime.MaxValue,
+                FechaInicio = DateTime.Now.Date,
+                FechaFin = DateTime.Now.Date.AddYears(1),
                 Activo = !(promocion.Anulado ?? false),
                 InstitucionId = promocion.InstitucionID,
-                CreatedAt = DateTime.MinValue,
+                CreatedAt = DateTime.Now,
                 UpdatedAt = null,
             };
 
