@@ -255,6 +255,11 @@ const props = defineProps({
 
 const emits = defineEmits(["close", "confirmaAccion"]);
 
+// Función para recargar el inventario
+const recargarInventario = async () => {
+  await fetchArticulos();
+};
+
 // Estados reactivos
 const isLoading = ref(false);
 const productos = ref([]);
@@ -285,6 +290,9 @@ onMounted(async () => {
     } else {
       getInv.value = `/api/v1/inventory/rooms/${props.habitacionID}`;
     }
+    
+    // Clear previous selections when mounting
+    seleccionados.value = [];
     
     await Promise.all([
       fetchCategorias(),
@@ -373,6 +381,7 @@ const handleImageError = (event) => {
 const toggleSeleccion = (producto) => {
   const index = seleccionados.value.findIndex(p => p.articuloId === producto.articuloId);
   if (index === -1) {
+    // Agregar producto a la selección
     seleccionados.value.push({
       articuloId: producto.articuloId,
       nombreArticulo: producto.nombreArticulo,
@@ -381,6 +390,8 @@ const toggleSeleccion = (producto) => {
       maximo: producto.cantidad,
     });
   } else {
+    // Remover producto de la selección - no necesitamos restaurar stock aquí
+    // porque el stock se descuenta solo al confirmar
     seleccionados.value.splice(index, 1);
   }
 };
@@ -393,7 +404,21 @@ const confirmarAccion = () => {
   if (seleccionados.value.length === 0) return;
   
   isLoading.value = true;
+  
+  // Descontar stock localmente para reflejar el consumo inmediatamente
+  seleccionados.value.forEach(itemSeleccionado => {
+    const producto = productos.value.find(p => p.articuloId === itemSeleccionado.articuloId);
+    if (producto) {
+      producto.cantidad = Math.max(0, producto.cantidad - itemSeleccionado.cantidad);
+    }
+  });
+  
+  // Enviar productos seleccionados
   emits("confirmaAccion", seleccionados.value);
+  
+  // Limpiar selecciones
+  seleccionados.value = [];
+  
   emits("close");
 };
 
@@ -402,6 +427,11 @@ const InstitucionID = ref(null);
 function getDatosLogin() {
   InstitucionID.value = authStore.institucionID;
 }
+
+// Exponer funciones para el componente padre
+defineExpose({
+  recargarInventario
+});
 </script>
 
 <style scoped>

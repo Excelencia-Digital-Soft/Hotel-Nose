@@ -6,5 +6,5 @@
 export { useRoomUtils } from './useRoomUtils.js';
 export { useRoomFilters } from './useRoomFilters.js';
 export { useRoomActions } from './useRoomActions.js';
-export { useRoomWebSocket } from './useRoomWebSocket.js';
+export { useRoomWebSocket } from './useRoomWebSocket';
 export { useRoomView } from './useRoomView.js';

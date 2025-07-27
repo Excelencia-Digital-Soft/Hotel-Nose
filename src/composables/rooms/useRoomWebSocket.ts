@@ -7,6 +7,7 @@ import { onMounted, onUnmounted } from 'vue';
 import { useWebSocketStore } from '../../store/websocket';
 import { useRoomsStore } from '../../store/modules/roomsStore';
 import { configurationService } from '../../services/configurationService';
+import type { WebSocketEvent } from '../../types';
 
 export function useRoomWebSocket() {
   const websocketStore = useWebSocketStore();
@@ -15,7 +16,7 @@ export function useRoomWebSocket() {
   /**
    * Handle WebSocket events related to rooms with optimized loading
    */
-  const handleWebSocketEvent = (data) => {
+  const handleWebSocketEvent = (data: WebSocketEvent): void => {
     console.log('🔄 Room WebSocket event received:', data.type);
 
     switch (data.type) {
@@ -90,7 +91,7 @@ export function useRoomWebSocket() {
   /**
    * Get and set timer update interval from configuration
    */
-  const setupTimerInterval = async () => {
+  const setupTimerInterval = async (): Promise<number> => {
     try {
       const result = await configurationService.getTimerUpdateInterval();
 
@@ -118,7 +119,7 @@ export function useRoomWebSocket() {
   /**
    * Initialize WebSocket connection for rooms
    */
-  const initializeWebSocket = () => {
+  const initializeWebSocket = (): void => {
     console.log('🔹 Registering WebSocket event listener for Rooms');
     websocketStore.registerEventCallback('RoomsModule', handleWebSocketEvent);
   };
@@ -126,7 +127,7 @@ export function useRoomWebSocket() {
   /**
    * Cleanup WebSocket connection
    */
-  const cleanupWebSocket = () => {
+  const cleanupWebSocket = (): void => {
     console.log('❌ Unregistering WebSocket event listener for Rooms');
     websocketStore.unregisterEventCallback('RoomsModule');
   };
@@ -134,7 +135,7 @@ export function useRoomWebSocket() {
   /**
    * Setup real-time monitoring
    */
-  const setupRealTimeMonitoring = async () => {
+  const setupRealTimeMonitoring = async (): Promise<void> => {
     // Initialize WebSocket
     initializeWebSocket();
 

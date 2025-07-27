@@ -69,21 +69,25 @@ export interface InventoryTransferDto {
   notes?: string;
 }
 
-// Movement history DTO
+// Movement history DTO (V1)
 export interface InventoryMovementDto {
   movementId: number;
+  inventoryId: number;
   articuloId: number;
   articuloNombre: string;
-  movementType: InventoryMovementType;
-  cantidad: number;
-  fromLocationId?: number;
-  fromLocationName?: string;
-  toLocationId?: number;
-  toLocationName?: string;
-  notes?: string;
+  tipoMovimiento: string;
+  cantidadCambiada: number;
+  cantidadAnterior: number;
+  cantidadNueva: number;
+  motivo: string;
+  numeroDocumento?: string;
+  tipoUbicacionOrigen?: InventoryLocationType;
+  tipoUbicacionDestino?: InventoryLocationType;
+  ubicacionIdOrigen?: number;
+  ubicacionIdDestino?: number;
   fechaMovimiento: string;
-  userId?: string;
-  userName?: string;
+  usuarioId?: string;
+  usuarioNombre?: string;
   institucionId: number;
 }
 
@@ -107,15 +111,40 @@ export interface InventorySummaryDto {
   items: InventoryItemSummaryDto[];
 }
 
-// Stock validation DTO
+// Stock validation DTO (V1)
 export interface StockValidationDto {
   isValid: boolean;
   errorMessage?: string;
   articuloId: number;
+  inventoryId: number;
   requestedQuantity: number;
   availableQuantity: number;
   locationType: InventoryLocationType;
   locationId?: number;
+}
+
+// Alert DTOs (V1)
+export interface InventoryAlertDto {
+  alertId: number;
+  inventoryId: number;
+  articuloId: number;
+  articuloNombre: string;
+  tipoAlerta: 'StockBajo' | 'StockCritico' | 'StockAgotado';
+  severidad: 'Baja' | 'Media' | 'Alta' | 'Critica';
+  cantidadActual: number;
+  umbralStockBajo?: number;
+  umbralStockCritico?: number;
+  locationType: InventoryLocationType;
+  locationId?: number;
+  locationName?: string;
+  mensaje: string;
+  fechaCreacion: string;
+  reconocida: boolean;
+  fechaReconocimiento?: string;
+  comentarios?: string;
+  usuarioId?: string;
+  usuarioNombre?: string;
+  institucionId: number;
 }
 
 // Filter interfaces for component usage

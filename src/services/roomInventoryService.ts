@@ -1,352 +1,352 @@
 import axiosClient from '../axiosClient'
 import type {
-  RoomInventoryDto,
-  RoomInventoryCreateDto,
-  RoomInventoryUpdateDto,
-  RoomInventoryBulkUpdateDto,
-  RoomInventorySummaryDto,
-  InventoryAlertDto,
-  RoomForInventoryDto,
-  ArticleForRoomDto,
+  InventoryDto,
+  InventoryCreateDto,
+  InventoryUpdateDto,
+  InventoryBatchUpdateDto,
   InventoryMovementDto,
-  RoomInventoryReportDto,
-  InventoryTransferDto,
-  RoomInventoryResponse,
-  RoomInventoryListResponse,
-  RoomInventorySummaryResponse,
-  InventoryAlertsResponse,
-  RoomForInventoryResponse,
-  ArticleForRoomResponse,
-  InventoryReportResponse,
-  ApiResponse
+  InventoryAlertDto,
+  StockValidationDto,
+  InventorySummaryDto,
+  InventoryLocationType,
+  ApiResponse,
 } from '../types'
 
 /**
- * Room Inventory Service
- * Handles all room inventory-related API calls
- * Base endpoint: /api/v1/room-inventory
+ * Inventory Service V1 - Complete Implementation
+ * Based on: Guía Completa: Administración de Inventario por Habitación - API V1
+ * 
+ * Endpoints:
+ * - General inventory management
+ * - Room-specific inventory
+ * - Transfers and movements
+ * - Alerts and notifications
+ * - Batch operations
+ * - Validation and reports
  */
-export class RoomInventoryService {
-  private static readonly BASE_URL = '/api/v1/room-inventory'
+export class InventoryService {
+  private static readonly BASE_URL = '/api/v1/inventory'
 
-  // Room Inventory CRUD Operations
-  static async getAllInventories(habitacionId?: number): Promise<RoomInventoryListResponse> {
-    const params = habitacionId ? { habitacionId } : undefined
+  // 🏠 1. General Inventory Management
+
+  /**
+   * Get all inventory with optional filters
+   * GET /api/v1/inventory
+   */
+  static async getAllInventory(params?: {
+    locationType?: InventoryLocationType
+    locationId?: number
+  }): Promise<ApiResponse<InventoryDto[]>> {
     const response = await axiosClient.get(this.BASE_URL, { params })
     return response.data
   }
 
-  static async getInventoryById(roomInventoryId: number): Promise<RoomInventoryResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/${roomInventoryId}`)
+  /**
+   * Get inventory for a specific room
+   * GET /api/v1/inventory/rooms/{roomId}
+   */
+  static async getRoomInventory(roomId: number): Promise<ApiResponse<InventoryDto[]>> {
+    const response = await axiosClient.get(`${this.BASE_URL}/rooms/${roomId}`)
     return response.data
   }
 
-  static async getInventoriesByRoom(habitacionId: number): Promise<RoomInventoryListResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/room/${habitacionId}`)
+  /**
+   * Get combined view (room + general available)
+   * GET /api/v1/inventory/rooms/{roomId}/combined
+   */
+  static async getCombinedInventory(roomId: number): Promise<ApiResponse<InventoryDto[]>> {
+    const response = await axiosClient.get(`${this.BASE_URL}/rooms/${roomId}/combined`)
     return response.data
   }
 
-  static async createInventory(data: RoomInventoryCreateDto): Promise<RoomInventoryResponse> {
+  /**
+   * Get general inventory of the hotel
+   * GET /api/v1/inventory/general
+   */
+  static async getGeneralInventory(): Promise<ApiResponse<InventoryDto[]>> {
+    const response = await axiosClient.get(`${this.BASE_URL}/general`)
+    return response.data
+  }
+
+  // 📦 2. CRUD Operations
+
+  /**
+   * Create new inventory item
+   * POST /api/v1/inventory
+   */
+  static async createInventory(data: InventoryCreateDto): Promise<ApiResponse<InventoryDto>> {
     const response = await axiosClient.post(this.BASE_URL, data)
     return response.data
   }
 
-  static async updateInventory(roomInventoryId: number, data: RoomInventoryUpdateDto): Promise<RoomInventoryResponse> {
-    const response = await axiosClient.put(`${this.BASE_URL}/${roomInventoryId}`, data)
+  /**
+   * Update inventory quantity
+   * PUT /api/v1/inventory/{id}
+   */
+  static async updateInventory(id: number, data: InventoryUpdateDto): Promise<ApiResponse<InventoryDto>> {
+    const response = await axiosClient.put(`${this.BASE_URL}/${id}`, data)
     return response.data
   }
 
-  static async deleteInventory(roomInventoryId: number): Promise<ApiResponse> {
-    const response = await axiosClient.delete(`${this.BASE_URL}/${roomInventoryId}`)
+  /**
+   * Batch update inventory items
+   * PUT /api/v1/inventory/batch
+   */
+  static async batchUpdateInventory(data: InventoryBatchUpdateDto): Promise<ApiResponse<InventoryDto[]>> {
+    const response = await axiosClient.put(`${this.BASE_URL}/batch`, data)
     return response.data
   }
 
-  // Bulk Operations
-  static async bulkUpdateInventories(data: RoomInventoryBulkUpdateDto): Promise<RoomInventoryListResponse> {
-    const response = await axiosClient.put(`${this.BASE_URL}/bulk-update`, data)
-    return response.data
-  }
+  // 🔄 3. Movements and Traceability
 
-  static async initializeRoomInventory(habitacionId: number, articuloIds: number[]): Promise<RoomInventoryListResponse> {
-    const payload = { habitacionId, articuloIds }
-    const response = await axiosClient.post(`${this.BASE_URL}/initialize`, payload)
-    return response.data
-  }
-
-  // Inventory Summary and Reports
-  static async getRoomInventorySummary(habitacionId?: number): Promise<RoomInventorySummaryResponse> {
-    const params = habitacionId ? { habitacionId } : undefined
-    const response = await axiosClient.get(`${this.BASE_URL}/summary`, { params })
-    return response.data
-  }
-
-  static async getInventoryReport(habitacionId: number): Promise<InventoryReportResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/report/${habitacionId}`)
-    return response.data
-  }
-
-  static async getInventoryReportByDateRange(
-    habitacionId: number, 
-    fechaInicio: string, 
-    fechaFin: string
-  ): Promise<InventoryReportResponse> {
-    const params = { fechaInicio, fechaFin }
-    const response = await axiosClient.get(`${this.BASE_URL}/report/${habitacionId}/date-range`, { params })
-    return response.data
-  }
-
-  // Inventory Alerts
-  static async getInventoryAlerts(habitacionId?: number): Promise<InventoryAlertsResponse> {
-    const params = habitacionId ? { habitacionId } : undefined
-    const response = await axiosClient.get(`${this.BASE_URL}/alerts`, { params })
-    return response.data
-  }
-
-  static async getLowStockAlerts(): Promise<InventoryAlertsResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/alerts/low-stock`)
-    return response.data
-  }
-
-  static async getOutOfStockAlerts(): Promise<InventoryAlertsResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/alerts/out-of-stock`)
-    return response.data
-  }
-
-  static async getCriticalAlerts(): Promise<InventoryAlertsResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/alerts/critical`)
-    return response.data
-  }
-
-  // Room and Article Data
-  static async getAvailableRooms(): Promise<RoomForInventoryResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/rooms/available`)
-    return response.data
-  }
-
-  static async getRoomsWithInventory(): Promise<RoomForInventoryResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/rooms/with-inventory`)
-    return response.data
-  }
-
-  static async getArticlesForRoom(habitacionId: number): Promise<ArticleForRoomResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/rooms/${habitacionId}/articles`)
-    return response.data
-  }
-
-  static async getAvailableArticles(): Promise<ArticleForRoomResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/articles/available`)
-    return response.data
-  }
-
-  // Inventory Movements
-  static async getInventoryMovements(
-    roomInventoryId: number,
-    limit?: number
-  ): Promise<ApiResponse<InventoryMovementDto[]>> {
-    const params = limit ? { limit } : undefined
-    const response = await axiosClient.get(`${this.BASE_URL}/${roomInventoryId}/movements`, { params })
-    return response.data
-  }
-
-  static async addInventoryMovement(
-    roomInventoryId: number,
-    tipoMovimiento: 'ENTRADA' | 'SALIDA' | 'AJUSTE' | 'CONSUMO' | 'REPOSICION',
-    cantidad: number,
+  /**
+   * Register inventory movement
+   * POST /api/v1/inventory/{id}/movements
+   */
+  static async registerMovement(inventoryId: number, data: {
+    tipoMovimiento: string
+    cantidadCambiada: number
     motivo: string
-  ): Promise<ApiResponse<InventoryMovementDto>> {
-    const payload = {
-      tipoMovimiento,
-      cantidad,
-      motivo
-    }
-    const response = await axiosClient.post(`${this.BASE_URL}/${roomInventoryId}/movements`, payload)
+    numeroDocumento?: string
+    tipoUbicacionOrigen?: InventoryLocationType
+    tipoUbicacionDestino?: InventoryLocationType
+    ubicacionIdDestino?: number
+  }): Promise<ApiResponse<InventoryMovementDto>> {
+    const response = await axiosClient.post(`${this.BASE_URL}/${inventoryId}/movements`, data)
     return response.data
   }
 
-  // Inventory Adjustments
-  static async adjustInventoryQuantity(
-    roomInventoryId: number,
-    nuevaCantidad: number,
+  /**
+   * Get movement history for an item
+   * GET /api/v1/inventory/{id}/movements
+   */
+  static async getMovementHistory(inventoryId: number): Promise<ApiResponse<InventoryMovementDto[]>> {
+    const response = await axiosClient.get(`${this.BASE_URL}/${inventoryId}/movements`)
+    return response.data
+  }
+
+  /**
+   * Get complete audit of movements
+   * GET /api/v1/inventory/movements/audit
+   */
+  static async getMovementAudit(params?: {
+    fechaInicio?: string
+    fechaFin?: string
+    tipoMovimiento?: string
+    articuloId?: number
+    usuarioId?: string
+    pagina?: number
+    tamañoPagina?: number
+  }): Promise<ApiResponse<InventoryMovementDto[]>> {
+    const response = await axiosClient.get(`${this.BASE_URL}/movements/audit`, { params })
+    return response.data
+  }
+
+  // 🚨 4. Alert System
+
+  /**
+   * Get active alerts
+   * GET /api/v1/inventory/alerts/active
+   */
+  static async getActiveAlerts(params?: {
+    tipoAlerta?: 'StockBajo' | 'StockCritico' | 'StockAgotado'
+    severidad?: 'Baja' | 'Media' | 'Alta' | 'Critica'
+    soloNoReconocidas?: boolean
+    tipoUbicacion?: InventoryLocationType
+  }): Promise<ApiResponse<InventoryAlertDto[]>> {
+    const response = await axiosClient.get(`${this.BASE_URL}/alerts/active`, { params })
+    return response.data
+  }
+
+  /**
+   * Configure alerts for inventory item
+   * POST /api/v1/inventory/alerts/configure
+   */
+  static async configureAlerts(data: {
+    inventarioId: number
+    umbralStockBajo: number
+    umbralStockCritico: number
+    alertasStockBajoActivas: boolean
+    notificacionEmailActiva: boolean
+  }): Promise<ApiResponse<any>> {
+    const response = await axiosClient.post(`${this.BASE_URL}/alerts/configure`, data)
+    return response.data
+  }
+
+  /**
+   * Acknowledge alert
+   * PUT /api/v1/inventory/alerts/{alertId}/acknowledge
+   */
+  static async acknowledgeAlert(alertId: number, data: {
+    comentarios?: string
+    resolverAlerta?: boolean
+  }): Promise<ApiResponse<any>> {
+    const response = await axiosClient.put(`${this.BASE_URL}/alerts/${alertId}/acknowledge`, data)
+    return response.data
+  }
+
+  // ⚡ 5. Transfers (Recommended for Reloads)
+
+  /**
+   * Simple transfer between locations
+   * POST /api/v1/inventory/transfer
+   */
+  static async createTransfer(data: {
+    tipoUbicacionOrigen: InventoryLocationType
+    tipoUbicacionDestino: InventoryLocationType
+    ubicacionIdDestino?: number
+    prioridad?: 'Baja' | 'Media' | 'Alta'
     motivo: string
-  ): Promise<RoomInventoryResponse> {
-    const payload = {
-      cantidad: nuevaCantidad,
-      motivo
-    }
-    const response = await axiosClient.put(`${this.BASE_URL}/${roomInventoryId}/adjust`, payload)
-    return response.data
-  }
-
-  static async increaseInventory(
-    roomInventoryId: number,
-    cantidad: number,
-    motivo: string
-  ): Promise<RoomInventoryResponse> {
-    const payload = { cantidad, motivo }
-    const response = await axiosClient.put(`${this.BASE_URL}/${roomInventoryId}/increase`, payload)
-    return response.data
-  }
-
-  static async decreaseInventory(
-    roomInventoryId: number,
-    cantidad: number,
-    motivo: string
-  ): Promise<RoomInventoryResponse> {
-    const payload = { cantidad, motivo }
-    const response = await axiosClient.put(`${this.BASE_URL}/${roomInventoryId}/decrease`, payload)
-    return response.data
-  }
-
-  // Inventory Transfers
-  static async transferInventory(data: InventoryTransferDto): Promise<ApiResponse<{
-    origen: RoomInventoryDto
-    destino: RoomInventoryDto
-  }>> {
+    requireAprobacion?: boolean
+    detalles: Array<{
+      inventarioId: number
+      cantidadSolicitada: number
+    }>
+  }): Promise<ApiResponse<any>> {
     const response = await axiosClient.post(`${this.BASE_URL}/transfer`, data)
     return response.data
   }
 
-  static async getTransferHistory(habitacionId?: number): Promise<ApiResponse<InventoryMovementDto[]>> {
-    const params = habitacionId ? { habitacionId } : undefined
-    const response = await axiosClient.get(`${this.BASE_URL}/transfers/history`, { params })
+  /**
+   * Batch transfers (Multiple rooms)
+   * POST /api/v1/inventory/transfer/batch
+   */
+  static async createBatchTransfer(data: {
+    procesamientoAtomico?: boolean
+    transferencias: Array<{
+      tipoUbicacionOrigen: InventoryLocationType
+      tipoUbicacionDestino: InventoryLocationType
+      ubicacionIdDestino?: number
+      motivo: string
+      detalles: Array<{
+        inventarioId: number
+        cantidadSolicitada: number
+      }>
+    }>
+  }): Promise<ApiResponse<any>> {
+    const response = await axiosClient.post(`${this.BASE_URL}/transfer/batch`, data)
     return response.data
   }
 
-  // Stock Management
-  static async replenishStock(
-    roomInventoryId: number,
-    cantidadReponer: number,
-    motivo?: string
-  ): Promise<RoomInventoryResponse> {
-    const payload = {
-      cantidadReponer,
-      motivo: motivo || 'Reposición de stock'
+  /**
+   * Get pending transfers
+   * GET /api/v1/inventory/transfer/pending
+   */
+  static async getPendingTransfers(): Promise<ApiResponse<any[]>> {
+    const response = await axiosClient.get(`${this.BASE_URL}/transfer/pending`)
+    return response.data
+  }
+
+  /**
+   * Approve transfer
+   * PUT /api/v1/inventory/transfer/{id}/approve
+   */
+  static async approveTransfer(transferId: number, data: {
+    comentarios?: string
+  }): Promise<ApiResponse<any>> {
+    const response = await axiosClient.put(`${this.BASE_URL}/transfer/${transferId}/approve`, data)
+    return response.data
+  }
+
+  // 📊 Additional Utility Methods
+
+  /**
+   * Validate stock availability
+   * GET /api/v1/inventory/validate-stock
+   */
+  static async validateStock(params: {
+    articuloId: number
+    cantidad: number
+    locationType?: InventoryLocationType
+  }): Promise<ApiResponse<StockValidationDto>> {
+    const response = await axiosClient.get(`${this.BASE_URL}/validate-stock`, { params })
+    return response.data
+  }
+
+  /**
+   * Get inventory summary
+   * GET /api/v1/inventory/summary
+   */
+  static async getInventorySummary(): Promise<ApiResponse<InventorySummaryDto[]>> {
+    const response = await axiosClient.get(`${this.BASE_URL}/summary`)
+    return response.data
+  }
+
+  // 🎯 Utility Functions for Frontend
+
+  /**
+   * Reload room stock - Common use case implementation
+   */
+  static async reloadRoomStock(roomId: number, articuloId: number, cantidad: number): Promise<ApiResponse<any>> {
+    // 1. Validate stock availability
+    const validation = await this.validateStock({
+      articuloId,
+      cantidad,
+      locationType: InventoryLocationType.General
+    })
+
+    if (!validation.data.isValid) {
+      throw new Error(`Stock insuficiente. Disponible: ${validation.data.availableQuantity}`)
     }
-    const response = await axiosClient.put(`${this.BASE_URL}/${roomInventoryId}/replenish`, payload)
-    return response.data
+
+    // 2. Create transfer
+    return await this.createTransfer({
+      tipoUbicacionOrigen: InventoryLocationType.General,
+      tipoUbicacionDestino: InventoryLocationType.Room,
+      ubicacionIdDestino: roomId,
+      prioridad: 'Media',
+      motivo: `Recarga habitación ${roomId}`,
+      requireAprobacion: false,
+      detalles: [{
+        inventarioId: validation.data.inventoryId,
+        cantidadSolicitada: cantidad
+      }]
+    })
   }
 
-  static async setStockLimits(
-    roomInventoryId: number,
+  /**
+   * Quick stock check for room
+   */
+  static async checkRoomStock(roomId: number): Promise<{
+    items: InventoryDto[]
+    alerts: InventoryAlertDto[]
+    needsReload: boolean
+  }> {
+    const [stockResponse, alertsResponse] = await Promise.all([
+      this.getRoomInventory(roomId),
+      this.getActiveAlerts({ tipoUbicacion: InventoryLocationType.Room })
+    ])
+
+    const roomAlerts = alertsResponse.data.filter(
+      (alert: any) => alert.ubicacionId === roomId
+    )
+
+    return {
+      items: stockResponse.data,
+      alerts: roomAlerts,
+      needsReload: roomAlerts.length > 0
+    }
+  }
+
+  // Static validation helpers
+  static validateInventoryLimits(
+    cantidad: number,
     cantidadMinima: number,
     cantidadMaxima: number
-  ): Promise<RoomInventoryResponse> {
-    const payload = {
-      cantidadMinima,
-      cantidadMaxima
-    }
-    const response = await axiosClient.put(`${this.BASE_URL}/${roomInventoryId}/limits`, payload)
-    return response.data
-  }
-
-  // Search and Filtering
-  static async searchInventories(query: {
-    habitacionId?: number
-    articuloId?: number
-    categoria?: string
-    bajoStock?: boolean
-    agotados?: boolean
-    busqueda?: string
-  }): Promise<RoomInventoryListResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/search`, { params: query })
-    return response.data
-  }
-
-  static async getInventoriesByCategory(categoria: string): Promise<RoomInventoryListResponse> {
-    const response = await axiosClient.get(`${this.BASE_URL}/category/${encodeURIComponent(categoria)}`)
-    return response.data
-  }
-
-  // Statistics and Analytics
-  static async getInventoryStatistics(): Promise<ApiResponse<{
-    totalRoomsWithInventory: number
-    totalArticlesInInventory: number
-    totalValueInventory: number
-    lowStockCount: number
-    outOfStockCount: number
-    averageStockLevel: number
-    topCategories: Array<{ categoria: string; count: number; value: number }>
-  }>> {
-    const response = await axiosClient.get(`${this.BASE_URL}/statistics`)
-    return response.data
-  }
-
-  static async getRoomInventoryStats(habitacionId: number): Promise<ApiResponse<{
-    totalArticulos: number
-    valorTotal: number
-    articulosBajoStock: number
-    articulosAgotados: number
-    ultimaActualizacion: string
-    categorias: Array<{ categoria: string; count: number; value: number }>
-  }>> {
-    const response = await axiosClient.get(`${this.BASE_URL}/statistics/room/${habitacionId}`)
-    return response.data
-  }
-
-  // Validation and Utility Methods
-  static validateInventoryLimits(cantidad: number, cantidadMinima: number, cantidadMaxima: number): boolean {
+  ): boolean {
     return cantidad >= 0 && cantidadMinima >= 0 && cantidadMaxima >= cantidadMinima
-  }
-
-  static validateTransfer(
-    origenCantidad: number,
-    cantidadTransferir: number
-  ): { valid: boolean; error?: string } {
-    if (cantidadTransferir <= 0) {
-      return { valid: false, error: 'La cantidad a transferir debe ser mayor a 0' }
-    }
-    if (cantidadTransferir > origenCantidad) {
-      return { valid: false, error: 'No hay suficiente stock para realizar la transferencia' }
-    }
-    return { valid: true }
   }
 
   static calculateStockStatus(
     cantidad: number,
-    cantidadMinima: number,
-    cantidadMaxima: number
-  ): 'OK' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'OVERSTOCKED' {
+    cantidadMinima: number = 5
+  ): 'OK' | 'LOW_STOCK' | 'OUT_OF_STOCK' {
     if (cantidad === 0) return 'OUT_OF_STOCK'
     if (cantidad <= cantidadMinima) return 'LOW_STOCK'
-    if (cantidad > cantidadMaxima) return 'OVERSTOCKED'
     return 'OK'
-  }
-
-  // Export/Import functionality
-  static async exportRoomInventory(habitacionId: number, format: 'CSV' | 'EXCEL' = 'EXCEL'): Promise<Blob> {
-    const response = await axiosClient.get(`${this.BASE_URL}/export/room/${habitacionId}`, {
-      params: { format },
-      responseType: 'blob'
-    })
-    return response.data
-  }
-
-  static async exportAllInventories(format: 'CSV' | 'EXCEL' = 'EXCEL'): Promise<Blob> {
-    const response = await axiosClient.get(`${this.BASE_URL}/export/all`, {
-      params: { format },
-      responseType: 'blob'
-    })
-    return response.data
-  }
-
-  static async importInventory(file: File, habitacionId?: number): Promise<ApiResponse<{
-    imported: number
-    errors: Array<{ row: number; error: string }>
-  }>> {
-    const formData = new FormData()
-    formData.append('file', file)
-    if (habitacionId) {
-      formData.append('habitacionId', habitacionId.toString())
-    }
-
-    const response = await axiosClient.post(`${this.BASE_URL}/import`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-    return response.data
   }
 }
 
-// Export singleton pattern for consistency
-export const roomInventoryService = RoomInventoryService
+// Export both class and singleton for compatibility
+export const inventoryService = InventoryService
+export { InventoryService as RoomInventoryService } // Backward compatibility

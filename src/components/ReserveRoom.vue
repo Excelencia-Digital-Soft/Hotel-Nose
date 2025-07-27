@@ -332,13 +332,6 @@
 
             <!-- Modals -->
             <ModalPagar v-if="modalPayment" 
-              :periodo="Number(periodoCost) || 0" 
-              :consumo="consumos.reduce((sum, consumo) => sum + (consumo.total || 0), 0)" 
-              :total="Number(totalAmount) || 0" 
-              :adicional="Number(adicional) || 0"
-              :habitacionId="selectedRoom.HabitacionID" 
-              :visitaId="selectedRoom.VisitaID" 
-              :pausa="Boolean(Pausa)"
               @close="modalPayment = false" 
               @confirm-payment="handlePaymentConfirmation" />
 
@@ -349,6 +342,7 @@
               @ocupacion-anulada="handleOcupacionAnulada" />
               
             <ModalConsumo v-if="modalConsumo" 
+              ref="modalConsumoRef"
               :name="selectedRoom.Identificador"
               :habitacionID="selectedRoom.HabitacionID" 
               :consumoHabitacion="esConsumoHabitacion"
@@ -381,6 +375,11 @@ import { useTimer } from '../composables/useTimer'
 import { usePromociones } from '../composables/usePromociones'
 import { useConsumos } from '../composables/useConsumos'
 import { useReservas } from '../composables/useReservas'
+import { usePaymentProvider } from '../composables/usePaymentProvider'
+
+// Import services and types
+import { InventoryService } from '../services/roomInventoryService.ts'
+import { InventoryLocationType } from '../types/inventory'
 
 // Props and emits
 const emits = defineEmits(['close-modal', 'update-room', 'update-tiempo', 'room-checkout'])
@@ -441,8 +440,12 @@ const {
   handleOcupacionAnulada
 } = useReservas(selectedRoom, USE_V1_API)
 
+// Initialize payment provider
+const paymentProvider = usePaymentProvider()
+
 // Local modal states
 const modalConsumo = ref(false)
+const modalConsumoRef = ref(null)
 const modalPayment = ref(false)
 const totalAmount = ref(0)
 const esConsumoHabitacion = ref(false)
@@ -502,18 +505,79 @@ const toggleModalConsumo = async (esHabitacion) => {
   await nextTick()
   modalConsumo.value = true
   
+  // El stock se maneja localmente, no necesitamos recargar desde API
+  // Solo recargamos al abrir para obtener datos frescos del servidor
+  
   setTimeout(() => {
     isToggling = false
   }, 300)
 }
 
-const confirmAndSend = (ConfirmedArticles) => {
-  if (esConsumoHabitacion.value) {
-    agregarConsumosHabitacion(ConfirmedArticles)
-  } else {
-    agregarConsumos(ConfirmedArticles)
+const confirmAndSend = async (ConfirmedArticles) => {
+  try {
+    // 1. Agregar los consumos
+    if (esConsumoHabitacion.value) {
+      await agregarConsumosHabitacion(ConfirmedArticles)
+    } else {
+      await agregarConsumos(ConfirmedArticles)
+    }
+    
+    // 2. Actualizar el stock en el inventario
+    // Obtener el inventario una sola vez
+    let inventoryResponse
+    if (esConsumoHabitacion.value) {
+      inventoryResponse = await InventoryService.getRoomInventory(selectedRoom.value.HabitacionID)
+    } else {
+      inventoryResponse = await InventoryService.getGeneralInventory()
+    }
+    
+    // Registrar movimientos de inventario para cada artículo consumido
+    const movementPromises = ConfirmedArticles.map(async (item) => {
+      try {
+        // Encontrar el item de inventario correspondiente
+        const inventoryItem = inventoryResponse.data.find(inv => inv.articuloId === item.articuloId)
+        
+        if (inventoryItem) {
+          // Registrar el movimiento de consumo
+          return await InventoryService.registerMovement(inventoryItem.inventoryId, {
+            tipoMovimiento: 'Consumo',
+            cantidadCambiada: -item.cantidad, // Negativo porque es una salida
+            motivo: `Consumo en habitación ${selectedRoom.value.NombreHabitacion}`,
+            numeroDocumento: `VISITA-${selectedRoom.value.VisitaID}`,
+            tipoUbicacionOrigen: esConsumoHabitacion.value ? InventoryLocationType.Room : InventoryLocationType.General,
+            ubicacionIdOrigen: esConsumoHabitacion.value ? selectedRoom.value.HabitacionID : undefined
+          })
+        } else {
+          console.warn(`No se encontró inventario para artículo ${item.articuloId}`)
+        }
+      } catch (error) {
+        console.error(`Error al actualizar stock para artículo ${item.articuloId}:`, error)
+      }
+    })
+    
+    // Ejecutar todos los movimientos en paralelo
+    await Promise.all(movementPromises)
+    
+    // Mostrar mensaje de éxito adicional
+    toast.add({
+      severity: 'success',
+      summary: 'Stock actualizado',
+      detail: 'El inventario ha sido actualizado correctamente',
+      life: 3000
+    })
+    
+    modalConsumo.value = false
+    
+  } catch (error) {
+    console.error('Error al procesar consumos:', error)
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'Hubo un problema al actualizar el inventario',
+      life: 5000
+    })
+    modalConsumo.value = false
   }
-  modalConsumo.value = false
 }
 
 // OverlayPanel handlers
@@ -618,6 +682,17 @@ const continuePaymentProcess = () => {
     isProcessingPayment.value = false
     return
   }
+
+  // Initialize payment provider with calculated data
+  paymentProvider.updatePaymentData({
+    periodo: totales.periodoCostValue,
+    consumo: totales.consumoTotal,
+    adicional: totales.adicionalValue,
+    total: totales.total,
+    visitaId: selectedRoom.value.VisitaID,
+    habitacionId: selectedRoom.value.HabitacionID,
+    pausa: Boolean(Pausa.value)
+  })
 
   totalAmount.value = totales.total
   modalPayment.value = true

@@ -92,27 +92,54 @@ import { fetchImage } from '../services/imageService';
 const fetchInventario = async () => {
   isLoading.value = true;
   try {
-    const response = await axiosClient.get(`/api/Inventario/GetInventario?habitacionID=${habitacionID.value}`);
-    if (response.data && response.data.data) {
+    // Use new V1 API endpoint
+    const response = await axiosClient.get(`/api/v1/inventory/rooms/${habitacionID.value}`);
+    if (response.data && response.data.isSuccess) {
       // Map over inventory data and fetch images for each articulo
       inventario.value = await Promise.all(
         response.data.data.map(async (item) => {
-          const imageUrl = await fetchImage(item.articulo.articuloId); // Fetch the image URL
+          const imageUrl = await fetchImage(item.articuloId); // Fetch the image URL
           return {
             ...item,
+            // Adapt V1 API structure to component expectations
+            inventarioId: item.inventoryId,
             articulo: {
-              ...item.articulo,
-              imageUrl, // Include the image URL
+              articuloId: item.articuloId,
+              nombreArticulo: item.articuloNombre,
+              precio: item.articuloPrecio,
+              descripcion: item.articuloDescripcion,
+              imageUrl,
             },
           };
         })
       );
-      console.log(inventario.value);
+      console.log('V1 Inventory loaded:', inventario.value);
     } else {
-      console.error("Datos de la API no válidos:", response.data);
+      console.error("Error en respuesta de API V1:", response.data);
     }
   } catch (error) {
-    console.error("Error al obtener el inventario:", error);
+    console.error("Error al obtener el inventario V1:", error);
+    // Fallback to old API if V1 fails
+    try {
+      const fallbackResponse = await axiosClient.get(`/api/Inventario/GetInventario?habitacionID=${habitacionID.value}`);
+      if (fallbackResponse.data && fallbackResponse.data.data) {
+        inventario.value = await Promise.all(
+          fallbackResponse.data.data.map(async (item) => {
+            const imageUrl = await fetchImage(item.articulo.articuloId);
+            return {
+              ...item,
+              articulo: {
+                ...item.articulo,
+                imageUrl,
+              },
+            };
+          })
+        );
+        console.log('Fallback inventory loaded');
+      }
+    } catch (fallbackError) {
+      console.error("Error en fallback:", fallbackError);
+    }
   } finally {
     isLoading.value = false;
   }

@@ -7,7 +7,7 @@
  * @param {string} url - The URL to normalize
  * @returns {string} - URL with trailing slash
  */
-export function ensureTrailingSlash(url) {
+export function ensureTrailingSlash(url: string): string {
   if (!url) return '/';
   return url.endsWith('/') ? url : `${url}/`;
 }
@@ -17,7 +17,7 @@ export function ensureTrailingSlash(url) {
  * @param {string} url - The URL to normalize
  * @returns {string} - URL without trailing slash
  */
-export function removeTrailingSlash(url) {
+export function removeTrailingSlash(url: string): string {
   if (!url) return '';
   return url.endsWith('/') ? url.slice(0, -1) : url;
 }
@@ -28,7 +28,7 @@ export function removeTrailingSlash(url) {
  * @param {string} endpoint - WebSocket endpoint (default: 'notifications')
  * @returns {string} - Properly formatted WebSocket URL
  */
-export function buildWebSocketUrl(baseUrl, endpoint = 'notifications') {
+export function buildWebSocketUrl(baseUrl: string, endpoint: string = 'notifications'): string {
   const normalizedBase = ensureTrailingSlash(baseUrl);
   return `${normalizedBase}${endpoint}`;
 }
@@ -39,7 +39,7 @@ export function buildWebSocketUrl(baseUrl, endpoint = 'notifications') {
  * @param {string} endpoint - API endpoint
  * @returns {string} - Properly formatted API URL
  */
-export function buildApiUrl(baseUrl, endpoint) {
+export function buildApiUrl(baseUrl: string, endpoint: string): string {
   const normalizedBase = ensureTrailingSlash(baseUrl);
   // Remove leading slash from endpoint if present
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;

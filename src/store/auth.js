@@ -184,7 +184,7 @@ export const useAuthStore = defineStore('auth', {
 
     async connectWebSocket() {
       try {
-        const { useWebSocketStore } = await import('./websocket.js');
+        const { useWebSocketStore } = await import('./websocket');
         const websocketStore = useWebSocketStore();
         await websocketStore.connect();
       } catch (error) {
@@ -197,6 +197,11 @@ export const useAuthStore = defineStore('auth', {
         if (this.token) {
           await axiosClient.post('/api/v1/authentication/logout');
         }
+        
+        // Disconnect WebSocket
+        const { useWebSocketStore } = await import('./websocket');
+        const websocketStore = useWebSocketStore();
+        await websocketStore.disconnect();
       } catch (error) {
         console.error('Logout error:', error);
       } finally {

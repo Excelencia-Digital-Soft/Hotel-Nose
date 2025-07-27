@@ -22,6 +22,11 @@ export const ROUTER_CONFIG = {
     SUBMIT_ORDER: "SubmitOrder",
     RECEPTION_ORDER: "ReceptionOrder",
     INVENTORY_MANAGER: "InventoryManager",
+    // V1 Inventory System Routes
+    ROOM_INVENTORY_MANAGER: "RoomInventoryManager",
+    INVENTORY_ALERTS: "InventoryAlerts",
+    INVENTORY_TRANSFERS: "InventoryTransfers",
+    // Legacy and other routes
     CIERRES_MANAGER: "CierresManager",
     EMPENOS_MANAGER: "EmpenosManager",
     PROMOCIONES_MANAGER: "PromocionesManager",

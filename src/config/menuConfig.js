@@ -34,7 +34,7 @@ export const operationalMenuConfig = [
   },
   {
     id: 'inventory',
-    label: 'Artículos',
+    label: 'Inventario',
     icon: 'inventory_2',
     variant: 'secondary',
     roles: [...ROLE_GROUPS.OPERATIONAL, ...ROLE_GROUPS.ADMIN_ACCESS],
@@ -50,12 +50,32 @@ export const operationalMenuConfig = [
         route: { name: 'InventoryManager' },
         icon: 'warehouse',
         roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+        badge: 'V1',
+        description: 'Gestión completa del inventario general con API V1'
       },
       {
         label: 'Inventario por Habitación',
-        route: { name: 'RoomInventory' },
-        icon: 'inventory',
+        route: { name: 'RoomInventoryManager' },
+        icon: 'hotel',
         roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+        badge: 'V1',
+        description: 'Administración de inventario específico por habitación'
+      },
+      {
+        label: 'Alertas de Stock',
+        route: { name: 'InventoryAlerts' },
+        icon: 'notifications_active',
+        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+        badge: 'Nuevo',
+        description: 'Monitoreo de alertas de stock bajo y crítico'
+      },
+      {
+        label: 'Transferencias',
+        route: { name: 'InventoryTransfers' },
+        icon: 'swap_horizontal_circle',
+        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+        badge: 'V1',
+        description: 'Transferencias entre habitaciones y lotes'
       },
     ],
   },

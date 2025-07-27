@@ -213,7 +213,7 @@
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
           v-for="item in filteredInventory"
-          :key="item.inventarioId"
+          :key="item.inventoryId || item.inventarioId"
           class="glass-card p-4 hover:bg-white/15 transition-all duration-300 group transform hover:scale-105"
           :class="{
             'border-red-500/50': item.cantidad === 0,
@@ -225,7 +225,7 @@
           <div class="flex items-start justify-between mb-4">
             <div class="flex-1">
               <h4 class="text-white font-semibold text-lg mb-1 line-clamp-2">
-                {{ item.articulo?.nombreArticulo || 'Producto sin nombre' }}
+                {{ item.articuloNombre || item.articulo?.nombreArticulo || 'Producto sin nombre' }}
               </h4>
               <div class="flex items-center space-x-2">
                 <span 
@@ -393,6 +393,8 @@ import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
 import axiosClient from '../axiosClient'
 import { useAuthStore } from '../store/auth.js'
+import { useGeneralInventory } from '../composables/useRoomInventory'
+import { useGlobalAlerts } from '../composables/useInventoryAlerts'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 
@@ -401,7 +403,11 @@ const toast = useToast()
 const confirm = useConfirm()
 const authStore = useAuthStore()
 
-// State
+// New V1 composables
+const generalInventory = useGeneralInventory()
+const globalAlerts = useGlobalAlerts()
+
+// State (keeping existing for compatibility)
 const inventory = ref([])
 const isLoading = ref(true)
 const isUpdating = ref(false)
@@ -412,30 +418,48 @@ const showBulkEdit = ref(false)
 const bulkAmount = ref(10)
 const changedItems = ref(new Set())
 
-// Computed
-const totalItems = computed(() => inventory.value?.length || 0)
+// Computed (enhanced with V1 data)
+const totalItems = computed(() => {
+  // Use V1 data if available, fallback to legacy
+  return generalInventory.inventory.value?.length || inventory.value?.length || 0
+})
 
 const totalStock = computed(() => {
-  if (!inventory.value || !Array.isArray(inventory.value)) return 0
-  return inventory.value.reduce((sum, item) => sum + (item.cantidad || 0), 0)
+  const items = generalInventory.inventory.value?.length > 0 
+    ? generalInventory.inventory.value 
+    : inventory.value
+    
+  if (!items || !Array.isArray(items)) return 0
+  return items.reduce((sum, item) => sum + (item.cantidad || 0), 0)
 })
 
 const lowStockCount = computed(() => {
-  if (!inventory.value || !Array.isArray(inventory.value)) return 0
-  return inventory.value.filter(item => item.cantidad <= 5 && item.cantidad > 0).length
+  const items = generalInventory.inventory.value?.length > 0 
+    ? generalInventory.inventory.value 
+    : inventory.value
+    
+  if (!items || !Array.isArray(items)) return 0
+  return items.filter(item => item.cantidad <= 5 && item.cantidad > 0).length
 })
 
 const filteredInventory = computed(() => {
-  if (!inventory.value || !Array.isArray(inventory.value)) return []
+  // Use V1 data if available, fallback to legacy
+  const items = generalInventory.inventory.value?.length > 0 
+    ? generalInventory.inventory.value 
+    : inventory.value
+    
+  if (!items || !Array.isArray(items)) return []
   
-  let filtered = [...inventory.value]
+  let filtered = [...items]
 
   // Search filter
   if (keyword.value) {
     const term = keyword.value.toLowerCase()
-    filtered = filtered.filter(item => 
-      item.articulo?.nombreArticulo?.toLowerCase().includes(term)
-    )
+    filtered = filtered.filter(item => {
+      // Support both V1 and legacy structure
+      const itemName = item.articuloNombre || item.articulo?.nombreArticulo || ''
+      return itemName.toLowerCase().includes(term)
+    })
   }
 
   // Stock filter
@@ -460,7 +484,9 @@ const filteredInventory = computed(() => {
         return b.cantidad - a.cantidad
       case 'name':
       default:
-        return (a.articulo?.nombreArticulo || '').localeCompare(b.articulo?.nombreArticulo || '')
+        const nameA = a.articuloNombre || a.articulo?.nombreArticulo || ''
+        const nameB = b.articuloNombre || b.articulo?.nombreArticulo || ''
+        return nameA.localeCompare(nameB)
     }
   })
 
@@ -549,6 +575,33 @@ const fetchInventory = async () => {
 
   try {
     isLoading.value = true
+    
+    // Try V1 API first
+    try {
+      await generalInventory.fetchInventory()
+      
+      // Map V1 data to legacy format for compatibility
+      if (generalInventory.inventory.value?.length > 0) {
+        inventory.value = generalInventory.inventory.value.map((item) => ({
+          ...item,
+          inventarioId: item.inventoryId,
+          newStock: item.cantidad, // Initialize editable stock quantity
+          articulo: {
+            articuloId: item.articuloId,
+            nombreArticulo: item.articuloNombre,
+            precio: item.articuloPrecio,
+            descripcion: item.articuloDescripcion
+          }
+        }))
+        changedItems.value.clear()
+        showSuccess('📦 Inventario V1 cargado correctamente')
+        return
+      }
+    } catch (v1Error) {
+      console.warn('V1 API failed, falling back to legacy:', v1Error)
+    }
+    
+    // Fallback to legacy API
     const response = await axiosClient.get(`/GetInventarioGeneral?InstitucionID=${institucionID}`)
     
     if (response.data && response.data.data) {
@@ -557,7 +610,7 @@ const fetchInventory = async () => {
         newStock: item.cantidad, // Initialize editable stock quantity
       }))
       changedItems.value.clear()
-      showSuccess('📦 Inventario cargado correctamente')
+      showSuccess('📦 Inventario legacy cargado correctamente')
     }
   } catch (error) {
     console.error('Error fetching inventory:', error)
