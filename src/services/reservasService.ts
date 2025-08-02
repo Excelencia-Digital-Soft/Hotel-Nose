@@ -1,9 +1,15 @@
-import axiosClient from '../axiosClient';
-import { ApiResponse, ComprehensiveCancelRequest, CreateReservaRequestDto, ReservaResponseDto } from '../types';
+import axiosClient from '../axiosClient'
+import type {
+  ApiResponse,
+  ComprehensiveCancelRequest,
+  CreateReservaRequestDto,
+  ReservaResponseDto,
+} from '../types'
+import type { ReservaExtensionDto } from '../types/reserva'
 
 export class ReservasService {
   // Get reserva by ID
-  static async getReserva(reservaId) {
+  static async getReserva(reservaId: number) {
     try {
       const response = await axiosClient.get(`/api/v1/reservas/${reservaId}`)
       return response.data
@@ -25,7 +31,7 @@ export class ReservasService {
   }
 
   // Finalize reserva
-  static async finalizeReserva(reservaData) {
+  static async finalizeReserva(reservaData: number) {
     try {
       const response = await axiosClient.post('/api/v1/reservas/finalize', reservaData)
       return response.data
@@ -36,7 +42,7 @@ export class ReservasService {
   }
 
   // Pause ocupacion
-  static async pauseOcupacion(visitaId) {
+  static async pauseOcupacion(visitaId: number) {
     try {
       const response = await axiosClient.post(`/api/v1/reservas/${visitaId}/pause`)
       return response.data
@@ -47,7 +53,7 @@ export class ReservasService {
   }
 
   // Resume ocupacion
-  static async resumeOcupacion(visitaId) {
+  static async resumeOcupacion(visitaId: number) {
     try {
       const response = await axiosClient.post(`/api/v1/reservas/${visitaId}/resume`)
       return response.data
@@ -58,9 +64,14 @@ export class ReservasService {
   }
 
   // Update promotion
-  static async updatePromotion(reservaId: number, promocionId: number | null): Promise<ApiResponse> {
+  static async updatePromotion(
+    reservaId: number,
+    promocionId: number | null
+  ): Promise<ApiResponse> {
     try {
-      const response = await axiosClient.put(`/api/v1/reservas/${reservaId}/promotion`, { promocionId })
+      const response = await axiosClient.put(`/api/v1/reservas/${reservaId}/promotion`, {
+        promocionId,
+      })
       return response.data
     } catch (error) {
       console.error('Error updating promotion:', error)
@@ -69,7 +80,7 @@ export class ReservasService {
   }
 
   // Extend time
-  static async extendTime(reservaId, extensionData) {
+  static async extendTime(reservaId: number, extensionData: ReservaExtensionDto) {
     try {
       const response = await axiosClient.put(`/api/v1/reservas/${reservaId}/extend`, extensionData)
       return response.data
@@ -80,7 +91,7 @@ export class ReservasService {
   }
 
   // Cancel reserva
-  static async cancelReserva(reservaId) {
+  static async cancelReserva(reservaId: number) {
     try {
       const response = await axiosClient.delete(`/api/v1/reservas/${reservaId}`)
       return response.data
@@ -93,8 +104,11 @@ export class ReservasService {
   // Comprehensive cancel (cancels reserva and all associated consumos)
   static async comprehensiveCancel(reservaId: number, motivo: string): Promise<ApiResponse> {
     try {
-      const requestData: ComprehensiveCancelRequest = { motivo };
-      const response = await axiosClient.post(`/api/v1/reservas/${reservaId}/comprehensive-cancel`, requestData)
+      const requestData: ComprehensiveCancelRequest = { reason: motivo }
+      const response = await axiosClient.post(
+        `/api/v1/reservas/${reservaId}/comprehensive-cancel`,
+        requestData
+      )
       return response.data
     } catch (error) {
       console.error('Error in comprehensive cancel:', error)
@@ -103,7 +117,9 @@ export class ReservasService {
   }
 
   // Create new reserva (V1)
-  static async createReserva(reservaData: CreateReservaRequestDto): Promise<ApiResponse<ReservaResponseDto>> {
+  static async createReserva(
+    reservaData: CreateReservaRequestDto
+  ): Promise<ApiResponse<ReservaResponseDto>> {
     try {
       const response = await axiosClient.post('/api/v1/reservas', reservaData)
       return response.data
@@ -114,9 +130,12 @@ export class ReservasService {
   }
 
   // Legacy methods for backward compatibility
-  static async legacyCreateReserva(institucionId, usuarioId, reservaData) {
+  static async legacyCreateReserva(institucionId: number, usuarioId: number, reservaData: any) {
     try {
-      const response = await axiosClient.post(`/ReservarHabitacion?InstitucionID=${institucionId}&UsuarioID=${usuarioId}`, reservaData)
+      const response = await axiosClient.post(
+        `/ReservarHabitacion?InstitucionID=${institucionId}&UsuarioID=${usuarioId}`,
+        reservaData
+      )
       return response.data
     } catch (error) {
       console.error('Error creating legacy reserva:', error)
@@ -124,7 +143,7 @@ export class ReservasService {
     }
   }
 
-  static async legacyFinalizeReserva(habitacionId) {
+  static async legacyFinalizeReserva(habitacionId: number) {
     try {
       const response = await axiosClient.put(`/FinalizarReserva?idHabitacion=${habitacionId}`)
       return response.data
@@ -134,7 +153,7 @@ export class ReservasService {
     }
   }
 
-  static async legacyPauseOcupacion(visitaId) {
+  static async legacyPauseOcupacion(visitaId: number) {
     try {
       const response = await axiosClient.put(`/PausarOcupacion?visitaId=${visitaId}`)
       return response.data
@@ -144,7 +163,7 @@ export class ReservasService {
     }
   }
 
-  static async legacyUpdatePromotion(reservaId, promocionId) {
+  static async legacyUpdatePromotion(reservaId: number, promocionId: number) {
     try {
       const response = await axiosClient.put('/ActualizarReservaPromocion', null, {
         params: {
@@ -159,3 +178,4 @@ export class ReservasService {
     }
   }
 }
+

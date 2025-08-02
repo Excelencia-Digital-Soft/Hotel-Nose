@@ -12,7 +12,7 @@ export function useArticleCreate() {
     price: '',
     categoryId: null,
     image: null,
-    articuloId: null
+    articuloId: null,
   })
 
   // UI state
@@ -32,18 +32,21 @@ export function useArticleCreate() {
 
   // Validation
   const isFormValid = computed(() => {
-    return formData.value.name.trim() !== '' &&
+    return (
+      formData.value.name.trim() !== '' &&
       formData.value.price !== '' &&
       formData.value.categoryId !== null &&
       (isEditMode.value || formData.value.image !== null)
+    )
   })
 
   const isNameDuplicate = computed(() => {
     if (!articles.value || !formData.value.name) return false
 
-    return articles.value.some((article) =>
-      article.nombreArticulo.toLowerCase() === formData.value.name.toLowerCase() &&
-      article.articuloId !== formData.value.articuloId
+    return articles.value.some(
+      (article) =>
+        article.nombreArticulo.toLowerCase() === formData.value.name.toLowerCase() &&
+        article.articuloId !== formData.value.articuloId
     )
   })
 
@@ -54,17 +57,19 @@ export function useArticleCreate() {
     // Search filter
     if (searchTerm.value) {
       const term = searchTerm.value.toLowerCase()
-      filtered = filtered.filter(article =>
-        article.nombreArticulo.toLowerCase().includes(term) ||
-        article.precio.toString().includes(term)
+      filtered = filtered.filter(
+        (article) =>
+          article.nombreArticulo.toLowerCase().includes(term) ||
+          article.precio.toString().includes(term)
       )
     }
 
     // Category filter
     if (selectedCategory.value && selectedCategory.value !== 'all') {
-      filtered = filtered.filter(article =>
-        (article.categoriaID === selectedCategory.value) ||
-        (article.categoriaId === selectedCategory.value)
+      filtered = filtered.filter(
+        (article) =>
+          article.categoriaID === selectedCategory.value ||
+          article.categoriaId === selectedCategory.value
       )
     }
 
@@ -76,7 +81,9 @@ export function useArticleCreate() {
         case 'category':
           const aCategoryId = a.categoriaID || a.categoriaId
           const bCategoryId = b.categoriaID || b.categoriaId
-          return (getCategoryName(aCategoryId) || '').localeCompare(getCategoryName(bCategoryId) || '')
+          return (getCategoryName(aCategoryId) || '').localeCompare(
+            getCategoryName(bCategoryId) || ''
+          )
         case 'name':
         default:
           return a.nombreArticulo.localeCompare(b.nombreArticulo)
@@ -88,26 +95,32 @@ export function useArticleCreate() {
 
   const statistics = computed(() => {
     const total = articles.value.length
-    const totalValue = articles.value.reduce((sum, article) => sum + parseFloat(article.precio || 0), 0)
+    const totalValue = articles.value.reduce(
+      (sum, article) => sum + parseFloat(article.precio || 0),
+      0
+    )
     const averagePrice = total > 0 ? totalValue / total : 0
 
-    const categoryStats = categories.value.filter(cat => cat.categoriaId !== null).map(category => {
-      const categoryArticles = articles.value.filter(article =>
-        (article.categoriaID === category.categoriaId) ||
-        (article.categoriaId === category.categoriaId)
-      )
-      return {
-        name: category.nombreCategoria,
-        count: categoryArticles.length,
-        percentage: total > 0 ? Math.round((categoryArticles.length / total) * 100) : 0
-      }
-    })
+    const categoryStats = categories.value
+      .filter((cat) => cat.categoriaId !== null)
+      .map((category) => {
+        const categoryArticles = articles.value.filter(
+          (article) =>
+            article.categoriaID === category.categoriaId ||
+            article.categoriaId === category.categoriaId
+        )
+        return {
+          name: category.nombreCategoria,
+          count: categoryArticles.length,
+          percentage: total > 0 ? Math.round((categoryArticles.length / total) * 100) : 0,
+        }
+      })
 
     return {
       total,
       totalValue: formatCurrency(totalValue),
       averagePrice: formatCurrency(averagePrice),
-      categoryStats
+      categoryStats,
     }
   })
 
@@ -118,7 +131,7 @@ export function useArticleCreate() {
       price: '',
       categoryId: null,
       image: null,
-      articuloId: null
+      articuloId: null,
     }
     imagePreview.value = new URL('../assets/sin-imagen.png', import.meta.url).href
     isEditMode.value = false
@@ -171,10 +184,9 @@ export function useArticleCreate() {
       name: article.nombreArticulo,
       price: article.precio.toString(),
       categoryId: article.categoriaID || article.categoriaId,
-      image: null
+      image: null,
     }
 
-    // Set the image preview using the same logic as the article list
     imagePreview.value = getArticleImage(article)
   }
 
@@ -187,13 +199,13 @@ export function useArticleCreate() {
     if (imagePreview.value && imagePreview.value.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview.value)
     }
-    
+
     // Clear the image from form data
     formData.value.image = null
-    
+
     // Reset to default image
     imagePreview.value = new URL('../assets/sin-imagen.png', import.meta.url).href
-    
+
     // Show feedback
     showInfo('✅ Imagen removida correctamente')
   }
@@ -204,7 +216,7 @@ export function useArticleCreate() {
   }
 
   const getCategoryName = (categoryId) => {
-    const category = categories.value.find(cat => cat.categoriaId === categoryId)
+    const category = categories.value.find((cat) => cat.categoriaId === categoryId)
     return category ? category.nombreCategoria : 'Sin categoría'
   }
 
@@ -240,7 +252,7 @@ export function useArticleCreate() {
       showError('El precio debe ser un número válido mayor a 0')
       return false
     }
-    
+
     // Additional validation for edit mode
     if (isEditMode.value && !formData.value.articuloId) {
       showError('Error: ID del artículo no encontrado')
@@ -256,7 +268,7 @@ export function useArticleCreate() {
       nombre: formData.value.name.trim(),
       precio: parseFloat(formData.value.price),
       categoriaID: formData.value.categoryId,
-      imagen: formData.value.image
+      imagen: formData.value.image,
     }
   }
 
@@ -266,7 +278,7 @@ export function useArticleCreate() {
       severity: 'success',
       summary: 'Éxito',
       detail: message,
-      life: 5000
+      life: 5000,
     })
   }
 
@@ -275,7 +287,7 @@ export function useArticleCreate() {
       severity: 'error',
       summary: 'Error',
       detail: message,
-      life: 5000
+      life: 5000,
     })
   }
 
@@ -284,7 +296,7 @@ export function useArticleCreate() {
       severity: 'info',
       summary: 'Información',
       detail: message,
-      life: 5000
+      life: 5000,
     })
   }
 
@@ -299,7 +311,7 @@ export function useArticleCreate() {
         rejectLabel: 'Cancelar',
         acceptClass: 'p-button-danger',
         accept: () => resolve(true),
-        reject: () => resolve(false)
+        reject: () => resolve(false),
       })
     })
   }
@@ -309,7 +321,7 @@ export function useArticleCreate() {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 0,
     }).format(amount)
   }
 
@@ -328,24 +340,32 @@ export function useArticleCreate() {
           const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
           return `${baseUrl}/uploads/${article.imagenUrl}`
         }
-        
+
         // Try direct API endpoint for image - this is the standard V1 approach
         const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
         return `${baseUrl}/api/v1/articulos/${article.articuloId}/image`
       }
-      
+
       // Legacy API support
       if (article.imagenAPI) {
         return article.imagenAPI
       }
-      
+
       // Direct image URL
-      if (article.imagen && typeof article.imagen === 'string' && article.imagen.startsWith('http')) {
+      if (
+        article.imagen &&
+        typeof article.imagen === 'string' &&
+        article.imagen.startsWith('http')
+      ) {
         return article.imagen
       }
-      
+
       // Base64 image
-      if (article.imagen && typeof article.imagen === 'string' && article.imagen.startsWith('data:image')) {
+      if (
+        article.imagen &&
+        typeof article.imagen === 'string' &&
+        article.imagen.startsWith('data:image')
+      ) {
         return article.imagen
       }
     } catch (error) {
@@ -394,6 +414,6 @@ export function useArticleCreate() {
     confirmDelete,
     formatCurrency,
     formatPrice,
-    getArticleImage
+    getArticleImage,
   }
 }

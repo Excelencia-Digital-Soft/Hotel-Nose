@@ -12,6 +12,18 @@ export interface Habitacion {
   pedidosPendientes?: boolean;
 }
 
+// Extended room interface for ReserveRoom component
+export interface RoomReservation extends Habitacion {
+  TotalHoras: number;
+  TotalMinutos: number;
+  Precio: number;
+  Patente?: string;
+  CompaniaString?: string;
+  Pausa: number;
+  NombrePromocion?: string;
+  PromocionId?: number;
+}
+
 // Room availability DTO
 export interface HabitacionAvailabilityDto {
   disponible: boolean;

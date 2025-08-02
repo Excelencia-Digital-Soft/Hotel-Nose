@@ -14,6 +14,7 @@ import { ROLE_GROUPS } from '../../utils/role-mapping.js'
 const RoomInventoryManager = () => import('../../views/RoomInventoryManager.vue')
 const InventoryAlerts = () => import('../../views/InventoryAlerts.vue')
 const InventoryTransfers = () => import('../../views/InventoryTransfers.vue')
+const InventoryManagerV1 = () => import('../../views/InventoryManagerV1.vue')
 
 /**
  * Management and operational routes
@@ -101,9 +102,21 @@ export const managementRoutes = [
     meta: {
       requireAuth: true,
       roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
-      description: 'Manage general inventory and stock (V1)',
+      description: 'Manage general inventory and stock (Legacy)',
       category: 'Inventory Management',
-      badge: 'V1',
+      badge: 'Legacy',
+    },
+  },
+  {
+    path: '/inventory/general',
+    name: 'InventoryManagerV1',
+    component: InventoryManagerV1,
+    meta: {
+      requireAuth: true,
+      roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+      description: 'Advanced general inventory management with V1 API',
+      category: 'Inventory Management',
+      badge: 'V1 - New',
     },
   },
   // V1 Inventory System Routes

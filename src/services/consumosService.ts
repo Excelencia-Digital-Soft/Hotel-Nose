@@ -1,10 +1,10 @@
 import axiosClient from '../axiosClient'
-import { 
-  ApiResponse, 
+import type {
+  ApiResponse,
   ConsumoCreateDto,
   ConsumoUpdateDto,
   ConsumoResponseDto,
-  ConsumoSummaryDto
+  ConsumoSummaryDto,
 } from '../types'
 
 export class ConsumosService {
@@ -31,19 +31,23 @@ export class ConsumosService {
   }
 
   // Add general consumos
-  static async addGeneralConsumos(visitaId: number, habitacionId: number, consumos: any[]): Promise<ApiResponse<ConsumoResponseDto[]>> {
+  static async addGeneralConsumos(
+    visitaId: number,
+    habitacionId: number,
+    consumos: any[]
+  ): Promise<ApiResponse<ConsumoResponseDto[]>> {
     try {
       // Map component format to DTO format
-      const items: ConsumoCreateDto[] = consumos.map(item => ({
+      const items: ConsumoCreateDto[] = consumos.map((item) => ({
         articuloId: item.articuloId,
         cantidad: item.cantidad,
         precioUnitario: item.precio, // Changed from 'precio' to 'precioUnitario'
-        esHabitacion: false // For general consumos
+        esHabitacion: false, // For general consumos
       }))
-      
+
       // Use query parameters for habitacionId and visitaId
       const url = `/api/v1/consumos/general?habitacionId=${habitacionId}&visitaId=${visitaId}`
-      
+
       console.log('Sending consumos to V1 API:', url, items)
       // Send items array directly as body
       const response = await axiosClient.post(url, items)
@@ -55,19 +59,23 @@ export class ConsumosService {
   }
 
   // Add room consumos
-  static async addRoomConsumos(visitaId: number, habitacionId: number, consumos: any[]): Promise<ApiResponse<ConsumoResponseDto[]>> {
+  static async addRoomConsumos(
+    visitaId: number,
+    habitacionId: number,
+    consumos: any[]
+  ): Promise<ApiResponse<ConsumoResponseDto[]>> {
     try {
       // Map component format to DTO format
-      const items: ConsumoCreateDto[] = consumos.map(item => ({
+      const items: ConsumoCreateDto[] = consumos.map((item) => ({
         articuloId: item.articuloId,
         cantidad: item.cantidad,
         precioUnitario: item.precio, // Changed from 'precio' to 'precioUnitario'
-        esHabitacion: true // For room consumos
+        esHabitacion: true, // For room consumos
       }))
-      
+
       // Use query parameters for habitacionId and visitaId
       const url = `/api/v1/consumos/room?habitacionId=${habitacionId}&visitaId=${visitaId}`
-      
+
       console.log('Sending room consumos to V1 API:', url, items)
       // Send items array directly as body
       const response = await axiosClient.post(url, items)
@@ -79,7 +87,10 @@ export class ConsumosService {
   }
 
   // Update consumo quantity
-  static async updateConsumoQuantity(consumoId: number, cantidad: number): Promise<ApiResponse<ConsumoResponseDto>> {
+  static async updateConsumoQuantity(
+    consumoId: number,
+    cantidad: number
+  ): Promise<ApiResponse<ConsumoResponseDto>> {
     try {
       const updateData: ConsumoUpdateDto = { cantidad }
       const response = await axiosClient.put(`/api/v1/consumos/${consumoId}`, updateData)
@@ -112,7 +123,11 @@ export class ConsumosService {
     }
   }
 
-  static async addLegacyGeneralConsumos(habitacionId: number, visitaId: number, selectedItems: any[]): Promise<any> {
+  static async addLegacyGeneralConsumos(
+    habitacionId: number,
+    visitaId: number,
+    selectedItems: any[]
+  ): Promise<any> {
     try {
       const response = await axiosClient.post(
         `/ConsumoGeneral?habitacionId=${habitacionId}&visitaId=${visitaId}`,
@@ -125,7 +140,11 @@ export class ConsumosService {
     }
   }
 
-  static async addLegacyRoomConsumos(habitacionId: number, visitaId: number, selectedItems: any[]): Promise<any> {
+  static async addLegacyRoomConsumos(
+    habitacionId: number,
+    visitaId: number,
+    selectedItems: any[]
+  ): Promise<any> {
     try {
       const response = await axiosClient.post(
         `/ConsumoHabitacion?habitacionId=${habitacionId}&visitaId=${visitaId}`,
@@ -140,7 +159,9 @@ export class ConsumosService {
 
   static async updateLegacyConsumo(consumoId: number, cantidad: number): Promise<any> {
     try {
-      const response = await axiosClient.put(`/UpdateConsumo?idConsumo=${consumoId}&Cantidad=${cantidad}`)
+      const response = await axiosClient.put(
+        `/UpdateConsumo?idConsumo=${consumoId}&Cantidad=${cantidad}`
+      )
       return response.data
     } catch (error) {
       console.error('Error updating legacy consumo:', error)
@@ -158,3 +179,4 @@ export class ConsumosService {
     }
   }
 }
+

@@ -22,10 +22,16 @@ export interface InventoryDto {
   articuloNombre: string;
   articuloDescripcion?: string;
   articuloPrecio: number;
+  articuloImagenUrl?: string;
   cantidad: number;
   locationType: InventoryLocationType;
   locationId?: number;
   locationName?: string;
+  categoriaId?: number;
+  cantidadMinima?: number;
+  cantidadMaxima?: number;
+  categoria?: string;
+  fechaActualizacion?: string;
   institucionId: number;
   fechaRegistro: string;
   userId?: string;

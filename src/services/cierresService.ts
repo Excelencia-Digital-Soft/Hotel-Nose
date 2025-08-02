@@ -8,79 +8,27 @@
 
 import axiosClient from '../axiosClient';
 import type { ApiResponse } from '../types';
+import type { 
+  CierresyActualDto, 
+  CierreDetalleCompletoDto, 
+  CajaDetalladaDto,
+  CierreBasicoDto,
+  CierresPaginatedDto,
+  PaginationParams
+} from '../types/cierre-model';
 
-// ==================== V1 DTOs ====================
-
-export interface CajaDto {
-  cajaId: number;
-  fechaHoraCierre: string;
-  montoInicial: number;
-  montoFinal: number;
-  totalEfectivo: number;
-  totalTarjeta: number;
-  totalDescuentos: number;
-  observacion?: string;
-  usuarioId: number;
-  institucionId: number;
-}
-
-export interface TransaccionDto {
-  pagoId: number;
-  fecha: string;
-  montoEfectivo: number;
-  montoTarjeta: number;
-  montoDescuento: number;
-  montoBillVirt?: number;
-  tipoHabitacion?: string;
-  categoriaNombre?: string;
-  periodo?: number;
-  montoAdicional?: number;
-  totalConsumo?: number;
-  horaIngreso?: string;
-  horaSalida?: string;
-  tarjetaNombre?: string;
-  observacion?: string;
-  cierreId?: number;
-  visitaId?: number;
-}
-
-export interface EgresoDto {
-  egresoId: number;
-  fecha: string;
-  montoEfectivo: number;
-  montoTarjeta: number;
-  montoDescuento: number;
-  observacion?: string;
-  cierreId?: number;
-  usuarioId: number;
-  institucionId: number;
-}
-
-export interface CierresyActualDto {
-  cierres: CajaDto[];
-  transaccionesPendientes: TransaccionDto[];
-  egresosPendientes: EgresoDto[];
-}
-
-export interface CierreDetalleCompletoDto {
-  cierre: CajaDto;
-  pagos: TransaccionDto[];
-  anulaciones: TransaccionDto[];
-  egresos: EgresoDto[];
-}
-
-export interface CajaDetalladaDto {
-  cajaId: number;
-  fechaHoraCierre: string;
-  montoInicial: number;
-  montoFinal: number;
-  totalEfectivo: number;
-  totalTarjeta: number;
-  totalDescuentos: number;
-  observacion?: string;
-  usuarioNombre: string;
-  institucionNombre?: string;
-}
+// Re-export types for backward compatibility
+export type { 
+  CierresyActualDto, 
+  CierreDetalleCompletoDto, 
+  CajaDetalladaDto,
+  CierreBasicoDto,
+  TransaccionPendienteDto,
+  EgresoDetalleDto,
+  PagoDto,
+  CierresPaginatedDto,
+  PaginationParams
+} from '../types/cierre-model';
 
 export class CierresService {
   
@@ -90,7 +38,7 @@ export class CierresService {
    * Get all closures
    * GET /api/v1/caja
    */
-  static async getCierres(): Promise<ApiResponse<CajaDto[]>> {
+  static async getCierres(): Promise<ApiResponse<CierreBasicoDto[]>> {
     const response = await axiosClient.get('/api/v1/caja');
     return response.data;
   }
@@ -126,20 +74,42 @@ export class CierresService {
    * Get closures with payments (paginated)
    * GET /api/v1/caja/con-pagos
    */
-  static async getCierresConPagos(page: number = 1, pageSize: number = 10): Promise<ApiResponse<any>> {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      pageSize: pageSize.toString(),
+  static async getCierresConPagos(params: PaginationParams): Promise<ApiResponse<CierresPaginatedDto>> {
+    const urlParams = new URLSearchParams({
+      page: params.page.toString(),
+      pageSize: params.pageSize.toString(),
     });
-    const response = await axiosClient.get(`/api/v1/caja/con-pagos?${params}`);
+    
+    if (params.startDate) urlParams.append('startDate', params.startDate);
+    if (params.endDate) urlParams.append('endDate', params.endDate);
+    
+    const response = await axiosClient.get(`/api/v1/caja/con-pagos?${urlParams}`);
     return response.data;
+  }
+
+  /**
+   * Get paginated closures for historical view
+   * Uses the con-pagos endpoint for historical data with pagination
+   */
+  static async getCierresHistoricos(params: PaginationParams): Promise<ApiResponse<CierresPaginatedDto>> {
+    try {
+      return await this.getCierresConPagos(params);
+    } catch (error: any) {
+      // If endpoint returns 404 or 405, it's likely not implemented yet
+      if (error.response?.status === 404 || error.response?.status === 405) {
+        console.warn('⚠️ Paginated endpoint not available, status:', error.response.status);
+        throw new Error('ENDPOINT_NOT_AVAILABLE');
+      }
+      // Re-throw other errors
+      throw error;
+    }
   }
 
   /**
    * Create new cash register (Caja)
    * POST /api/v1/caja
    */
-  static async createCaja(data: { montoInicial: number; observacion?: string }): Promise<ApiResponse<CajaDto>> {
+  static async createCaja(data: { montoInicial: number; observacion?: string }): Promise<ApiResponse<CierreBasicoDto>> {
     const response = await axiosClient.post('/api/v1/caja', data);
     return response.data;
   }

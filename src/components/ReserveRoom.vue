@@ -355,8 +355,8 @@
   </Teleport>
 </template>
 
-<script setup>
-import { onMounted, ref, nextTick, computed } from 'vue'
+<script setup lang="ts">
+import { onMounted, ref, nextTick, computed, type Ref, type ComputedRef } from 'vue'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
 import OverlayPanel from 'primevue/overlaypanel'
@@ -379,20 +379,36 @@ import { usePaymentProvider } from '../composables/usePaymentProvider'
 
 // Import services and types
 import { InventoryService } from '../services/roomInventoryService.ts'
-import { InventoryLocationType } from '../types/inventory'
+import { InventoryLocationType } from '../types'
+import type { 
+  RoomReservation, 
+  ConsumoResponseDto, 
+  PromocionDto, 
+  InventoryItem,
+  InventoryDto
+} from '../types'
 
 // Props and emits
-const emits = defineEmits(['close-modal', 'update-room', 'update-tiempo', 'room-checkout'])
-const props = defineProps({
-  room: Object,
-})
+interface Props {
+  room: RoomReservation;
+}
+
+interface Emits {
+  'close-modal': [];
+  'update-room': [room: RoomReservation];
+  'update-tiempo': [tiempo: number];
+  'room-checkout': [room: RoomReservation];
+}
+
+const emits = defineEmits<Emits>()
+const props = defineProps<Props>()
 
 // Composables
 const toast = useToast()
 const confirm = useConfirm()
 
 // Feature flag for V1 API (can be set to true to use new endpoints)
-const USE_V1_API = true
+const USE_V1_API: boolean = true
 
 // Use composables
 const {
@@ -444,18 +460,18 @@ const {
 const paymentProvider = usePaymentProvider()
 
 // Local modal states
-const modalConsumo = ref(false)
-const modalConsumoRef = ref(null)
-const modalPayment = ref(false)
-const totalAmount = ref(0)
-const esConsumoHabitacion = ref(false)
+const modalConsumo = ref<boolean>(false)
+const modalConsumoRef = ref<any>(null)
+const modalPayment = ref<boolean>(false)
+const totalAmount = ref<number>(0)
+const esConsumoHabitacion = ref<boolean>(false)
 
 // OverlayPanel refs
-const timeExtensionButton = ref(null)
-const timeExtensionPopover = ref(null)
+const timeExtensionButton = ref<any>(null)
+const timeExtensionPopover = ref<any>(null)
 
 // Calculate period cost
-const periodoCost = computed(() => {
+const periodoCost: ComputedRef<string> = computed(() => {
   const totalHours = Number(selectedRoom.value.TotalHoras) || 0
   const totalMinutes = Number(selectedRoom.value.TotalMinutos) || 0
   
@@ -473,7 +489,7 @@ const periodoCost = computed(() => {
 })
 
 // Calculate additional cost
-const adicional = computed(() => {
+const adicional: ComputedRef<number> = computed(() => {
   const validOvertime = isNaN(overtime.value) || overtime.value === null || overtime.value === undefined ? 0 : overtime.value
   
   let hourlyRate = 0
@@ -491,8 +507,8 @@ const adicional = computed(() => {
 })
 
 // Modal handlers
-let isToggling = false
-const toggleModalConsumo = async (esHabitacion) => {
+let isToggling: boolean = false
+const toggleModalConsumo = async (esHabitacion: boolean): Promise<void> => {
   if (isToggling) return
   isToggling = true
   
@@ -513,7 +529,7 @@ const toggleModalConsumo = async (esHabitacion) => {
   }, 300)
 }
 
-const confirmAndSend = async (ConfirmedArticles) => {
+const confirmAndSend = async (ConfirmedArticles: InventoryItem[]): Promise<void> => {
   try {
     // 1. Agregar los consumos
     if (esConsumoHabitacion.value) {
@@ -524,7 +540,7 @@ const confirmAndSend = async (ConfirmedArticles) => {
     
     // 2. Actualizar el stock en el inventario
     // Obtener el inventario una sola vez
-    let inventoryResponse
+    let inventoryResponse: { data: InventoryDto[] }
     if (esConsumoHabitacion.value) {
       inventoryResponse = await InventoryService.getRoomInventory(selectedRoom.value.HabitacionID)
     } else {
@@ -532,7 +548,7 @@ const confirmAndSend = async (ConfirmedArticles) => {
     }
     
     // Registrar movimientos de inventario para cada artículo consumido
-    const movementPromises = ConfirmedArticles.map(async (item) => {
+    const movementPromises = ConfirmedArticles.map(async (item: InventoryItem) => {
       try {
         // Encontrar el item de inventario correspondiente
         const inventoryItem = inventoryResponse.data.find(inv => inv.articuloId === item.articuloId)
@@ -581,15 +597,20 @@ const confirmAndSend = async (ConfirmedArticles) => {
 }
 
 // OverlayPanel handlers
-const toggleTimeExtensionPopover = (event) => {
+const toggleTimeExtensionPopover = (event: Event): void => {
   timeExtensionPopover.value.toggle(event)
 }
 
-const closeTimeExtensionPopover = () => {
+const closeTimeExtensionPopover = (): void => {
   timeExtensionPopover.value.hide()
 }
 
-const handleTimeExtension = async ({ hours, minutes }) => {
+interface TimeExtension {
+  hours: number;
+  minutes: number;
+}
+
+const handleTimeExtension = async ({ hours, minutes }: TimeExtension): Promise<void> => {
   try {
     await extendTime(hours, minutes)
     // Update local state directly for immediate feedback

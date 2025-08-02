@@ -8,9 +8,9 @@ import type {
   InventoryAlertDto,
   StockValidationDto,
   InventorySummaryDto,
-  InventoryLocationType,
   ApiResponse,
 } from '../types'
+import { InventoryLocationType } from '../types'
 
 /**
  * Inventory Service V1 - Complete Implementation
@@ -285,8 +285,8 @@ export class InventoryService {
       locationType: InventoryLocationType.General
     })
 
-    if (!validation.data.isValid) {
-      throw new Error(`Stock insuficiente. Disponible: ${validation.data.availableQuantity}`)
+    if (!validation.data?.isValid) {
+      throw new Error(`Stock insuficiente. Disponible: ${validation.data?.availableQuantity || 0}`)
     }
 
     // 2. Create transfer
@@ -317,12 +317,12 @@ export class InventoryService {
       this.getActiveAlerts({ tipoUbicacion: InventoryLocationType.Room })
     ])
 
-    const roomAlerts = alertsResponse.data.filter(
+    const roomAlerts = (alertsResponse.data || []).filter(
       (alert: any) => alert.ubicacionId === roomId
     )
 
     return {
-      items: stockResponse.data,
+      items: stockResponse.data || [],
       alerts: roomAlerts,
       needsReload: roomAlerts.length > 0
     }

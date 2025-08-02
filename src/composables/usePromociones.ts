@@ -1,27 +1,27 @@
-import { ref, watch, onMounted, Ref } from 'vue'
+import { ref, watch, onMounted, type Ref } from 'vue'
 import { PromocionesService } from '../services/promocionesService'
 import { ReservasService } from '../services/reservasService'
-import { ApiResponse, PromocionDto, Habitacion } from '../types'
+import type { ApiResponse, PromocionDto, Habitacion } from '../types'
 
 // Component props interface
 interface UsePromocionesProps {
   room: Habitacion & {
-    categoriaId?: number;
+    categoriaId?: number
     reservaActiva?: {
-      promocionId?: number | null;
-    };
-  };
+      promocionId?: number | null
+    }
+  }
 }
 
 // Component emits interface
 interface UsePromocionesEmits {
-  (event: 'update-room', room: any): void;
+  (event: 'update-room', room: any): void
 }
 
 // Extended room interface with promocion data
 interface ExtendedRoom extends Habitacion {
-  PromocionID?: number | null;
-  promocionId?: number | null;
+  PromocionID?: number | null
+  promocionId?: number | null
 }
 
 export function usePromociones(
@@ -45,7 +45,8 @@ export function usePromociones(
       }
 
       // Use V1 API only
-      const response: ApiResponse<PromocionDto[]> = await PromocionesService.getPromocionesByCategoria(props.room.categoriaId)
+      const response: ApiResponse<PromocionDto[]> =
+        await PromocionesService.getPromocionesByCategoria(props.room.categoriaId)
 
       // Handle V1 API response with proper typing
       if (response?.isSuccess && response?.data) {
@@ -78,29 +79,34 @@ export function usePromociones(
   // Update promotion
   const actualizarPromocion = async (): Promise<void> => {
     if (!selectedRoom.value || !selectedRoom.value.ReservaID) {
-      console.error("Reserva or HabitacionID is not set.")
+      console.error('Reserva or HabitacionID is not set.')
       return
     }
 
     const reservaId: number = selectedRoom.value.ReservaID
-    const promocionId: number | null = selectedPromocion.value ? selectedPromocion.value.promocionId : null
+    const promocionId: number | null = selectedPromocion.value
+      ? selectedPromocion.value.promocionId
+      : null
 
     try {
       // Use V1 API only
       await ReservasService.updatePromotion(reservaId, promocionId)
 
-      console.log("Promoción actualizada correctamente", promocionId ? `ID: ${promocionId}` : 'Removed')
+      console.log(
+        'Promoción actualizada correctamente',
+        promocionId ? `ID: ${promocionId}` : 'Removed'
+      )
 
       // Update room data with new promocion
-      const updatedRoom = { 
-        ...props.room, 
-        promocionId: promocionId 
+      const updatedRoom = {
+        ...props.room,
+        promocionId: promocionId,
       }
       emits('update-room', updatedRoom)
 
       promocionActiva.value = promocionId !== null
     } catch (error) {
-      console.error("Error actualizando la promoción:", error)
+      console.error('Error actualizando la promoción:', error)
     }
   }
 
@@ -132,9 +138,10 @@ export function usePromociones(
     promociones,
     promocionActiva,
     loadPromociones,
-    actualizarPromocion
+    actualizarPromocion,
   }
 }
 
 // Export types for component usage
 export type UsePromocionesReturn = ReturnType<typeof usePromociones>
+

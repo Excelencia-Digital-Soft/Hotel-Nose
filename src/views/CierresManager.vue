@@ -83,16 +83,44 @@
 
     <!-- Historical Closures Section -->
     <div v-if="canViewHistorical" class="glass-container p-6">
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 mb-6">
         <div class="flex items-center">
           <i class="pi pi-history text-primary-400 text-xl mr-2"></i>
           <h3 class="text-xl font-bold text-white">
             {{
               hasHistoricalClosures
-                ? `📚 ${totalCierres} cierres históricos`
-                : '📚 Cierres Históricos'
+                ? `📚 ${totalCierres} cierres`
+                : '📚 Gestión de Cierres'
             }}
           </h3>
+        </div>
+
+        <!-- View Mode Selector -->
+        <div class="flex items-center space-x-2">
+          <button
+            @click="switchToCurrentView"
+            :class="[
+              'px-4 py-2 transition-all text-sm font-medium rounded-lg',
+              viewMode === 'current'
+                ? 'bg-gradient-to-r from-primary-400 to-secondary-500 text-white'
+                : 'glass-button text-gray-300 hover:bg-white/20'
+            ]"
+          >
+            <i class="pi pi-clock mr-2"></i>
+            Actual
+          </button>
+          <button
+            @click="switchToHistoricalView"
+            :class="[
+              'px-4 py-2 transition-all text-sm font-medium rounded-lg',
+              viewMode === 'historical'
+                ? 'bg-gradient-to-r from-primary-400 to-secondary-500 text-white'
+                : 'glass-button text-gray-300 hover:bg-white/20'
+            ]"
+          >
+            <i class="pi pi-history mr-2"></i>
+            Histórico
+          </button>
         </div>
 
         <button
@@ -120,6 +148,23 @@
 
       <!-- Empty State -->
       <EmptyState v-else @refresh="refreshCierres" />
+
+      <!-- Pagination Controls -->
+      <div v-if="hasHistoricalClosures && !isLoading" class="mt-6">
+        <PaginationControls
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          :total-records="totalRecords"
+          :page-size="pageSize"
+          :can-go-next="canGoNext"
+          :can-go-previous="canGoPrevious"
+          :is-loading="isLoading"
+          @go-to-page="(page) => goToPage(page, viewMode)"
+          @next="() => nextPage(viewMode)"
+          @previous="() => previousPage(viewMode)"
+          @set-page-size="(size) => setPageSize(size, viewMode)"
+        />
+      </div>
     </div>
 
     <!-- Access Denied for Regular Users -->
@@ -163,6 +208,7 @@ import LoadingState from '../components/cierres/LoadingState.vue';
 import CierreCard from '../components/cierres/CierreCard.vue';
 import EmptyState from '../components/cierres/EmptyState.vue';
 import AccessDenied from '../components/cierres/AccessDenied.vue';
+import PaginationControls from '../components/cierres/PaginationControls.vue';
 
 // Composable
 const {
@@ -173,19 +219,34 @@ const {
   isLoading,
   selectedCierre,
 
+  // Pagination State
+  currentPage,
+  pageSize,
+  totalRecords,
+  totalPages,
+
   // Computed
   hasHistoricalClosures,
   hasCurrentSession,
   totalCierres,
   canViewHistorical,
+  canGoNext,
+  canGoPrevious,
 
   // Methods
   fetchCierres,
+  fetchCierresHistoricos,
   fetchDetalleCierre,
   selectCierre,
   openCurrentSession,
   handlePrint,
   initialize,
+
+  // Pagination Methods
+  goToPage,
+  nextPage,
+  previousPage,
+  setPageSize,
 
   // Utilities
   formatFechaHora,
@@ -200,17 +261,34 @@ const selectedPagos = ref([]);
 const selectedEgresos = ref([]);
 const selectedIdCierre = ref(null);
 
+// Local state for view mode
+const viewMode = ref('current'); // 'current' or 'historical'
+
 // Methods
 const refreshCierres = async () => {
-  await fetchCierres();
+  if (viewMode.value === 'current') {
+    await fetchCierres(currentPage.value);
+  } else {
+    await fetchCierresHistoricos(currentPage.value);
+  }
+};
+
+const switchToCurrentView = async () => {
+  viewMode.value = 'current';
+  await fetchCierres(1);
+};
+
+const switchToHistoricalView = async () => {
+  viewMode.value = 'historical';
+  await fetchCierresHistoricos(1);
 };
 
 const openCierreModal = async (cierre) => {
   selectCierre(cierre);
-  selectedIdCierre.value = cierre.cajaId;
+  selectedIdCierre.value = cierre.cierreId;
   
   // Fetch detailed data for the specific cierre
-  const detalle = await fetchDetalleCierre(cierre.cajaId);
+  const detalle = await fetchDetalleCierre(cierre.cierreId);
   if (detalle) {
     selectedPagos.value = [...(detalle.pagos || []), ...(detalle.anulaciones || [])];
     selectedEgresos.value = detalle.egresos || [];

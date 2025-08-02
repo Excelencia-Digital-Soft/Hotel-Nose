@@ -1,16 +1,18 @@
 import axiosClient from '../axiosClient'
-import { 
-  ApiResponse, 
-  PromocionDto, 
-  PromocionCreateDto, 
-  PromocionUpdateDto, 
+import type {
+  ApiResponse,
+  PromocionDto,
+  PromocionCreateDto,
+  PromocionUpdateDto,
   PromocionValidateDto,
-  PromocionValidationResult 
+  PromocionValidationResult,
 } from '../types'
 
 export class PromocionesService {
   // Get promociones by categoria
-  static async getPromocionesByCategoria(categoriaId: number): Promise<ApiResponse<PromocionDto[]>> {
+  static async getPromocionesByCategoria(
+    categoriaId: number
+  ): Promise<ApiResponse<PromocionDto[]>> {
     try {
       const response = await axiosClient.get(`/api/v1/promociones/categoria/${categoriaId}`)
       return response.data
@@ -43,7 +45,9 @@ export class PromocionesService {
   }
 
   // Create promocion
-  static async createPromocion(promocionData: PromocionCreateDto): Promise<ApiResponse<PromocionDto>> {
+  static async createPromocion(
+    promocionData: PromocionCreateDto
+  ): Promise<ApiResponse<PromocionDto>> {
     try {
       const response = await axiosClient.post('/api/v1/promociones', promocionData)
       return response.data
@@ -54,7 +58,10 @@ export class PromocionesService {
   }
 
   // Update promocion
-  static async updatePromocion(promocionId: number, promocionData: PromocionUpdateDto): Promise<ApiResponse<PromocionDto>> {
+  static async updatePromocion(
+    promocionId: number,
+    promocionData: PromocionUpdateDto
+  ): Promise<ApiResponse<PromocionDto>> {
     try {
       const response = await axiosClient.put(`/api/v1/promociones/${promocionId}`, promocionData)
       return response.data
@@ -76,14 +83,20 @@ export class PromocionesService {
   }
 
   // Validate promocion
-  static async validatePromocion(promocionId: number, validationData: PromocionValidateDto): Promise<ApiResponse<PromocionValidationResult>> {
+  static async validatePromocion(
+    promocionId: number,
+    validationData: PromocionValidateDto
+  ): Promise<ApiResponse<PromocionValidationResult>> {
     try {
-      const response = await axiosClient.post(`/api/v1/promociones/${promocionId}/validate`, validationData)
+      const response = await axiosClient.post(
+        `/api/v1/promociones/${promocionId}/validate`,
+        validationData
+      )
       return response.data
     } catch (error) {
       console.error('Error validating promocion:', error)
       throw error
     }
   }
-
 }
+

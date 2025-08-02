@@ -10,3 +10,4 @@ export * from './menu';
 export * from './configuration';
 export * from './roomInventory';
 export * from './websocket';
+export * from './cierre-model';
