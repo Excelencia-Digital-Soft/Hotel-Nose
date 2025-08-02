@@ -43,7 +43,6 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICategoriasService, CategoriasService>();
         services.AddScoped<IConsumosService, ConsumosService>();
         services.AddScoped<IHabitacionesService, HabitacionesService>();
-        services.AddScoped<IInventoryService, InventoryUnifiedService>();
         services.AddScoped<IMovimientosService, MovimientosService>();
         services.AddScoped<IPromocionesService, PromocionesService>();
         services.AddScoped<IRegistrosService, RegistrosService>();
@@ -56,10 +55,16 @@ public static class ServiceCollectionExtensions
         // Register notification service as singleton (required for background services)
         services.AddSingleton<INotificationService, SignalRNotificationService>();
 
-        // Register specialized inventory services
+        // Register specialized inventory services (following Single Responsibility Principle)
+        services.AddScoped<IInventoryCoreService, InventoryCoreService>();
+        services.AddScoped<IInventoryValidationService, InventoryValidationService>();
+        services.AddScoped<IInventoryReportingService, InventoryReportingService>();
         services.AddScoped<IInventoryMovementService, InventoryMovementService>();
         services.AddScoped<IInventoryAlertService, InventoryAlertService>();
         services.AddScoped<IInventoryTransferService, InventoryTransferService>();
+
+        // Keep backward compatibility for legacy controllers that still use IInventoryService
+        services.AddScoped<IInventoryService, InventoryUnifiedServiceRefactored>();
 
         return services;
     }

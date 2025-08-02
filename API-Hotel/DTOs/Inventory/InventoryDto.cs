@@ -78,6 +78,8 @@ public class InventoryBatchItem
     [Required]
     [Range(0, int.MaxValue, ErrorMessage = "Quantity must be greater than or equal to 0")]
     public int Cantidad { get; set; }
+
+    public string? Notes { get; set; }
 }
 
 /// <summary>
@@ -189,4 +191,3 @@ public class StockValidationDto
     public InventoryLocationType LocationType { get; set; }
     public int? LocationId { get; set; }
 }
-

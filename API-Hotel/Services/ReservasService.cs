@@ -3,6 +3,7 @@ using hotel.DTOs.Common;
 using hotel.DTOs.Reservas;
 using hotel.DTOs.Visitas;
 using hotel.DTOs.Movimientos;
+using hotel.DTOs.Consumos;
 using hotel.Interfaces;
 using hotel.Models;
 using Microsoft.EntityFrameworkCore;
@@ -619,12 +620,12 @@ public class ReservasService : IReservasService
                     .Consumo.Where(c =>
                         movimientosIds.Contains(c.MovimientosId ?? 0) && c.Anulado != true
                     )
-                    .Select(c => new
+                    .Select(c => new ConsumoInventoryRestoreDto
                     {
-                        c.ConsumoId,
-                        c.ArticuloId,
-                        c.Cantidad,
-                        c.EsHabitacion,
+                        ConsumoId = c.ConsumoId,
+                        ArticuloId = c.ArticuloId,
+                        Cantidad = c.Cantidad,
+                        EsHabitacion = c.EsHabitacion,
                     })
                     .ToListAsync(cancellationToken);
 
@@ -712,7 +713,7 @@ public class ReservasService : IReservasService
     }
 
     private async Task RestoreInventoryAsync(
-        IEnumerable<dynamic> consumosToRestore,
+        IEnumerable<ConsumoInventoryRestoreDto> consumosToRestore,
         int? habitacionId,
         int institucionId,
         CancellationToken cancellationToken
@@ -721,7 +722,7 @@ public class ReservasService : IReservasService
         // Group consumptions by article and inventory type
         var roomInventoryItems = consumosToRestore
             .Where(c => c.EsHabitacion == true && c.ArticuloId.HasValue)
-            .GroupBy(c => c.ArticuloId.Value)
+            .GroupBy(c => c.ArticuloId!.Value)
             .Select(g => new
             {
                 ArticuloId = g.Key,
@@ -731,7 +732,7 @@ public class ReservasService : IReservasService
 
         var generalInventoryItems = consumosToRestore
             .Where(c => c.EsHabitacion != true && c.ArticuloId.HasValue)
-            .GroupBy(c => c.ArticuloId.Value)
+            .GroupBy(c => c.ArticuloId!.Value)
             .Select(g => new
             {
                 ArticuloId = g.Key,

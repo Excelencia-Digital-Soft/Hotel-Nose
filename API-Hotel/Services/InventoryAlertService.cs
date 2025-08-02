@@ -29,12 +29,37 @@ public class InventoryAlertService : IInventoryAlertService
     {
         try
         {
-            var query = _context
-                .AlertasInventario.AsNoTracking()
-                .Include(a => a.Inventario)
-                .ThenInclude(i => i!.Articulo)
-                .Include(a => a.UsuarioQueReconocio)
-                .Where(a => a.InstitucionID == institucionId);
+            IQueryable<AlertaInventario> query;
+            try
+            {
+                query = _context
+                    .AlertasInventario.AsNoTracking()
+                    .Include(a => a.Inventario)
+                    .ThenInclude(i => i!.Articulo)
+                    .Include(a => a.UsuarioQueReconocio)
+                    .Where(a => a.InstitucionID == institucionId);
+            }
+            catch (Exception dbEx) when (dbEx.Message.Contains("Invalid column name") || 
+                                       dbEx.Message.Contains("Invalid object name") ||
+                                       dbEx.Message.Contains("nombre de columna") ||
+                                       dbEx.Message.Contains("no es válido"))
+            {
+                _logger.LogWarning(
+                    "AlertasInventario table not found. Please run script 14-Create_Inventory_Alerts_Tables.sql. Error: {Error}",
+                    dbEx.Message
+                );
+                
+                return ApiResponse<PagedResult<AlertaInventarioDto>>.Success(
+                    new PagedResult<AlertaInventarioDto>
+                    {
+                        Items = new List<AlertaInventarioDto>(),
+                        TotalCount = 0,
+                        Page = filter.Pagina,
+                        PageSize = filter.TamanoPagina,
+                        TotalPages = 0
+                    }
+                );
+            }
 
             // Apply filters
             if (filter.SoloActivas)
@@ -211,11 +236,46 @@ public class InventoryAlertService : IInventoryAlertService
                     UsuarioCreacion = userId,
                 };
 
-                _context.ConfiguracionAlertasInventario.Add(config);
+                try
+                {
+                    _context.ConfiguracionAlertasInventario.Add(config);
+                }
+                catch (Exception dbEx) when (dbEx.Message.Contains("Invalid column name") || 
+                                           dbEx.Message.Contains("Invalid object name") ||
+                                           dbEx.Message.Contains("nombre de columna") ||
+                                           dbEx.Message.Contains("no es válido"))
+                {
+                    _logger.LogError(
+                        "Cannot configure alerts - ConfiguracionAlertasInventario table not found. Please run script 14-Create_Inventory_Alerts_Tables.sql. Error: {Error}",
+                        dbEx.Message
+                    );
+                    
+                    return ApiResponse<ConfiguracionAlertaDto>.Failure(
+                        "Alert configuration not available. Please run database migration scripts to create alert tables."
+                    );
+                }
             }
 
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
+            catch (Exception dbEx) when (dbEx.Message.Contains("Invalid column name") || 
+                                       dbEx.Message.Contains("Invalid object name") ||
+                                       dbEx.Message.Contains("nombre de columna") ||
+                                       dbEx.Message.Contains("no es válido"))
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                _logger.LogError(
+                    "Cannot save alert configuration - tables not found. Please run script 14-Create_Inventory_Alerts_Tables.sql. Error: {Error}",
+                    dbEx.Message
+                );
+                
+                return ApiResponse<ConfiguracionAlertaDto>.Failure(
+                    "Alert configuration not available. Please run database migration scripts to create alert tables."
+                );
+            }
 
             // Map to DTO
             var configDto_result = new ConfiguracionAlertaDto
@@ -359,14 +419,32 @@ public class InventoryAlertService : IInventoryAlertService
     {
         try
         {
-            var config = await _context
-                .ConfiguracionAlertasInventario.AsNoTracking()
-                .Include(c => c.CreadoPor)
-                .Include(c => c.ModificadoPor)
-                .FirstOrDefaultAsync(
-                    c => c.InventarioId == inventoryId && c.InstitucionID == institucionId,
-                    cancellationToken
+            ConfiguracionAlertaInventario? config;
+            try
+            {
+                config = await _context
+                    .ConfiguracionAlertasInventario.AsNoTracking()
+                    .Include(c => c.CreadoPor)
+                    .Include(c => c.ModificadoPor)
+                    .FirstOrDefaultAsync(
+                        c => c.InventarioId == inventoryId && c.InstitucionID == institucionId,
+                        cancellationToken
+                    );
+            }
+            catch (Exception dbEx) when (dbEx.Message.Contains("Invalid column name") || 
+                                       dbEx.Message.Contains("Invalid object name") ||
+                                       dbEx.Message.Contains("nombre de columna") ||
+                                       dbEx.Message.Contains("no es válido"))
+            {
+                _logger.LogWarning(
+                    "ConfiguracionAlertasInventario table not found. Please run script 14-Create_Inventory_Alerts_Tables.sql. Error: {Error}",
+                    dbEx.Message
                 );
+                
+                return ApiResponse<ConfiguracionAlertaDto>.Failure(
+                    "Alert configuration not available. Please run database migration scripts to create alert tables."
+                );
+            }
 
             if (config == null)
             {
@@ -440,11 +518,28 @@ public class InventoryAlertService : IInventoryAlertService
                 return ApiResponse<AlertaGenerationResultDto>.Failure("Inventory not found");
             }
 
-            // Get alert configuration
-            var config = await _context.ConfiguracionAlertasInventario.FirstOrDefaultAsync(
-                c => c.InventarioId == inventoryId,
-                cancellationToken
-            );
+            // Get alert configuration - handle case where tables don't exist yet
+            ConfiguracionAlertaInventario? config = null;
+            try
+            {
+                config = await _context.ConfiguracionAlertasInventario.FirstOrDefaultAsync(
+                    c => c.InventarioId == inventoryId,
+                    cancellationToken
+                );
+            }
+            catch (Exception dbEx) when (dbEx.Message.Contains("Invalid column name") || 
+                                       dbEx.Message.Contains("Invalid object name") ||
+                                       dbEx.Message.Contains("nombre de columna") ||
+                                       dbEx.Message.Contains("no es válido"))
+            {
+                _logger.LogWarning(
+                    "Alert tables not found in database. Please run script 14-Create_Inventory_Alerts_Tables.sql. Error: {Error}",
+                    dbEx.Message
+                );
+                
+                result.Mensaje = "Alert system not configured (tables missing). Please run database migration scripts.";
+                return ApiResponse<AlertaGenerationResultDto>.Success(result);
+            }
 
             if (config == null || !config.EsActiva)
             {
@@ -454,10 +549,22 @@ public class InventoryAlertService : IInventoryAlertService
 
             var currentStock = inventario.Cantidad;
 
-            // Deactivate resolved alerts first
-            var alertsToDeactivate = await _context
-                .AlertasInventario.Where(a => a.InventarioId == inventoryId && a.EsActiva)
-                .ToListAsync(cancellationToken);
+            // Deactivate resolved alerts first - also handle missing tables
+            List<AlertaInventario> alertsToDeactivate = new();
+            try
+            {
+                alertsToDeactivate = await _context
+                    .AlertasInventario.Where(a => a.InventarioId == inventoryId && a.EsActiva)
+                    .ToListAsync(cancellationToken);
+            }
+            catch (Exception dbEx) when (dbEx.Message.Contains("Invalid column name") || 
+                                       dbEx.Message.Contains("Invalid object name") ||
+                                       dbEx.Message.Contains("nombre de columna") ||
+                                       dbEx.Message.Contains("no es válido"))
+            {
+                _logger.LogDebug("AlertasInventario table not found, skipping alert deactivation check");
+                // Continue without deactivating alerts - table doesn't exist yet
+            }
 
             foreach (var alert in alertsToDeactivate)
             {
@@ -608,13 +715,29 @@ public class InventoryAlertService : IInventoryAlertService
                 }
             }
 
-            // Add new alerts to context
-            if (alertsToCreate.Any())
+            // Add new alerts to context - handle missing tables
+            try
             {
-                _context.AlertasInventario.AddRange(alertsToCreate);
-            }
+                if (alertsToCreate.Any())
+                {
+                    _context.AlertasInventario.AddRange(alertsToCreate);
+                }
 
-            await _context.SaveChangesAsync(cancellationToken);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception dbEx) when (dbEx.Message.Contains("Invalid column name") || 
+                                       dbEx.Message.Contains("Invalid object name") ||
+                                       dbEx.Message.Contains("nombre de columna") ||
+                                       dbEx.Message.Contains("no es válido"))
+            {
+                _logger.LogWarning(
+                    "Cannot save alerts - AlertasInventario table not found. Please run script 14-Create_Inventory_Alerts_Tables.sql. Error: {Error}",
+                    dbEx.Message
+                );
+                
+                result.Mensaje = "Alerts detected but cannot be saved (tables missing). Please run database migration scripts.";
+                return ApiResponse<AlertaGenerationResultDto>.Success(result);
+            }
 
             // Map created alerts to DTOs
             foreach (var alerta in alertsToCreate)

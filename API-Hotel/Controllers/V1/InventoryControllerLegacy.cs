@@ -8,51 +8,36 @@ using Microsoft.AspNetCore.Mvc;
 namespace hotel.Controllers.V1;
 
 /// <summary>
-/// V1 API controller for unified inventory management using specialized services
-/// Follows Single Responsibility Principle by delegating to focused services
+/// V1 API controller for unified inventory management
 /// </summary>
 [ApiController]
-[Route("api/v1/inventory")]
+[Route("api/v1/inventory-legacy")]
 [Produces("application/json")]
 [Authorize(AuthenticationSchemes = "Bearer")]
-public class InventoryController : ControllerBase
+public class InventoryControllerLegacy : ControllerBase
 {
-    private readonly IInventoryCoreService _coreService;
-    private readonly IInventoryValidationService _validationService;
-    private readonly IInventoryReportingService _reportingService;
-    private readonly IInventoryMovementService _movementService;
-    private readonly IInventoryAlertService _alertService;
-    private readonly IInventoryTransferService _transferService;
-    private readonly ILogger<InventoryController> _logger;
+    private readonly IInventoryService _inventoryService;
+    private readonly ILogger<InventoryControllerLegacy> _logger;
 
-    public InventoryController(
-        IInventoryCoreService coreService,
-        IInventoryValidationService validationService,
-        IInventoryReportingService reportingService,
-        IInventoryMovementService movementService,
-        IInventoryAlertService alertService,
-        IInventoryTransferService transferService,
-        ILogger<InventoryController> logger
+    public InventoryControllerLegacy(
+        IInventoryService inventoryService,
+        ILogger<InventoryControllerLegacy> logger
     )
     {
-        _coreService = coreService ?? throw new ArgumentNullException(nameof(coreService));
-        _validationService =
-            validationService ?? throw new ArgumentNullException(nameof(validationService));
-        _reportingService =
-            reportingService ?? throw new ArgumentNullException(nameof(reportingService));
-        _movementService =
-            movementService ?? throw new ArgumentNullException(nameof(movementService));
-        _alertService = alertService ?? throw new ArgumentNullException(nameof(alertService));
-        _transferService =
-            transferService ?? throw new ArgumentNullException(nameof(transferService));
+        _inventoryService =
+            inventoryService ?? throw new ArgumentNullException(nameof(inventoryService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    #region Core Inventory Operations - Using IInventoryCoreService
+    #region General Inventory Management
 
     /// <summary>
     /// Get all inventory items for the current institution
     /// </summary>
+    /// <param name="locationType">Filter by location type (optional)</param>
+    /// <param name="locationId">Filter by specific location ID (optional)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of inventory items</returns>
     [HttpGet]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<InventoryDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -70,7 +55,7 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var result = await _coreService.GetInventoryAsync(
+        var result = await _inventoryService.GetInventoryAsync(
             institucionId.Value,
             locationType,
             locationId,
@@ -83,6 +68,9 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Get inventory item by ID
     /// </summary>
+    /// <param name="id">Inventory ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Inventory item details</returns>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(ApiResponse<InventoryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -99,7 +87,7 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var result = await _coreService.GetInventoryByIdAsync(
+        var result = await _inventoryService.GetInventoryByIdAsync(
             id,
             institucionId.Value,
             cancellationToken
@@ -116,8 +104,45 @@ public class InventoryController : ControllerBase
     }
 
     /// <summary>
+    /// Get inventory items by article ID
+    /// </summary>
+    /// <param name="articleId">Article ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of inventory items for the article</returns>
+    [HttpGet("by-article/{articleId}")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<InventoryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<InventoryDto>>>> GetInventoryByArticle(
+        int articleId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var institucionId = this.GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var result = await _inventoryService.GetInventoryByArticleAsync(
+            articleId,
+            institucionId.Value,
+            cancellationToken
+        );
+
+        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+    }
+
+    #endregion
+
+    #region CRUD Operations
+
+    /// <summary>
     /// Create a new inventory item
     /// </summary>
+    /// <param name="createDto">Inventory creation data</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Created inventory item</returns>
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<InventoryDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -133,57 +158,38 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var userId = this.GetCurrentUserId();
         if (!ModelState.IsValid)
         {
             var errors = ModelState
                 .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
+
             return BadRequest(ApiResponse.Failure(errors, "Validation failed"));
         }
 
-        var result = await _coreService.CreateInventoryAsync(
+        var result = await _inventoryService.CreateInventoryAsync(
             createDto,
             institucionId.Value,
-            userId,
             cancellationToken
         );
 
-        if (result.IsSuccess)
-        {
-            // Record initial movement if quantity > 0
-            if (createDto.Cantidad > 0)
-            {
-                await _movementService.CreateMovementAsync(
-                    new MovimientoInventarioCreateDto
-                    {
-                        InventarioId = result.Data!.InventoryId,
-                        TipoMovimiento = "Entrada",
-                        CantidadAnterior = 0,
-                        CantidadNueva = createDto.Cantidad,
-                        CantidadCambiada = createDto.Cantidad,
-                        Motivo = "Creación de inventario inicial",
-                    },
-                    institucionId.Value,
-                    userId ?? "system",
-                    cancellationToken: cancellationToken
-                );
-            }
-
-            return CreatedAtAction(
+        return result.IsSuccess
+            ? CreatedAtAction(
                 nameof(GetInventoryById),
                 new { id = result.Data!.InventoryId },
                 result
-            );
-        }
-
-        return StatusCode(500, result);
+            )
+            : StatusCode(500, result);
     }
 
     /// <summary>
     /// Update inventory quantity
     /// </summary>
+    /// <param name="id">Inventory ID</param>
+    /// <param name="updateDto">Inventory update data</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Updated inventory item</returns>
     [HttpPut("{id}")]
     [ProducesResponseType(typeof(ApiResponse<InventoryDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -201,83 +207,19 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var userId = this.GetCurrentUserId();
         if (!ModelState.IsValid)
         {
             var errors = ModelState
                 .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
+
             return BadRequest(ApiResponse.Failure(errors, "Validation failed"));
         }
 
-        // Get current inventory to calculate changes
-        var currentInventory = await _coreService.GetInventoryByIdAsync(
+        var result = await _inventoryService.UpdateInventoryAsync(
             id,
-            institucionId.Value,
-            cancellationToken
-        );
-        if (!currentInventory.IsSuccess)
-        {
-            return currentInventory.Errors.Any(e => e.Contains("not found"))
-                ? NotFound(currentInventory)
-                : StatusCode(500, currentInventory);
-        }
-
-        var previousQuantity = currentInventory.Data!.Cantidad;
-
-        // Update inventory quantity
-        var result = await _coreService.UpdateInventoryQuantityAsync(
-            id,
-            updateDto.Cantidad,
-            institucionId.Value,
-            cancellationToken
-        );
-
-        if (result.IsSuccess)
-        {
-            // Record adjustment movement
-            await _movementService.RecordAdjustmentAsync(
-                id,
-                updateDto.Cantidad,
-                updateDto.Notes ?? "Ajuste manual de inventario",
-                institucionId.Value,
-                userId ?? "system",
-                cancellationToken: cancellationToken
-            );
-
-            // Check and generate alerts
-            await _alertService.CheckAndGenerateAlertsAsync(
-                id,
-                institucionId.Value,
-                cancellationToken
-            );
-        }
-
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
-    }
-
-    /// <summary>
-    /// Delete inventory item
-    /// </summary>
-    [HttpDelete("{id}")]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse>> DeleteInventory(
-        int id,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var institucionId = this.GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var result = await _coreService.DeleteInventoryAsync(
-            id,
+            updateDto,
             institucionId.Value,
             cancellationToken
         );
@@ -323,7 +265,7 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure(errors, "Validation failed"));
         }
 
-        var result = await _coreService.BatchUpdateInventoryAsync(
+        var result = await _inventoryService.BatchUpdateInventoryAsync(
             batchUpdateDto,
             institucionId.Value,
             cancellationToken
@@ -333,13 +275,18 @@ public class InventoryController : ControllerBase
     }
 
     /// <summary>
-    /// Synchronize general inventory with articles catalog
+    /// Delete inventory item (soft delete)
     /// </summary>
-    [HttpPost("general/synchronize")]
-    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    /// <param name="id">Inventory ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Success response</returns>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<string>>> SynchronizeGeneralInventory(
+    public async Task<ActionResult<ApiResponse>> DeleteInventory(
+        int id,
         CancellationToken cancellationToken = default
     )
     {
@@ -349,234 +296,32 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var result = await _coreService.SynchronizeGeneralInventoryAsync(
+        var result = await _inventoryService.DeleteInventoryAsync(
+            id,
             institucionId.Value,
             cancellationToken
         );
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+
+        if (!result.IsSuccess)
+        {
+            return result.Errors.Any(e => e.Contains("not found"))
+                ? NotFound(result)
+                : StatusCode(500, result);
+        }
+
+        return Ok(result);
     }
 
     #endregion
 
-    #region Stock Validation - Using IInventoryValidationService
-
-    /// <summary>
-    /// Validate stock availability
-    /// </summary>
-    [HttpGet("validate-stock")]
-    [ProducesResponseType(typeof(ApiResponse<StockValidationDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<StockValidationDto>>> ValidateStock(
-        [FromQuery] int articleId,
-        [FromQuery] int requestedQuantity,
-        [FromQuery] InventoryLocationType locationType,
-        [FromQuery] int? locationId = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var institucionId = this.GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var result = await _validationService.ValidateStockAsync(
-            articleId,
-            requestedQuantity,
-            locationType,
-            locationId,
-            institucionId.Value,
-            cancellationToken
-        );
-
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
-    }
-
-    /// <summary>
-    /// Get available quantity for an article
-    /// </summary>
-    [HttpGet("available-quantity")]
-    [ProducesResponseType(typeof(ApiResponse<int>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<int>>> GetAvailableQuantity(
-        [FromQuery] int articleId,
-        [FromQuery] InventoryLocationType locationType,
-        [FromQuery] int? locationId = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var institucionId = this.GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var result = await _validationService.GetAvailableQuantityAsync(
-            articleId,
-            locationType,
-            locationId,
-            institucionId.Value,
-            cancellationToken
-        );
-
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
-    }
-
-    /// <summary>
-    /// Validate multiple stock items at once
-    /// </summary>
-    [HttpPost("validate-multiple")]
-    [ProducesResponseType(
-        typeof(ApiResponse<IEnumerable<StockValidationDto>>),
-        StatusCodes.Status200OK
-    )]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<
-        ActionResult<ApiResponse<IEnumerable<StockValidationDto>>>
-    > ValidateMultipleStock(
-        [FromBody] IEnumerable<StockValidationRequestDto> requests,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var institucionId = this.GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var result = await _validationService.ValidateMultipleStockAsync(
-            requests,
-            institucionId.Value,
-            cancellationToken
-        );
-
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
-    }
-
-    #endregion
-
-    #region Reporting and Analytics - Using IInventoryReportingService
-
-    /// <summary>
-    /// Get inventory summary by location
-    /// </summary>
-    [HttpGet("summary")]
-    [ProducesResponseType(
-        typeof(ApiResponse<IEnumerable<InventorySummaryDto>>),
-        StatusCodes.Status200OK
-    )]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<
-        ActionResult<ApiResponse<IEnumerable<InventorySummaryDto>>>
-    > GetInventorySummary(CancellationToken cancellationToken = default)
-    {
-        var institucionId = this.GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var result = await _reportingService.GetInventorySummaryAsync(
-            institucionId.Value,
-            cancellationToken
-        );
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
-    }
-
-    /// <summary>
-    /// Get comprehensive inventory statistics
-    /// </summary>
-    [HttpGet("statistics")]
-    [ProducesResponseType(typeof(ApiResponse<InventoryStatisticsDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<InventoryStatisticsDto>>> GetInventoryStatistics(
-        [FromQuery] DateTime? fromDate = null,
-        [FromQuery] DateTime? toDate = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var institucionId = this.GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var result = await _reportingService.GetInventoryStatisticsAsync(
-            institucionId.Value,
-            fromDate,
-            toDate,
-            cancellationToken
-        );
-
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
-    }
-
-    /// <summary>
-    /// Get items with low stock
-    /// </summary>
-    [HttpGet("low-stock")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<InventoryDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<IEnumerable<InventoryDto>>>> GetLowStockItems(
-        [FromQuery] int threshold = 5,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var institucionId = this.GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var result = await _reportingService.GetLowStockItemsAsync(
-            institucionId.Value,
-            threshold,
-            cancellationToken
-        );
-
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
-    }
-
-    /// <summary>
-    /// Get combined inventory view (general + room inventories)
-    /// </summary>
-    [HttpGet("rooms/{roomId}/combined")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<InventoryDto>>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<IEnumerable<InventoryDto>>>> GetCombinedInventory(
-        int roomId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var institucionId = this.GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var result = await _reportingService.GetCombinedInventoryAsync(
-            roomId,
-            institucionId.Value,
-            cancellationToken
-        );
-
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
-    }
-
-    #endregion
-
-    #region Room and General Inventory - Using Core Service
+    #region Room Inventory
 
     /// <summary>
     /// Get all inventory items for a specific room
     /// </summary>
+    /// <param name="roomId">Room ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of room inventory items</returns>
     [HttpGet("rooms/{roomId}")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<InventoryDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -592,10 +337,9 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var result = await _coreService.GetInventoryAsync(
-            institucionId.Value,
-            InventoryLocationType.Room,
+        var result = await _inventoryService.GetRoomInventoryAsync(
             roomId,
+            institucionId.Value,
             cancellationToken
         );
 
@@ -605,6 +349,10 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Add inventory item to a room
     /// </summary>
+    /// <param name="roomId">Room ID</param>
+    /// <param name="createDto">Inventory creation data</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Created inventory item</returns>
     [HttpPost("rooms/{roomId}")]
     [ProducesResponseType(typeof(ApiResponse<InventoryDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -627,21 +375,14 @@ public class InventoryController : ControllerBase
                 .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
+
             return BadRequest(ApiResponse.Failure(errors, "Validation failed"));
         }
 
-        var roomCreateDto = new InventoryCreateDto
-        {
-            ArticuloId = createDto.ArticuloId,
-            LocationType = InventoryLocationType.Room,
-            LocationId = roomId,
-            Cantidad = createDto.Cantidad,
-        };
-
-        var result = await _coreService.CreateInventoryAsync(
-            roomCreateDto,
+        var result = await _inventoryService.AddRoomInventoryAsync(
+            roomId,
+            createDto,
             institucionId.Value,
-            this.GetCurrentUserId(),
             cancellationToken
         );
 
@@ -655,8 +396,44 @@ public class InventoryController : ControllerBase
     }
 
     /// <summary>
-    /// Get general inventory for institution
+    /// Get combined inventory view (general + room inventories)
     /// </summary>
+    /// <param name="roomId">Room ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Combined inventory view</returns>
+    [HttpGet("rooms/{roomId}/combined")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<InventoryDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<InventoryDto>>>> GetCombinedInventory(
+        int roomId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var institucionId = this.GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var result = await _inventoryService.GetCombinedInventoryAsync(
+            roomId,
+            institucionId.Value,
+            cancellationToken
+        );
+
+        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+    }
+
+    #endregion
+
+    #region General Inventory
+
+    /// <summary>
+    /// Get general inventory for institution (non-room specific)
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of general inventory items</returns>
     [HttpGet("general")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<InventoryDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -671,10 +448,8 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var result = await _coreService.GetInventoryAsync(
+        var result = await _inventoryService.GetGeneralInventoryAsync(
             institucionId.Value,
-            InventoryLocationType.General,
-            null,
             cancellationToken
         );
 
@@ -684,6 +459,9 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Add item to general inventory
     /// </summary>
+    /// <param name="createDto">Inventory creation data</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Created inventory item</returns>
     [HttpPost("general")]
     [ProducesResponseType(typeof(ApiResponse<InventoryDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -705,21 +483,13 @@ public class InventoryController : ControllerBase
                 .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
+
             return BadRequest(ApiResponse.Failure(errors, "Validation failed"));
         }
 
-        var generalCreateDto = new InventoryCreateDto
-        {
-            ArticuloId = createDto.ArticuloId,
-            LocationType = InventoryLocationType.General,
-            LocationId = null,
-            Cantidad = createDto.Cantidad,
-        };
-
-        var result = await _coreService.CreateInventoryAsync(
-            generalCreateDto,
+        var result = await _inventoryService.AddGeneralInventoryAsync(
+            createDto,
             institucionId.Value,
-            this.GetCurrentUserId(),
             cancellationToken
         );
 
@@ -732,13 +502,121 @@ public class InventoryController : ControllerBase
             : StatusCode(500, result);
     }
 
+    /// <summary>
+    /// Synchronize general inventory with articles catalog
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Synchronization result</returns>
+    [HttpPost("general/synchronize")]
+    [ProducesResponseType(typeof(ApiResponse<string>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<string>>> SynchronizeGeneralInventory(
+        CancellationToken cancellationToken = default
+    )
+    {
+        var institucionId = this.GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var result = await _inventoryService.SynchronizeGeneralInventoryAsync(
+            institucionId.Value,
+            cancellationToken
+        );
+
+        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+    }
+
     #endregion
 
-    #region Movement Operations - Using IInventoryMovementService
+    #region Reporting and Analysis
+
+    /// <summary>
+    /// Get inventory summary by location
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Inventory summary by location</returns>
+    [HttpGet("summary")]
+    [ProducesResponseType(
+        typeof(ApiResponse<IEnumerable<InventorySummaryDto>>),
+        StatusCodes.Status200OK
+    )]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<
+        ActionResult<ApiResponse<IEnumerable<InventorySummaryDto>>>
+    > GetInventorySummary(CancellationToken cancellationToken = default)
+    {
+        var institucionId = this.GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var result = await _inventoryService.GetInventorySummaryAsync(
+            institucionId.Value,
+            cancellationToken
+        );
+
+        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+    }
+
+    #endregion
+
+    #region Stock Validation
+
+    /// <summary>
+    /// Validate stock availability
+    /// </summary>
+    /// <param name="articleId">Article ID</param>
+    /// <param name="requestedQuantity">Requested quantity</param>
+    /// <param name="locationType">Location type</param>
+    /// <param name="locationId">Location ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Stock validation result</returns>
+    [HttpGet("validate-stock")]
+    [ProducesResponseType(typeof(ApiResponse<StockValidationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<StockValidationDto>>> ValidateStock(
+        [FromQuery] int articleId,
+        [FromQuery] int requestedQuantity,
+        [FromQuery] InventoryLocationType locationType,
+        [FromQuery] int? locationId = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var institucionId = this.GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var result = await _inventoryService.ValidateStockAsync(
+            articleId,
+            requestedQuantity,
+            locationType,
+            locationId,
+            institucionId.Value,
+            cancellationToken
+        );
+
+        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+    }
+
+    #endregion
+
+    #region Inventory Movements
 
     /// <summary>
     /// Register an inventory movement
     /// </summary>
+    /// <param name="id">Inventory ID</param>
+    /// <param name="movementDto">Movement data</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Created movement</returns>
     [HttpPost("{id}/movements")]
     [ProducesResponseType(
         typeof(ApiResponse<MovimientoInventarioDto>),
@@ -777,16 +655,7 @@ public class InventoryController : ControllerBase
         // Set the inventory ID from route
         movementDto.InventarioId = id;
 
-        // First update the inventory quantity
-        await _coreService.UpdateInventoryQuantityAsync(
-            id,
-            movementDto.CantidadNueva,
-            institucionId.Value,
-            cancellationToken
-        );
-
-        // Then record the movement
-        var result = await _movementService.CreateMovementAsync(
+        var result = await _inventoryService.RegisterMovementAsync(
             movementDto,
             institucionId.Value,
             userId,
@@ -796,13 +665,6 @@ public class InventoryController : ControllerBase
 
         if (result.IsSuccess)
         {
-            // Check and generate alerts after inventory update
-            await _alertService.CheckAndGenerateAlertsAsync(
-                id,
-                institucionId.Value,
-                cancellationToken
-            );
-
             return CreatedAtAction(
                 nameof(GetMovement),
                 new { id = result.Data!.MovimientoId },
@@ -818,21 +680,20 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Get movement history for a specific inventory item
     /// </summary>
+    /// <param name="id">Inventory ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of movements</returns>
     [HttpGet("{id}/movements")]
     [ProducesResponseType(
-        typeof(ApiResponse<PagedResult<MovimientoInventarioDto>>),
+        typeof(ApiResponse<MovimientoInventarioResumenDto>),
         StatusCodes.Status200OK
     )]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
     public async Task<
-        ActionResult<ApiResponse<PagedResult<MovimientoInventarioDto>>>
-    > GetInventoryMovements(
-        int id,
-        [FromQuery] MovimientoInventarioFilterDto filter,
-        CancellationToken cancellationToken = default
-    )
+        ActionResult<ApiResponse<MovimientoInventarioResumenDto>>
+    > GetInventoryMovements(int id, CancellationToken cancellationToken = default)
     {
         var institucionId = this.GetCurrentInstitucionId();
         if (!institucionId.HasValue)
@@ -840,10 +701,9 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var result = await _movementService.GetMovementsAsync(
+        var result = await _inventoryService.GetInventoryMovementsAsync(
             id,
             institucionId.Value,
-            filter,
             cancellationToken
         );
 
@@ -853,8 +713,43 @@ public class InventoryController : ControllerBase
     }
 
     /// <summary>
+    /// Get movement audit trail with advanced filtering
+    /// </summary>
+    /// <param name="request">Audit request parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Paginated audit results</returns>
+    [HttpGet("movements/audit")]
+    [ProducesResponseType(
+        typeof(ApiResponse<MovimientoAuditoriaResponseDto>),
+        StatusCodes.Status200OK
+    )]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<MovimientoAuditoriaResponseDto>>> GetMovementAudit(
+        [FromQuery] MovimientoAuditoriaRequestDto request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var institucionId = this.GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var result = await _inventoryService.GetMovementAuditAsync(
+            request,
+            institucionId.Value,
+            cancellationToken
+        );
+        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+    }
+
+    /// <summary>
     /// Get a specific movement by ID
     /// </summary>
+    /// <param name="id">Movement ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Movement details</returns>
     [HttpGet("movements/{id}")]
     [ProducesResponseType(typeof(ApiResponse<MovimientoInventarioDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -871,7 +766,7 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var result = await _movementService.GetMovementByIdAsync(
+        var result = await _inventoryService.GetMovementByIdAsync(
             id,
             institucionId.Value,
             cancellationToken
@@ -882,49 +777,22 @@ public class InventoryController : ControllerBase
             : StatusCode(500, result);
     }
 
-    /// <summary>
-    /// Get movement statistics
-    /// </summary>
-    [HttpGet("movements/statistics")]
-    [ProducesResponseType(typeof(ApiResponse<MovimientoEstadisticasDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<MovimientoEstadisticasDto>>> GetMovementStatistics(
-        [FromQuery] MovimientoEstadisticasFilterDto filter,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var institucionId = this.GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var result = await _movementService.GetMovementStatisticsAsync(
-            institucionId.Value,
-            filter,
-            cancellationToken
-        );
-
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
-    }
-
     #endregion
 
-    #region Alert Operations - Using IInventoryAlertService
+    #region Inventory Alerts
 
     /// <summary>
     /// Get active inventory alerts
     /// </summary>
+    /// <param name="request">Filter parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of active alerts</returns>
     [HttpGet("alerts/active")]
-    [ProducesResponseType(
-        typeof(ApiResponse<PagedResult<AlertaInventarioDto>>),
-        StatusCodes.Status200OK
-    )]
+    [ProducesResponseType(typeof(ApiResponse<AlertasActivasResumenDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<PagedResult<AlertaInventarioDto>>>> GetActiveAlerts(
-        [FromQuery] AlertaInventarioFilterDto filter,
+    public async Task<ActionResult<ApiResponse<AlertasActivasResumenDto>>> GetActiveAlerts(
+        [FromQuery] AlertaFiltroRequestDto request,
         CancellationToken cancellationToken = default
     )
     {
@@ -934,9 +802,9 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var result = await _alertService.GetActiveAlertsAsync(
+        var result = await _inventoryService.GetActiveAlertsAsync(
+            request,
             institucionId.Value,
-            filter,
             cancellationToken
         );
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
@@ -945,6 +813,9 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Configure alert thresholds for inventory items
     /// </summary>
+    /// <param name="configDto">Alert configuration</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Created configuration</returns>
     [HttpPost("alerts/configure")]
     [ProducesResponseType(
         typeof(ApiResponse<ConfiguracionAlertaDto>),
@@ -978,7 +849,7 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure(errors, "Validation failed"));
         }
 
-        var result = await _alertService.ConfigureAlertsAsync(
+        var result = await _inventoryService.ConfigureAlertsAsync(
             configDto,
             institucionId.Value,
             userId,
@@ -1000,6 +871,10 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Acknowledge an inventory alert
     /// </summary>
+    /// <param name="id">Alert ID</param>
+    /// <param name="acknowledgmentDto">Acknowledgment data</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Updated alert</returns>
     [HttpPut("alerts/{id}/acknowledge")]
     [ProducesResponseType(typeof(ApiResponse<AlertaInventarioDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -1023,7 +898,7 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("User ID is required"));
         }
 
-        var result = await _alertService.AcknowledgeAlertAsync(
+        var result = await _inventoryService.AcknowledgeAlertAsync(
             id,
             acknowledgmentDto,
             institucionId.Value,
@@ -1039,6 +914,9 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Get alert configuration for an inventory item
     /// </summary>
+    /// <param name="inventoryId">Inventory ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Alert configuration</returns>
     [HttpGet("alerts/configuration/{inventoryId}")]
     [ProducesResponseType(typeof(ApiResponse<ConfiguracionAlertaDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -1055,7 +933,7 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var result = await _alertService.GetAlertConfigurationAsync(
+        var result = await _inventoryService.GetAlertConfigurationAsync(
             inventoryId,
             institucionId.Value,
             cancellationToken
@@ -1068,11 +946,14 @@ public class InventoryController : ControllerBase
 
     #endregion
 
-    #region Transfer Operations - Using IInventoryTransferService
+    #region Enhanced Transfer Operations
 
     /// <summary>
     /// Create a single transfer request
     /// </summary>
+    /// <param name="transferDto">Transfer data</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Created transfer</returns>
     [HttpPost("transfer")]
     [ProducesResponseType(
         typeof(ApiResponse<TransferenciaInventarioDto>),
@@ -1106,7 +987,7 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure(errors, "Validation failed"));
         }
 
-        var result = await _transferService.CreateTransferAsync(
+        var result = await _inventoryService.CreateTransferAsync(
             transferDto,
             institucionId.Value,
             userId,
@@ -1127,47 +1008,22 @@ public class InventoryController : ControllerBase
     }
 
     /// <summary>
-    /// Get all transfers with filtering
+    /// Create multiple transfer requests in batch
     /// </summary>
-    [HttpGet("transfers")]
+    /// <param name="batchDto">Batch transfer data</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Created transfers</returns>
+    [HttpPost("transfer/batch")]
     [ProducesResponseType(
-        typeof(ApiResponse<PagedResult<TransferenciaInventarioDto>>),
-        StatusCodes.Status200OK
+        typeof(ApiResponse<IEnumerable<TransferenciaInventarioDto>>),
+        StatusCodes.Status201Created
     )]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
     public async Task<
-        ActionResult<ApiResponse<PagedResult<TransferenciaInventarioDto>>>
-    > GetTransfers(
-        [FromQuery] TransferenciaInventarioFilterDto filter,
-        CancellationToken cancellationToken = default
-    )
-    {
-        var institucionId = this.GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var result = await _transferService.GetTransfersAsync(
-            institucionId.Value,
-            filter,
-            cancellationToken
-        );
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
-    }
-
-    /// <summary>
-    /// Approve a transfer request
-    /// </summary>
-    [HttpPut("transfer/{id}/approve")]
-    [ProducesResponseType(typeof(ApiResponse<TransferenciaInventarioDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<ApiResponse<TransferenciaInventarioDto>>> ApproveTransfer(
-        int id,
-        [FromBody] TransferenciaApprovalDto approvalDto,
+        ActionResult<ApiResponse<IEnumerable<TransferenciaInventarioDto>>>
+    > CreateBatchTransfers(
+        [FromBody] TransferenciaBatchCreateDto batchDto,
         CancellationToken cancellationToken = default
     )
     {
@@ -1183,7 +1039,95 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("User ID is required"));
         }
 
-        var result = await _transferService.ApproveTransferAsync(
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            return BadRequest(ApiResponse.Failure(errors, "Validation failed"));
+        }
+
+        var result = await _inventoryService.CreateBatchTransfersAsync(
+            batchDto,
+            institucionId.Value,
+            userId,
+            this.GetClientIpAddress(),
+            cancellationToken
+        );
+        return result.IsSuccess
+            ? CreatedAtAction(nameof(GetTransfers), null, result)
+            : StatusCode(500, result);
+    }
+
+    /// <summary>
+    /// Get pending transfers requiring approval
+    /// </summary>
+    /// <param name="request">Filter parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of pending transfers</returns>
+    [HttpGet("transfer/pending")]
+    [ProducesResponseType(
+        typeof(ApiResponse<IEnumerable<TransferenciaInventarioDto>>),
+        StatusCodes.Status200OK
+    )]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<
+        ActionResult<ApiResponse<IEnumerable<TransferenciaInventarioDto>>>
+    > GetPendingTransfers(
+        [FromQuery] TransferenciaInventarioFilterDto request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var institucionId = this.GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        // Force filter to pending only
+        request.Estado = "Pendiente";
+
+        var result = await _inventoryService.GetTransfersAsync(
+            request,
+            institucionId.Value,
+            cancellationToken
+        );
+        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+    }
+
+    /// <summary>
+    /// Approve a transfer request
+    /// </summary>
+    /// <param name="id">Transfer ID</param>
+    /// <param name="approvalDto">Approval data</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Updated transfer</returns>
+    [HttpPut("transfer/{id}/approve")]
+    [ProducesResponseType(typeof(ApiResponse<TransferenciaInventarioDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<TransferenciaInventarioDto>>> ApproveTransfer(
+        int id,
+        [FromBody] TransferenciaAprobacionDto approvalDto,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var institucionId = this.GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var userId = this.GetCurrentUserId();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return BadRequest(ApiResponse.Failure("User ID is required"));
+        }
+
+        var result = await _inventoryService.ApproveTransferAsync(
             id,
             approvalDto,
             institucionId.Value,
@@ -1197,8 +1141,45 @@ public class InventoryController : ControllerBase
     }
 
     /// <summary>
+    /// Get all transfers with filtering
+    /// </summary>
+    /// <param name="request">Filter parameters</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of transfers</returns>
+    [HttpGet("transfers")]
+    [ProducesResponseType(
+        typeof(ApiResponse<IEnumerable<TransferenciaInventarioDto>>),
+        StatusCodes.Status200OK
+    )]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<
+        ActionResult<ApiResponse<IEnumerable<TransferenciaInventarioDto>>>
+    > GetTransfers(
+        [FromQuery] TransferenciaInventarioFilterDto request,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var institucionId = this.GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("Institution ID is required"));
+        }
+
+        var result = await _inventoryService.GetTransfersAsync(
+            request,
+            institucionId.Value,
+            cancellationToken
+        );
+        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+    }
+
+    /// <summary>
     /// Get a specific transfer by ID
     /// </summary>
+    /// <param name="id">Transfer ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Transfer details</returns>
     [HttpGet("transfer/{id}")]
     [ProducesResponseType(typeof(ApiResponse<TransferenciaInventarioDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
@@ -1215,7 +1196,7 @@ public class InventoryController : ControllerBase
             return BadRequest(ApiResponse.Failure("Institution ID is required"));
         }
 
-        var result = await _transferService.GetTransferByIdAsync(
+        var result = await _inventoryService.GetTransferByIdAsync(
             id,
             institucionId.Value,
             cancellationToken
@@ -1233,6 +1214,7 @@ public class InventoryController : ControllerBase
     /// <summary>
     /// Health check endpoint for inventory service
     /// </summary>
+    /// <returns>Health status</returns>
     [HttpGet("health")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
@@ -1241,29 +1223,17 @@ public class InventoryController : ControllerBase
         return Ok(
             new
             {
-                service = "Inventory Service V1 (Refactored with SRP)",
+                service = "Inventory Service V1",
                 status = "healthy",
                 timestamp = DateTime.UtcNow,
-                version = "2.0.0",
-                architecture = "Single Responsibility Principle",
-                services = new[]
-                {
-                    "InventoryCoreService - CRUD operations",
-                    "InventoryValidationService - Stock validation",
-                    "InventoryReportingService - Reports and analytics",
-                    "InventoryMovementService - Movement tracking",
-                    "InventoryAlertService - Alert management",
-                    "InventoryTransferService - Transfer operations",
-                },
+                version = "1.0.0",
                 features = new[]
                 {
                     "Unified room and general inventory",
                     "Multi-tenant support",
                     "Stock validation",
-                    "Comprehensive reporting",
-                    "Real-time alerts",
-                    "Transfer management",
-                    "Movement tracking",
+                    "Batch operations",
+                    "Inventory synchronization",
                 },
             }
         );
@@ -1271,4 +1241,3 @@ public class InventoryController : ControllerBase
 
     #endregion
 }
-
