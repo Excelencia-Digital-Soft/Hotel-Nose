@@ -21,6 +21,7 @@ public class ReservasService : IReservasService
     private readonly IVisitasService _visitasService;
     private readonly IMovimientosService _movimientosService;
     private readonly IPromocionesService _promocionesService;
+    private readonly IReservationNotificationService _reservationNotificationService;
 
     public ReservasService(
         HotelDbContext context,
@@ -28,7 +29,8 @@ public class ReservasService : IReservasService
         IRegistrosService registrosService,
         IVisitasService visitasService,
         IMovimientosService movimientosService,
-        IPromocionesService promocionesService
+        IPromocionesService promocionesService,
+        IReservationNotificationService reservationNotificationService
     )
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
@@ -38,6 +40,7 @@ public class ReservasService : IReservasService
         _visitasService = visitasService ?? throw new ArgumentNullException(nameof(visitasService));
         _movimientosService = movimientosService ?? throw new ArgumentNullException(nameof(movimientosService));
         _promocionesService = promocionesService ?? throw new ArgumentNullException(nameof(promocionesService));
+        _reservationNotificationService = reservationNotificationService ?? throw new ArgumentNullException(nameof(reservationNotificationService));
     }
 
     /// <inheritdoc/>
@@ -81,6 +84,13 @@ public class ReservasService : IReservasService
             await transaction.CommitAsync(cancellationToken);
 
             _logger.LogInformation("Finalized reservation for room {HabitacionId}", habitacionId);
+
+            // Send notification about reservation finalization
+            await _reservationNotificationService.NotifyReservationFinalizedAsync(
+                reservaActiva?.ReservaId ?? 0, 
+                habitacion, 
+                habitacion.InstitucionID,
+                cancellationToken);
 
             return ApiResponse.Success("Reservation finalized successfully");
         }
@@ -961,7 +971,16 @@ public class ReservasService : IReservasService
                 pricingResult.TotalAmount
             );
 
-            // 10. Return created reservation as DTO
+            // 10. Send real-time notification to institution
+            await _reservationNotificationService.NotifyReservationCreatedAsync(
+                reserva, 
+                habitacion, 
+                visita, 
+                pricingResult.TotalAmount, 
+                pricingResult.PromocionNombre,
+                cancellationToken);  
+
+            // 11. Return created reservation as DTO
             var reservaDto = new ReservaDto
             {
                 ReservaId = reserva.ReservaId,

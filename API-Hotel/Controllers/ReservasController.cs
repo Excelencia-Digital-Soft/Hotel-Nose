@@ -14,14 +14,14 @@ namespace hotel.Controllers
         private readonly MovimientosController _movimiento;
         private readonly VisitasController _visita;
         private readonly IServiceProvider _serviceProvider;
-        private readonly ReservationMonitorService _reservationMonitorService;
+        private readonly INotificationService _notificationService;
         private readonly IRegistrosService _registrosService;
 
         public ReservasController(
             HotelDbContext db,
             IServiceProvider serviceProvider,
             IConfiguration configuration,
-            ReservationMonitorService reservationMonitorService,
+            INotificationService notificationService,
             IRegistrosService registrosService
         )
         {
@@ -29,6 +29,8 @@ namespace hotel.Controllers
             _movimiento = new MovimientosController(db);
             _visita = new VisitasController(db);
             _registrosService = registrosService;
+            _notificationService = notificationService;
+            _serviceProvider = serviceProvider;
         }
 
         #region Reservas
@@ -131,12 +133,13 @@ namespace hotel.Controllers
                 );
                 nuevaReserva.MovimientoId = movimientoID;
                 await _db.SaveChangesAsync();
-                using (var scope = _serviceProvider.CreateScope())
-                {
-                    var notificationService =
-                        scope.ServiceProvider.GetRequiredService<ReservationMonitorService>();
-                    notificationService.ScheduleNotification(nuevaReserva);
-                }
+                // Send notification about new reservation
+                await _notificationService.SendNotificationToInstitutionAsync(
+                    nuevaReserva.Visita.InstitucionID,
+                    "info",
+                    $"Nueva reserva creada para habitación {habitacion.NombreHabitacion}",
+                    new { reservaId = nuevaReserva.ReservaId, habitacionId = nuevaReserva.HabitacionId }
+                );
                 // Step 5: Update the room's availability and set the current VisitaID
                 habitacion.Disponible = false;
                 habitacion.VisitaID = VisitaID;
@@ -476,7 +479,13 @@ namespace hotel.Controllers
                     reserva.TotalHoras = reserva.TotalHoras + horas;
                     reserva.TotalMinutos = reserva.TotalMinutos + minutos;
                     await _db.SaveChangesAsync();
-                    _reservationMonitorService.ScheduleNotification(reserva);
+                    // Send notification about reservation extension
+                    await _notificationService.SendNotificationToInstitutionAsync(
+                        reserva.Visita!.InstitucionID,
+                        "info",
+                        $"Reserva extendida - Total: {reserva.TotalHoras}h {reserva.TotalMinutos}min",
+                        new { reservaId = reserva.ReservaId, totalHoras = reserva.TotalHoras, totalMinutos = reserva.TotalMinutos }
+                    );
                     res.Data = reserva;
                     res.Message = "Reserva encontrada.";
                     res.Ok = true;

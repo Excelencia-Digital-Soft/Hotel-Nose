@@ -5,9 +5,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 [Authorize]
+[Obsolete("This hub is deprecated. Use hotel.Hubs.V1.NotificationsHub instead.")]
 public class NotificationsHub : Hub<INotificationClient>
 {
     private readonly ILogger<NotificationsHub> _logger;
@@ -62,11 +64,33 @@ public class NotificationsHub : Hub<INotificationClient>
                 return;
             }
 
+            // Security check: Verify user belongs to the institution they're trying to subscribe to
+            var userInstitucionIdClaim = Context.User?.FindFirst("InstitucionId")?.Value;
+            if (string.IsNullOrEmpty(userInstitucionIdClaim) || 
+                !int.TryParse(userInstitucionIdClaim, out int userInstitucionId))
+            {
+                await Clients.Caller.ReceiveNotification("error", "Institution not found in user claims", 
+                    new { error = "User institution information is missing" });
+                _logger.LogWarning("User {UserId} attempted to subscribe without institution claim", 
+                    Context.UserIdentifier);
+                return;
+            }
+
+            // Ensure user can only subscribe to their own institution
+            if (userInstitucionId != institucionID)
+            {
+                await Clients.Caller.ReceiveNotification("error", "Unauthorized subscription attempt", 
+                    new { error = "You can only subscribe to your own institution" });
+                _logger.LogWarning("User {UserId} from institution {UserInstitution} attempted to subscribe to institution {RequestedInstitution}", 
+                    Context.UserIdentifier, userInstitucionId, institucionID);
+                return;
+            }
+
             await Groups.AddToGroupAsync(Context.ConnectionId, $"institution-{institucionID}");
             await Clients.Caller.SubscriptionConfirmed($"Subscribed to notifications for Institution {institucionID}");
             
-            _logger.LogInformation("Client {ConnectionId} subscribed to institution {InstitucionID}", 
-                Context.ConnectionId, institucionID);
+            _logger.LogInformation("Client {ConnectionId} (User: {UserId}) subscribed to institution {InstitucionID}", 
+                Context.ConnectionId, Context.UserIdentifier, institucionID);
         }
         catch (Exception ex)
         {
@@ -78,7 +102,18 @@ public class NotificationsHub : Hub<INotificationClient>
 
     public override async Task OnConnectedAsync()
     {
-        _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
+        _logger.LogInformation("Client connected: {ConnectionId} (User: {UserId})", 
+            Context.ConnectionId, Context.UserIdentifier);
+        
+        // Auto-subscribe to user's institution if available in claims
+        var institucionIdClaim = Context.User?.FindFirst("InstitucionId")?.Value;
+        if (!string.IsNullOrEmpty(institucionIdClaim) && int.TryParse(institucionIdClaim, out int institucionId))
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, $"institution-{institucionId}");
+            _logger.LogInformation("Client {ConnectionId} auto-subscribed to institution {InstitucionId}", 
+                Context.ConnectionId, institucionId);
+        }
+        
         await base.OnConnectedAsync();
     }
 

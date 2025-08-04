@@ -52,8 +52,9 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IUserConsumptionService, UserConsumptionService>();
         services.AddScoped<IVisitasService, VisitasService>();
 
-        // Register notification service as singleton (required for background services)
+        // Register notification services
         services.AddSingleton<INotificationService, SignalRNotificationService>();
+        services.AddScoped<IReservationNotificationService, ReservationNotificationService>();
 
         // Register specialized inventory services (following Single Responsibility Principle)
         services.AddScoped<IInventoryCoreService, InventoryCoreService>();
@@ -111,24 +112,21 @@ public static class ServiceCollectionExtensions
     /// </summary>
     public static IServiceCollection AddBackgroundServices(this IServiceCollection services)
     {
-        // Configure Host Options for better handling of background service exceptions
+        // Configure graceful shutdown timeout for background services
         services.Configure<HostOptions>(options =>
         {
-            options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
             options.ShutdownTimeout = TimeSpan.FromSeconds(15);
         });
 
-        // Add Cron Job
-        services.AddCronJob<MySchedulerJob>(options =>
+        // Reservation expiration monitoring job (every 5 minutes)
+        services.AddCronJob<ReservationExpirationJob>(options =>
         {
-            options.CronExpression = "20 8 * * *";
+            options.CronExpression = "*/5 * * * *"; // Every 5 minutes
             options.TimeZone = TimeZoneInfo.Local;
         });
 
-        // Add SignalR and background services
+        // Add SignalR
         services.AddSignalR();
-        services.AddSingleton<ReservationMonitorService>();
-        services.AddHostedService<ReservationMonitorService>();
 
         return services;
     }

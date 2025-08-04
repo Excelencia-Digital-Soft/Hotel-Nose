@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using hotel.DTOs.Auth;
 using hotel.DTOs.Common;
 using hotel.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace hotel.Controllers.V1;
 
@@ -15,7 +15,10 @@ public class AuthenticationController : ControllerBase
     private readonly IAuthService _authService;
     private readonly ILogger<AuthenticationController> _logger;
 
-    public AuthenticationController(IAuthService authService, ILogger<AuthenticationController> logger)
+    public AuthenticationController(
+        IAuthService authService,
+        ILogger<AuthenticationController> logger
+    )
     {
         _authService = authService;
         _logger = logger;
@@ -31,20 +34,24 @@ public class AuthenticationController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<LoginResponseDto>>> Login([FromBody] LoginRequestDto loginRequest)
+    public async Task<ActionResult<ApiResponse<LoginResponseDto>>> Login(
+        [FromBody] LoginRequestDto loginRequest
+    )
     {
         if (!ModelState.IsValid)
         {
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
-            
-            return BadRequest(ApiResponse<LoginResponseDto>.Failure(errors, "Invalid request data"));
+
+            return BadRequest(
+                ApiResponse<LoginResponseDto>.Failure(errors, "Invalid request data")
+            );
         }
 
         var result = await _authService.LoginAsync(loginRequest);
-        
+
         if (!result.IsSuccess)
         {
             return Unauthorized(result);
@@ -62,20 +69,24 @@ public class AuthenticationController : ControllerBase
     [AllowAnonymous]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<ApiResponse<LoginResponseDto>>> Register([FromBody] RegisterRequestDto registerRequest)
+    public async Task<ActionResult<ApiResponse<LoginResponseDto>>> Register(
+        [FromBody] RegisterRequestDto registerRequest
+    )
     {
         if (!ModelState.IsValid)
         {
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
-            
-            return BadRequest(ApiResponse<LoginResponseDto>.Failure(errors, "Invalid request data"));
+
+            return BadRequest(
+                ApiResponse<LoginResponseDto>.Failure(errors, "Invalid request data")
+            );
         }
 
         var result = await _authService.RegisterAsync(registerRequest);
-        
+
         if (!result.IsSuccess)
         {
             return BadRequest(result);
@@ -89,7 +100,7 @@ public class AuthenticationController : ControllerBase
     /// </summary>
     /// <returns>Current user data</returns>
     [HttpGet("me")]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [ProducesResponseType(typeof(ApiResponse<UserInfoDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<UserInfoDto>), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse<UserInfoDto>), StatusCodes.Status404NotFound)]
@@ -102,7 +113,7 @@ public class AuthenticationController : ControllerBase
         }
 
         var result = await _authService.GetCurrentUserAsync(userId);
-        
+
         if (!result.IsSuccess)
         {
             return NotFound(result);
@@ -117,19 +128,21 @@ public class AuthenticationController : ControllerBase
     /// <param name="changePasswordRequest">Password change data</param>
     /// <returns>Password change result</returns>
     [HttpPut("password")]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse>> ChangePassword([FromBody] ChangePasswordRequestDto changePasswordRequest)
+    public async Task<ActionResult<ApiResponse>> ChangePassword(
+        [FromBody] ChangePasswordRequestDto changePasswordRequest
+    )
     {
         if (!ModelState.IsValid)
         {
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
-            
+
             return BadRequest(ApiResponse.Failure(errors, "Invalid request data"));
         }
 
@@ -140,7 +153,7 @@ public class AuthenticationController : ControllerBase
         }
 
         var result = await _authService.ChangePasswordAsync(userId, changePasswordRequest);
-        
+
         if (!result.IsSuccess)
         {
             return BadRequest(result);
@@ -155,20 +168,24 @@ public class AuthenticationController : ControllerBase
     /// <param name="forceChangePasswordRequest">New password data</param>
     /// <returns>Password change result with new token</returns>
     [HttpPut("password/force-change")]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse<LoginResponseDto>), StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult<ApiResponse<LoginResponseDto>>> ForceChangePassword([FromBody] ForceChangePasswordRequestDto forceChangePasswordRequest)
+    public async Task<ActionResult<ApiResponse<LoginResponseDto>>> ForceChangePassword(
+        [FromBody] ForceChangePasswordRequestDto forceChangePasswordRequest
+    )
     {
         if (!ModelState.IsValid)
         {
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
-            
-            return BadRequest(ApiResponse<LoginResponseDto>.Failure(errors, "Invalid request data"));
+
+            return BadRequest(
+                ApiResponse<LoginResponseDto>.Failure(errors, "Invalid request data")
+            );
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -177,8 +194,11 @@ public class AuthenticationController : ControllerBase
             return Unauthorized(ApiResponse<LoginResponseDto>.Failure("User not authenticated"));
         }
 
-        var result = await _authService.ForceChangePasswordAsync(userId, forceChangePasswordRequest);
-        
+        var result = await _authService.ForceChangePasswordAsync(
+            userId,
+            forceChangePasswordRequest
+        );
+
         if (!result.IsSuccess)
         {
             return BadRequest(result);
@@ -192,7 +212,7 @@ public class AuthenticationController : ControllerBase
     /// </summary>
     /// <returns>Logout result</returns>
     [HttpPost("logout")]
-    [Authorize]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     public async Task<ActionResult<ApiResponse>> Logout()
     {
@@ -200,3 +220,4 @@ public class AuthenticationController : ControllerBase
         return Ok(result);
     }
 }
+

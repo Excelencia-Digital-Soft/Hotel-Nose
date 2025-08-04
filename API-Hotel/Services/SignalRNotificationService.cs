@@ -1,7 +1,6 @@
 using hotel.Interfaces;
-using hotel.NotificacionesHub;
+using hotel.Hubs.V1;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Logging;
 
 namespace hotel.Services;
 
@@ -15,7 +14,8 @@ public class SignalRNotificationService : INotificationService
 
     public SignalRNotificationService(
         IHubContext<NotificationsHub, INotificationClient> hubContext,
-        ILogger<SignalRNotificationService> logger)
+        ILogger<SignalRNotificationService> logger
+    )
     {
         _hubContext = hubContext ?? throw new ArgumentNullException(nameof(hubContext));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -29,8 +29,11 @@ public class SignalRNotificationService : INotificationService
         try
         {
             await _hubContext.Clients.All.ReceiveNotification(type, message, data);
-            _logger.LogInformation("Notification sent to all clients: Type={Type}, Message={Message}", 
-                type, message);
+            _logger.LogInformation(
+                "Notification sent to all clients: Type={Type}, Message={Message}",
+                type,
+                message
+            );
         }
         catch (Exception ex)
         {
@@ -42,18 +45,31 @@ public class SignalRNotificationService : INotificationService
     /// <summary>
     /// Send notification to all clients in a specific institution
     /// </summary>
-    public async Task SendNotificationToInstitutionAsync(int institucionId, string type, string message, object? data = null)
+    public async Task SendNotificationToInstitutionAsync(
+        int institucionId,
+        string type,
+        string message,
+        object? data = null
+    )
     {
         try
         {
             var groupName = $"institution-{institucionId}";
             await _hubContext.Clients.Group(groupName).ReceiveNotification(type, message, data);
-            _logger.LogInformation("Notification sent to institution {InstitucionId}: Type={Type}, Message={Message}", 
-                institucionId, type, message);
+            _logger.LogInformation(
+                "Notification sent to institution {InstitucionId}: Type={Type}, Message={Message}",
+                institucionId,
+                type,
+                message
+            );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error sending notification to institution {InstitucionId}", institucionId);
+            _logger.LogError(
+                ex,
+                "Error sending notification to institution {InstitucionId}",
+                institucionId
+            );
             throw;
         }
     }
@@ -61,13 +77,22 @@ public class SignalRNotificationService : INotificationService
     /// <summary>
     /// Send notification to a specific user
     /// </summary>
-    public async Task SendNotificationToUserAsync(string userId, string type, string message, object? data = null)
+    public async Task SendNotificationToUserAsync(
+        string userId,
+        string type,
+        string message,
+        object? data = null
+    )
     {
         try
         {
             await _hubContext.Clients.User(userId).ReceiveNotification(type, message, data);
-            _logger.LogInformation("Notification sent to user {UserId}: Type={Type}, Message={Message}", 
-                userId, type, message);
+            _logger.LogInformation(
+                "Notification sent to user {UserId}: Type={Type}, Message={Message}",
+                userId,
+                type,
+                message
+            );
         }
         catch (Exception ex)
         {
@@ -79,13 +104,22 @@ public class SignalRNotificationService : INotificationService
     /// <summary>
     /// Send notification to a specific group
     /// </summary>
-    public async Task SendNotificationToGroupAsync(string groupName, string type, string message, object? data = null)
+    public async Task SendNotificationToGroupAsync(
+        string groupName,
+        string type,
+        string message,
+        object? data = null
+    )
     {
         try
         {
             await _hubContext.Clients.Group(groupName).ReceiveNotification(type, message, data);
-            _logger.LogInformation("Notification sent to group {GroupName}: Type={Type}, Message={Message}", 
-                groupName, type, message);
+            _logger.LogInformation(
+                "Notification sent to group {GroupName}: Type={Type}, Message={Message}",
+                groupName,
+                type,
+                message
+            );
         }
         catch (Exception ex)
         {
@@ -94,3 +128,4 @@ public class SignalRNotificationService : INotificationService
         }
     }
 }
+

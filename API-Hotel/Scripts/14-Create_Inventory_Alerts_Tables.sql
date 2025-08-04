@@ -3,7 +3,7 @@
 -- Date: 2025-08-01
 -- Author: Claude AI Assistant
 
-USE [HotelManagement]
+USE [Hotel]
 GO
 
 -- Create AlertasInventario table
@@ -73,6 +73,88 @@ END
 ELSE
 BEGIN
     PRINT 'Table ConfiguracionAlertasInventario already exists.'
+END
+GO
+
+-- Add missing columns to ConfiguracionAlertasInventario if the table already exists
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'ConfiguracionAlertasInventario')
+BEGIN
+    -- Add EsActiva column if it doesn't exist
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ConfiguracionAlertasInventario') AND name = 'EsActiva')
+    BEGIN
+        ALTER TABLE [dbo].[ConfiguracionAlertasInventario]
+        ADD [EsActiva] [bit] NOT NULL DEFAULT 1
+        
+        PRINT 'Column EsActiva added to ConfiguracionAlertasInventario table.'
+    END
+    
+    -- Add StockMinimo column if it doesn't exist
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ConfiguracionAlertasInventario') AND name = 'StockMinimo')
+    BEGIN
+        ALTER TABLE [dbo].[ConfiguracionAlertasInventario]
+        ADD [StockMinimo] [int] NULL
+        
+        PRINT 'Column StockMinimo added to ConfiguracionAlertasInventario table.'
+    END
+    
+    -- Add StockMaximo column if it doesn't exist
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ConfiguracionAlertasInventario') AND name = 'StockMaximo')
+    BEGIN
+        ALTER TABLE [dbo].[ConfiguracionAlertasInventario]
+        ADD [StockMaximo] [int] NULL
+        
+        PRINT 'Column StockMaximo added to ConfiguracionAlertasInventario table.'
+    END
+    
+    -- Add StockCritico column if it doesn't exist
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ConfiguracionAlertasInventario') AND name = 'StockCritico')
+    BEGIN
+        ALTER TABLE [dbo].[ConfiguracionAlertasInventario]
+        ADD [StockCritico] [int] NULL
+        
+        PRINT 'Column StockCritico added to ConfiguracionAlertasInventario table.'
+    END
+    
+    -- Add FrecuenciaRevisionMinutos column if it doesn't exist
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ConfiguracionAlertasInventario') AND name = 'FrecuenciaRevisionMinutos')
+    BEGIN
+        ALTER TABLE [dbo].[ConfiguracionAlertasInventario]
+        ADD [FrecuenciaRevisionMinutos] [int] NOT NULL DEFAULT 60
+        
+        PRINT 'Column FrecuenciaRevisionMinutos added to ConfiguracionAlertasInventario table.'
+    END
+    
+    -- Add EmailsNotificacion column if it doesn't exist
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ConfiguracionAlertasInventario') AND name = 'EmailsNotificacion')
+    BEGIN
+        ALTER TABLE [dbo].[ConfiguracionAlertasInventario]
+        ADD [EmailsNotificacion] [nvarchar](1000) NULL
+        
+        PRINT 'Column EmailsNotificacion added to ConfiguracionAlertasInventario table.'
+    END
+END
+GO
+
+-- Add missing columns to AlertasInventario if the table already exists
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'AlertasInventario')
+BEGIN
+    -- Add NotasReconocimiento column if it doesn't exist
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AlertasInventario') AND name = 'NotasReconocimiento')
+    BEGIN
+        ALTER TABLE [dbo].[AlertasInventario]
+        ADD [NotasReconocimiento] [nvarchar](500) NULL
+        
+        PRINT 'Column NotasReconocimiento added to AlertasInventario table.'
+    END
+    
+    -- Add UmbralConfiguracion column if it doesn't exist
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('AlertasInventario') AND name = 'UmbralConfiguracion')
+    BEGIN
+        ALTER TABLE [dbo].[AlertasInventario]
+        ADD [UmbralConfiguracion] [int] NULL
+        
+        PRINT 'Column UmbralConfiguracion added to AlertasInventario table.'
+    END
 END
 GO
 
@@ -267,31 +349,59 @@ BEGIN
 END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_ConfiguracionAlertasInventario_StockValues')
+-- Check if table and columns exist before adding constraint
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'ConfiguracionAlertasInventario')
+   AND EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ConfiguracionAlertasInventario') AND name = 'StockMinimo')
+   AND EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ConfiguracionAlertasInventario') AND name = 'StockMaximo')
+   AND EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ConfiguracionAlertasInventario') AND name = 'StockCritico')
+   AND NOT EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_ConfiguracionAlertasInventario_StockValues')
 BEGIN
+    DECLARE @sql1 NVARCHAR(MAX) = '
     ALTER TABLE [dbo].[ConfiguracionAlertasInventario]
     ADD CONSTRAINT [CK_ConfiguracionAlertasInventario_StockValues] 
-    CHECK ([StockMinimo] >= 0 AND [StockMaximo] >= 0 AND [StockCritico] >= 0)
+    CHECK ([StockMinimo] >= 0 AND [StockMaximo] >= 0 AND [StockCritico] >= 0)'
     
+    EXEC sp_executesql @sql1
     PRINT 'Check constraint CK_ConfiguracionAlertasInventario_StockValues created.'
 END
-ELSE
+ELSE IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ConfiguracionAlertasInventario')
+BEGIN
+    PRINT 'Table ConfiguracionAlertasInventario does not exist. Constraint not created.'
+END
+ELSE IF EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_ConfiguracionAlertasInventario_StockValues')
 BEGIN
     PRINT 'Check constraint CK_ConfiguracionAlertasInventario_StockValues already exists.'
 END
+ELSE
+BEGIN
+    PRINT 'WARNING: Required columns for CK_ConfiguracionAlertasInventario_StockValues do not exist.'
+END
 GO
 
-IF NOT EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_ConfiguracionAlertasInventario_FrecuenciaRevision')
+-- Check if table and column exist before adding constraint
+IF EXISTS (SELECT * FROM sys.tables WHERE name = 'ConfiguracionAlertasInventario')
+   AND EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('ConfiguracionAlertasInventario') AND name = 'FrecuenciaRevisionMinutos')
+   AND NOT EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_ConfiguracionAlertasInventario_FrecuenciaRevision')
 BEGIN
+    DECLARE @sql2 NVARCHAR(MAX) = '
     ALTER TABLE [dbo].[ConfiguracionAlertasInventario]
     ADD CONSTRAINT [CK_ConfiguracionAlertasInventario_FrecuenciaRevision] 
-    CHECK ([FrecuenciaRevisionMinutos] > 0 AND [FrecuenciaRevisionMinutos] <= 10080) -- Max 1 week
+    CHECK ([FrecuenciaRevisionMinutos] > 0 AND [FrecuenciaRevisionMinutos] <= 10080)' -- Max 1 week
     
+    EXEC sp_executesql @sql2
     PRINT 'Check constraint CK_ConfiguracionAlertasInventario_FrecuenciaRevision created.'
+END
+ELSE IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'ConfiguracionAlertasInventario')
+BEGIN
+    PRINT 'Table ConfiguracionAlertasInventario does not exist. Constraint not created.'
+END
+ELSE IF EXISTS (SELECT * FROM sys.check_constraints WHERE name = 'CK_ConfiguracionAlertasInventario_FrecuenciaRevision')
+BEGIN
+    PRINT 'Check constraint CK_ConfiguracionAlertasInventario_FrecuenciaRevision already exists.'
 END
 ELSE
 BEGIN
-    PRINT 'Check constraint CK_ConfiguracionAlertasInventario_FrecuenciaRevision already exists.'
+    PRINT 'WARNING: Required column FrecuenciaRevisionMinutos for CK_ConfiguracionAlertasInventario_FrecuenciaRevision does not exist.'
 END
 GO
 

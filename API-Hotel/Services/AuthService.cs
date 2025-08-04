@@ -187,7 +187,7 @@ public class AuthService : IAuthService
             }
 
             // Assign default role
-            await _userManager.AddToRoleAsync(user, "User");
+            await _userManager.AddToRoleAsync(user, "Mucama");
 
             // Generate token
             var token = await _jwtService.GenerateTokenAsync(user);

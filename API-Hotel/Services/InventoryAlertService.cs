@@ -116,10 +116,39 @@ public class InventoryAlertService : IInventoryAlertService
             };
 
             // Apply pagination
-            var alertas = await query
-                .Skip((filter.Pagina - 1) * filter.TamanoPagina)
-                .Take(filter.TamanoPagina)
-                .ToListAsync(cancellationToken);
+            List<AlertaInventario> alertas;
+            int actualTotalCount = 0;
+            
+            try 
+            {
+                alertas = await query
+                    .Skip((filter.Pagina - 1) * filter.TamanoPagina)
+                    .Take(filter.TamanoPagina)
+                    .ToListAsync(cancellationToken);
+                    
+                actualTotalCount = totalCount;
+            }
+            catch (Exception dbEx) when (dbEx.Message.Contains("Invalid column name") || 
+                                       dbEx.Message.Contains("nombre de columna") ||
+                                       dbEx.Message.Contains("no es válido"))
+            {
+                _logger.LogWarning(
+                    "AlertasInventario table has missing columns. Please run script 14-Create_Inventory_Alerts_Tables.sql. Error: {Error}",
+                    dbEx.Message
+                );
+                
+                return ApiResponse<PagedResult<AlertaInventarioDto>>.Success(
+                    new PagedResult<AlertaInventarioDto>
+                    {
+                        Items = new List<AlertaInventarioDto>(),
+                        TotalCount = 0,
+                        Page = filter.Pagina,
+                        PageSize = filter.TamanoPagina,
+                        TotalPages = 0
+                    },
+                    "Alert system not available. Database tables need to be updated."
+                );
+            }
 
             // Map to DTOs
             var alertaDtos = new List<AlertaInventarioDto>();
@@ -131,10 +160,10 @@ public class InventoryAlertService : IInventoryAlertService
             var result = new PagedResult<AlertaInventarioDto>
             {
                 Items = alertaDtos,
-                TotalCount = totalCount,
+                TotalCount = actualTotalCount,
                 Page = filter.Pagina,
                 PageSize = filter.TamanoPagina,
-                TotalPages = (int)Math.Ceiling((double)totalCount / filter.TamanoPagina),
+                TotalPages = (int)Math.Ceiling((double)actualTotalCount / filter.TamanoPagina),
             };
 
             // Add statistics

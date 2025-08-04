@@ -1,4 +1,4 @@
-using hotel.NotificacionesHub;
+using hotel.Hubs.V1;
 
 namespace hotel.Extensions;
 
@@ -34,8 +34,8 @@ public static class MiddlewareExtensions
         // Controllers
         app.MapControllers();
 
-        // SignalR Hub with authentication required
-        app.MapHub<NotificationsHub>("/notifications")
+        // SignalR V1 Hub with authentication required
+        app.MapHub<NotificationsHub>("/api/v1/notifications")
             .RequireAuthorization();
 
         return app;

@@ -58,7 +58,7 @@ public class InventoryCoreService : IInventoryCoreService
                 ArticuloNombre = i.Articulo?.NombreArticulo ?? "Desconocido",
                 ArticuloDescripcion = "",
                 ArticuloPrecio = i.Articulo?.Precio ?? 0,
-                ArticuloImagenUrl = i.Articulo?.Imagen?.Origen,
+                ArticuloImagenUrl = i.Articulo?.Imagen?.NombreArchivo,
                 Cantidad = i.Cantidad,
                 LocationType = (InventoryLocationType)i.TipoUbicacion,
                 LocationId = i.UbicacionId,
@@ -416,4 +416,3 @@ public class InventoryCoreService : IInventoryCoreService
         };
     }
 }
-

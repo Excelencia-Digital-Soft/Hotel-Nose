@@ -17,13 +17,15 @@ public class ConsumosService : IConsumosService
     private readonly IRegistrosService _registrosService;
 
     public ConsumosService(
-        HotelDbContext context, 
+        HotelDbContext context,
         ILogger<ConsumosService> logger,
-        IRegistrosService registrosService)
+        IRegistrosService registrosService
+    )
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _registrosService = registrosService ?? throw new ArgumentNullException(nameof(registrosService));
+        _registrosService =
+            registrosService ?? throw new ArgumentNullException(nameof(registrosService));
     }
 
     /// <inheritdoc/>
@@ -35,8 +37,7 @@ public class ConsumosService : IConsumosService
         try
         {
             var consumos = await _context
-                .Consumo
-                .AsNoTracking()
+                .Consumo.AsNoTracking()
                 .Where(c => c.Movimientos!.VisitaId == visitaId && c.Anulado != true)
                 .Include(c => c.Movimientos)
                 .Include(c => c.Articulo)
@@ -87,7 +88,11 @@ public class ConsumosService : IConsumosService
         try
         {
             // Get or create movement
-            var movimiento = await GetOrCreateMovementAsync(visitaId, habitacionId, cancellationToken);
+            var movimiento = await GetOrCreateMovementAsync(
+                visitaId,
+                habitacionId,
+                cancellationToken
+            );
 
             foreach (var item in items)
             {
@@ -104,7 +109,12 @@ public class ConsumosService : IConsumosService
                 _context.Consumo.Add(consumo);
 
                 // Update general inventory
-                await UpdateInventoryAsync(item.ArticuloId, -item.Cantidad, null, cancellationToken);
+                await UpdateInventoryAsync(
+                    item.ArticuloId,
+                    -item.Cantidad,
+                    null,
+                    cancellationToken
+                );
             }
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -142,7 +152,11 @@ public class ConsumosService : IConsumosService
         try
         {
             // Get or create movement
-            var movimiento = await GetOrCreateMovementAsync(visitaId, habitacionId, cancellationToken);
+            var movimiento = await GetOrCreateMovementAsync(
+                visitaId,
+                habitacionId,
+                cancellationToken
+            );
 
             foreach (var item in items)
             {
@@ -159,7 +173,12 @@ public class ConsumosService : IConsumosService
                 _context.Consumo.Add(consumo);
 
                 // Update room inventory
-                await UpdateInventoryAsync(item.ArticuloId, -item.Cantidad, habitacionId, cancellationToken);
+                await UpdateInventoryAsync(
+                    item.ArticuloId,
+                    -item.Cantidad,
+                    habitacionId,
+                    cancellationToken
+                );
             }
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -191,11 +210,11 @@ public class ConsumosService : IConsumosService
     )
     {
         using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        
+
         try
         {
-            var consumo = await _context.Consumo
-                .Include(c => c.Movimientos)
+            var consumo = await _context
+                .Consumo.Include(c => c.Movimientos)
                 .FirstOrDefaultAsync(c => c.ConsumoId == consumoId, cancellationToken);
 
             if (consumo == null)
@@ -209,8 +228,14 @@ public class ConsumosService : IConsumosService
             consumo.Anulado = true;
 
             // Restore inventory
-            var habitacionId = consumo.EsHabitacion == true ? consumo.Movimientos?.HabitacionId : null;
-            await UpdateInventoryAsync(consumo.ArticuloId ?? 0, consumo.Cantidad ?? 0, habitacionId, cancellationToken);
+            var habitacionId =
+                consumo.EsHabitacion == true ? consumo.Movimientos?.HabitacionId : null;
+            await UpdateInventoryAsync(
+                consumo.ArticuloId ?? 0,
+                consumo.Cantidad ?? 0,
+                habitacionId,
+                cancellationToken
+            );
 
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
@@ -237,11 +262,11 @@ public class ConsumosService : IConsumosService
     )
     {
         using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        
+
         try
         {
-            var consumo = await _context.Consumo
-                .Include(c => c.Articulo)
+            var consumo = await _context
+                .Consumo.Include(c => c.Articulo)
                 .Include(c => c.Movimientos)
                 .FirstOrDefaultAsync(c => c.ConsumoId == consumoId, cancellationToken);
 
@@ -255,14 +280,20 @@ public class ConsumosService : IConsumosService
 
             var originalQuantity = consumo.Cantidad ?? 0;
             var quantityDifference = originalQuantity - quantity;
-            
+
             consumo.Cantidad = quantity;
 
             // Update inventory with the difference
             if (quantityDifference != 0)
             {
-                var habitacionId = consumo.EsHabitacion == true ? consumo.Movimientos?.HabitacionId : null;
-                await UpdateInventoryAsync(consumo.ArticuloId ?? 0, quantityDifference, habitacionId, cancellationToken);
+                var habitacionId =
+                    consumo.EsHabitacion == true ? consumo.Movimientos?.HabitacionId : null;
+                await UpdateInventoryAsync(
+                    consumo.ArticuloId ?? 0,
+                    quantityDifference,
+                    habitacionId,
+                    cancellationToken
+                );
             }
 
             await _context.SaveChangesAsync(cancellationToken);
@@ -309,27 +340,29 @@ public class ConsumosService : IConsumosService
     {
         try
         {
-            var consumos = await _context.Consumo
-                .AsNoTracking()
+            var consumos = await _context
+                .Consumo.AsNoTracking()
                 .Where(c => c.Movimientos!.VisitaId == visitaId && c.Anulado != true)
                 .Include(c => c.Articulo)
                 .Include(c => c.Movimientos)
                 .ToListAsync(cancellationToken);
 
-            var consumoDtos = consumos.Select(c => new ConsumoDto
-            {
-                ConsumoId = c.ConsumoId,
-                ArticuloId = c.ArticuloId ?? 0,
-                ArticleName = c.Articulo?.NombreArticulo ?? string.Empty,
-                Cantidad = c.Cantidad ?? 0,
-                PrecioUnitario = c.PrecioUnitario ?? 0,
-                Total = (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0),
-                EsHabitacion = c.EsHabitacion ?? false,
-                FechaConsumo = c.Movimientos?.FechaRegistro ?? DateTime.Now,
-                VisitaId = c.Movimientos?.VisitaId ?? 0,
-                HabitacionId = c.Movimientos?.HabitacionId ?? 0,
-                Activo = !(c.Anulado ?? false),
-            }).ToList();
+            var consumoDtos = consumos
+                .Select(c => new ConsumoDto
+                {
+                    ConsumoId = c.ConsumoId,
+                    ArticuloId = c.ArticuloId ?? 0,
+                    ArticleName = c.Articulo?.NombreArticulo ?? string.Empty,
+                    Cantidad = c.Cantidad ?? 0,
+                    PrecioUnitario = c.PrecioUnitario ?? 0,
+                    Total = (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0),
+                    EsHabitacion = c.EsHabitacion ?? false,
+                    FechaConsumo = c.Movimientos?.FechaRegistro ?? DateTime.Now,
+                    VisitaId = c.Movimientos?.VisitaId ?? 0,
+                    HabitacionId = c.Movimientos?.HabitacionId ?? 0,
+                    Activo = !(c.Anulado ?? false),
+                })
+                .ToList();
 
             var summary = new ConsumoSummaryDto
             {
@@ -366,13 +399,17 @@ public class ConsumosService : IConsumosService
     /// Get or create a movement for the visit
     /// </summary>
     private async Task<Movimientos> GetOrCreateMovementAsync(
-        int visitaId, 
-        int habitacionId, 
-        CancellationToken cancellationToken)
+        int visitaId,
+        int habitacionId,
+        CancellationToken cancellationToken
+    )
     {
-        var existingMovement = await _context.Movimientos
-            .AsNoTracking()
-            .FirstOrDefaultAsync(m => m.VisitaId == visitaId && m.Anulado != true, cancellationToken);
+        var existingMovement = await _context
+            .Movimientos.AsNoTracking()
+            .FirstOrDefaultAsync(
+                m => m.VisitaId == visitaId && m.Anulado != true,
+                cancellationToken
+            );
 
         if (existingMovement != null)
         {
@@ -380,8 +417,8 @@ public class ConsumosService : IConsumosService
         }
 
         // Get institution ID from habitacion
-        var habitacion = await _context.Habitaciones
-            .AsNoTracking()
+        var habitacion = await _context
+            .Habitaciones.AsNoTracking()
             .FirstOrDefaultAsync(h => h.HabitacionId == habitacionId, cancellationToken);
 
         var newMovement = new Movimientos
@@ -392,7 +429,7 @@ public class ConsumosService : IConsumosService
             FechaRegistro = DateTime.Now,
             TotalFacturado = 0,
             Anulado = false,
-            InstitucionID = habitacion?.InstitucionID ?? 0
+            InstitucionID = habitacion?.InstitucionID ?? 0,
         };
 
         _context.Movimientos.Add(newMovement);
@@ -402,46 +439,35 @@ public class ConsumosService : IConsumosService
     }
 
     /// <summary>
-    /// Update inventory (room or general) when consuming items
+    /// Update inventory (room or general) when consuming items using InventarioUnificado
     /// </summary>
     private async Task UpdateInventoryAsync(
-        int articuloId, 
-        int quantityChange, 
-        int? habitacionId, 
-        CancellationToken cancellationToken)
+        int articuloId,
+        int quantityChange,
+        int? habitacionId,
+        CancellationToken cancellationToken
+    )
     {
-        if (habitacionId.HasValue)
-        {
-            // Update room inventory (No AsNoTracking because we need to update)
-            var roomInventory = await _context.Inventarios
-                .FirstOrDefaultAsync(i => i.ArticuloId == articuloId && 
-                                        i.HabitacionId == habitacionId.Value && 
-                                        i.Anulado != true, cancellationToken);
+        // Use InventarioUnificado instead of separate Inventarios and InventarioGeneral tables
+        var inventory = await _context.InventarioUnificado.FirstOrDefaultAsync(
+            i =>
+                i.ArticuloId == articuloId
+                && i.UbicacionId == habitacionId // UbicacionId is HabitacionId for rooms, null for general inventory
+                && (habitacionId.HasValue ? i.TipoUbicacion == 1 : i.TipoUbicacion == 0) // 1 = Room, 0 = General
+                && i.Anulado != true,
+            cancellationToken
+        );
 
-            if (roomInventory != null)
-            {
-                roomInventory.Cantidad = (roomInventory.Cantidad ?? 0) + quantityChange;
-                if (roomInventory.Cantidad < 0)
-                {
-                    roomInventory.Cantidad = 0;
-                }
-            }
-        }
-        else
+        if (inventory != null)
         {
-            // Update general inventory (No AsNoTracking because we need to update)
-            var generalInventory = await _context.InventarioGeneral
-                .FirstOrDefaultAsync(i => i.ArticuloId == articuloId && 
-                                        i.Anulado != true, cancellationToken);
-
-            if (generalInventory != null)
+            inventory.Cantidad = inventory.Cantidad + quantityChange;
+            if (inventory.Cantidad < 0)
             {
-                generalInventory.Cantidad = (generalInventory.Cantidad ?? 0) + quantityChange;
-                if (generalInventory.Cantidad < 0)
-                {
-                    generalInventory.Cantidad = 0;
-                }
+                inventory.Cantidad = 0;
             }
+            
+            // Update audit fields
+            inventory.FechaUltimaActualizacion = DateTime.UtcNow;
         }
 
         // Create stock movement record
@@ -452,7 +478,7 @@ public class ConsumosService : IConsumosService
             TipoMovimientoId = quantityChange < 0 ? 2 : 1, // 2 = Egreso, 1 = Ingreso
             FechaMovimiento = DateTime.Now,
             FechaRegistro = DateTime.Now,
-            Anulado = false
+            Anulado = false,
         };
 
         _context.MovimientosStock.Add(stockMovement);
@@ -460,4 +486,3 @@ public class ConsumosService : IConsumosService
 
     #endregion
 }
-
