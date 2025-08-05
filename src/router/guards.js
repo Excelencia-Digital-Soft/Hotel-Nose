@@ -1,5 +1,5 @@
 import { useAuthStore } from "../store/auth";
-import { hasAnyRole } from "../utils/role-mapping.js";
+import { hasAnyRole } from "../utils/role-mapping";
 import { showAccessDeniedToast } from "../utils/toast.js";
 
 /**
@@ -13,14 +13,14 @@ export function requireAuth(to, from, next) {
   const isAuthenticated = authStore.isAuthenticated && authStore.user !== null;
 
   if (!isAuthenticated && to.meta.requireAuth) {
-    next(false) // Cancela la navegación sin redirigir;
+    next({ name: 'Guest' }); // Redirige a la página de login
     return;
   }
 
   next();
 }
 
-// Note: hasAnyRole function is now imported from role-mapping.js utility
+// Note: hasAnyRole function is now imported from role-mapping utility
 
 /**
  * Role-based access control guard
@@ -62,7 +62,7 @@ export function authAndRoleGuard(to, from, next) {
 
   // Check authentication first
   if (needAuth && !isAuthenticated) {
-    next(false) // Cancela la navegación sin redirigir;
+    next({ name: 'Guest' }); // Redirige a la página de login
     return;
   }
 
@@ -72,7 +72,7 @@ export function authAndRoleGuard(to, from, next) {
 
     if (!hasAnyRole(userRoles, allowedRoles)) {
       showAccessDeniedToast();
-      next(false) // Cancela la navegación sin redirigir;
+      next(false); // Cancela la navegación sin redirigir
       return;
     }
   }

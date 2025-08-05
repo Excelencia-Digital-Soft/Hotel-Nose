@@ -1,6 +1,7 @@
 // Re-export all types for easier imports
 export * from './api';
 export * from './composables';
+export * from './signalr';
 
 // Explicit re-exports for better IDE support and to avoid module resolution issues
 export type { ApiResponse } from './common';
@@ -29,3 +30,25 @@ export type {
   ConsumoCreateDto, 
   ConsumoUpdateDto 
 } from './consumo';
+export type {
+  ArticleDto,
+  ArticleCreateDto,
+  ArticleCreateWithImageDto,
+  ArticleUpdateDto,
+  ArticleStatusDto,
+  ArticleSearchParams,
+  ArticleStatisticsDto,
+  ArticleFormData,
+  ArticleDisplay
+} from './article';
+export type {
+  NotificationSeverity,
+  NotificationCategory,
+  NotificationData,
+  ClientNotification,
+  ConnectionState,
+  NotificationFilter,
+  NotificationStats,
+  UseNotificationsReturn,
+  NotificationServiceConfig
+} from './signalr';

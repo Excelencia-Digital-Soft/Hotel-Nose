@@ -30,7 +30,9 @@ export function removeTrailingSlash(url: string): string {
  */
 export function buildWebSocketUrl(baseUrl: string, endpoint: string = 'notifications'): string {
   const normalizedBase = ensureTrailingSlash(baseUrl);
-  return `${normalizedBase}${endpoint}`;
+  // Remove leading slash from endpoint if present to avoid double slashes
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
+  return `${normalizedBase}${cleanEndpoint}`;
 }
 
 /**

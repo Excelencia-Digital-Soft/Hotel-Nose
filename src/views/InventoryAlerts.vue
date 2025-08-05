@@ -115,7 +115,7 @@
             <div class="flex items-center space-x-1">
               <div
                 v-for="alert in room.alerts.slice(0, 3)"
-                :key="alert.alertId"
+                :key="alert.alertaId"
                 class="w-3 h-3 rounded-full"
                 :class="{
                   'bg-red-500': alert.severidad === 'Critica',
@@ -131,7 +131,7 @@
           <div class="space-y-2 mb-4">
             <div
               v-for="alert in room.alerts.slice(0, 2)"
-              :key="alert.alertId"
+              :key="alert.alertaId"
               class="text-sm"
             >
               <div class="flex items-center justify-between">
@@ -235,14 +235,14 @@
           <tbody>
             <tr
               v-for="alert in filteredAlerts"
-              :key="alert.alertId"
+              :key="alert.alertaId"
               class="border-b border-white/5 hover:bg-white/5 transition-colors"
             >
               <td class="py-3 px-4">
                 <div class="text-white font-semibold">{{ alert.articuloNombre }}</div>
               </td>
               <td class="py-3 px-4">
-                <div class="text-gray-300">{{ alert.locationName || `Habitación ${alert.locationId}` }}</div>
+                <div class="text-gray-300">{{ alert.ubicacionNombre || `Habitación ${alert.ubicacionId}` }}</div>
               </td>
               <td class="py-3 px-4">
                 <span
@@ -315,28 +315,39 @@
   </div>
 </template>
 
-<script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useToast } from 'primevue/usetoast'
-import { useConfirm } from 'primevue/useconfirm'
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
+import { useToast, type ToastServiceMethods } from 'primevue/usetoast'
+import { useConfirm, type ConfirmationService } from 'primevue/useconfirm'
 import { useGlobalAlerts } from '../composables/useInventoryAlerts'
 import Toast from 'primevue/toast'
 import ConfirmDialog from 'primevue/confirmdialog'
+import type { InventoryAlertDto } from '../types'
+
+// Types for component state
+interface RoomAlertGroup {
+  roomId: number
+  roomName: string
+  alerts: InventoryAlertDto[]
+}
+
+type AlertSeverity = 'Critica' | 'Alta' | 'Media' | 'Baja'
+type AlertType = 'StockBajo' | 'StockCritico' | 'StockAgotado'
 
 // Composables
-const toast = useToast()
-const confirm = useConfirm()
+const toast: ToastServiceMethods = useToast()
+const confirm: ConfirmationService = useConfirm()
 const alertSystem = useGlobalAlerts()
 
 // State
-const showCriticalOnly = ref(false)
-const severityFilter = ref('')
-const typeFilter = ref('')
-const timeSinceUpdate = ref(0)
-const updateTimer = ref(null)
+const showCriticalOnly: Ref<boolean> = ref(false)
+const severityFilter: Ref<string> = ref('')
+const typeFilter: Ref<string> = ref('')
+const timeSinceUpdate: Ref<number> = ref(0)
+const updateTimer: Ref<ReturnType<typeof setInterval> | null> = ref(null)
 
 // Computed
-const filteredRoomAlerts = computed(() => {
+const filteredRoomAlerts: ComputedRef<RoomAlertGroup[]> = computed(() => {
   if (showCriticalOnly.value) {
     return alertSystem.alertsByRoom.value.filter(room => 
       room.alerts.some(alert => alert.severidad === 'Critica')
@@ -345,7 +356,7 @@ const filteredRoomAlerts = computed(() => {
   return alertSystem.alertsByRoom.value
 })
 
-const filteredAlerts = computed(() => {
+const filteredAlerts: ComputedRef<InventoryAlertDto[]> = computed(() => {
   let alerts = [...alertSystem.activeAlerts.value]
   
   if (showCriticalOnly.value) {
@@ -362,15 +373,17 @@ const filteredAlerts = computed(() => {
   
   return alerts.sort((a, b) => {
     // Sort by severity priority
-    const severityPriority = { Critica: 4, Alta: 3, Media: 2, Baja: 1 }
-    return severityPriority[b.severidad] - severityPriority[a.severidad]
+    const severityPriority: Record<AlertSeverity, number> = { 
+      Critica: 4, Alta: 3, Media: 2, Baja: 1 
+    }
+    return severityPriority[b.severidad as AlertSeverity] - severityPriority[a.severidad as AlertSeverity]
   })
 })
 
 // Methods
-const acknowledgeAlert = async (alert) => {
+const acknowledgeAlert = async (alert: InventoryAlertDto): Promise<void> => {
   try {
-    await alertSystem.acknowledgeAlert(alert.alertId, 'Reconocida desde panel de alertas')
+    await alertSystem.acknowledgeAlert(alert.alertaId, 'Reconocida desde panel de alertas')
     toast.add({
       severity: 'success',
       summary: 'Alerta Reconocida',
@@ -387,8 +400,8 @@ const acknowledgeAlert = async (alert) => {
   }
 }
 
-const acknowledgeAllAlerts = async () => {
-  const confirmed = await new Promise((resolve) => {
+const acknowledgeAllAlerts = async (): Promise<void> => {
+  const confirmed = await new Promise<boolean>((resolve) => {
     confirm.require({
       message: `¿Estás seguro de reconocer todas las ${alertSystem.activeAlerts.value.length} alertas activas?`,
       header: 'Confirmar Reconocimiento Masivo',
@@ -404,7 +417,7 @@ const acknowledgeAllAlerts = async () => {
   if (!confirmed) return
 
   try {
-    const alertIds = alertSystem.activeAlerts.value.map(a => a.alertId)
+    const alertIds = alertSystem.activeAlerts.value.map(a => a.alertaId)
     await alertSystem.acknowledgeMultipleAlerts(alertIds, 'Reconocimiento masivo desde panel')
     
     toast.add({
@@ -423,9 +436,9 @@ const acknowledgeAllAlerts = async () => {
   }
 }
 
-const acknowledgeRoomAlerts = async (room) => {
+const acknowledgeRoomAlerts = async (room: RoomAlertGroup): Promise<void> => {
   try {
-    const alertIds = room.alerts.map(a => a.alertId)
+    const alertIds = room.alerts.map(a => a.alertaId)
     await alertSystem.acknowledgeMultipleAlerts(alertIds, `Reconocidas para ${room.roomName}`)
     
     toast.add({
@@ -444,7 +457,7 @@ const acknowledgeRoomAlerts = async (room) => {
   }
 }
 
-const viewRoomDetails = (room) => {
+const viewRoomDetails = (room: RoomAlertGroup): void => {
   toast.add({
     severity: 'info',
     summary: 'Funcionalidad',
@@ -453,7 +466,7 @@ const viewRoomDetails = (room) => {
   })
 }
 
-const refreshAlerts = async () => {
+const refreshAlerts = async (): Promise<void> => {
   try {
     await alertSystem.refresh()
     timeSinceUpdate.value = 0
@@ -473,7 +486,7 @@ const refreshAlerts = async () => {
   }
 }
 
-const formatDate = (dateString) => {
+const formatDate = (dateString: string): string => {
   return new Date(dateString).toLocaleString('es-ES', {
     day: '2-digit',
     month: '2-digit',

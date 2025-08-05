@@ -1,81 +1,110 @@
-import { ROLE_GROUPS } from '../utils/role-mapping.js'
+import { ROLE_GROUPS, type Role } from '../utils/role-mapping'
+import { type RouteLocationRaw } from 'vue-router'
+
+/**
+ * Menu variant types for styling
+ */
+export type MenuVariant = 'primary' | 'secondary' | 'user'
+
+/**
+ * Badge type for menu items
+ */
+export type MenuBadge = 'V1' | 'Nuevo' | string
+
+/**
+ * Menu item interface
+ */
+export interface MenuItem {
+  label: string
+  route?: RouteLocationRaw
+  action?: string
+  icon: string
+  roles: Role[] | null
+  badge?: MenuBadge
+  description?: string
+}
+
+/**
+ * Menu configuration interface
+ */
+export interface MenuConfig {
+  id: string
+  label: string
+  icon: string
+  variant: MenuVariant
+  roles: Role[]
+  items: MenuItem[]
+}
+
+/**
+ * User interface for menu configuration
+ */
+export interface User {
+  name?: string
+  email?: string
+  roles?: string[]
+  rolId?: string
+}
+
+/**
+ * Menu configuration for user interface
+ */
+export interface UserMenuConfigResult {
+  operational: MenuConfig[]
+  admin: MenuConfig[]
+  user: MenuConfig
+  userRoles: string[]
+}
 
 /**
  * Operational menu configuration
  * Business-specific functionality organized by domain
  */
-export const operationalMenuConfig = [
-  {
-    id: 'orders',
-    label: 'Pedidos',
-    icon: 'receipt_long',
-    variant: 'secondary',
-    roles: [...ROLE_GROUPS.BASIC_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
-    items: [
-      {
-        label: 'Recibir Pedido',
-        route: { name: 'ReceptionOrder' },
-        icon: 'inbox',
-        roles: [...ROLE_GROUPS.BASIC_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
-      },
-      {
-        label: 'Historial Pedidos',
-        route: { name: 'OrderHistory' },
-        icon: 'history',
-        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
-      },
-      {
-        label: 'Reportes Pedidos',
-        action: 'generateOrderReports',
-        icon: 'analytics',
-        roles: ROLE_GROUPS.ADMIN_ACCESS,
-      },
-    ],
-  },
+export const operationalMenuConfig: MenuConfig[] = [
   {
     id: 'inventory',
     label: 'Inventario',
     icon: 'inventory_2',
     variant: 'secondary',
-    roles: [...ROLE_GROUPS.OPERATIONAL, ...ROLE_GROUPS.ADMIN_ACCESS],
+    roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
     items: [
       {
         label: 'Agregar Artículos',
         route: { name: 'ArticleCreate' },
         icon: 'add_box',
-        roles: ROLE_GROUPS.ADMIN_ACCESS,
+        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
       },
       {
         label: 'Inventario General',
-        route: { name: 'InventoryManager' },
+        route: { name: 'InventoryManagerV1' },
         icon: 'warehouse',
-        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
         badge: 'V1',
-        description: 'Gestión completa del inventario general con API V1'
+        description: 'Gestión completa del inventario general con API V1',
       },
       {
         label: 'Inventario por Habitación',
         route: { name: 'RoomInventoryManager' },
         icon: 'hotel',
-        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
         badge: 'V1',
-        description: 'Administración de inventario específico por habitación'
+        description: 'Administración de inventario específico por habitación',
       },
       {
         label: 'Alertas de Stock',
         route: { name: 'InventoryAlerts' },
         icon: 'notifications_active',
-        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
         badge: 'Nuevo',
-        description: 'Monitoreo de alertas de stock bajo y crítico'
+        description: 'Monitoreo de alertas de stock bajo y crítico',
       },
       {
         label: 'Transferencias',
         route: { name: 'InventoryTransfers' },
         icon: 'swap_horizontal_circle',
-        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
         badge: 'V1',
-        description: 'Transferencias entre habitaciones y lotes'
+        description: 'Transferencias entre habitaciones y lotes',
       },
     ],
   },
@@ -144,13 +173,6 @@ export const operationalMenuConfig = [
         roles: ROLE_GROUPS.ADMIN_ACCESS,
       },
       {
-        label: 'Egresos',
-        route: { name: 'Egresos' },
-        icon: 'money_off',
-        roles: ROLE_GROUPS.ADMIN_ACCESS,
-      },
-
-      {
         label: 'Consumo Usuario',
         route: { name: 'UserConsumptionManager' },
         icon: 'receipt_long',
@@ -164,7 +186,7 @@ export const operationalMenuConfig = [
  * Admin menu configuration
  * System administration and management features
  */
-export const adminMenuConfig = [
+export const adminMenuConfig: MenuConfig[] = [
   {
     id: 'admin',
     label: 'Administración',
@@ -182,13 +204,13 @@ export const adminMenuConfig = [
         label: 'Gestión Usuarios',
         route: { name: 'UsersManagement' },
         icon: 'group',
-        roles: ROLE_GROUPS.MANAGEMENT,
+        roles: ROLE_GROUPS.ADMIN_ACCESS,
       },
       {
         label: 'Configuración Sistema',
         route: { name: 'AdminSettings' },
         icon: 'settings',
-        roles: ROLE_GROUPS.MANAGEMENT,
+        roles: ROLE_GROUPS.ADMIN_ACCESS,
       },
     ],
   },
@@ -198,17 +220,18 @@ export const adminMenuConfig = [
  * User menu configuration
  * Personal account and session management
  */
-export const userMenuConfig = {
+export const userMenuConfig: MenuConfig = {
   id: 'user',
   label: 'Usuario', // This will be replaced with actual user name
   icon: 'account_circle',
   variant: 'user',
+  roles: [], // User menu doesn't need role restrictions at top level
   items: [
     {
       label: 'Administración Usuarios',
       route: { name: 'UsersManagement' },
       icon: 'admin_panel_settings',
-      roles: ROLE_GROUPS.MANAGEMENT,
+      roles: ROLE_GROUPS.ADMIN_ACCESS,
     },
     {
       label: 'Cerrar Sesión',
@@ -221,18 +244,18 @@ export const userMenuConfig = {
 
 /**
  * Get all menu configurations
- * @returns {Array} Combined menu configurations
+ * @returns Combined menu configurations
  */
-export function getAllMenuConfigs() {
+export function getAllMenuConfigs(): MenuConfig[] {
   return [...operationalMenuConfig, ...adminMenuConfig]
 }
 
 /**
  * Get user menu configuration with dynamic label
- * @param {string} userName - User display name
- * @returns {Object} User menu config with dynamic label
+ * @param userName - User display name
+ * @returns User menu config with dynamic label
  */
-export function getUserMenuConfig(userName = 'Usuario') {
+export function getUserMenuConfig(userName: string = 'Usuario'): MenuConfig {
   return {
     ...userMenuConfig,
     label: userName,
@@ -241,43 +264,44 @@ export function getUserMenuConfig(userName = 'Usuario') {
 
 /**
  * Filter menu items based on user roles
- * @param {Array} menuItems - Menu items to filter
- * @param {Array} userRoles - User's roles
- * @returns {Array} Filtered menu items
+ * @param menuItems - Menu items to filter
+ * @param userRoles - User's roles
+ * @returns Filtered menu items
  */
-export function filterMenuItemsByRole(menuItems, userRoles) {
-  if (!Array.isArray(userRoles)) {
-    userRoles = userRoles ? [userRoles] : []
-  }
+export function filterMenuItemsByRole(
+  menuItems: MenuItem[],
+  userRoles: string[] | string
+): MenuItem[] {
+  const rolesArray: string[] = Array.isArray(userRoles) ? userRoles : userRoles ? [userRoles] : []
 
   return menuItems.filter((item) => {
     // If no roles specified, item is available to everyone
     if (!item.roles || item.roles.length === 0) return true
 
     // Check if user has any of the required roles
-    return userRoles.some((role) => item.roles.includes(role))
+    return rolesArray.some((role) => item.roles?.includes(role as Role))
   })
 }
 
 /**
  * Get menu configuration for specific user
- * @param {Object} user - User object with roles
- * @returns {Object} Complete menu configuration for user
+ * @param user - User object with roles
+ * @returns Complete menu configuration for user
  */
-export function getMenuConfigForUser(user) {
-  const userRoles = user?.roles || (user?.rolId ? [user.rolId] : [])
-  const userName = user?.name || user?.email || 'Usuario'
+export function getMenuConfigForUser(user: User | null | undefined): UserMenuConfigResult {
+  const userRoles: string[] = user?.roles || (user?.rolId ? [user.rolId] : [])
+  const userName: string = user?.name || user?.email || 'Usuario'
 
   // Filter operational menus based on user roles
   const availableOperationalMenus = operationalMenuConfig.filter((menu) => {
     if (!menu.roles || menu.roles.length === 0) return true
-    return userRoles.some((role) => menu.roles.includes(role))
+    return userRoles.some((role) => menu.roles.includes(role as Role))
   })
 
   // Filter admin menus based on user roles
   const availableAdminMenus = adminMenuConfig.filter((menu) => {
     if (!menu.roles || menu.roles.length === 0) return true
-    return userRoles.some((role) => menu.roles.includes(role))
+    return userRoles.some((role) => menu.roles.includes(role as Role))
   })
 
   return {
@@ -287,3 +311,4 @@ export function getMenuConfigForUser(user) {
     userRoles,
   }
 }
+

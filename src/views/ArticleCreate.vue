@@ -1,8 +1,12 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 p-4 lg:p-6">
+  <div
+    class="min-h-screen bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 p-4 lg:p-6"
+  >
     <!-- Welcome Header -->
     <div class="glass-container mb-6 p-6 transform hover:scale-[1.02] transition-all duration-300">
-      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+      <div
+        class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0"
+      >
         <div class="text-center lg:text-left">
           <div class="flex items-center justify-center lg:justify-start mb-2">
             <div class="bg-gradient-to-r from-primary-400 to-accent-400 p-3 rounded-full mr-3">
@@ -10,27 +14,39 @@
             </div>
             <h1 class="text-3xl lg:text-4xl font-bold text-white">¡Gestiona tus Artículos!</h1>
           </div>
-          <p class="text-gray-300 text-lg">Crea, edita y organiza tu inventario de manera fácil y divertida 🎉</p>
+          <p class="text-gray-300 text-lg">
+            Crea, edita y organiza tu inventario de manera fácil y divertida 🎉
+          </p>
         </div>
-        
+
         <!-- Quick Stats -->
         <div class="glass-card p-4">
           <div class="grid grid-cols-3 gap-4 text-center">
             <div class="transform hover:scale-110 transition-transform duration-200">
-              <div class="bg-gradient-to-r from-primary-400 to-primary-500 text-white p-3 rounded-full mx-auto w-12 h-12 flex items-center justify-center mb-2">
+              <div
+                class="bg-gradient-to-r from-primary-400 to-primary-500 text-white p-3 rounded-full mx-auto w-12 h-12 flex items-center justify-center mb-2"
+              >
                 <span class="font-bold text-lg">{{ articles?.length || 0 }}</span>
               </div>
               <p class="text-xs text-gray-300">Artículos</p>
             </div>
             <div class="transform hover:scale-110 transition-transform duration-200">
-              <div class="bg-gradient-to-r from-secondary-400 to-secondary-500 text-white p-3 rounded-full mx-auto w-12 h-12 flex items-center justify-center mb-2">
-                <span class="font-bold text-xs">{{ formatCompactCurrency(calculateTotalValue() || 0) }}</span>
+              <div
+                class="bg-gradient-to-r from-secondary-400 to-secondary-500 text-white p-3 rounded-full mx-auto w-12 h-12 flex items-center justify-center mb-2"
+              >
+                <span class="font-bold text-xs">{{
+                  formatCompactCurrency(calculateTotalValue() || 0)
+                }}</span>
               </div>
               <p class="text-xs text-gray-300">Valor Total</p>
             </div>
             <div class="transform hover:scale-110 transition-transform duration-200">
-              <div class="bg-gradient-to-r from-accent-400 to-accent-500 text-white p-3 rounded-full mx-auto w-12 h-12 flex items-center justify-center mb-2">
-                <span class="font-bold text-xs">{{ formatCompactCurrency(calculateAveragePrice() || 0) }}</span>
+              <div
+                class="bg-gradient-to-r from-accent-400 to-accent-500 text-white p-3 rounded-full mx-auto w-12 h-12 flex items-center justify-center mb-2"
+              >
+                <span class="font-bold text-xs">{{
+                  formatCompactCurrency(calculateAveragePrice() || 0)
+                }}</span>
               </div>
               <p class="text-xs text-gray-300">Promedio</p>
             </div>
@@ -41,19 +57,29 @@
 
     <!-- Create Article Button (Expandable) -->
     <div class="mb-6">
-      <div 
+      <div
         class="glass-container cursor-pointer transform transition-all duration-500 hover:scale-[1.02]"
         :class="{ 'p-4': !showCreateForm, 'p-6': showCreateForm }"
         @click="!showCreateForm && toggleCreateForm()"
       >
         <!-- Collapsed State -->
         <div v-if="!showCreateForm" class="flex items-center justify-center py-4">
-          <div class="bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 p-4 rounded-full mr-4 animate-pulse">
+          <div
+            class="bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 p-4 rounded-full mr-4 animate-pulse"
+          >
             <i class="pi pi-plus text-white text-2xl"></i>
           </div>
           <div class="text-center">
-            <h2 class="text-2xl font-bold text-white mb-1">{{ isEditMode ? 'Editando Artículo' : 'Crear Nuevo Artículo' }}</h2>
-            <p class="text-gray-300">{{ isEditMode ? '¡Actualiza la información de tu artículo!' : '¡Haz clic aquí para agregar algo increíble!' }}</p>
+            <h2 class="text-2xl font-bold text-white mb-1">
+              {{ isEditMode ? 'Editando Artículo' : 'Crear Nuevo Artículo' }}
+            </h2>
+            <p class="text-gray-300">
+              {{
+                isEditMode
+                  ? '¡Actualiza la información de tu artículo!'
+                  : '¡Haz clic aquí para agregar algo increíble!'
+              }}
+            </p>
           </div>
           <i class="pi pi-chevron-down text-white text-xl ml-4 animate-bounce"></i>
         </div>
@@ -64,7 +90,10 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center">
               <div class="bg-gradient-to-r from-primary-400 to-accent-400 p-3 rounded-full mr-3">
-                <i :class="isEditMode ? 'pi pi-pencil' : 'pi pi-plus'" class="text-white text-xl"></i>
+                <i
+                  :class="isEditMode ? 'pi pi-pencil' : 'pi pi-plus'"
+                  class="text-white text-xl"
+                ></i>
               </div>
               <h2 class="text-2xl font-bold text-white">
                 {{ isEditMode ? '✏️ Editar Artículo' : '🎨 Crear Nuevo Artículo' }}
@@ -108,13 +137,19 @@
                     required
                   />
                 </div>
-                <div v-if="isNameDuplicate" class="mt-2 p-2 bg-red-500/20 rounded-lg border border-red-500/30">
+                <div
+                  v-if="isNameDuplicate"
+                  class="mt-2 p-2 bg-red-500/20 rounded-lg border border-red-500/30"
+                >
                   <p class="text-red-300 text-sm flex items-center">
                     <i class="pi pi-exclamation-triangle mr-2"></i>
                     ¡Ups! Ya tienes un artículo con este nombre
                   </p>
                 </div>
-                <div v-if="formData.name && !isNameDuplicate" class="mt-2 p-2 bg-green-500/20 rounded-lg border border-green-500/30">
+                <div
+                  v-if="formData.name && !isNameDuplicate"
+                  class="mt-2 p-2 bg-green-500/20 rounded-lg border border-green-500/30"
+                >
                   <p class="text-green-300 text-sm flex items-center">
                     <i class="pi pi-check mr-2"></i>
                     ¡Perfecto! Este nombre está disponible
@@ -161,7 +196,7 @@
                 >
                   <option value="">🤔 Selecciona una categoría...</option>
                   <option
-                    v-for="category in (categories || []).filter(c => c.categoriaId !== null)"
+                    v-for="category in (categories || []).filter((c) => c.categoriaId !== null)"
                     :key="category.categoriaId"
                     :value="category.categoriaId"
                   >
@@ -183,9 +218,9 @@
                   <i class="pi pi-camera text-accent-400 mr-2"></i>
                   {{ isEditMode ? '📸 Cambiar imagen (opcional)' : '📸 Añade una foto genial *' }}
                 </label>
-                
+
                 <!-- Image Preview with Hover Effects and Drag & Drop -->
-                <div 
+                <div
                   class="relative group cursor-pointer transform hover:scale-[1.02] transition-all duration-300"
                   @click="$refs.imageInput.click()"
                   @dragover.prevent="onDragOver"
@@ -195,21 +230,23 @@
                 >
                   <div class="glass-card p-2 mb-4 relative">
                     <!-- Loading Overlay -->
-                    <div v-if="isLoadingImage" 
-                         class="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center">
+                    <div
+                      v-if="isLoadingImage"
+                      class="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center"
+                    >
                       <div class="text-center">
                         <i class="pi pi-spinner pi-spin text-white text-3xl mb-3"></i>
                         <p class="text-white font-semibold">Cargando imagen...</p>
                       </div>
                     </div>
-                    
+
                     <img
                       :src="imagePreview"
                       alt="Vista previa"
                       class="w-full h-64 object-cover rounded-lg"
                       :class="{ 'opacity-50': isLoadingImage }"
                     />
-                    
+
                     <!-- Clear Image Button -->
                     <button
                       v-if="formData.image && !isLoadingImage"
@@ -218,26 +255,34 @@
                     >
                       <i class="pi pi-times text-white"></i>
                     </button>
-                    
+
                     <!-- Drag & Drop Overlay -->
-                    <div v-if="isDragging && !isLoadingImage"
-                         class="absolute inset-2 bg-primary-500/30 backdrop-blur-sm rounded-lg z-30 flex flex-col items-center justify-center border-2 border-dashed border-primary-400">
+                    <div
+                      v-if="isDragging && !isLoadingImage"
+                      class="absolute inset-2 bg-primary-500/30 backdrop-blur-sm rounded-lg z-30 flex flex-col items-center justify-center border-2 border-dashed border-primary-400"
+                    >
                       <div class="bg-primary-400/80 p-4 rounded-full mb-2 animate-bounce">
                         <i class="pi pi-upload text-white text-3xl"></i>
                       </div>
                       <p class="text-white font-bold text-lg">¡Suelta aquí tu imagen!</p>
                       <p class="text-primary-200 text-sm">Se cargará automáticamente</p>
                     </div>
-                    
-                    <div class="absolute inset-2 bg-gradient-to-t from-black/60 via-transparent to-transparent 
-                               opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg 
-                               flex flex-col items-center justify-center"
-                         :class="{ 'opacity-0': isLoadingImage || isDragging }">
-                      <div class="bg-white/20 backdrop-blur-sm p-4 rounded-full mb-2 transform group-hover:scale-110 transition-transform">
+
+                    <div
+                      class="absolute inset-2 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-lg flex flex-col items-center justify-center"
+                      :class="{ 'opacity-0': isLoadingImage || isDragging }"
+                    >
+                      <div
+                        class="bg-white/20 backdrop-blur-sm p-4 rounded-full mb-2 transform group-hover:scale-110 transition-transform"
+                      >
                         <i class="pi pi-cloud-upload text-white text-2xl"></i>
                       </div>
                       <p class="text-white font-semibold">
-                        {{ imagePreview.includes('sin-imagen') ? '¡Sube tu primera imagen!' : '¡Cambia la imagen!' }}
+                        {{
+                          imagePreview.includes('sin-imagen')
+                            ? '¡Sube tu primera imagen!'
+                            : '¡Cambia la imagen!'
+                        }}
                       </p>
                       <p class="text-gray-300 text-sm">Haz clic aquí o arrastra la imagen</p>
                     </div>
@@ -259,12 +304,23 @@
                   :disabled="isLoadingImage"
                   class="w-full glass-button py-4 text-white hover:bg-white/20 transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <i :class="isLoadingImage ? 'pi pi-spinner pi-spin' : 'pi pi-cloud-upload'" class="mr-2 text-lg"></i>
+                  <i
+                    :class="isLoadingImage ? 'pi pi-spinner pi-spin' : 'pi pi-cloud-upload'"
+                    class="mr-2 text-lg"
+                  ></i>
                   <span class="font-semibold">
-                    {{ isLoadingImage ? '⏳ Cargando...' : (imagePreview.includes('sin-imagen') ? (isEditMode ? '🎨 Agregar Imagen' : '🎨 Subir Imagen') : '🔄 Cambiar Imagen') }}
+                    {{
+                      isLoadingImage
+                        ? '⏳ Cargando...'
+                        : imagePreview.includes('sin-imagen')
+                          ? isEditMode
+                            ? '🎨 Agregar Imagen'
+                            : '🎨 Subir Imagen'
+                          : '🔄 Cambiar Imagen'
+                    }}
                   </span>
                 </button>
-                
+
                 <!-- Clear Image Button -->
                 <button
                   v-if="formData.image && !isLoadingImage"
@@ -275,7 +331,7 @@
                   <i class="pi pi-trash mr-2"></i>
                   <span class="font-semibold">🗑️ Remover Imagen</span>
                 </button>
-                
+
                 <div class="mt-3 p-3 bg-blue-500/20 rounded-lg border border-blue-500/30">
                   <p class="text-blue-300 text-sm flex items-center mb-1">
                     <i class="pi pi-info-circle mr-2"></i>
@@ -291,18 +347,23 @@
               <button
                 type="submit"
                 :disabled="!isFormValid || isSubmitting"
-                class="w-full bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 
-                       hover:from-primary-500 hover:via-secondary-500 hover:to-accent-500 
-                       disabled:opacity-50 disabled:cursor-not-allowed
-                       text-white font-bold py-4 px-6 rounded-xl text-lg
-                       transition-all duration-300 transform hover:scale-105 
-                       shadow-lg hover:shadow-xl"
+                class="w-full bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 hover:from-primary-500 hover:via-secondary-500 hover:to-accent-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
               >
                 <div class="flex items-center justify-center">
                   <i v-if="isSubmitting" class="pi pi-spinner pi-spin mr-3 text-xl"></i>
-                  <i v-else :class="isEditMode ? 'pi pi-check' : 'pi pi-sparkles'" class="mr-3 text-xl"></i>
+                  <i
+                    v-else
+                    :class="isEditMode ? 'pi pi-check' : 'pi pi-sparkles'"
+                    class="mr-3 text-xl"
+                  ></i>
                   <span>
-                    {{ isSubmitting ? '✨ Procesando magia...' : (isEditMode ? '🎉 ¡Actualizar Artículo!' : '🚀 ¡Crear Artículo!') }}
+                    {{
+                      isSubmitting
+                        ? '✨ Procesando magia...'
+                        : isEditMode
+                          ? '🎉 ¡Actualizar Artículo!'
+                          : '🚀 ¡Crear Artículo!'
+                    }}
                   </span>
                 </div>
               </button>
@@ -318,7 +379,7 @@
         <i class="pi pi-search text-accent-400 text-xl mr-2"></i>
         <h3 class="text-xl font-bold text-white">🔍 Encuentra tus artículos</h3>
       </div>
-      
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Search -->
         <div class="relative">
@@ -337,13 +398,10 @@
         </div>
 
         <!-- Category Filter -->
-        <select
-          v-model="selectedCategory"
-          class="glass-input px-4 py-3"
-        >
+        <select v-model="selectedCategory" class="glass-input px-4 py-3">
           <option value="all">📂 Todas las categorías</option>
           <option
-            v-for="category in (categories || []).filter(c => c.categoriaId !== null)"
+            v-for="category in (categories || []).filter((c) => c.categoriaId !== null)"
             :key="category.categoriaId"
             :value="category.categoriaId"
           >
@@ -352,10 +410,7 @@
         </select>
 
         <!-- Sort -->
-        <select
-          v-model="sortBy"
-          class="glass-input px-4 py-3"
-        >
+        <select v-model="sortBy" class="glass-input px-4 py-3">
           <option value="name">🔤 Ordenar por nombre</option>
           <option value="price">💰 Ordenar por precio</option>
           <option value="category">📂 Ordenar por categoría</option>
@@ -383,13 +438,22 @@
         <div class="flex items-center">
           <i class="pi pi-grid text-primary-400 text-xl mr-2"></i>
           <h3 class="text-xl font-bold text-white">
-            {{ (filteredArticles?.length || 0) > 0 ? `🎉 ${filteredArticles.length} artículos encontrados` : '📦 Tu inventario' }}
+            {{
+              (filteredArticles?.length || 0) > 0
+                ? `🎉 ${filteredArticles.length} artículos encontrados`
+                : '📦 Tu inventario'
+            }}
           </h3>
         </div>
-        
+
         <div v-if="filteredArticles.length > 0" class="glass-card px-3 py-1">
           <span class="text-accent-400 text-sm font-semibold text-white">
-            Total: {{ formatPrice((filteredArticles || []).reduce((sum, art) => sum + parseFloat(art.precio || 0), 0)) }}
+            Total:
+            {{
+              formatPrice(
+                (filteredArticles || []).reduce((sum, art) => sum + parseFloat(art.precio || 0), 0)
+              )
+            }}
           </span>
         </div>
       </div>
@@ -397,7 +461,7 @@
       <!-- Articles Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <div
-          v-for="article in (filteredArticles || [])"
+          v-for="article in filteredArticles || []"
           :key="article.articuloId"
           class="glass-card p-4 hover:bg-white/15 transition-all duration-300 group transform hover:scale-105"
         >
@@ -410,7 +474,7 @@
             />
             <div class="absolute top-2 right-2">
               <span class="glass-button px-2 py-1 text-xs text-white">
-                📂 {{ getCategoryName(article.categoriaID || article.categoriaId) }}
+                📂 {{ getCategoryName(article.categoriaId) }}
               </span>
             </div>
             <div class="absolute bottom-2 left-2">
@@ -422,7 +486,9 @@
 
           <!-- Article Info -->
           <div class="mb-4">
-            <h4 class="text-white font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary-300 transition-colors">
+            <h4
+              class="text-white font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary-300 transition-colors"
+            >
               {{ article.nombreArticulo }}
             </h4>
           </div>
@@ -436,7 +502,7 @@
               <i class="pi pi-pencil mr-1"></i>
               ✏️ Editar
             </button>
-            
+
             <button
               @click="handleDelete(article)"
               class="flex-1 glass-button py-2 text-white hover:text-red-300 transform hover:scale-105 transition-all"
@@ -452,30 +518,35 @@
       <div v-if="(filteredArticles?.length || 0) === 0" class="text-center py-16">
         <div class="glass-card max-w-md mx-auto p-8">
           <div class="mb-6">
-            <div class="bg-gradient-to-r from-primary-400 to-accent-400 p-6 rounded-full mx-auto w-24 h-24 flex items-center justify-center mb-4">
+            <div
+              class="bg-gradient-to-r from-primary-400 to-accent-400 p-6 rounded-full mx-auto w-24 h-24 flex items-center justify-center mb-4"
+            >
               <i class="pi pi-box text-white text-4xl"></i>
             </div>
             <h3 class="text-2xl text-white font-bold mb-2">
               {{ searchTerm ? '🔍 ¡No encontramos nada!' : '📦 ¡Tu inventario está vacío!' }}
             </h3>
             <p class="text-gray-300 mb-6">
-              {{ searchTerm ? 'Intenta con otros términos de búsqueda o ajusta los filtros' : '¡Es hora de agregar tu primer artículo increíble!' }}
+              {{
+                searchTerm
+                  ? 'Intenta con otros términos de búsqueda o ajusta los filtros'
+                  : '¡Es hora de agregar tu primer artículo increíble!'
+              }}
             </p>
           </div>
-          
+
           <button
             v-if="!searchTerm"
             @click="showCreateForm = true"
-            class="bg-gradient-to-r from-primary-400 to-accent-400 hover:from-primary-500 hover:to-accent-500 
-                   text-white font-bold py-3 px-6 rounded-lg transform hover:scale-105 transition-all duration-300"
+            class="bg-gradient-to-r from-primary-400 to-accent-400 hover:from-primary-500 hover:to-accent-500 text-white font-bold py-3 px-6 rounded-lg transform hover:scale-105 transition-all duration-300"
           >
             <i class="pi pi-plus mr-2"></i>
             🚀 ¡Crear mi primer artículo!
           </button>
-          
+
           <button
             v-else
-            @click="searchTerm = ''; selectedCategory = 'all'"
+            @click="() => { searchTerm = ''; selectedCategory = 'all' }"
             class="glass-button text-white py-3 px-6 hover:bg-white/20 transform hover:scale-105 transition-all"
           >
             <i class="pi pi-refresh mr-2"></i>
@@ -485,335 +556,334 @@
       </div>
     </div>
 
-
     <!-- Toast and Confirm Dialog -->
     <Toast />
     <ConfirmDialog />
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useArticleCreate } from '../composables/useArticleCreate'
-import { ArticleService } from '../services/ArticleService'
-import { useAuthStore } from '../store/auth'
-import Toast from 'primevue/toast'
-import ConfirmDialog from 'primevue/confirmdialog'
+<script setup lang="ts">
+  import { ref, onMounted, computed, type Ref } from 'vue'
+  import { useArticleCreate } from '../composables/useArticleCreate'
+  import { ArticleService } from '../services/ArticleService'
+  import { useAuthStore } from '../store/auth'
+  import Toast from 'primevue/toast'
+  import ConfirmDialog from 'primevue/confirmdialog'
+  import type { ArticleDto, CategoryDto, ApiResponse } from '../types'
 
-// Composables
-const {
-  // State
-  formData,
-  isEditMode,
-  isSubmitting,
-  isLoadingImage,
-  imagePreview,
-  articles,
-  categories,
-  selectedCategory,
-  searchTerm,
-  sortBy,
-  
-  // Computed
-  isFormValid,
-  isNameDuplicate,
-  filteredArticles,
-  
-  // Methods
-  resetForm,
-  handleImageUpload,
-  clearImage,
-  startEdit,
-  cancelEdit,
-  validateForm,
-  getFormattedData,
-  showSuccess,
-  showError,
-  confirmDelete,
-  formatPrice,
-  getArticleImage,
-  getCategoryName
-} = useArticleCreate()
-
-// Store
-const authStore = useAuthStore()
-
-// Local State
-const showCreateForm = ref(false)
-const imageInput = ref(null)
-const isDragging = ref(false)
-
-// Enhanced Methods
-const toggleCreateForm = () => {
-  showCreateForm.value = !showCreateForm.value
-  if (!showCreateForm.value && isEditMode.value) {
-    cancelEdit()
+  // Category interface
+  interface CategoryWithAll extends CategoryDto {
+    categoriaId: number | null
   }
-}
 
-const startEditAndShowForm = (article) => {
-  startEdit(article)
-  showCreateForm.value = true
-  
-  // Scroll to the form smoothly with a slight delay to ensure DOM is updated
-  setTimeout(() => {
-    // Target the create/edit form container more specifically
-    const formElement = document.querySelector('[ref="createFormContainer"]') || 
-                       document.querySelector('.glass-container:has(form)') ||
-                       document.querySelector('.glass-container:nth-of-type(2)')
-    
-    if (formElement) {
-      // Add offset to account for fixed headers
-      const yOffset = -100 
-      const y = formElement.getBoundingClientRect().top + window.pageYOffset + yOffset
-      
-      window.scrollTo({ 
-        top: y, 
-        behavior: 'smooth' 
-      })
-    }
-  }, 150)
-}
+  // Composables
+  const {
+    // State
+    formData,
+    isEditMode,
+    isSubmitting,
+    isLoadingImage,
+    imagePreview,
+    articles,
+    categories,
+    selectedCategory,
+    searchTerm,
+    sortBy,
 
+    // Computed
+    isFormValid,
+    isNameDuplicate,
+    filteredArticles,
 
-const handleImageChange = (event) => {
-  const file = event.target.files[0]
-  if (file && handleImageUpload(file)) {
-    // Image uploaded successfully
-  }
-}
+    // Methods
+    resetForm,
+    handleImageUpload,
+    clearImage,
+    startEdit,
+    cancelEdit,
+    validateForm,
+    getFormattedData,
+    showSuccess,
+    showError,
+    confirmDelete,
+    formatPrice,
+    getArticleImage,
+    getCategoryName,
+  } = useArticleCreate()
 
-// Drag & Drop handlers
-const onDragOver = (event) => {
-  event.preventDefault()
-  isDragging.value = true
-}
+  // Store
+  const authStore = useAuthStore()
 
-const onDragLeave = (event) => {
-  event.preventDefault()
-  isDragging.value = false
-}
+  // Local State
+  const showCreateForm: Ref<boolean> = ref(false)
+  const imageInput: Ref<HTMLInputElement | null> = ref(null)
+  const isDragging: Ref<boolean> = ref(false)
 
-const onDrop = (event) => {
-  event.preventDefault()
-  isDragging.value = false
-  
-  const files = event.dataTransfer.files
-  if (files.length > 0) {
-    const file = files[0]
-    if (file.type.startsWith('image/')) {
-      handleImageUpload(file)
-    } else {
-      showError('Solo se permiten archivos de imagen')
+  // Enhanced Methods
+  const toggleCreateForm = (): void => {
+    showCreateForm.value = !showCreateForm.value
+    if (!showCreateForm.value && isEditMode.value) {
+      cancelEdit()
     }
   }
-}
 
-const formatCompactCurrency = (amount) => {
-  if (amount >= 1000000) {
-    return `$${(amount / 1000000).toFixed(1)}M`
-  } else if (amount >= 1000) {
-    return `$${(amount / 1000).toFixed(1)}K`
-  }
-  return formatPrice(amount)
-}
+  const startEditAndShowForm = (article: ArticleDto): void => {
+    startEdit(article)
+    showCreateForm.value = true
 
-const calculateTotalValue = () => {
-  if (!articles.value || !Array.isArray(articles.value)) return 0
-  return articles.value.reduce((sum, article) => sum + parseFloat(article.precio || 0), 0)
-}
+    // Scroll to the form smoothly with a slight delay to ensure DOM is updated
+    setTimeout(() => {
+      // Target the create/edit form container more specifically
+      const formElement =
+        document.querySelector('[ref="createFormContainer"]') ||
+        document.querySelector('.glass-container:has(form)') ||
+        document.querySelector('.glass-container:nth-of-type(2)')
 
-const calculateAveragePrice = () => {
-  if (!articles.value || !Array.isArray(articles.value) || articles.value.length === 0) return 0
-  return calculateTotalValue() / articles.value.length
-}
+      if (formElement) {
+        // Add offset to account for fixed headers
+        const yOffset = -100
+        const y = formElement.getBoundingClientRect().top + window.pageYOffset + yOffset
 
-const handleSubmit = async () => {
-  if (!validateForm()) return
-  
-  isSubmitting.value = true
-  
-  try {
-    const articleData = getFormattedData()
-    
-    if (isEditMode.value) {
-      // Update existing article
-      await ArticleService.updateArticle(
-        formData.value.articuloId,
-        articleData,
-        authStore.auth?.usuarioID
-      )
-      
-      // Update image if provided
-      if (formData.value.image) {
-        await ArticleService.updateArticleImage(
-          formData.value.articuloId,
-          formData.value.image
-        )
+        window.scrollTo({
+          top: y,
+          behavior: 'smooth',
+        })
       }
-      
-      showSuccess('🎉 ¡Artículo actualizado exitosamente!')
-    } else {
-      // Create new article
-      if (formData.value.image) {
-        // Create with image using the new endpoint
-        await ArticleService.createArticleWithImage(articleData, authStore.institucionID)
+    }, 150)
+  }
+
+  const handleImageChange = (event: Event): void => {
+    const target = event.target as HTMLInputElement
+    const file = target.files?.[0]
+    if (file && handleImageUpload(file)) {
+      // Image uploaded successfully
+    }
+  }
+
+  // Drag & Drop handlers
+  const onDragOver = (event: DragEvent): void => {
+    event.preventDefault()
+    isDragging.value = true
+  }
+
+  const onDragLeave = (event: DragEvent): void => {
+    event.preventDefault()
+    isDragging.value = false
+  }
+
+  const onDrop = (event: DragEvent): void => {
+    event.preventDefault()
+    isDragging.value = false
+
+    const files = event.dataTransfer?.files
+    if (files && files.length > 0) {
+      const file = files[0]
+      if (file.type.startsWith('image/')) {
+        handleImageUpload(file)
       } else {
-        // Create without image
-        await ArticleService.createArticle(articleData, authStore.institucionID)
+        showError('Solo se permiten archivos de imagen')
       }
-      showSuccess('🚀 ¡Nuevo artículo creado con éxito!')
     }
-    
-    resetForm()
-    showCreateForm.value = false
-    await fetchArticles()
-    
-  } catch (error) {
-    console.error('Error:', error)
-    showError(isEditMode.value ? '❌ Error al actualizar el artículo' : '❌ Error al crear el artículo')
-  } finally {
-    isSubmitting.value = false
   }
-}
 
-const handleDelete = async (article) => {
-  const confirmed = await confirmDelete(article)
-  if (!confirmed) return
-  
-  try {
-    await ArticleService.deleteArticle(article.articuloId)
-    showSuccess('🗑️ Artículo eliminado correctamente')
-    await fetchArticles()
-  } catch (error) {
-    console.error('Error deleting article:', error)
-    showError('❌ Error al eliminar el artículo')
-  }
-}
-
-const fetchArticles = async () => {
-  try {
-    const categoriaID = selectedCategory.value === 'all' ? null : selectedCategory.value
-    const response = await ArticleService.getArticles(authStore.institucionID, categoriaID)
-    
-    // Handle V1 API response structure
-    if (response.data?.isSuccess) {
-      articles.value = response.data.data || []
-    } else if (response.data?.ok) {
-      // Legacy API response structure
-      articles.value = response.data.data || []
-    } else {
-      articles.value = response.data || []
+  const formatCompactCurrency = (amount: number): string => {
+    if (amount >= 1000000) {
+      return `$${(amount / 1000000).toFixed(1)}M`
+    } else if (amount >= 1000) {
+      return `$${(amount / 1000).toFixed(1)}K`
     }
-  } catch (error) {
-    console.error('Error fetching articles:', error)
-    showError('❌ Error al cargar los artículos')
+    return formatPrice(amount)
   }
-}
 
-const fetchCategories = async () => {
-  try {
-    const response = await ArticleService.getCategories(authStore.institucionID)
-    
-    // Handle V1 API response structure
-    if (response.data?.isSuccess) {
-      categories.value = [
-        { categoriaId: null, nombreCategoria: "Todas las categorías" },
-        ...(response.data.data || [])
-      ]
-    } else if (response.data?.ok) {
-      // Legacy API response structure
-      categories.value = [
-        { categoriaId: null, nombreCategoria: "Todas las categorías" },
-        ...(response.data.data || [])
-      ]
-    } else {
-      categories.value = [
-        { categoriaId: null, nombreCategoria: "Todas las categorías" },
-        ...(response.data || [])
-      ]
+  const calculateTotalValue = (): number => {
+    if (!articles.value || !Array.isArray(articles.value)) return 0
+    return articles.value.reduce((sum, article) => sum + article.precio, 0)
+  }
+
+  const calculateAveragePrice = (): number => {
+    if (!articles.value || !Array.isArray(articles.value) || articles.value.length === 0) return 0
+    return calculateTotalValue() / articles.value.length
+  }
+
+  const handleSubmit = async (): Promise<void> => {
+    if (!validateForm()) return
+
+    isSubmitting.value = true
+
+    try {
+      const articleData = getFormattedData()
+
+      if (isEditMode.value) {
+        await ArticleService.updateArticle(formData.value.articuloId!, {
+          nombreArticulo: articleData.nombreArticulo,
+          precio: articleData.precio,
+          categoriaId: articleData.categoriaId,
+        })
+
+        if (formData.value.image) {
+          await ArticleService.updateArticleImage(formData.value.articuloId!, formData.value.image)
+        }
+
+        showSuccess('🎉 ¡Artículo actualizado exitosamente!')
+      } else {
+        if (formData.value.image) {
+          // Create with image using V1 endpoint
+          await ArticleService.createArticleWithImage(articleData as any)
+        } else {
+          // Create without image using V1 endpoint
+          await ArticleService.createArticle(articleData as any)
+        }
+        showSuccess('🚀 ¡Nuevo artículo creado con éxito!')
+      }
+
+      resetForm()
+      showCreateForm.value = false
+      await fetchArticles()
+    } catch (error) {
+      console.error('Error:', error)
+      showError(
+        isEditMode.value ? '❌ Error al actualizar el artículo' : '❌ Error al crear el artículo'
+      )
+    } finally {
+      isSubmitting.value = false
     }
-  } catch (error) {
-    console.error('Error fetching categories:', error)
-    showError('❌ Error al cargar las categorías')
   }
-}
 
-// Lifecycle
-onMounted(async () => {
-  await Promise.all([
-    fetchCategories(),
-    fetchArticles()
-  ])
-})
+  const handleDelete = async (article: ArticleDto): Promise<void> => {
+    const confirmed = await confirmDelete(article)
+    if (!confirmed) return
+
+    try {
+      await ArticleService.deleteArticle(article.articuloId)
+      showSuccess('🗑️ Artículo eliminado correctamente')
+      await fetchArticles()
+    } catch (error) {
+      console.error('Error deleting article:', error)
+      showError('❌ Error al eliminar el artículo')
+    }
+  }
+
+  const fetchArticles = async (): Promise<void> => {
+    try {
+      const categoriaId = selectedCategory.value === 'all' ? null : Number(selectedCategory.value)
+      const response: ApiResponse<ArticleDto[]> = await ArticleService.getArticles(categoriaId)
+
+      // Handle V1 API response structure only
+      if (response.isSuccess && response.data) {
+        articles.value = response.data
+      } else {
+        articles.value = []
+        if (!response.isSuccess) {
+          showError(`Error: ${response.message || 'Error al cargar artículos'}`)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching articles:', error)
+      showError('❌ Error al cargar los artículos')
+    }
+  }
+
+  const fetchCategories = async (): Promise<void> => {
+    try {
+      const response: ApiResponse<CategoryDto[]> = await ArticleService.getCategories()
+
+      if (response.isSuccess && response.data) {
+        categories.value = [
+          { categoriaId: null, nombreCategoria: 'Todas las categorías' } as CategoryWithAll,
+          ...response.data,
+        ]
+      } else {
+        categories.value = [
+          { categoriaId: null, nombreCategoria: 'Todas las categorías' } as CategoryWithAll,
+        ]
+        if (!response.isSuccess) {
+          showError(`Error: ${response.message || 'Error al cargar categorías'}`)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      showError('❌ Error al cargar las categorías')
+    }
+  }
+
+  // Lifecycle
+  onMounted(async () => {
+    await Promise.all([fetchCategories(), fetchArticles()])
+  })
 </script>
 
 <style scoped>
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 
-/* Glass effect styles */
-.glass-container {
-  @apply bg-white/5 backdrop-blur-2xl border border-white/20 rounded-3xl;
-}
+  /* Glass effect styles */
+  .glass-container {
+    @apply bg-white/5 backdrop-blur-2xl border border-white/20 rounded-3xl;
+  }
 
-.glass-card {
-  @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-xl;
-}
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-xl;
+  }
 
-.glass-button {
-  @apply bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg transition-all;
-}
+  .glass-button {
+    @apply bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg transition-all;
+  }
 
-.glass-input {
-  @apply bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-gray-300;
-}
+  .glass-input {
+    @apply bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-gray-300;
+  }
 
-.glass-input:focus {
-  @apply ring-2 ring-primary-400 border-primary-400 outline-none;
-}
+  .glass-input:focus {
+    @apply ring-2 ring-primary-400 border-primary-400 outline-none;
+  }
 
-/* Custom animations */
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
+  /* Custom animations */
+  @keyframes shake {
+    0%,
+    100% {
+      transform: translateX(0);
+    }
+    25% {
+      transform: translateX(-5px);
+    }
+    75% {
+      transform: translateX(5px);
+    }
+  }
 
-.shake {
-  animation: shake 0.5s ease-in-out;
-}
+  .shake {
+    animation: shake 0.5s ease-in-out;
+  }
 
-/* Hover animations */
-.animate-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
+  /* Hover animations */
+  .animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
 
-.animate-bounce {
-  animation: bounce 1s infinite;
-}
+  .animate-bounce {
+    animation: bounce 1s infinite;
+  }
 
+  /* Custom scrollbar for better UX */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
 
-/* Custom scrollbar for better UX */
-::-webkit-scrollbar {
-  width: 8px;
-}
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
 
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-}
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
 </style>

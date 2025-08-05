@@ -7,7 +7,7 @@ import CaracteristicasManager from '../../views/CaracteristicasManager.vue'
 import StatisticsManager from '../../views/StatisticsManager.vue'
 import UserConsumptionManager from '../../views/UserConsumptionManager.vue'
 import AdminSettings from '../../views/AdminSettings.vue'
-import { ROLE_GROUPS } from '../../utils/role-mapping.js'
+import { ROLE_GROUPS } from '../../utils/role-mapping'
 
 /**
  * Administrative routes
@@ -58,7 +58,7 @@ export const adminRoutes = [
     component: UsersManagement,
     meta: {
       requireAuth: true,
-      roles: ROLE_GROUPS.MANAGEMENT,
+      roles: ROLE_GROUPS.ADMIN_ACCESS,
       description: 'Advanced user management',
       category: 'User Management',
     },
@@ -113,7 +113,7 @@ export const adminRoutes = [
     component: AdminSettings,
     meta: {
       requireAuth: true,
-      roles: ROLE_GROUPS.MANAGEMENT,
+      roles: ROLE_GROUPS.ADMIN_ACCESS,
       description: 'System configuration and settings',
       category: 'Administration',
     },

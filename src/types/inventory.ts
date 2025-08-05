@@ -131,7 +131,7 @@ export interface StockValidationDto {
 
 // Alert DTOs (V1)
 export interface InventoryAlertDto {
-  alertId: number;
+  alertaId: number; // Changed to match API
   inventoryId: number;
   articuloId: number;
   articuloNombre: string;
@@ -140,9 +140,9 @@ export interface InventoryAlertDto {
   cantidadActual: number;
   umbralStockBajo?: number;
   umbralStockCritico?: number;
-  locationType: InventoryLocationType;
-  locationId?: number;
-  locationName?: string;
+  tipoUbicacion: InventoryLocationType; // Changed to match API
+  ubicacionId?: number; // Changed to match API
+  ubicacionNombre?: string; // Changed to match API
   mensaje: string;
   fechaCreacion: string;
   reconocida: boolean;

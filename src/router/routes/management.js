@@ -4,11 +4,10 @@ import Services from '../../views/Services.vue'
 import ArticleCreate from '../../views/ArticleCreate.vue'
 import SubmitOrder from '../../views/SubmitOrder.vue'
 import ReceptionOrder from '../../views/ReceptionOrder.vue'
-import InventoryManager from '../../views/InventoryManager.vue'
 import CierresManager from '../../views/CierresManager.vue'
 import Egresos from '../../views/Egresos.vue'
 import PawnManager from '../../views/PawnManager.vue'
-import { ROLE_GROUPS } from '../../utils/role-mapping.js'
+import { ROLE_GROUPS } from '../../utils/role-mapping'
 
 // V1 Inventory System Views (lazy-loaded for better performance)
 const RoomInventoryManager = () => import('../../views/RoomInventoryManager.vue')
@@ -96,18 +95,6 @@ export const managementRoutes = [
     },
   },
   {
-    path: '/InventoryManager',
-    name: 'InventoryManager',
-    component: InventoryManager,
-    meta: {
-      requireAuth: true,
-      roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
-      description: 'Manage general inventory and stock (Legacy)',
-      category: 'Inventory Management',
-      badge: 'Legacy',
-    },
-  },
-  {
     path: '/inventory/general',
     name: 'InventoryManagerV1',
     component: InventoryManagerV1,
@@ -126,7 +113,7 @@ export const managementRoutes = [
     component: RoomInventoryManager,
     meta: {
       requireAuth: true,
-      roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+      roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
       description: 'Advanced room inventory management with V1 API',
       category: 'Inventory Management',
       badge: 'V1',
@@ -138,7 +125,7 @@ export const managementRoutes = [
     component: InventoryAlerts,
     meta: {
       requireAuth: true,
-      roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+      roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
       description: 'Inventory alerts and low stock monitoring',
       category: 'Inventory Management',
       badge: 'New',
@@ -150,7 +137,7 @@ export const managementRoutes = [
     component: InventoryTransfers,
     meta: {
       requireAuth: true,
-      roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.CASHIER_ACCESS],
+      roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
       description: 'Inventory transfers and batch operations',
       category: 'Inventory Management',
       badge: 'V1',

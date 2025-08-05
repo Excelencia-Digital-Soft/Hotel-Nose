@@ -1,6 +1,132 @@
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, type Ref, type ComputedRef } from 'vue'
 import { inventoryService } from '../services/roomInventoryService'
 import { InventoryLocationType } from '../types'
+import type { InventoryAlertDto, ApiResponse } from '../types'
+
+// Types for the composable
+interface AlertOptions {
+  autoRefresh?: boolean
+  refreshInterval?: number
+  filterByRoom?: number | null
+  alertTypes?: AlertType[]
+}
+
+interface AlertFilterCriteria {
+  severity?: AlertSeverity
+  type?: AlertType
+  acknowledged?: boolean
+  roomId?: number
+  search?: string
+}
+
+// API parameter interfaces for better type safety
+interface FetchAlertsParams {
+  soloNoReconocidas?: boolean
+  tipoUbicacion?: InventoryLocationType
+  ubicacionId?: number
+  tipoAlerta?: AlertType[]
+  severidad?: AlertSeverity[]
+  articuloId?: number
+  fechaDesde?: string
+  fechaHasta?: string
+  limite?: number
+  pagina?: number
+}
+
+interface AcknowledgeAlertParams {
+  comentarios?: string
+  resolverAlerta?: boolean
+  fechaReconocimiento?: string
+}
+
+interface AlertConfigurationParams {
+  inventarioId: number
+  umbralStockBajo: number
+  umbralStockCritico: number
+  alertasStockBajoActivas: boolean
+  notificacionEmailActiva: boolean
+}
+
+interface AlertConfig {
+  lowStockThreshold?: number
+  criticalStockThreshold?: number
+  enableLowStockAlerts?: boolean
+  enableEmailNotifications?: boolean
+}
+
+interface RoomAlertGroup {
+  roomId: number
+  roomName: string
+  alerts: InventoryAlertDto[]
+}
+
+interface AlertCounts {
+  total: number
+  critical: number
+  lowStock: number
+  outOfStock: number
+  roomsAffected: number
+}
+
+interface AlertSummary {
+  Baja: number
+  Media: number
+  Alta: number
+  Critica: number
+}
+
+interface RoomAlertSummary {
+  hasAlerts: boolean
+  criticalCount: number
+  lowStockCount: number
+  outOfStockCount: number
+  lastUpdate: string
+}
+
+interface GlobalAlertSummary {
+  totalAlerts: number
+  criticalAlerts: number
+  roomsAffected: number
+  topAlertedRooms: RoomAlertGroup[]
+  needsImmediateAttention: boolean
+}
+
+interface BatchAcknowledgeResult {
+  successful: number
+  failed: number
+}
+
+type AlertType = 'StockBajo' | 'StockCritico' | 'StockAgotado'
+type AlertSeverity = 'Baja' | 'Media' | 'Alta' | 'Critica'
+
+interface UseInventoryAlertsReturn {
+  // State
+  loading: Ref<boolean>
+  saving: Ref<boolean>
+  error: Ref<string | null>
+  alerts: Ref<InventoryAlertDto[]>
+  
+  // Computed
+  activeAlerts: ComputedRef<InventoryAlertDto[]>
+  criticalAlerts: ComputedRef<InventoryAlertDto[]>
+  lowStockAlerts: ComputedRef<InventoryAlertDto[]>
+  outOfStockAlerts: ComputedRef<InventoryAlertDto[]>
+  alertsByRoom: ComputedRef<RoomAlertGroup[]>
+  alertCounts: ComputedRef<AlertCounts>
+  
+  // Methods
+  fetchAlerts: (filters?: Partial<FetchAlertsParams>) => Promise<void>
+  acknowledgeAlert: (alertId: number, comments?: string) => Promise<any>
+  acknowledgeMultipleAlerts: (alertIds: number[], comments?: string) => Promise<BatchAcknowledgeResult>
+  configureAlerts: (inventoryId: number, config: AlertConfig) => Promise<any>
+  getAlertsForRoom: (roomId: number) => InventoryAlertDto[]
+  getAlertSummary: () => AlertSummary
+  filterAlerts: (criteria: AlertFilterCriteria) => InventoryAlertDto[]
+  getHighPriorityAlerts: (limit?: number) => InventoryAlertDto[]
+  startAutoRefresh: () => void
+  stopAutoRefresh: () => void
+  refresh: () => Promise<void>
+}
 
 /**
  * Composable for Inventory Alert Management (V1 API)
@@ -13,7 +139,7 @@ import { InventoryLocationType } from '../types'
  * - Auto-refresh capability
  * - Filtering and sorting
  */
-export function useInventoryAlerts(options = {}) {
+export function useInventoryAlerts(options: AlertOptions = {}): UseInventoryAlertsReturn {
   const {
     autoRefresh = true,
     refreshInterval = 30000, // 30 seconds
@@ -22,44 +148,44 @@ export function useInventoryAlerts(options = {}) {
   } = options
 
   // State
-  const loading = ref(false)
-  const saving = ref(false)
-  const error = ref(null)
-  const alerts = ref([])
-  const refreshTimer = ref(null)
+  const loading: Ref<boolean> = ref(false)
+  const saving: Ref<boolean> = ref(false)
+  const error: Ref<string | null> = ref(null)
+  const alerts: Ref<InventoryAlertDto[]> = ref([])
+  const refreshTimer: Ref<ReturnType<typeof setInterval> | null> = ref(null)
 
   // Computed
-  const activeAlerts = computed(() => 
+  const activeAlerts: ComputedRef<InventoryAlertDto[]> = computed(() => 
     alerts.value.filter(alert => !alert.reconocida)
   )
 
-  const criticalAlerts = computed(() =>
+  const criticalAlerts: ComputedRef<InventoryAlertDto[]> = computed(() =>
     activeAlerts.value.filter(alert => 
       alert.severidad === 'Critica' || alert.tipoAlerta === 'StockAgotado'
     )
   )
 
-  const lowStockAlerts = computed(() =>
+  const lowStockAlerts: ComputedRef<InventoryAlertDto[]> = computed(() =>
     activeAlerts.value.filter(alert => alert.tipoAlerta === 'StockBajo')
   )
 
-  const outOfStockAlerts = computed(() =>
+  const outOfStockAlerts: ComputedRef<InventoryAlertDto[]> = computed(() =>
     activeAlerts.value.filter(alert => alert.tipoAlerta === 'StockAgotado')
   )
 
-  const alertsByRoom = computed(() => {
-    const roomMap = new Map()
+  const alertsByRoom: ComputedRef<RoomAlertGroup[]> = computed(() => {
+    const roomMap = new Map<number, RoomAlertGroup>()
     
     activeAlerts.value.forEach(alert => {
-      if (alert.locationType === InventoryLocationType.Room && alert.locationId) {
-        if (!roomMap.has(alert.locationId)) {
-          roomMap.set(alert.locationId, {
-            roomId: alert.locationId,
-            roomName: alert.locationName || `Habitación ${alert.locationId}`,
+      if (alert.tipoUbicacion === InventoryLocationType.Room && alert.ubicacionId) {
+        if (!roomMap.has(alert.ubicacionId)) {
+          roomMap.set(alert.ubicacionId, {
+            roomId: alert.ubicacionId,
+            roomName: alert.ubicacionNombre || `Habitación ${alert.ubicacionId}`,
             alerts: []
           })
         }
-        roomMap.get(alert.locationId).alerts.push(alert)
+        roomMap.get(alert.ubicacionId)!.alerts.push(alert)
       }
     })
     
@@ -67,7 +193,7 @@ export function useInventoryAlerts(options = {}) {
       .sort((a, b) => b.alerts.length - a.alerts.length) // Sort by alert count
   })
 
-  const alertCounts = computed(() => ({
+  const alertCounts: ComputedRef<AlertCounts> = computed(() => ({
     total: activeAlerts.value.length,
     critical: criticalAlerts.value.length,
     lowStock: lowStockAlerts.value.length,
@@ -80,12 +206,12 @@ export function useInventoryAlerts(options = {}) {
   /**
    * 📡 Fetch all active alerts
    */
-  const fetchAlerts = async (filters = {}) => {
+  const fetchAlerts = async (filters: Partial<FetchAlertsParams> = {}): Promise<void> => {
     try {
       loading.value = true
       error.value = null
 
-      const params = {
+      const params: FetchAlertsParams = {
         soloNoReconocidas: false,
         ...filters
       }
@@ -96,25 +222,34 @@ export function useInventoryAlerts(options = {}) {
         // Note: The API might need room filtering capability
       }
 
-      const response = await inventoryService.getActiveAlerts(params)
+      const response: ApiResponse<InventoryAlertDto[]> = await inventoryService.getActiveAlerts(params as Record<string, any>)
       
-      if (response.isSuccess) {
+      if (response.isSuccess && response.data) {
+        // Ensure response.data is an array
+        const alertsData = Array.isArray(response.data) ? response.data : []
+        
         // Filter by alert types
-        alerts.value = response.data.filter(alert => 
-          alertTypes.includes(alert.tipoAlerta)
+        alerts.value = alertsData.filter(alert => 
+          alertTypes.includes(alert.tipoAlerta as AlertType)
         )
 
         // Additional client-side filtering by room if needed
         if (filterByRoom) {
           alerts.value = alerts.value.filter(alert => 
-            alert.locationId === filterByRoom
+            alert.ubicacionId === filterByRoom
           )
         }
       } else {
-        throw new Error(response.message || 'Error al cargar alertas')
+        // Handle case where response is successful but data is null/undefined
+        if (response.isSuccess && !response.data) {
+          alerts.value = []
+        } else {
+          throw new Error(response.message || 'Error al cargar alertas')
+        }
       }
     } catch (err) {
-      error.value = err.message
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      error.value = errorMessage
       console.error('Error fetching alerts:', err)
     } finally {
       loading.value = false
@@ -124,19 +259,21 @@ export function useInventoryAlerts(options = {}) {
   /**
    * ✅ Acknowledge an alert
    */
-  const acknowledgeAlert = async (alertId, comments = '') => {
+  const acknowledgeAlert = async (alertId: number, comments: string = ''): Promise<any> => {
     try {
       saving.value = true
       error.value = null
 
-      const response = await inventoryService.acknowledgeAlert(alertId, {
+      const params: AcknowledgeAlertParams = {
         comentarios: comments,
         resolverAlerta: true
-      })
+      }
+
+      const response: ApiResponse<any> = await inventoryService.acknowledgeAlert(alertId, params)
       
       if (response.isSuccess) {
         // Update local state
-        const alert = alerts.value.find(a => a.alertId === alertId)
+        const alert = alerts.value.find(a => a.alertaId === alertId)
         if (alert) {
           alert.reconocida = true
           alert.fechaReconocimiento = new Date().toISOString()
@@ -147,7 +284,8 @@ export function useInventoryAlerts(options = {}) {
         throw new Error(response.message || 'Error al reconocer alerta')
       }
     } catch (err) {
-      error.value = err.message
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      error.value = errorMessage
       throw err
     } finally {
       saving.value = false
@@ -157,7 +295,10 @@ export function useInventoryAlerts(options = {}) {
   /**
    * 🔄 Acknowledge multiple alerts
    */
-  const acknowledgeMultipleAlerts = async (alertIds, comments = '') => {
+  const acknowledgeMultipleAlerts = async (
+    alertIds: number[], 
+    comments: string = ''
+  ): Promise<BatchAcknowledgeResult> => {
     try {
       saving.value = true
       error.value = null
@@ -175,7 +316,8 @@ export function useInventoryAlerts(options = {}) {
 
       return { successful, failed }
     } catch (err) {
-      error.value = err.message
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      error.value = errorMessage
       throw err
     } finally {
       saving.value = false
@@ -185,18 +327,20 @@ export function useInventoryAlerts(options = {}) {
   /**
    * ⚙️ Configure alert thresholds for inventory item
    */
-  const configureAlerts = async (inventoryId, config) => {
+  const configureAlerts = async (inventoryId: number, config: AlertConfig): Promise<any> => {
     try {
       saving.value = true
       error.value = null
 
-      const response = await inventoryService.configureAlerts({
+      const params: AlertConfigurationParams = {
         inventarioId: inventoryId,
         umbralStockBajo: config.lowStockThreshold || 5,
         umbralStockCritico: config.criticalStockThreshold || 1,
         alertasStockBajoActivas: config.enableLowStockAlerts !== false,
         notificacionEmailActiva: config.enableEmailNotifications !== false
-      })
+      }
+
+      const response: ApiResponse<any> = await inventoryService.configureAlerts(params)
       
       if (response.isSuccess) {
         await fetchAlerts() // Refresh to get updated alerts
@@ -205,7 +349,8 @@ export function useInventoryAlerts(options = {}) {
         throw new Error(response.message || 'Error al configurar alertas')
       }
     } catch (err) {
-      error.value = err.message
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      error.value = errorMessage
       throw err
     } finally {
       saving.value = false
@@ -215,18 +360,18 @@ export function useInventoryAlerts(options = {}) {
   /**
    * 🎯 Get alerts for specific room
    */
-  const getAlertsForRoom = (roomId) => {
+  const getAlertsForRoom = (roomId: number): InventoryAlertDto[] => {
     return alerts.value.filter(alert => 
-      alert.locationType === InventoryLocationType.Room && 
-      alert.locationId === roomId
+      alert.tipoUbicacion === InventoryLocationType.Room && 
+      alert.ubicacionId === roomId
     )
   }
 
   /**
    * 📊 Get alert summary by severity
    */
-  const getAlertSummary = () => {
-    const summary = {
+  const getAlertSummary = (): AlertSummary => {
+    const summary: AlertSummary = {
       Baja: 0,
       Media: 0,
       Alta: 0,
@@ -234,7 +379,9 @@ export function useInventoryAlerts(options = {}) {
     }
 
     activeAlerts.value.forEach(alert => {
-      summary[alert.severidad]++
+      if (alert.severidad in summary) {
+        summary[alert.severidad as AlertSeverity]++
+      }
     })
 
     return summary
@@ -243,7 +390,7 @@ export function useInventoryAlerts(options = {}) {
   /**
    * 🔍 Filter alerts by criteria
    */
-  const filterAlerts = (criteria) => {
+  const filterAlerts = (criteria: AlertFilterCriteria): InventoryAlertDto[] => {
     let filtered = [...alerts.value]
 
     if (criteria.severity) {
@@ -259,14 +406,14 @@ export function useInventoryAlerts(options = {}) {
     }
 
     if (criteria.roomId) {
-      filtered = filtered.filter(alert => alert.locationId === criteria.roomId)
+      filtered = filtered.filter(alert => alert.ubicacionId === criteria.roomId)
     }
 
     if (criteria.search) {
       const searchTerm = criteria.search.toLowerCase()
       filtered = filtered.filter(alert => 
         alert.articuloNombre.toLowerCase().includes(searchTerm) ||
-        alert.locationName?.toLowerCase().includes(searchTerm) ||
+        alert.ubicacionNombre?.toLowerCase().includes(searchTerm) ||
         alert.mensaje.toLowerCase().includes(searchTerm)
       )
     }
@@ -277,16 +424,18 @@ export function useInventoryAlerts(options = {}) {
   /**
    * 🚨 Get highest priority alerts
    */
-  const getHighPriorityAlerts = (limit = 5) => {
-    const priorityOrder = { 'Critica': 4, 'Alta': 3, 'Media': 2, 'Baja': 1 }
+  const getHighPriorityAlerts = (limit: number = 5): InventoryAlertDto[] => {
+    const priorityOrder: Record<AlertSeverity, number> = { 
+      'Critica': 4, 'Alta': 3, 'Media': 2, 'Baja': 1 
+    }
     
     return activeAlerts.value
       .sort((a, b) => {
         // Sort by severity first, then by creation date
-        const severityDiff = priorityOrder[b.severidad] - priorityOrder[a.severidad]
+        const severityDiff = priorityOrder[b.severidad as AlertSeverity] - priorityOrder[a.severidad as AlertSeverity]
         if (severityDiff !== 0) return severityDiff
         
-        return new Date(b.fechaCreacion) - new Date(a.fechaCreacion)
+        return new Date(b.fechaCreacion).getTime() - new Date(a.fechaCreacion).getTime()
       })
       .slice(0, limit)
   }
@@ -294,7 +443,7 @@ export function useInventoryAlerts(options = {}) {
   /**
    * 🔄 Start auto-refresh
    */
-  const startAutoRefresh = () => {
+  const startAutoRefresh = (): void => {
     if (refreshTimer.value) return // Already running
 
     refreshTimer.value = setInterval(() => {
@@ -305,7 +454,7 @@ export function useInventoryAlerts(options = {}) {
   /**
    * ⏹️ Stop auto-refresh
    */
-  const stopAutoRefresh = () => {
+  const stopAutoRefresh = (): void => {
     if (refreshTimer.value) {
       clearInterval(refreshTimer.value)
       refreshTimer.value = null
@@ -315,7 +464,7 @@ export function useInventoryAlerts(options = {}) {
   /**
    * 🔄 Manual refresh
    */
-  const refresh = () => {
+  const refresh = (): Promise<void> => {
     return fetchAlerts()
   }
 
@@ -364,18 +513,18 @@ export function useInventoryAlerts(options = {}) {
 /**
  * Specialized composable for room-specific alerts
  */
-export function useRoomAlerts(roomId) {
+export function useRoomAlerts(roomId: number) {
   const alertSystem = useInventoryAlerts({
     filterByRoom: roomId,
     autoRefresh: true,
     refreshInterval: 15000 // More frequent for room-specific monitoring
   })
 
-  const roomNeedsAttention = computed(() => 
+  const roomNeedsAttention: ComputedRef<boolean> = computed(() => 
     alertSystem.activeAlerts.value.length > 0
   )
 
-  const roomAlertSummary = computed(() => ({
+  const roomAlertSummary: ComputedRef<RoomAlertSummary> = computed(() => ({
     hasAlerts: alertSystem.activeAlerts.value.length > 0,
     criticalCount: alertSystem.criticalAlerts.value.length,
     lowStockCount: alertSystem.lowStockAlerts.value.length,
@@ -399,7 +548,7 @@ export function useGlobalAlerts() {
     refreshInterval: 60000 // Less frequent for global monitoring
   })
 
-  const globalAlertSummary = computed(() => ({
+  const globalAlertSummary: ComputedRef<GlobalAlertSummary> = computed(() => ({
     totalAlerts: alertSystem.alertCounts.value.total,
     criticalAlerts: alertSystem.alertCounts.value.critical,
     roomsAffected: alertSystem.alertCounts.value.roomsAffected,

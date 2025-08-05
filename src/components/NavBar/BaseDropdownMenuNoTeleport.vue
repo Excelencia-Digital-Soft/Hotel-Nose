@@ -66,7 +66,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../store/auth.js'
-import { hasAnyRole } from '../../utils/role-mapping.js'
+import { hasAnyRole } from '../../utils/role-mapping'
 
 // Props
 const props = defineProps({

@@ -51,8 +51,8 @@
   import { computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { useAuthStore } from '../../store/auth.js'
-  import { hasAnyRole } from '../../utils/role-mapping.js'
-  import { getMenuConfigForUser, filterMenuItemsByRole } from '../../config/menuConfig.js'
+  import { hasAnyRole } from '../../utils/role-mapping'
+  import { getMenuConfigForUser, filterMenuItemsByRole } from '../../config/menuConfig'
   import BaseDropdownMenuNoTeleport from './BaseDropdownMenuNoTeleport.vue'
 
   // Composables
@@ -97,12 +97,12 @@
   const handleLogout = async () => {
     try {
       await authStore.logout()
-      router.push({ name: 'Login' })
+      router.push({ name: 'Guest' })
     } catch (error) {
       console.error('Error during logout:', error)
       // Forzar logout local si hay error
       authStore.$reset()
-      router.push({ name: 'Login' })
+      router.push({ name: 'Guest' })
     }
   }
 

@@ -1,37 +1,107 @@
-import { ref, computed } from 'vue'
+import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import { useToast } from 'primevue/usetoast'
 import { useConfirm } from 'primevue/useconfirm'
+import type {
+  ArticleFormData,
+  ArticleDto,
+  ArticleCreateDto,
+  ArticleCreateWithImageDto,
+} from '../types'
 
-export function useArticleCreate() {
+// Types for categories
+interface CategoryDto {
+  categoriaId: number
+  nombreCategoria: string
+}
+
+// Sort options type
+type SortBy = 'name' | 'price' | 'category' | 'date'
+
+// Statistics interface
+interface ArticleStatistics {
+  total: number
+  totalValue: string
+  averagePrice: string
+  categoryStats: {
+    name: string
+    count: number
+    percentage: number
+  }[]
+}
+
+// Return type for the composable
+interface UseArticleCreateReturn {
+  // Form state
+  formData: Ref<ArticleFormData>
+  isEditMode: Ref<boolean>
+  isSubmitting: Ref<boolean>
+  isLoadingImage: Ref<boolean>
+  imagePreview: Ref<string>
+
+  // Data state
+  articles: Ref<ArticleDto[]>
+  categories: Ref<CategoryDto[]>
+  selectedCategory: Ref<string | number>
+
+  // Search and filters
+  searchTerm: Ref<string>
+  sortBy: Ref<SortBy>
+
+  // Computed
+  isFormValid: ComputedRef<boolean>
+  isNameDuplicate: ComputedRef<boolean>
+  filteredArticles: ComputedRef<ArticleDto[]>
+  statistics: ComputedRef<ArticleStatistics>
+
+  // Methods
+  resetForm: () => void
+  handleImageUpload: (file: File) => boolean
+  clearImage: () => void
+  startEdit: (article: ArticleDto) => void
+  cancelEdit: () => void
+  filterByCategory: (categoryId: string | number) => void
+  getCategoryName: (categoryId: number) => string
+  validateForm: () => boolean
+  getFormattedData: () => ArticleCreateDto | ArticleCreateWithImageDto
+  showSuccess: (message: string) => void
+  showError: (message: string) => void
+  showInfo: (message: string) => void
+  confirmDelete: (article: ArticleDto) => Promise<boolean>
+  formatCurrency: (amount: number) => string
+  formatPrice: (price: number | string) => string
+  getArticleImage: (article: ArticleDto) => string
+}
+
+export function useArticleCreate(): UseArticleCreateReturn {
   const toast = useToast()
   const confirm = useConfirm()
 
   // Form state
-  const formData = ref({
+  const formData: Ref<ArticleFormData> = ref({
     name: '',
     price: '',
     categoryId: null,
     image: null,
-    articuloId: null,
+    articuloId: undefined,
   })
 
   // UI state
-  const isEditMode = ref(false)
-  const isSubmitting = ref(false)
-  const isLoadingImage = ref(false)
-  const imagePreview = ref(new URL('../assets/sin-imagen.png', import.meta.url).href)
+  const isEditMode: Ref<boolean> = ref(false)
+  const isSubmitting: Ref<boolean> = ref(false)
+  const isLoadingImage: Ref<boolean> = ref(false)
+  const imagePreview: Ref<string> = ref(new URL('../assets/sin-imagen.png', import.meta.url).href)
 
   // Data state
-  const articles = ref([])
-  const categories = ref([])
-  const selectedCategory = ref(null)
+  const articles: Ref<ArticleDto[]> = ref([])
+  const categories: Ref<CategoryDto[]> = ref([])
+  const selectedCategory: Ref<string | number> = ref('all')
 
   // Search and filters
-  const searchTerm = ref('')
-  const sortBy = ref('name') // name, price, category, date
+  const searchTerm: Ref<string> = ref('')
+  const sortBy: Ref<SortBy> = ref('name')
 
   // Validation
-  const isFormValid = computed(() => {
+  const isFormValid: ComputedRef<boolean> = computed(() => {
     return (
       formData.value.name.trim() !== '' &&
       formData.value.price !== '' &&
@@ -40,7 +110,7 @@ export function useArticleCreate() {
     )
   })
 
-  const isNameDuplicate = computed(() => {
+  const isNameDuplicate: ComputedRef<boolean> = computed(() => {
     if (!articles.value || !formData.value.name) return false
 
     return articles.value.some(
@@ -51,7 +121,7 @@ export function useArticleCreate() {
   })
 
   // Computed values
-  const filteredArticles = computed(() => {
+  const filteredArticles: ComputedRef<ArticleDto[]> = computed(() => {
     let filtered = articles.value
 
     // Search filter
@@ -66,24 +136,22 @@ export function useArticleCreate() {
 
     // Category filter
     if (selectedCategory.value && selectedCategory.value !== 'all') {
-      filtered = filtered.filter(
-        (article) =>
-          article.categoriaID === selectedCategory.value ||
-          article.categoriaId === selectedCategory.value
-      )
+      filtered = filtered.filter((article) => article.categoriaId === selectedCategory.value)
     }
 
     // Sort
     filtered.sort((a, b) => {
       switch (sortBy.value) {
         case 'price':
-          return parseFloat(b.precio) - parseFloat(a.precio)
+          return b.precio - a.precio
         case 'category':
-          const aCategoryId = a.categoriaID || a.categoriaId
-          const bCategoryId = b.categoriaID || b.categoriaId
-          return (getCategoryName(aCategoryId) || '').localeCompare(
-            getCategoryName(bCategoryId) || ''
+          return (getCategoryName(a.categoriaId) || '').localeCompare(
+            getCategoryName(b.categoriaId) || ''
           )
+        case 'date':
+          const aDate = new Date(a.fechaCreacion).getTime()
+          const bDate = new Date(b.fechaCreacion).getTime()
+          return bDate - aDate
         case 'name':
         default:
           return a.nombreArticulo.localeCompare(b.nombreArticulo)
@@ -93,21 +161,16 @@ export function useArticleCreate() {
     return filtered
   })
 
-  const statistics = computed(() => {
+  const statistics: ComputedRef<ArticleStatistics> = computed(() => {
     const total = articles.value.length
-    const totalValue = articles.value.reduce(
-      (sum, article) => sum + parseFloat(article.precio || 0),
-      0
-    )
+    const totalValue = articles.value.reduce((sum, article) => sum + article.precio, 0)
     const averagePrice = total > 0 ? totalValue / total : 0
 
     const categoryStats = categories.value
       .filter((cat) => cat.categoriaId !== null)
       .map((category) => {
         const categoryArticles = articles.value.filter(
-          (article) =>
-            article.categoriaID === category.categoriaId ||
-            article.categoriaId === category.categoriaId
+          (article) => article.categoriaId === category.categoriaId
         )
         return {
           name: category.nombreCategoria,
@@ -125,19 +188,19 @@ export function useArticleCreate() {
   })
 
   // Form operations
-  const resetForm = () => {
+  const resetForm = (): void => {
     formData.value = {
       name: '',
       price: '',
       categoryId: null,
       image: null,
-      articuloId: null,
+      articuloId: undefined,
     }
     imagePreview.value = new URL('../assets/sin-imagen.png', import.meta.url).href
     isEditMode.value = false
   }
 
-  const handleImageUpload = (file) => {
+  const handleImageUpload = (file: File): boolean => {
     if (file) {
       isLoadingImage.value = true
 
@@ -177,24 +240,24 @@ export function useArticleCreate() {
     return false
   }
 
-  const startEdit = (article) => {
+  const startEdit = (article: ArticleDto): void => {
     isEditMode.value = true
     formData.value = {
       articuloId: article.articuloId,
       name: article.nombreArticulo,
       price: article.precio.toString(),
-      categoryId: article.categoriaID || article.categoriaId,
+      categoryId: article.categoriaId,
       image: null,
     }
 
     imagePreview.value = getArticleImage(article)
   }
 
-  const cancelEdit = () => {
+  const cancelEdit = (): void => {
     resetForm()
   }
 
-  const clearImage = () => {
+  const clearImage = (): void => {
     // Revoke object URL if it's a blob URL to prevent memory leaks
     if (imagePreview.value && imagePreview.value.startsWith('blob:')) {
       URL.revokeObjectURL(imagePreview.value)
@@ -211,17 +274,17 @@ export function useArticleCreate() {
   }
 
   // Category operations
-  const filterByCategory = (categoryId) => {
+  const filterByCategory = (categoryId: string | number): void => {
     selectedCategory.value = categoryId
   }
 
-  const getCategoryName = (categoryId) => {
+  const getCategoryName = (categoryId: number): string => {
     const category = categories.value.find((cat) => cat.categoriaId === categoryId)
     return category ? category.nombreCategoria : 'Sin categoría'
   }
 
   // Validation methods
-  const validateForm = () => {
+  const validateForm = (): boolean => {
     if (!isFormValid.value) {
       if (!formData.value.name.trim()) {
         showError('Por favor ingresa un nombre para el artículo')
@@ -262,18 +325,26 @@ export function useArticleCreate() {
     return true
   }
 
-  // Format data for API
-  const getFormattedData = () => {
-    return {
-      nombre: formData.value.name.trim(),
+  // Format data for API - V1 only
+  const getFormattedData = (): ArticleCreateDto | ArticleCreateWithImageDto => {
+    const baseData = {
+      nombreArticulo: formData.value.name.trim(),
       precio: parseFloat(formData.value.price),
-      categoriaID: formData.value.categoryId,
-      imagen: formData.value.image,
+      categoriaId: formData.value.categoryId!,
     }
+
+    if (formData.value.image) {
+      return {
+        ...baseData,
+        imagen: formData.value.image,
+      } as ArticleCreateWithImageDto
+    }
+
+    return baseData as ArticleCreateDto
   }
 
   // Toast messages
-  const showSuccess = (message) => {
+  const showSuccess = (message: string): void => {
     toast.add({
       severity: 'success',
       summary: 'Éxito',
@@ -282,7 +353,7 @@ export function useArticleCreate() {
     })
   }
 
-  const showError = (message) => {
+  const showError = (message: string): void => {
     toast.add({
       severity: 'error',
       summary: 'Error',
@@ -291,7 +362,7 @@ export function useArticleCreate() {
     })
   }
 
-  const showInfo = (message) => {
+  const showInfo = (message: string): void => {
     toast.add({
       severity: 'info',
       summary: 'Información',
@@ -301,7 +372,7 @@ export function useArticleCreate() {
   }
 
   // Confirmation dialogs
-  const confirmDelete = (article) => {
+  const confirmDelete = (article: ArticleDto): Promise<boolean> => {
     return new Promise((resolve) => {
       confirm.require({
         message: `¿Estás seguro de eliminar el artículo "${article.nombreArticulo}"?`,
@@ -317,7 +388,7 @@ export function useArticleCreate() {
   }
 
   // Helper methods for display
-  const formatCurrency = (amount) => {
+  const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
@@ -325,48 +396,19 @@ export function useArticleCreate() {
     }).format(amount)
   }
 
-  const formatPrice = (price) => {
-    return formatCurrency(parseFloat(price || 0))
+  const formatPrice = (price: number | string): string => {
+    return formatCurrency(parseFloat(price.toString() || '0'))
   }
 
-  const getArticleImage = (article) => {
+  // V1 API only - clean image URL handling
+  const getArticleImage = (article: ArticleDto): string => {
     const urlNoImage = new URL('../assets/sin-imagen.png', import.meta.url).href
 
     try {
-      // For V1 API, check multiple possible image properties
-      if (article.articuloId) {
-        // Try V1 API image URL format
-        if (article.imagenUrl) {
-          const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
-          return `${baseUrl}/uploads/${article.imagenUrl}`
-        }
-
-        // Try direct API endpoint for image - this is the standard V1 approach
+      // V1 API direct endpoint for image
+      if (article.imagenUrl) {
         const baseUrl = import.meta.env.VITE_API_BASE_URL || ''
-        return `${baseUrl}/api/v1/articulos/${article.articuloId}/image`
-      }
-
-      // Legacy API support
-      if (article.imagenAPI) {
-        return article.imagenAPI
-      }
-
-      // Direct image URL
-      if (
-        article.imagen &&
-        typeof article.imagen === 'string' &&
-        article.imagen.startsWith('http')
-      ) {
-        return article.imagen
-      }
-
-      // Base64 image
-      if (
-        article.imagen &&
-        typeof article.imagen === 'string' &&
-        article.imagen.startsWith('data:image')
-      ) {
-        return article.imagen
+        return `${baseUrl}uploads/${article.imagenUrl}`
       }
     } catch (error) {
       console.error('Error getting article image:', error)
