@@ -187,7 +187,6 @@ export const useRoomsStore = defineStore('rooms', {
             this.freeRooms = result.data;
             this.allRooms = [...this.freeRooms, ...this.maintenanceRooms, ...this.occupiedRooms];
             this.lastUpdated = new Date();
-            console.log('🏨 Free rooms loaded optimized:', this.freeRooms.length);
             return true;
           } else {
             this.addError(result.message);
@@ -201,7 +200,6 @@ export const useRoomsStore = defineStore('rooms', {
             this.occupiedRooms = result.data;
             this.allRooms = [...this.freeRooms, ...this.maintenanceRooms, ...this.occupiedRooms];
             this.lastUpdated = new Date();
-            console.log('🏨 Occupied rooms loaded optimized:', this.occupiedRooms.length);
             return true;
           } else {
             this.addError(result.message);
@@ -210,7 +208,6 @@ export const useRoomsStore = defineStore('rooms', {
           }
         } else if (options.parallel) {
           // Load both types in parallel for maximum performance
-          console.log('🏨 Loading rooms in parallel...');
           const [freeResult, occupiedResult] = await Promise.all([
             roomsService.fetchFreeRooms(institutionId),
             roomsService.fetchOccupiedRooms(institutionId)
@@ -223,8 +220,6 @@ export const useRoomsStore = defineStore('rooms', {
             const allFreeRooms = freeResult.data;
             this.freeRooms = allFreeRooms.filter(room => !room.estado || room.estado.toLowerCase() === 'disponible');
             this.maintenanceRooms = allFreeRooms.filter(room => room.estado && room.estado.toLowerCase() !== 'disponible');
-            console.log('🏨 Free rooms loaded:', this.freeRooms.length);
-            console.log('🏨 Maintenance rooms loaded:', this.maintenanceRooms.length);
           } else {
             this.addError(freeResult.message);
             freeResult.errors.forEach(error => this.addError(error));
@@ -233,7 +228,6 @@ export const useRoomsStore = defineStore('rooms', {
           
           if (occupiedResult.isSuccess) {
             this.occupiedRooms = occupiedResult.data;
-            console.log('🏨 Occupied rooms loaded:', this.occupiedRooms.length);
           } else {
             this.addError(occupiedResult.message);
             occupiedResult.errors.forEach(error => this.addError(error));
@@ -242,7 +236,6 @@ export const useRoomsStore = defineStore('rooms', {
           
           this.allRooms = [...this.freeRooms, ...this.maintenanceRooms, ...this.occupiedRooms];
           this.lastUpdated = new Date();
-          console.log('🏨 Parallel loading completed, total rooms:', this.allRooms.length);
           return success;
         } else {
           // Default: load all rooms with optimized endpoint
@@ -474,6 +467,179 @@ export const useRoomsStore = defineStore('rooms', {
         (room.reservaActiva.totalHoras * 60 + room.reservaActiva.totalMinutos) * 60000);
       
       return Math.max(0, Math.floor((endTime - now) / 60000));
+    },
+
+    /**
+     * SignalR Real-time Update Methods
+     */
+    
+    /**
+     * Update room status via SignalR
+     */
+    updateRoomStatus(payload) {
+      const { roomId, status, visitaId, timestamp } = payload;
+      
+      
+      // Find room in all collections
+      let room = this.allRooms.find(r => r.habitacionId === roomId);
+      if (!room) {
+        console.error(`❌ [Store] Room ${roomId} not found in allRooms!`);
+        return;
+      }
+
+
+      // Update basic status
+      room.estadoHabitacion = status;
+      room.lastUpdated = timestamp;
+
+      // Handle status-specific updates
+      if (status === 'ocupada' && visitaId) {
+        room.visitaID = visitaId;
+        room.disponible = false;
+        // Move from free to occupied if needed
+        this.moveRoomToOccupied(roomId);
+      } else if (status === 'libre') {
+        room.visitaID = null;
+        room.reservaActiva = null;
+        room.disponible = true;
+        // Move from occupied to free if needed
+        this.moveRoomToFree(roomId);
+      } else if (status === 'mantenimiento') {
+        // Move to maintenance collection if needed
+        this.moveRoomToMaintenance(roomId);
+      }
+
+      this.lastUpdated = new Date();
+      
+      // Force refresh of room collections
+      this.allRooms = [...this.allRooms];
+      this.freeRooms = [...this.freeRooms];
+      this.occupiedRooms = [...this.occupiedRooms];
+      this.maintenanceRooms = [...this.maintenanceRooms];
+    },
+
+    /**
+     * Update room progress via SignalR
+     */
+    updateRoomProgress(payload) {
+      const { roomId, visitaId, progressPercentage, timeElapsed, startTime, estimatedEndTime } = payload;
+      
+      
+      let room = this.allRooms.find(r => r.habitacionId === roomId);
+      if (!room || !room.reservaActiva) {
+        return;
+      }
+
+      // Update progress information
+      room.reservaActiva.progressPercentage = progressPercentage;
+      room.reservaActiva.timeElapsed = timeElapsed;
+      room.reservaActiva.estimatedEndTime = estimatedEndTime;
+      room.reservaActiva.lastProgressUpdate = new Date().toISOString();
+
+      // Update in occupied rooms if present
+      const occupiedRoom = this.occupiedRooms.find(r => r.habitacionId === roomId);
+      if (occupiedRoom && occupiedRoom.reservaActiva) {
+        occupiedRoom.reservaActiva.progressPercentage = progressPercentage;
+        occupiedRoom.reservaActiva.timeElapsed = timeElapsed;
+        occupiedRoom.reservaActiva.estimatedEndTime = estimatedEndTime;
+        occupiedRoom.reservaActiva.lastProgressUpdate = new Date().toISOString();
+      }
+
+      this.lastUpdated = new Date();
+    },
+
+    /**
+     * Update room reservation via SignalR
+     */
+    updateRoomReservation(payload) {
+      const { roomId, reservaId, visitaId, action, timestamp } = payload;
+      
+      let room = this.allRooms.find(r => r.habitacionId === roomId);
+      if (!room) return;
+
+      switch (action) {
+        case 'created':
+          room.visitaID = visitaId;
+          room.reservaId = reservaId;
+          room.estadoHabitacion = 'ocupada';
+          this.moveRoomToOccupied(roomId);
+          break;
+          
+        case 'finalized':
+        case 'cancelled':
+          room.visitaID = null;
+          room.reservaId = null;
+          room.reservaActiva = null;
+          room.estadoHabitacion = 'libre';
+          this.moveRoomToFree(roomId);
+          break;
+          
+        case 'updated':
+          // Refresh room data if needed
+          if (room.reservaActiva) {
+            room.reservaActiva.lastUpdated = timestamp;
+          }
+          break;
+      }
+
+      room.lastUpdated = timestamp;
+      this.lastUpdated = new Date();
+    },
+
+    /**
+     * Update room maintenance via SignalR
+     */
+    updateRoomMaintenance(payload) {
+      const { roomId, maintenanceType, status, description, timestamp } = payload;
+      
+      let room = this.allRooms.find(r => r.habitacionId === roomId);
+      if (!room) return;
+
+      switch (status) {
+        case 'started':
+          room.estadoHabitacion = 'mantenimiento';
+          room.maintenanceInfo = {
+            type: maintenanceType,
+            description,
+            startedAt: timestamp,
+            status: 'in_progress'
+          };
+          this.moveRoomToMaintenance(roomId);
+          break;
+          
+        case 'completed':
+          room.estadoHabitacion = 'libre';
+          if (room.maintenanceInfo) {
+            room.maintenanceInfo.completedAt = timestamp;
+            room.maintenanceInfo.status = 'completed';
+          }
+          this.moveRoomToFree(roomId);
+          break;
+          
+        case 'cancelled':
+          room.estadoHabitacion = 'libre';
+          room.maintenanceInfo = null;
+          this.moveRoomToFree(roomId);
+          break;
+      }
+
+      room.lastUpdated = timestamp;
+      this.lastUpdated = new Date();
+    },
+
+    /**
+     * Helper method to move room to maintenance collection
+     */
+    moveRoomToMaintenance(roomId) {
+      // Remove from other collections
+      this.freeRooms = this.freeRooms.filter(r => r.habitacionId !== roomId);
+      this.occupiedRooms = this.occupiedRooms.filter(r => r.habitacionId !== roomId);
+      
+      // Add to maintenance if not already there
+      const room = this.allRooms.find(r => r.habitacionId === roomId);
+      if (room && !this.maintenanceRooms.find(r => r.habitacionId === roomId)) {
+        this.maintenanceRooms.push(room);
+      }
     }
   }
 });

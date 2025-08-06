@@ -3,10 +3,27 @@
  * Contains utility functions for room categorization, formatting, and calculations
  */
 
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import dayjs from 'dayjs';
 
 export function useRoomUtils() {
+  // ⏰ Reactive timer to force time updates every minute
+  const currentTime = ref(new Date());
+  let timeUpdateInterval;
+  
+  onMounted(() => {
+    // Update current time every 30 seconds for more responsive UI
+    timeUpdateInterval = setInterval(() => {
+      currentTime.value = new Date();
+    }, 30000); // 30 seconds
+  });
+  
+  onUnmounted(() => {
+    if (timeUpdateInterval) {
+      clearInterval(timeUpdateInterval);
+    }
+  });
+
   /**
    * Extract category from room name
    */
@@ -71,9 +88,21 @@ export function useRoomUtils() {
   const getTimeLeftInMinutes = (room) => {
     if (!room.reservaActiva) return 0;
     
-    // Handle both old and new API formats
+    // 🔍 Force reactivity by referencing currentTime
+    const now = dayjs(currentTime.value);
+    
+    // 🔍 Debug logging for problematic rooms
+    const roomId = room.habitacionId || 'unknown';
+    const shouldLog = room.reservaActiva.totalHoras > 100 || room.reservaActiva.totalMinutos > 1000;
+    
+    
+    // Handle both old and new API formats, prioritizing SignalR real-time data
     let endTime;
-    if (room.reservaActiva.fechaFin) {
+    
+    // ✅ Use SignalR estimatedEndTime if available (most accurate)
+    if (room.reservaActiva.estimatedEndTime) {
+      endTime = dayjs(room.reservaActiva.estimatedEndTime);
+    } else if (room.reservaActiva.fechaFin) {
       // New API format with fechaFin
       endTime = dayjs(room.reservaActiva.fechaFin);
     } else if (room.reservaActiva.fechaInicio) {
@@ -90,7 +119,10 @@ export function useRoomUtils() {
       return 0;
     }
     
-    return endTime.diff(dayjs(), 'minute');
+    const diffMinutes = endTime.diff(now, 'minute');
+    
+    
+    return diffMinutes;
   };
 
   /**
@@ -100,6 +132,7 @@ export function useRoomUtils() {
     if (!room.reservaActiva) return 'Sin reserva';
     
     const timeLeft = getTimeLeftInMinutes(room);
+    
     
     if (timeLeft <= 0) {
       const overtime = Math.abs(timeLeft);
@@ -119,25 +152,44 @@ export function useRoomUtils() {
   const getTimeProgress = (room) => {
     if (!room.reservaActiva) return 0;
     
+    const roomId = room.habitacionId || 'unknown';
     const totalMinutes = (room.reservaActiva.totalHoras || 0) * 60 + (room.reservaActiva.totalMinutos || 0);
+    
+    // 🔍 Force reactivity by referencing currentTime
+    const now = dayjs(currentTime.value);
+    
+    // ⚠️ Skip SignalR progressPercentage if it seems incorrect
+    // If progressPercentage is 100 but we still have time left, it's wrong
+    const timeLeft = getTimeLeftInMinutes(room);
+    const signalRProgressSeemsBroken = room.reservaActiva.progressPercentage === 100 && timeLeft > 0;
+    
+    
+    // ✅ Use SignalR real-time data if available AND seems correct
+    if (room.reservaActiva.progressPercentage !== undefined && !signalRProgressSeemsBroken) {
+      const progress = Math.max(0, Math.min(100, room.reservaActiva.progressPercentage));
+      return progress;
+    }
     
     // If we have fechaInicio and fechaFin, calculate based on actual time range
     if (room.reservaActiva.fechaInicio && room.reservaActiva.fechaFin) {
       const start = dayjs(room.reservaActiva.fechaInicio);
       const end = dayjs(room.reservaActiva.fechaFin);
-      const now = dayjs();
       
       const totalDuration = end.diff(start, 'minute');
       const elapsed = now.diff(start, 'minute');
       
-      return Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+      const progress = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100));
+      return progress;
     }
     
-    // Fallback to the old calculation
-    const timeLeft = getTimeLeftInMinutes(room);
-    const elapsed = totalMinutes - timeLeft;
+    // Fallback to calculation based on time left
+    if (totalMinutes > 0) {
+      const elapsed = totalMinutes - timeLeft;
+      const progress = Math.max(0, Math.min(100, (elapsed / totalMinutes) * 100));
+      return progress;
+    }
     
-    return Math.max(0, Math.min(100, (elapsed / totalMinutes) * 100));
+    return 0;
   };
 
   /**
@@ -329,6 +381,7 @@ export function useRoomUtils() {
     getTimeLeftInMinutes,
     getTimeRemaining,
     getTimeProgress,
+    currentTime, // Export reactive time for debugging
     
     // Status information
     getStatusText,

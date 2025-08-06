@@ -28,7 +28,6 @@ export function useRoomActions() {
       return;
     }
     
-    console.log('Opening occupied room modal with room:', room);
     selectedRoom.value = room;
     showOccupiedModal.value = true;
     showFreeModal.value = false;
@@ -163,13 +162,11 @@ export function useRoomActions() {
    * Refresh rooms data using optimized loading
    */
   const refreshRooms = async () => {
-    console.log('🏨 Starting optimized refresh from actions...');
     const startTime = performance.now();
     
     const success = await roomsStore.refreshRoomsOptimized();
 
     const endTime = performance.now();
-    console.log(`🏨 Optimized refresh completed in ${Math.round(endTime - startTime)}ms`);
 
     if (success) {
       showSuccessToast('Datos actualizados correctamente');

@@ -9,19 +9,11 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, computed } from 'vue'
+  import { onMounted } from 'vue'
   import { useAuthStore } from './store/auth.js'
   import MenuCoordinationProvider from './components/NavBar/MenuCoordinationProvider.vue'
-  import { useNotifications, useNotificationToasts } from '@/composables/useNotifications'
-  import { useSignalRAutoConnect } from '@/composables/useSignalRAutoConnect'
 
   const authStore = useAuthStore()
-
-  useSignalRAutoConnect() // Auto-conecta SignalR al login
-  useNotificationToasts() // Toasts glassmorphism automáticos
-
-  const { unreadNotifications } = useNotifications(undefined, false) // Don't auto-connect here
-  const unreadCount = computed(() => unreadNotifications.value.length)
 
   onMounted(() => {
     // Initialize auth store if needed

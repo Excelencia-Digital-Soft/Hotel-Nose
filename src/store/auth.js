@@ -59,8 +59,6 @@ export const useAuthStore = defineStore('auth', {
                 nombre: user.institucionName || 'Hotel',
               },
             ]
-            // Connect to WebSocket after setting institution
-            this.connectWebSocket()
           }
 
           return {
@@ -188,24 +186,6 @@ export const useAuthStore = defineStore('auth', {
 
     selectInstitucion(id) {
       this.institucionID = id
-      // Connect to WebSocket after selecting institution
-      this.connectWebSocket()
-    },
-
-    async connectWebSocket() {
-      try {
-        // Use the new SignalR NotificationService
-        const { NotificationService } = await import('../services/NotificationService')
-        const notificationService = NotificationService.getInstance()
-        
-        if (this.token && this.institucionID) {
-          await notificationService.initialize(this.token)
-          // Auto-subscribe to institution (handled by server based on token claims)
-          console.log('SignalR connected for institution:', this.institucionID)
-        }
-      } catch (error) {
-        console.error('Failed to connect SignalR:', error)
-      }
     },
 
     async logout() {
@@ -213,11 +193,6 @@ export const useAuthStore = defineStore('auth', {
         if (this.token) {
           await axiosClient.post('/api/v1/authentication/logout')
         }
-
-        // Disconnect SignalR
-        const { NotificationService } = await import('../services/NotificationService')
-        const notificationService = NotificationService.getInstance()
-        await notificationService.stop()
       } catch (error) {
         console.error('Logout error:', error)
       } finally {

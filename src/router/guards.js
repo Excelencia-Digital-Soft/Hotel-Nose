@@ -1,6 +1,6 @@
-import { useAuthStore } from "../store/auth";
-import { hasAnyRole } from "../utils/role-mapping";
-import { showAccessDeniedToast } from "../utils/toast.js";
+import { useAuthStore } from '../store/auth'
+import { hasAnyRole } from '../utils/role-mapping'
+import { showAccessDeniedToast } from '../utils/toast'
 
 /**
  * Authentication guard
@@ -9,15 +9,15 @@ import { showAccessDeniedToast } from "../utils/toast.js";
  * @param {Function} next - Navigation callback
  */
 export function requireAuth(to, from, next) {
-  const authStore = useAuthStore();
-  const isAuthenticated = authStore.isAuthenticated && authStore.user !== null;
+  const authStore = useAuthStore()
+  const isAuthenticated = authStore.isAuthenticated && authStore.user !== null
 
   if (!isAuthenticated && to.meta.requireAuth) {
-    next({ name: 'Guest' }); // Redirige a la página de login
-    return;
+    next({ name: 'Guest' }) // Redirige a la página de login
+    return
   }
 
-  next();
+  next()
 }
 
 // Note: hasAnyRole function is now imported from role-mapping utility
@@ -30,21 +30,21 @@ export function requireAuth(to, from, next) {
  * @param {Function} next - Navigation callback
  */
 export function requireRole(to, from, next) {
-  const authStore = useAuthStore();
-  const user = authStore.user;
-  const allowedRoles = to.meta.roles;
+  const authStore = useAuthStore()
+  const user = authStore.user
+  const allowedRoles = to.meta.roles
 
   if (allowedRoles && user) {
-    const userRoles = user.roles;
+    const userRoles = user.roles
 
     if (!hasAnyRole(userRoles, allowedRoles)) {
-      showAccessDeniedToast();
+      showAccessDeniedToast()
       next(false) // Cancela la navegación sin redirigir;
-      return;
+      return
     }
   }
 
-  next();
+  next()
 }
 
 /**
@@ -54,30 +54,30 @@ export function requireRole(to, from, next) {
  * @param {Function} next - Navigation callback
  */
 export function authAndRoleGuard(to, from, next) {
-  const authStore = useAuthStore();
-  const isAuthenticated = authStore.isAuthenticated && authStore.user !== null;
-  const user = authStore.user;
-  const needAuth = to.meta.requireAuth;
-  const allowedRoles = to.meta.roles;
+  const authStore = useAuthStore()
+  const isAuthenticated = authStore.isAuthenticated && authStore.user !== null
+  const user = authStore.user
+  const needAuth = to.meta.requireAuth
+  const allowedRoles = to.meta.roles
 
   // Check authentication first
   if (needAuth && !isAuthenticated) {
-    next({ name: 'Guest' }); // Redirige a la página de login
-    return;
+    next({ name: 'Guest' }) // Redirige a la página de login
+    return
   }
 
   // Check role permissions if route has role restrictions
   if (allowedRoles && user) {
-    const userRoles = user.roles;
+    const userRoles = user.roles
 
     if (!hasAnyRole(userRoles, allowedRoles)) {
-      showAccessDeniedToast();
-      next(false); // Cancela la navegación sin redirigir
-      return;
+      showAccessDeniedToast()
+      next(false) // Cancela la navegación sin redirigir
+      return
     }
   }
 
-  next();
+  next()
 }
 
 /**
@@ -87,5 +87,5 @@ export function authAndRoleGuard(to, from, next) {
  * @param {Function} next - Navigation callback
  */
 export function publicRoute(to, from, next) {
-  next();
+  next()
 }

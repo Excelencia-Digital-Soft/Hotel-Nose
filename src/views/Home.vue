@@ -9,13 +9,23 @@
         inRoom<img src="../assets/pin.png" class="h-16 md:h-24 invert" alt="" />
       </div>
     </Transition>
+
+    <SignalRStatus />
+    <!-- Debug Panel (Development Only) -->
+    <SignalRDebug v-if="isDevelopment" />
   </div>
 </template>
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import { useAuthStore } from '../store/auth.js'
   import SelectRoom from '../views/SelectRoom.vue'
+  import SignalRStatus from '@/components/SignalRStatus.vue'
+  import SignalRDebug from '@/components/SignalRDebug.vue'
+
   const show = ref(false)
+  // Development mode for debugging
+  const isDevelopment = import.meta.env.DEV
+
   onMounted(() => {
     show.value = !show.value
   })
@@ -39,4 +49,3 @@
     opacity: 0;
   }
 </style>
-
