@@ -166,6 +166,7 @@
                         ? openMaintenanceRoomModal(room)
                         : openFreeRoomModal(room)
                     "
+                    @refresh-room="handleRefreshRoom"
                   />
                 </template>
               </div>
@@ -196,6 +197,7 @@
                   :room="room"
                   :variant="compactMode ? 'compact' : 'default'"
                   @click="openOccupiedRoomModal"
+                  @refresh-room="handleRefreshRoom"
                 />
               </div>
             </div>
@@ -420,6 +422,34 @@
     handleRoomUpdate,
     refreshRooms,
   } = useRoomActions()
+
+  // Handle individual room refresh
+  const handleRefreshRoom = async (roomId) => {
+    try {
+      // Show loading toast
+      import('../utils/toast').then(({ showInfoToast }) => {
+        showInfoToast(`Actualizando habitación ${roomId}...`)
+      })
+      
+      // Refresh all rooms (since there's no per-room refresh endpoint)
+      const success = await refreshRooms()
+      
+      if (success) {
+        import('../utils/toast').then(({ showSuccessToast }) => {
+          showSuccessToast(`Habitación ${roomId} actualizada correctamente`)
+        })
+      } else {
+        import('../utils/toast').then(({ showErrorToast }) => {
+          showErrorToast(`Error al actualizar habitación ${roomId}`)
+        })
+      }
+    } catch (error) {
+      console.error('Error refreshing room:', error)
+      import('../utils/toast').then(({ showErrorToast }) => {
+        showErrorToast(`Error al actualizar habitación ${roomId}`)
+      })
+    }
+  }
 
   // Real-time updates via SignalR
   const {

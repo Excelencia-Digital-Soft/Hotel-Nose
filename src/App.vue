@@ -5,17 +5,27 @@
       <!-- Main content area with router view -->
       <router-view />
     </MenuCoordinationProvider>
+    
+    <!-- Global Toast component -->
+    <Toast />
   </div>
 </template>
 
 <script setup lang="ts">
   import { onMounted } from 'vue'
+  import { useToast } from 'primevue/usetoast'
+  import Toast from 'primevue/toast'
   import { useAuthStore } from './store/auth.js'
   import MenuCoordinationProvider from './components/NavBar/MenuCoordinationProvider.vue'
+  import { setGlobalToastInstance } from './utils/toast'
 
   const authStore = useAuthStore()
+  const toast = useToast()
 
   onMounted(() => {
+    // Initialize global toast instance for use from services/stores
+    setGlobalToastInstance(toast)
+    
     // Initialize auth store if needed
     if (localStorage.getItem('token')) {
       authStore.checkAuth()

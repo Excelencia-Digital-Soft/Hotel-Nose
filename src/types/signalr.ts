@@ -44,6 +44,7 @@ export interface ConnectionInfo {
 export interface SignalREventHandlers {
   onReceiveNotification?: (type: string, message: string, data?: NotificationData) => void
   onSubscriptionConfirmed?: (message: string) => void
+  onForcedDisconnect?: (reason?: string) => void
   onReconnecting?: (error?: Error) => void
   onReconnected?: (connectionId: string) => void
   onClose?: (error?: Error) => void

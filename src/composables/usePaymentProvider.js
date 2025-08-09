@@ -58,7 +58,10 @@ export function usePaymentProvider(initialData = {}) {
     // UI state
     isProcessing: false,
     showEmpenoModal: false,
-    showRecargoModal: false
+    showRecargoModal: false,
+    
+    // Maintenance flag
+    enviarAMantenimiento: false
   })
 
   // Available payment methods
@@ -133,7 +136,8 @@ export function usePaymentProvider(initialData = {}) {
       porcentajeRecargo: 0,
       isProcessing: false,
       showEmpenoModal: false,
-      showRecargoModal: false
+      showRecargoModal: false,
+      enviarAMantenimiento: false
     }
   }
 
@@ -327,13 +331,21 @@ export function usePaymentProvider(initialData = {}) {
     const data = paymentData.value
     
     try {
+      // First, finalize the reservation
       await axiosClient.put(`/FinalizarReserva?idHabitacion=${data.habitacionId}`)
+      
+      // If maintenance is requested, set the room to maintenance mode
+      if (data.enviarAMantenimiento) {
+        await enviarHabitacionAMantenimiento()
+      }
       
       toast.add({
         severity: 'success',
         summary: 'Reserva Finalizada',
-        detail: 'La reserva se ha finalizado correctamente',
-        life: 3000
+        detail: data.enviarAMantenimiento 
+          ? 'La reserva se ha finalizado correctamente y la habitación fue enviada a mantenimiento'
+          : 'La reserva se ha finalizado correctamente',
+        life: 4000
       })
       
       return true
@@ -346,6 +358,58 @@ export function usePaymentProvider(initialData = {}) {
         detail: 'Error al finalizar la reserva',
         life: 5000
       })
+      return false
+    }
+  }
+
+  const enviarHabitacionAMantenimiento = async () => {
+    const data = paymentData.value
+    
+    try {
+      // Try V1 API first (if it exists)
+      try {
+        await axiosClient.put(`/api/v1/habitaciones/${data.habitacionId}/maintenance`, {
+          maintenanceType: 'mantenimiento',
+          description: 'Habitación marcada para mantenimiento durante checkout',
+          startedBy: authStore.user?.username || 'Usuario'
+        })
+        console.log('✅ Room set to maintenance using V1 API')
+        return true
+      } catch (v1Error) {
+        console.log('V1 API not available, trying legacy approach...')
+      }
+      
+      // Fallback: Try generic room state endpoint
+      try {
+        await axiosClient.put(`/SetEstadoHabitacion?habitacionId=${data.habitacionId}&estado=mantenimiento`)
+        console.log('✅ Room set to maintenance using legacy API')
+        return true
+      } catch (legacyError) {
+        console.log('Legacy API not available, trying alternative...')
+      }
+      
+      // Alternative: Use room update endpoint if available
+      await axiosClient.put(`/UpdateRoomStatus`, {
+        habitacionId: data.habitacionId,
+        estado: 'mantenimiento',
+        descripcion: 'Habitación enviada a mantenimiento después del checkout'
+      })
+      
+      console.log('✅ Room set to maintenance using alternative API')
+      return true
+      
+    } catch (err) {
+      console.error('❌ Error setting room to maintenance:', err)
+      
+      // Show user a warning but don't fail the entire checkout process
+      toast.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'La habitación fue liberada pero no se pudo marcar para mantenimiento automáticamente. Por favor, márquela manualmente.',
+        life: 8000
+      })
+      
+      // Don't throw error - the payment was successful, just the maintenance flag failed
       return false
     }
   }
@@ -434,6 +498,7 @@ export function usePaymentProvider(initialData = {}) {
     crearMovimientoAdicional,
     pagarVisita,
     finalizarReserva,
+    enviarHabitacionAMantenimiento,
     pausarTimer,
     recalcularTimer
   }

@@ -186,10 +186,24 @@ export const useSignalRStore = defineStore('signalr', () => {
       eventHandlers.value?.onSubscriptionConfirmed?.(message)
     })
 
+    // Handle forced disconnection from server
+    connection.value.on('forcedisconnect', (reason?: string) => {
+      addNotification('warning', `⚠️ Server forced disconnection: ${reason || 'Unknown reason'}`)
+      eventHandlers.value?.onForcedDisconnect?.(reason)
+      // Automatically attempt to reconnect after forced disconnect
+      setTimeout(() => {
+        if (connectionState.value === 'disconnected') {
+          connect().catch(console.error)
+        }
+      }, 2000)
+    })
+
     // ✅ ROOM-SPECIFIC EVENTS
     // Handle room status changes (libre -> ocupada -> mantenimiento, etc.)
     connection.value.on('RoomStatusChanged', (data: any) => {
       console.log('🏨 [SignalR] RoomStatusChanged EVENT RECEIVED:', JSON.stringify(data, null, 2))
+      console.log('🔍 [DEBUG] Browser window:', window.location.href)
+      console.log('🔍 [DEBUG] Timestamp:', new Date().toISOString())
       addNotification('info', `🏨 Room ${data.roomId} status changed to: ${data.status}`)
       
       // Show visual toast for important changes
@@ -482,14 +496,17 @@ export const useSignalRStore = defineStore('signalr', () => {
    */
   
   const handleRoomStatusChange = (data: any): void => {
+    console.log('🔧 [SignalR] handleRoomStatusChange called with:', data)
     try {
       // Import rooms store dynamically to avoid circular dependencies
       import('../store/modules/roomsStore').then(({ useRoomsStore }) => {
         const roomsStore = useRoomsStore()
+        console.log('🔧 [SignalR] Calling roomsStore.updateRoomStatus with:', data)
         roomsStore.updateRoomStatus(data)
+        console.log('🔧 [SignalR] roomsStore.updateRoomStatus completed')
       })
     } catch (error) {
-      console.error('Error handling room status change:', error)
+      console.error('❌ [SignalR] Error handling room status change:', error)
     }
   }
 

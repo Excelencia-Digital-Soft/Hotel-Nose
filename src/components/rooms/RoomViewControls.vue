@@ -38,17 +38,20 @@
       </span>
     </button>
 
-    <!-- WebSocket status indicator -->
+    <!-- SignalR status indicator -->
     <div 
-      class="relative group bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl flex items-center transition-all duration-300 shadow-lg" 
-      :class="buttonClasses"
-      title="Actualizaciones en tiempo real activas via WebSocket"
+      class="relative group rounded-2xl flex items-center transition-all duration-300 shadow-lg" 
+      :class="[buttonClasses, signalRStatusClasses]"
+      :title="signalRStatusTitle"
     >
-      <span class="material-symbols-outlined text-white animate-pulse" :class="iconClasses">
-        wifi
+      <span 
+        class="material-symbols-outlined text-white" 
+        :class="[iconClasses, signalRIconClasses]"
+      >
+        {{ signalRIcon }}
       </span>
       <span v-if="!compactMode" class="text-white font-medium">
-        Tiempo Real
+        {{ signalRLabel }}
       </span>
     </div>
 
@@ -71,6 +74,10 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useSignalRStore } from '../../store/signalr';
+
+// SignalR store
+const signalRStore = useSignalRStore();
 
 const props = defineProps({
   // View state
@@ -132,5 +139,84 @@ const compactModeIcon = computed(() => {
 
 const compactModeLabel = computed(() => {
   return props.compactMode ? 'Expandir' : 'Compacto';
+});
+
+// SignalR status computed properties
+const signalRStatusClasses = computed(() => {
+  const baseClasses = 'bg-gradient-to-r';
+  
+  switch (signalRStore.connectionState) {
+    case 'connected':
+      return `${baseClasses} from-green-600 to-emerald-600`;
+    case 'connecting':
+    case 'reconnecting':
+      return `${baseClasses} from-yellow-600 to-amber-600`;
+    case 'disconnected':
+    case 'disconnecting':
+    default:
+      return `${baseClasses} from-red-600 to-red-700`;
+  }
+});
+
+const signalRIcon = computed(() => {
+  switch (signalRStore.connectionState) {
+    case 'connected':
+      return 'wifi';
+    case 'connecting':
+    case 'reconnecting':
+      return 'wifi_tethering';
+    case 'disconnected':
+    case 'disconnecting':
+    default:
+      return 'wifi_off';
+  }
+});
+
+const signalRIconClasses = computed(() => {
+  const baseClasses = '';
+  
+  switch (signalRStore.connectionState) {
+    case 'connected':
+      return `${baseClasses} animate-pulse`;
+    case 'connecting':
+    case 'reconnecting':
+      return `${baseClasses} animate-spin`;
+    case 'disconnected':
+    case 'disconnecting':
+    default:
+      return baseClasses;
+  }
+});
+
+const signalRLabel = computed(() => {
+  switch (signalRStore.connectionState) {
+    case 'connected':
+      return 'Tiempo Real';
+    case 'connecting':
+      return 'Conectando...';
+    case 'reconnecting':
+      return 'Reconectando...';
+    case 'disconnecting':
+      return 'Desconectando...';
+    case 'disconnected':
+    default:
+      return 'Desconectado';
+  }
+});
+
+const signalRStatusTitle = computed(() => {
+  switch (signalRStore.connectionState) {
+    case 'connected':
+      return 'Actualizaciones en tiempo real activas via SignalR';
+    case 'connecting':
+      return 'Conectando a SignalR...';
+    case 'reconnecting':
+      return 'Reconectando a SignalR...';
+    case 'disconnecting':
+      return 'Desconectando de SignalR...';
+    case 'disconnected':
+    default:
+      return 'Sin conexión SignalR - Las actualizaciones en tiempo real no están disponibles';
+  }
 });
 </script>

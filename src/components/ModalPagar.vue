@@ -229,6 +229,37 @@
                 </button>
               </div>
 
+              <!-- Maintenance Checkbox -->
+              <div class="glass-card p-4 mb-4">
+                <label class="flex items-center cursor-pointer group">
+                  <div class="relative">
+                    <input
+                      type="checkbox"
+                      v-model="paymentData.enviarAMantenimiento"
+                      class="sr-only"
+                    />
+                    <div 
+                      class="w-6 h-6 border-2 border-white/30 rounded-lg transition-all duration-300 group-hover:border-yellow-400/50"
+                      :class="paymentData.enviarAMantenimiento 
+                        ? 'bg-gradient-to-r from-yellow-400 to-orange-500 border-yellow-400' 
+                        : 'bg-white/5'"
+                    >
+                      <i 
+                        v-if="paymentData.enviarAMantenimiento"
+                        class="pi pi-check text-white text-sm absolute top-0 left-0 w-full h-full flex items-center justify-center"
+                      ></i>
+                    </div>
+                  </div>
+                  <div class="ml-3 flex items-center">
+                    <i class="pi pi-wrench text-yellow-400 mr-2"></i>
+                    <div>
+                      <span class="text-white font-medium">Enviar a Mantenimiento</span>
+                      <p class="text-gray-300 text-sm">La habitación será marcada para mantenimiento después del checkout</p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
               <!-- Main Action Button -->
               <button 
                 @click="handleConfirmPayment"

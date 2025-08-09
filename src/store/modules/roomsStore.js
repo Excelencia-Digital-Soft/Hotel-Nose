@@ -628,6 +628,36 @@ export const useRoomsStore = defineStore('rooms', {
     },
 
     /**
+     * Helper method to move room to occupied collection
+     */
+    moveRoomToOccupied(roomId) {
+      // Remove from other collections
+      this.freeRooms = this.freeRooms.filter(r => r.habitacionId !== roomId);
+      this.maintenanceRooms = this.maintenanceRooms.filter(r => r.habitacionId !== roomId);
+      
+      // Add to occupied if not already there
+      const room = this.allRooms.find(r => r.habitacionId === roomId);
+      if (room && !this.occupiedRooms.find(r => r.habitacionId === roomId)) {
+        this.occupiedRooms.push(room);
+      }
+    },
+
+    /**
+     * Helper method to move room to free collection
+     */
+    moveRoomToFree(roomId) {
+      // Remove from other collections
+      this.occupiedRooms = this.occupiedRooms.filter(r => r.habitacionId !== roomId);
+      this.maintenanceRooms = this.maintenanceRooms.filter(r => r.habitacionId !== roomId);
+      
+      // Add to free if not already there
+      const room = this.allRooms.find(r => r.habitacionId === roomId);
+      if (room && !this.freeRooms.find(r => r.habitacionId === roomId)) {
+        this.freeRooms.push(room);
+      }
+    },
+
+    /**
      * Helper method to move room to maintenance collection
      */
     moveRoomToMaintenance(roomId) {
