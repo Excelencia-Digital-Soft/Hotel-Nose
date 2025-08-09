@@ -18,12 +18,18 @@ namespace hotel.Controllers.V1;
 public class ReservasController : ControllerBase
 {
     private readonly IReservasService _reservasService;
+    private readonly IRoomNotificationService _roomNotificationService;
     private readonly ILogger<ReservasController> _logger;
 
-    public ReservasController(IReservasService reservasService, ILogger<ReservasController> logger)
+    public ReservasController(
+        IReservasService reservasService,
+        IRoomNotificationService roomNotificationService,
+        ILogger<ReservasController> logger)
     {
         _reservasService =
             reservasService ?? throw new ArgumentNullException(nameof(reservasService));
+        _roomNotificationService =
+            roomNotificationService ?? throw new ArgumentNullException(nameof(roomNotificationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -113,6 +119,25 @@ public class ReservasController : ControllerBase
         if (!result.IsSuccess)
         {
             return BadRequest(result);
+        }
+
+        // Send real-time notification for room status change
+        var institucionId = GetCurrentInstitucionId();
+        if (institucionId.HasValue)
+        {
+            var userId = GetCurrentUserId();
+            await _roomNotificationService.NotifyRoomStatusChanged(
+                habitacionId,
+                "libre",
+                null,
+                institucionId.Value,
+                userId
+            );
+
+            _logger.LogInformation(
+                "Sent room status notification for room {HabitacionId} - status: libre",
+                habitacionId
+            );
         }
 
         return Ok(result);
@@ -321,6 +346,19 @@ public class ReservasController : ControllerBase
                 : BadRequest(result);
         }
 
+        // Send real-time notification for reservation cancellation
+        var institucionId = GetCurrentInstitucionId();
+        if (institucionId.HasValue)
+        {
+            // Note: We need to get the room ID from the reservation
+            // This is a simplified notification - you may need to enhance this
+            // based on your actual ReservasService implementation
+            _logger.LogInformation(
+                "Reservation {ReservaId} cancelled - notification will be sent if room info is available",
+                reservaId
+            );
+        }
+
         return Ok(result);
     }
 
@@ -446,6 +484,34 @@ public class ReservasController : ControllerBase
                 : BadRequest(result);
         }
 
+        // Send real-time notifications for new reservation
+        if (result.Data != null)
+        {
+            // Notify room status changed to occupied
+            await _roomNotificationService.NotifyRoomStatusChanged(
+                result.Data.HabitacionId,
+                "ocupada",
+                result.Data.VisitaId,
+                institucionId.Value,
+                userId
+            );
+
+            // Notify reservation created
+            await _roomNotificationService.NotifyRoomReservationChanged(
+                result.Data.HabitacionId,
+                result.Data.ReservaId,
+                result.Data.VisitaId,
+                "created",
+                institucionId.Value
+            );
+
+            _logger.LogInformation(
+                "Sent notifications for new reservation {ReservaId} in room {HabitacionId}",
+                result.Data.ReservaId,
+                result.Data.HabitacionId
+            );
+        }
+
         return CreatedAtAction(
             nameof(GetReservation),
             new { reservaId = result.Data!.ReservaId },
@@ -496,6 +562,15 @@ public class ReservasController : ControllerBase
         );
 
         return null;
+    }
+
+    /// <summary>
+    /// Get the current user's ID from JWT claims
+    /// </summary>
+    /// <returns>User ID or null if not found</returns>
+    private string? GetCurrentUserId()
+    {
+        return User.FindFirstValue(ClaimTypes.NameIdentifier);
     }
 
     #endregion

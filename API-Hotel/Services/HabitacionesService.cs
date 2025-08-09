@@ -1030,5 +1030,151 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
         }
     }
 
+    /// <inheritdoc />
+    public async Task<IEnumerable<DTOs.Rooms.OccupiedRoomDto>> GetOccupiedRoomsWithTimingAsync(
+        int institucionId,
+        CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Use SAME logic as GetOccupiedHabitacionesOptimizedAsync
+            // Get basic occupied room data with exact same criteria
+            var occupiedRoomsBasic = await _context
+                .Habitaciones.AsNoTracking()
+                .Where(h =>
+                    h.InstitucionID == institucionId 
+                    && h.Disponible == false  // Key criteria: must be marked as unavailable
+                    && h.Anulado != true      // Key criteria: not cancelled
+                    && h.VisitaID.HasValue    // Key criteria: must have active visit
+                )
+                .Select(h => new
+                {
+                    h.HabitacionId,
+                    h.VisitaID
+                })
+                .ToListAsync(cancellationToken);
+
+            var visitaIds = occupiedRoomsBasic.Select(h => h.VisitaID!.Value).ToList();
+            
+            if (!visitaIds.Any())
+            {
+                return new List<DTOs.Rooms.OccupiedRoomDto>();
+            }
+
+            // Get active visitas (same as optimized method)
+            var visitasData = await _context
+                .Visitas.AsNoTracking()
+                .Where(v => visitaIds.Contains(v.VisitaId) && v.Anulado != true)  // Key criteria: visit not cancelled
+                .Select(v => new
+                {
+                    v.VisitaId,
+                    v.FechaRegistro
+                })
+                .ToListAsync(cancellationToken);
+
+            // Get active reservas (same as optimized method)
+            var reservasData = await _context
+                .Reservas.AsNoTracking()
+                .Where(r => visitaIds.Contains(r.VisitaId ?? 0) && r.FechaFin == null)  // Key criteria: no end date
+                .Select(r => new
+                {
+                    r.VisitaId,
+                    r.ReservaId,
+                    r.FechaReserva,
+                    r.TotalHoras,
+                    r.TotalMinutos,
+                    r.PromocionId
+                })
+                .ToListAsync(cancellationToken);
+
+            var occupiedRooms = occupiedRoomsBasic
+                .Where(h => visitasData.Any(v => v.VisitaId == h.VisitaID))  // Ensure visit exists and is not cancelled
+                .Select(h => new
+                {
+                    h.HabitacionId,
+                    Visita = visitasData.FirstOrDefault(v => v.VisitaId == h.VisitaID),
+                    Reserva = reservasData.FirstOrDefault(r => r.VisitaId == h.VisitaID),
+                    VisitaId = h.VisitaID
+                })
+                .ToList();
+
+
+            // Get promotions if needed
+            var promotionIds = occupiedRooms
+                .Where(r => r.Reserva?.PromocionId.HasValue == true)
+                .Select(r => r.Reserva!.PromocionId!.Value)
+                .Distinct()
+                .ToList();
+            
+            var promotions = await _context.Promociones
+                .Where(p => promotionIds.Contains(p.PromocionID) && p.Anulado != true)
+                .Select(p => new { p.PromocionID, p.CantidadHoras, CantidadMinutos = 0 }) // Promociones doesn't have minutes field
+                .ToListAsync(cancellationToken);
+
+            var result = new List<DTOs.Rooms.OccupiedRoomDto>();
+
+            foreach (var room in occupiedRooms)
+            {
+                if (room.Visita != null)  // Must have valid visit
+                {
+                    var totalMinutes = 60; // Default 60 minutes
+                    DateTime? startTime = null;
+                    
+                    // Try to get total minutes and start time from reservation or promotion
+                    if (room.Reserva?.PromocionId.HasValue == true)
+                    {
+                        var promotion = promotions.FirstOrDefault(p => p.PromocionID == room.Reserva.PromocionId.Value);
+                        if (promotion != null)
+                        {
+                            totalMinutes = promotion.CantidadHoras * 60 + promotion.CantidadMinutos;
+                        }
+                        startTime = room.Reserva.FechaReserva;
+                    }
+                    else if (room.Reserva?.TotalHoras.HasValue == true)
+                    {
+                        // Use reservation hours and minutes
+                        totalMinutes = (room.Reserva.TotalHoras.Value * 60) + (room.Reserva.TotalMinutos ?? 0);
+                        startTime = room.Reserva.FechaReserva;
+                    }
+                    else
+                    {
+                        // No active reservation, use visit registration time
+                        startTime = room.Visita.FechaRegistro;
+                    }
+
+                    // Only add if we have a valid start time and visit ID
+                    if (startTime.HasValue && room.VisitaId.HasValue)
+                    {
+                        result.Add(new DTOs.Rooms.OccupiedRoomDto
+                        {
+                            RoomId = room.HabitacionId,
+                            VisitaId = room.VisitaId.Value,
+                            ReservationStartTime = startTime,
+                            TotalMinutes = totalMinutes,
+                            InstitutionId = institucionId
+                        });
+                    }
+                }
+            }
+
+            _logger.LogInformation(
+                "Retrieved {Count} occupied rooms with timing for institution {InstitucionId}",
+                result.Count,
+                institucionId
+            );
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error getting occupied rooms with timing for institution {InstitucionId}",
+                institucionId
+            );
+            return new List<DTOs.Rooms.OccupiedRoomDto>();
+        }
+    }
+
     #endregion
 }

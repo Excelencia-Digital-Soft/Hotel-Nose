@@ -17,7 +17,10 @@ public static class CorsExtensions
                 builder.SetIsOriginAllowed(_ => true)
                        .AllowAnyHeader()
                        .AllowAnyMethod()
-                       .AllowCredentials();
+                       .AllowCredentials()
+                       // Optimize for SignalR
+                       .WithExposedHeaders("Connection", "Upgrade")
+                       .SetPreflightMaxAge(TimeSpan.FromMinutes(5));
             });
 
             // Alternative policy for production (more restrictive)

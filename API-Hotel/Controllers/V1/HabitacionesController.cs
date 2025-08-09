@@ -18,13 +18,16 @@ namespace hotel.Controllers.V1;
 public class HabitacionesController : ControllerBase
 {
     private readonly IHabitacionesService _habitacionesService;
+    private readonly IRoomNotificationService _roomNotificationService;
     private readonly ILogger<HabitacionesController> _logger;
 
     public HabitacionesController(
         IHabitacionesService habitacionesService,
+        IRoomNotificationService roomNotificationService,
         ILogger<HabitacionesController> logger)
     {
         _habitacionesService = habitacionesService ?? throw new ArgumentNullException(nameof(habitacionesService));
+        _roomNotificationService = roomNotificationService ?? throw new ArgumentNullException(nameof(roomNotificationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -337,6 +340,45 @@ public class HabitacionesController : ControllerBase
                 ? NotFound(result) 
                 : BadRequest(result);
         }
+
+        // Send real-time notification for room availability change
+        var status = availabilityDto.Disponible ? "libre" : "mantenimiento";
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        await _roomNotificationService.NotifyRoomStatusChanged(
+            id,
+            status,
+            null,
+            institucionId.Value,
+            userId
+        );
+
+        if (!availabilityDto.Disponible)
+        {
+            await _roomNotificationService.NotifyRoomMaintenanceChanged(
+                id,
+                "availability",
+                "started",
+                "Room marked as unavailable",
+                institucionId.Value
+            );
+        }
+        else
+        {
+            await _roomNotificationService.NotifyRoomMaintenanceChanged(
+                id,
+                "availability",
+                "completed",
+                "Room marked as available",
+                institucionId.Value
+            );
+        }
+
+        _logger.LogInformation(
+            "Sent availability change notification for room {RoomId} - available: {Available}",
+            id,
+            availabilityDto.Disponible
+        );
 
         return Ok(result);
     }

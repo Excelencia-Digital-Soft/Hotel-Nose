@@ -36,9 +36,25 @@ public static class AuthenticationExtensions
                 NameClaimType = ClaimTypes.Name
             };
 
-            // Configure events to prevent redirects and return proper HTTP status codes
+            // Configure events to prevent redirects, handle SignalR tokens, and return proper HTTP status codes
             options.Events = new JwtBearerEvents
             {
+                // Handle SignalR token from query string
+                OnMessageReceived = context =>
+                {
+                    var accessToken = context.Request.Query["access_token"];
+                    var path = context.HttpContext.Request.Path;
+                    
+                    // If the request is for SignalR hub and we have a token in query string
+                    if (!string.IsNullOrEmpty(accessToken) && 
+                        path.StartsWithSegments("/api/v1/notifications"))
+                    {
+                        // Read the token out of the query string
+                        context.Token = accessToken;
+                    }
+                    
+                    return Task.CompletedTask;
+                },
                 OnChallenge = context =>
                 {
                     context.HandleResponse();

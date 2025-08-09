@@ -34,9 +34,21 @@ public static class MiddlewareExtensions
         // Controllers
         app.MapControllers();
 
-        // SignalR V1 Hub with authentication required
-        app.MapHub<NotificationsHub>("/api/v1/notifications")
-            .RequireAuthorization();
+        // SignalR V1 Hub with authentication and optimized transport configuration
+        app.MapHub<NotificationsHub>("/api/v1/notifications", options =>
+        {
+            // Configure transports for better compatibility
+            options.Transports = Microsoft.AspNetCore.Http.Connections.HttpTransportType.WebSockets |
+                                Microsoft.AspNetCore.Http.Connections.HttpTransportType.ServerSentEvents;
+            
+            // Prevent long polling which can block HTTP connections
+            // options.Transports does not include LongPolling
+            
+            // Configure application maximum buffer size
+            options.ApplicationMaxBufferSize = 32 * 1024; // 32KB
+            options.TransportMaxBufferSize = 32 * 1024; // 32KB
+        })
+        .RequireAuthorization();
 
         return app;
     }

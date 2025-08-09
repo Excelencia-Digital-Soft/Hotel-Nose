@@ -6,11 +6,8 @@
         public int HabitacionId { get; set; }
         public int ImagenId { get; set; }
         public bool? Anulado { get; set; }
-        public bool EsPrincipal { get; set; }
-        public int Orden { get; set; }
 
         public virtual Habitaciones Habitacion { get; set; } = null!;
         public virtual Imagenes Imagen { get; set; } = null!;
     }
 }
-

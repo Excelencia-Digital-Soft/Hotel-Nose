@@ -283,7 +283,7 @@ public class ArticulosController : ControllerBase
     }
 
     [HttpGet("{id:int}/image")]
-    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(hotel.Interfaces.FileResult), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     [AllowAnonymous] // Allow public access to images
     public async Task<IActionResult> GetArticuloImage(

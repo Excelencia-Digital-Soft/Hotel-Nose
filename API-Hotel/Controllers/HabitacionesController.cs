@@ -4,7 +4,6 @@ using hotel.Models;
 using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace hotel.Controllers
@@ -328,6 +327,7 @@ namespace hotel.Controllers
         [HttpGet]
         [Route("GetCategorias")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/categorias instead.")]
         public async Task<Respuesta> GetCategorias(int institucionID)
         {
             Respuesta res = new Respuesta();

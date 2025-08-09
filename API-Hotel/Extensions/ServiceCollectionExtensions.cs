@@ -40,9 +40,11 @@ public static class ServiceCollectionExtensions
         // Register V1 services
         services.AddScoped<IArticulosService, ArticulosService>();
         services.AddScoped<ICajaService, CajaService>();
+        services.AddScoped<ICaracteristicasService, CaracteristicasService>();
         services.AddScoped<ICategoriasService, CategoriasService>();
         services.AddScoped<IConsumosService, ConsumosService>();
         services.AddScoped<IHabitacionesService, HabitacionesService>();
+        services.AddScoped<IHabitacionCategoriasService, HabitacionCategoriasService>();
         services.AddScoped<IMovimientosService, MovimientosService>();
         services.AddScoped<IPromocionesService, PromocionesService>();
         services.AddScoped<IRegistrosService, RegistrosService>();
@@ -66,6 +68,12 @@ public static class ServiceCollectionExtensions
 
         // Keep backward compatibility for legacy controllers that still use IInventoryService
         services.AddScoped<IInventoryService, InventoryUnifiedServiceRefactored>();
+        
+        // Room notification services
+        services.AddScoped<IRoomNotificationService, RoomNotificationService>();
+        
+        // Connection management (Singleton to maintain state across requests)
+        services.AddSingleton<IConnectionManager, ConnectionManager>();
 
         return services;
     }
@@ -125,8 +133,23 @@ public static class ServiceCollectionExtensions
             options.TimeZone = TimeZoneInfo.Local;
         });
 
-        // Add SignalR
-        services.AddSignalR();
+        // Add SignalR with optimized configuration to prevent blocking HTTP calls
+        services.AddSignalR(options =>
+        {
+            options.EnableDetailedErrors = true; // Enable in development, disable in production
+            options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+            options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+            options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+            options.MaximumReceiveMessageSize = 32 * 1024; // 32KB
+            options.StreamBufferCapacity = 10;
+        })
+        .AddJsonProtocol(options =>
+        {
+            options.PayloadSerializerOptions.PropertyNamingPolicy = null;
+        });
+        
+        // Add Room Progress background service
+        services.AddHostedService<RoomProgressService>();
 
         return services;
     }

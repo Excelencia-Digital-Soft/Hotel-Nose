@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using hotel.Data;
+﻿using hotel.Data;
 using hotel.DTOs;
 using hotel.Models;
 using hotel.Models.Sistema;
@@ -26,6 +21,7 @@ namespace hotel.Controllers
         }
 
         [HttpGet("GetCaracteristicas")]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/caracteristicas instead.")]
         public async Task<Respuesta> GetCaracteristicas()
         {
             Respuesta res = new Respuesta();
@@ -55,6 +51,7 @@ namespace hotel.Controllers
         [HttpPost]
         [Route("CrearCaracteristica")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/caracteristicas instead.")]
         public async Task<Respuesta> CrearCaracteristica([FromForm] CaracteristicaDTO request)
         {
             Respuesta res = new Respuesta();
@@ -105,6 +102,7 @@ namespace hotel.Controllers
 
         [HttpPut("ActualizarCaracteristica/{id}")]
         [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use PUT /api/v1/caracteristicas/{id} instead.")]
         public async Task<Respuesta> ActualizarCaracteristica(
             int id,
             [FromForm] CaracteristicaDTO request
@@ -174,6 +172,7 @@ namespace hotel.Controllers
         }
 
         [HttpDelete("EliminarCaracteristica/{id}")]
+        [Obsolete("This endpoint is deprecated. Use DELETE /api/v1/caracteristicas/{id} instead.")]
         public async Task<Respuesta> EliminarCaracteristica(int id)
         {
             Respuesta res = new Respuesta();
@@ -201,6 +200,7 @@ namespace hotel.Controllers
         }
 
         [HttpPost("AsignarCaracteristicasAHabitacion")]
+        [Obsolete("This endpoint is deprecated. Use POST /api/v1/caracteristicas/rooms/{roomId}/assign instead.")]
         public async Task<Respuesta> AsignarCaracteristicasAHabitacion(
             int habitacionId,
             [FromBody] List<int>? caracteristicaIds
@@ -288,6 +288,7 @@ namespace hotel.Controllers
         }
 
         [HttpGet("GetImage/{idCaracteristica}")]
+        [Obsolete("This endpoint is deprecated. Use GET /api/v1/caracteristicas/{id}/image instead.")]
         public IActionResult GetImage(int idCaracteristica)
         {
             try

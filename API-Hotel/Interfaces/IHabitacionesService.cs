@@ -173,5 +173,16 @@ public interface IHabitacionesService
         HabitacionFilterDto filter,
         CancellationToken cancellationToken = default
     );
+
+    /// <summary>
+    /// Get occupied rooms with timing information for progress tracking
+    /// </summary>
+    /// <param name="institucionId">Institution ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of occupied rooms with timing data</returns>
+    Task<IEnumerable<DTOs.Rooms.OccupiedRoomDto>> GetOccupiedRoomsWithTimingAsync(
+        int institucionId,
+        CancellationToken cancellationToken = default
+    );
 }
 

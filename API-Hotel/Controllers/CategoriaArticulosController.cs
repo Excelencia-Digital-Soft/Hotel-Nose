@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using hotel.Data;
+﻿using hotel.Data;
 using hotel.Models;
 using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Mvc;
@@ -212,4 +209,3 @@ namespace hotel.Controllers
         }
     }
 }
-

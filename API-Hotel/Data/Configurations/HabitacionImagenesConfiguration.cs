@@ -1,6 +1,6 @@
+using hotel.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using hotel.Models;
 
 namespace hotel.Data.Configurations
 {
@@ -19,58 +19,39 @@ namespace hotel.Data.Configurations
             builder.HasKey(hi => hi.Id);
 
             // Configurar propiedades
-            builder.Property(hi => hi.Id)
-                .ValueGeneratedOnAdd();
+            builder.Property(hi => hi.Id).ValueGeneratedOnAdd();
 
-            builder.Property(hi => hi.HabitacionId)
-                .HasColumnName("HabitacionID")
-                .IsRequired();
+            builder.Property(hi => hi.HabitacionId).HasColumnName("HabitacionID").IsRequired();
 
-            builder.Property(hi => hi.ImagenId)
-                .HasColumnName("ImagenID")
-                .IsRequired();
+            builder.Property(hi => hi.ImagenId).HasColumnName("ImagenID").IsRequired();
 
-            builder.Property(hi => hi.Anulado)
-                .HasDefaultValue(false);
-
-            builder.Property(hi => hi.EsPrincipal)
-                .IsRequired()
-                .HasDefaultValue(false);
-
-            builder.Property(hi => hi.Orden)
-                .IsRequired()
-                .HasDefaultValue(0);
+            builder.Property(hi => hi.Anulado).HasDefaultValue(false);
 
             // Configurar relación con Habitaciones
-            builder.HasOne(hi => hi.Habitacion)
+            builder
+                .HasOne(hi => hi.Habitacion)
                 .WithMany(h => h.HabitacionImagenes)
                 .HasForeignKey(hi => hi.HabitacionId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_HabitacionImagenes_Habitaciones");
 
             // Configurar relación con Imágenes
-            builder.HasOne(hi => hi.Imagen)
+            builder
+                .HasOne(hi => hi.Imagen)
                 .WithMany(i => i.HabitacionImagenes)
                 .HasForeignKey(hi => hi.ImagenId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_HabitacionImagenes_Imagenes");
 
             // Índices para optimizar consultas
-            builder.HasIndex(hi => hi.HabitacionId)
+            builder
+                .HasIndex(hi => hi.HabitacionId)
                 .HasDatabaseName("IX_HabitacionImagenes_HabitacionId");
 
-            builder.HasIndex(hi => hi.ImagenId)
-                .HasDatabaseName("IX_HabitacionImagenes_ImagenId");
+            builder.HasIndex(hi => hi.ImagenId).HasDatabaseName("IX_HabitacionImagenes_ImagenId");
 
-            builder.HasIndex(hi => hi.Anulado)
-                .HasDatabaseName("IX_HabitacionImagenes_Anulado");
-
-            // Índices adicionales
-            builder.HasIndex(hi => hi.EsPrincipal)
-                .HasDatabaseName("IX_HabitacionImagenes_EsPrincipal");
-
-            builder.HasIndex(hi => hi.Orden)
-                .HasDatabaseName("IX_HabitacionImagenes_Orden");
+            builder.HasIndex(hi => hi.Anulado).HasDatabaseName("IX_HabitacionImagenes_Anulado");
         }
     }
 }
+

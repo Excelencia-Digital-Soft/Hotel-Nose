@@ -39,25 +39,61 @@ public class ReservationExpirationJob : CronBackgroundJob
             var notificationService =
                 scope.ServiceProvider.GetRequiredService<IReservationNotificationService>();
 
-            // Get all active reservations (no end date and not cancelled)
+            // Use SAME logic as GetOccupiedHabitacionesOptimizedAsync to get REAL occupied rooms
+            // Step 1: Get rooms that are truly occupied
+            var occupiedRoomsBasic = await dbContext
+                .Habitaciones.AsNoTracking()
+                .Where(h =>
+                    h.Disponible == false     // Key criteria: must be marked as unavailable
+                    && h.Anulado != true      // Key criteria: not cancelled
+                    && h.VisitaID.HasValue    // Key criteria: must have active visit
+                )
+                .Select(h => new
+                {
+                    h.HabitacionId,
+                    h.NombreHabitacion,
+                    h.InstitucionID,
+                    h.VisitaID
+                })
+                .ToListAsync(stoppingToken);
+
+            if (!occupiedRoomsBasic.Any())
+            {
+                _logger.LogInformation("No truly occupied rooms found");
+                return;
+            }
+
+            var visitaIds = occupiedRoomsBasic.Select(h => h.VisitaID!.Value).ToList();
+
+            // Step 2: Get active visitas (same as optimized method)
+            var activeVisitas = await dbContext
+                .Visitas.AsNoTracking()
+                .Where(v => visitaIds.Contains(v.VisitaId) && v.Anulado != true)  // Key criteria: visit not cancelled
+                .Select(v => v.VisitaId)
+                .ToListAsync(stoppingToken);
+
+            // Step 3: Get active reservations (same as optimized method)
             var activeReservations = await dbContext
                 .Reservas.Include(r => r.Habitacion)
                 .Include(r => r.Visita)
-                .Where(r =>
-                    r.FechaFin == null
-                    && // Active reservation
-                    r.FechaAnula == null
-                    && // Not cancelled
-                    r.FechaReserva != null
-                    && // Has start date
-                    r.TotalHoras != null
-                    && // Has duration
-                    r.Habitacion != null
-                    && // Room exists
-                    r.Visita != null
-                ) // Visit exists
+                .Where(r => 
+                    activeVisitas.Contains(r.VisitaId ?? 0)   // Must be in active visits
+                    && r.FechaFin == null                     // Key criteria: no end date (same as optimized)
+                    && r.FechaReserva != null                 // Has start date
+                    && r.TotalHoras != null                   // Has duration
+                )
                 .AsNoTracking()
                 .ToListAsync(stoppingToken);
+
+            // Filter to only include reservations for rooms that are truly occupied
+            var validRoomIds = occupiedRoomsBasic
+                .Where(h => activeVisitas.Contains(h.VisitaID!.Value))
+                .Select(h => h.HabitacionId)
+                .ToList();
+
+            activeReservations = activeReservations
+                .Where(r => r.HabitacionId.HasValue && validRoomIds.Contains(r.HabitacionId.Value))
+                .ToList();
 
             if (!activeReservations.Any())
             {
