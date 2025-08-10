@@ -1,6 +1,5 @@
 import { ref, computed, type Ref, type ComputedRef } from 'vue'
 import { useToast } from 'primevue/usetoast'
-import { useAuthStore } from '../store/auth'
 import type { HabitacionDto } from '../services/habitacionService'
 
 // Type definitions
@@ -36,14 +35,13 @@ interface UseRoomCreateReturn {
 
 export function useRoomCreate(): UseRoomCreateReturn {
   const toast = useToast()
-  const authStore = useAuthStore()
 
   // Form state
   const formData = ref<RoomFormData>({
     roomName: '',
     selectedCategory: null,
     imageFiles: [],
-    imagePreviews: []
+    imagePreviews: [],
   })
 
   // Update mode state
@@ -57,8 +55,7 @@ export function useRoomCreate(): UseRoomCreateReturn {
 
   // Validation
   const isFormValid = computed<boolean>(() => {
-    return formData.value.roomName.trim() !== '' && 
-           formData.value.selectedCategory !== null
+    return formData.value.roomName.trim() !== '' && formData.value.selectedCategory !== null
   })
 
   /**
@@ -82,7 +79,7 @@ export function useRoomCreate(): UseRoomCreateReturn {
       roomName: '',
       selectedCategory: null,
       imageFiles: [],
-      imagePreviews: []
+      imagePreviews: [],
     }
     removedImageIds.value = []
     isSubmitting.value = false
@@ -103,7 +100,7 @@ export function useRoomCreate(): UseRoomCreateReturn {
           formData.value.imagePreviews.push({
             id: 0,
             url: e.target.result as string,
-            isNew: true
+            isNew: true,
           })
         }
       }
@@ -118,7 +115,7 @@ export function useRoomCreate(): UseRoomCreateReturn {
     if (imageId && imageId !== 0) {
       removedImageIds.value.push(imageId)
     }
-    
+
     formData.value.imageFiles.splice(index, 1)
     formData.value.imagePreviews.splice(index, 1)
   }
@@ -138,7 +135,7 @@ export function useRoomCreate(): UseRoomCreateReturn {
       severity: 'success',
       summary: 'Éxito',
       detail: message,
-      life: 5000
+      life: 5000,
     })
   }
 
@@ -150,7 +147,7 @@ export function useRoomCreate(): UseRoomCreateReturn {
       severity: 'error',
       summary: 'Error',
       detail: message,
-      life: 5000
+      life: 5000,
     })
   }
 
@@ -168,9 +165,10 @@ export function useRoomCreate(): UseRoomCreateReturn {
     removeImage,
     selectCategory,
     showSuccess,
-    showError
+    showError,
   }
 }
 
 // Export types for external use
 export type { RoomFormData, ImagePreview, UseRoomCreateReturn }
+

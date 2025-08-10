@@ -139,6 +139,7 @@
             :trigger="triggerSignal"
             :idHabitacion="habitacionID"
             :listaCaracteristicas="listaCaracteristicas"
+            @caracteristicasActualizadas="onCaracteristicasActualizadas"
           />
         </div>
       </div>
@@ -147,11 +148,41 @@
       <div class="glass-card">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-xl text-white lexend-exa font-bold">
-            Habitaciones Registradas ({{ habitaciones.length }})
+            Habitaciones Registradas ({{ habitacionesFiltradas.length }})
           </h2>
           <div class="text-sm text-white/70">
-            Total: {{ habitaciones.length }} habitacion{{ habitaciones.length !== 1 ? 'es' : '' }}
+            Total: {{ habitacionesFiltradas.length }} de {{ habitaciones.length }} habitacion{{
+              habitaciones.length !== 1 ? 'es' : ''
+            }}
           </div>
+        </div>
+
+        <!-- Search Input -->
+        <div class="mb-6">
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <i class="pi pi-search text-white/40"></i>
+            </div>
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Buscar habitaciones por nombre..."
+              class="glass-input w-full pl-10 pr-12"
+            />
+            <button
+              v-if="searchQuery"
+              @click="clearSearch"
+              class="absolute inset-y-0 right-0 pr-3 flex items-center text-white/40 hover:text-white/70 transition-colors"
+            >
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+          <p
+            v-if="searchQuery && habitacionesFiltradas.length === 0"
+            class="text-white/50 text-sm mt-2"
+          >
+            No se encontraron habitaciones que coincidan con "{{ searchQuery }}"
+          </p>
         </div>
 
         <div v-if="habitaciones.length === 0" class="text-center py-12">
@@ -160,9 +191,18 @@
           <p class="text-white/50 text-sm">Crea la primera habitación usando el formulario</p>
         </div>
 
+        <div
+          v-else-if="searchQuery && habitacionesFiltradas.length === 0"
+          class="text-center py-12"
+        >
+          <i class="pi pi-search text-4xl text-white/50 mb-4 block"></i>
+          <p class="text-white/70 text-lg">No se encontraron habitaciones</p>
+          <p class="text-white/50 text-sm">Intenta con otros términos de búsqueda</p>
+        </div>
+
         <div v-else class="grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
           <div
-            v-for="habitacion in habitaciones"
+            v-for="habitacion in habitacionesFiltradas"
             :key="habitacion.habitacionId"
             class="glass-room-card group"
           >
@@ -174,7 +214,7 @@
                   </h3>
                   <p class="text-white/60 text-sm">ID: {{ habitacion.habitacionId }}</p>
                 </div>
-                <span class="glass-badge">
+                <span class="glass-badge" v-if="habitacion.categoriaId">
                   {{ getCategoryName(habitacion.categoriaId) }}
                 </span>
               </div>
@@ -266,7 +306,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, onMounted, computed } from 'vue'
+  import { ref, onMounted, computed, watch } from 'vue'
   import axiosClient from '../axiosClient'
   import ModalInventory from '../components/ModalInventory.vue'
   import { useAuthStore } from '../store/auth.js'
@@ -307,6 +347,20 @@
   const habitacionID = ref(null)
   const listaCaracteristicas = ref(null)
   const fileInput = ref(null)
+  const searchQuery = ref('')
+
+  // Computed properties
+  const habitacionesFiltradas = computed(() => {
+    if (!searchQuery.value.trim()) {
+      return habitaciones.value
+    }
+
+    const query = searchQuery.value.toLowerCase()
+    return habitaciones.value.filter((habitacion) =>
+      habitacion.nombreHabitacion.toLowerCase().includes(query)
+    )
+  })
+
   // Modal handlers
   const openDeleteRoom = (room) => {
     if (room) {
@@ -329,6 +383,11 @@
   const getFirstImageUrl = (imagenes) => {
     return imagenes && imagenes.length > 0 ? imagenes[0] : '/placeholder-room.jpg'
   }
+
+  // Search functionality
+  const clearSearch = () => {
+    searchQuery.value = ''
+  }
   const triggerChildFunction = (habID) => {
     habitacionID.value = habID
     triggerSignal.value = !triggerSignal.value
@@ -345,6 +404,11 @@
       const response = await habitacionService.getRooms()
       if (response && response.isSuccess) {
         habitaciones.value = response.data || []
+        // need mapper categoriaHabitacionId to categoriaId
+        habitaciones.value = habitaciones.value.map((habitacion) => ({
+          ...habitacion,
+          categoriaId: habitacion.categoriaHabitacionId,
+        }))
       } else {
         console.error('Failed to fetch rooms:', response?.message)
         showError(response?.message || 'Error al cargar las habitaciones')
@@ -366,6 +430,7 @@
       const response = await habitacionService.getCategories()
       if (response && response.isSuccess) {
         categorias.value = response.data || []
+        await fetchHabitaciones()
       } else {
         console.error('Failed to fetch categories:', response?.message)
         showError(response?.message || 'Error al cargar las categorías')
@@ -439,7 +504,7 @@
     const roomData = {
       institucionId: authStore.institucionID,
       nombreHabitacion: formData.value.roomName,
-      categoriaId: formData.value.selectedCategory,
+      categoriaHabitacionId: formData.value.selectedCategory,
       imagenes: formData.value.imageFiles,
     }
 
@@ -450,9 +515,11 @@
         const newRoomId = response.data?.habitacionId || response.data?.id
         if (newRoomId) {
           triggerChildFunction(newRoomId)
+        } else {
+          // If no room ID, reset immediately since no características to save
+          resetFormAndClear()
         }
         showSuccess(response.message || 'Habitación creada exitosamente')
-        resetForm()
         await fetchHabitaciones()
       } else {
         showError(response?.message || 'Error al crear la habitación')
@@ -465,16 +532,10 @@
 
   // Update a room
   const updateRoom = async (habitacionID) => {
-    const usuarioID = authStore.auth?.usuarioID || authStore.usuarioID
-    if (!usuarioID) {
-      showError('No se pudo obtener el ID del usuario')
-      return
-    }
-
     const updateData = {
       nombreHabitacion: formData.value.roomName,
       categoriaId: formData.value.selectedCategory,
-      usuarioId: usuarioID,
+      usuarioId: 0,
       nuevasImagenes: formData.value.imageFiles,
       imagenesEliminadas: removedImageIds.value,
     }
@@ -485,7 +546,7 @@
       if (response && response.isSuccess) {
         showSuccess(response.message || 'Habitación actualizada exitosamente')
         triggerChildFunction(habitacionID)
-        resetFormAndClear()
+        // Note: resetFormAndClear() will be called after características are saved
         await fetchHabitaciones()
       } else {
         showError(response?.message || 'Error al actualizar la habitación')
@@ -505,6 +566,12 @@
     }
   }
 
+  // Handle características updated event
+  const onCaracteristicasActualizadas = () => {
+    // Reset form only after características have been successfully saved
+    resetFormAndClear()
+  }
+
   // Delete a room
   const deleteRoom = async (idHabitacion) => {
     try {
@@ -512,7 +579,6 @@
 
       if (response && response.isSuccess) {
         showSuccess(response.message || 'Habitación eliminada correctamente')
-        await fetchHabitaciones()
         showDeleteModal.value = false
         roomToDelete.value = null
       } else {
@@ -530,9 +596,9 @@
   }
 
   // Fetch rooms and categories on component mount
-  onMounted(() => {
-    fetchHabitaciones()
-    fetchCategorias()
+  onMounted(async () => {
+    await fetchCategorias()
+    await fetchHabitaciones()
   })
 </script>
 

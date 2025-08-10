@@ -101,7 +101,9 @@ class HabitacionService {
    */
   static async getCategories(): Promise<ApiResponse<CategoriaDto[]>> {
     try {
-      const response = await axiosClient.get<ApiResponse<CategoriaDto[]>>(`/api/v1/habitacion-categorias`)
+      const response = await axiosClient.get<ApiResponse<CategoriaDto[]>>(
+        `/api/v1/habitacion-categorias`
+      )
       return response.data
     } catch (error: any) {
       console.error('Error fetching categories:', error)
@@ -123,7 +125,7 @@ class HabitacionService {
         const formData = new FormData()
         formData.append('institucionId', roomData.institucionId.toString())
         formData.append('nombreHabitacion', roomData.nombreHabitacion)
-        formData.append('categoriaId', roomData.categoriaId.toString())
+        formData.append('categoriaHabitacionId', roomData.categoriaId.toString())
 
         if (roomData.capacidadMaxima !== undefined) {
           formData.append('capacidadMaxima', roomData.capacidadMaxima.toString())
@@ -371,4 +373,3 @@ export type {
   AvailableRoomsParams,
   UpdateRoomStatusDto,
 }
-

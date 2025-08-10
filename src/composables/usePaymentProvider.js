@@ -82,13 +82,13 @@ export function usePaymentProvider(initialData = {}) {
     const tarjetaValue = data.tarjeta || 0
     const empenoMontoValue = data.empenoMonto || 0
 
-    return (
-      data.periodo +
-      data.consumo +
-      data.adicional -
-      (descuentoValue + efectivoValue + tarjetaValue + empenoMontoValue - data.extraTarjeta) +
-      data.recargoMonto
-    )
+    // Calculate total to pay (consistent with calculatedTotal)
+    const totalToPay = data.periodo + data.consumo + data.adicional + data.extraTarjeta + data.recargoMonto
+    
+    // Calculate total paid
+    const totalPaid = descuentoValue + efectivoValue + tarjetaValue + empenoMontoValue
+
+    return totalToPay - totalPaid
   })
 
   const isPaymentValid = computed(() => {
@@ -174,14 +174,19 @@ export function usePaymentProvider(initialData = {}) {
 
   const updateRecargo = () => {
     const data = paymentData.value
-    const subtotal = data.periodo + data.consumo + data.adicional + data.recargoMonto - 
-                    data.descuento - data.efectivo - data.empenoMonto
-
-    if (data.selectedTarjeta) {
+    
+    if (data.selectedTarjeta && data.selectedTarjeta.montoPorcentual > 0) {
+      // Calculate the amount available to pay with card (remaining amount)
+      const baseAmounts = data.periodo + data.consumo + data.adicional + data.recargoMonto
+      const currentPayments = data.descuento + data.efectivo + data.empenoMonto
+      const availableForCard = Math.max(0, baseAmounts - currentPayments)
+      
       data.porcentajeRecargo = data.selectedTarjeta.montoPorcentual
-      const newTarjetaValue = Number((subtotal * (1 + (data.selectedTarjeta.montoPorcentual / 100))).toFixed(2))
-      data.extraTarjeta = Number((newTarjetaValue - subtotal).toFixed(2))
-      data.tarjeta = newTarjetaValue
+      
+      // Calculate card surcharge based on the available amount
+      const surchargeRate = data.selectedTarjeta.montoPorcentual / 100
+      data.extraTarjeta = Number((availableForCard * surchargeRate).toFixed(2))
+      data.tarjeta = Number((availableForCard * (1 + surchargeRate)).toFixed(2))
     } else {
       data.tarjeta = 0
       data.extraTarjeta = 0
@@ -470,6 +475,7 @@ export function usePaymentProvider(initialData = {}) {
 
   // Watchers
   watch(() => paymentData.value.selectedTarjeta, updateRecargo, { immediate: true })
+  watch(() => [paymentData.value.efectivo, paymentData.value.descuento, paymentData.value.empenoMonto], updateRecargo, { deep: true })
   
   // Auto-fetch tarjetas on creation
   fetchTarjetas()

@@ -144,7 +144,7 @@ export class CaracteristicasService {
       const payload: CaracteristicaRoomAssignDto = { caracteristicaIds }
 
       const response = await axiosClient.post<ApiResponse<void>>(
-        `${this.API_BASE}/room/${roomId}/assign`,
+        `${this.API_BASE}/rooms/${roomId}/assign`,
         payload
       )
       return response.data
@@ -189,14 +189,14 @@ export class CaracteristicasService {
             icono: null,
           }
 
-          if (caracteristica.icono && caracteristica.caracteristicaId) {
-            try {
-              const imageBlob = await this.getCaracteristicaImage(caracteristica.caracteristicaId)
-              result.icono = URL.createObjectURL(imageBlob)
-            } catch (error) {
-              console.error(`Error loading image for ${caracteristica.nombre}:`, error)
-            }
-          }
+          // if (caracteristica.icono && caracteristica.caracteristicaId) {
+          //   try {
+          //     const imageBlob = await this.getCaracteristicaImage(caracteristica.caracteristicaId)
+          //     result.icono = URL.createObjectURL(imageBlob)
+          //   } catch (error) {
+          //     console.error(`Error loading image for ${caracteristica.nombre}:`, error)
+          //   }
+          // }
 
           return result
         })

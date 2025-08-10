@@ -5,7 +5,7 @@ export * from './signalr'
 
 // Explicit re-exports for better IDE support and to avoid module resolution issues
 export type { ApiResponse } from './common'
-export type { InventoryDto, InventoryItem } from './inventory'
+export type { InventoryDto, InventoryItem, InventoryCreateDto } from './inventory'
 export { InventoryLocationType, InventoryMovementType } from './inventory'
 export type { CategoriaDto } from './categoria'
 export type {

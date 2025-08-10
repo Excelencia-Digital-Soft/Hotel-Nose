@@ -88,16 +88,108 @@ export const useRoomsStore = defineStore('rooms', {
      */
     roomsAboutToExpire: (state) => {
       return state.occupiedRooms.filter(room => {
-        if (!room.reservaActiva) return false;
+        // Check if room has active reservation data in any format
+        if (!room.disponible) {
+          // Debug: Log the room structure to understand data format
+          if (room.nombreHabitacion && room.nombreHabitacion.includes('PRUEBA')) {
+            console.log('🔍 [RoomsStore] Checking room for expiry:', {
+              roomName: room.nombreHabitacion,
+              disponible: room.disponible,
+              visitaID: room.visitaID,
+              reservaActiva: room.reservaActiva,
+              visita: room.visita,
+              fechaInicio: room.fechaInicio,
+              fechaFin: room.fechaFin,
+              totalHoras: room.totalHoras,
+              totalMinutos: room.totalMinutos
+            });
+          }
+          // Room is occupied, let's check time
+          const now = new Date();
+          let endTime = null;
+          
+          // Try to find end time in various formats
+          if (room.reservaActiva) {
+            // If reservaActiva exists, use it
+            if (room.reservaActiva.estimatedEndTime) {
+              endTime = new Date(room.reservaActiva.estimatedEndTime);
+            } else if (room.reservaActiva.fechaFin) {
+              endTime = new Date(room.reservaActiva.fechaFin);
+            } else if (room.reservaActiva.fechaInicio) {
+              const startTime = new Date(room.reservaActiva.fechaInicio);
+              const totalMinutes = (room.reservaActiva.totalHoras || 0) * 60 + 
+                                   (room.reservaActiva.totalMinutos || 0);
+              endTime = new Date(startTime.getTime() + totalMinutes * 60000);
+            } else if (room.reservaActiva.fechaReserva) {
+              const startTime = new Date(room.reservaActiva.fechaReserva);
+              const totalMinutes = (room.reservaActiva.totalHoras || 0) * 60 + 
+                                   (room.reservaActiva.totalMinutos || 0);
+              endTime = new Date(startTime.getTime() + totalMinutes * 60000);
+            }
+          } else if (room.fechaFin) {
+            // Direct fechaFin on room object
+            endTime = new Date(room.fechaFin);
+          } else if (room.fechaInicio) {
+            // Direct fechaInicio on room object
+            const startTime = new Date(room.fechaInicio);
+            const totalMinutes = (room.totalHoras || 0) * 60 + (room.totalMinutos || 0);
+            endTime = new Date(startTime.getTime() + totalMinutes * 60000);
+          } else if (room.visita) {
+            // Check if visita object has time information
+            if (room.visita.fechaFin) {
+              endTime = new Date(room.visita.fechaFin);
+            } else if (room.visita.fechaInicio) {
+              const startTime = new Date(room.visita.fechaInicio);
+              const totalMinutes = (room.visita.totalHoras || room.totalHoras || 0) * 60 + 
+                                   (room.visita.totalMinutos || room.totalMinutos || 0);
+              endTime = new Date(startTime.getTime() + totalMinutes * 60000);
+            }
+          }
+          
+          // If we found an end time, calculate time left
+          if (endTime) {
+            const timeLeft = Math.max(0, Math.floor((endTime - now) / 60000));
+            
+            // Debug logging for rooms about to expire
+            if (room.nombreHabitacion && room.nombreHabitacion.includes('PRUEBA')) {
+              console.log('🕐 [RoomsStore] Time calculation:', {
+                roomName: room.nombreHabitacion,
+                endTime: endTime.toISOString(),
+                now: now.toISOString(),
+                timeLeftMinutes: timeLeft,
+                isAboutToExpire: timeLeft > 0 && timeLeft <= 15
+              });
+            }
+            
+            // Return true if room expires within 15 minutes
+            return timeLeft > 0 && timeLeft <= 15;
+          }
+          
+          // Additional check: If room shows time like "00:10" (10 minutes left)
+          // This handles cases where the time is shown in UI but not in expected data structure
+          if (room.tiempoRestante || room.timeRemaining) {
+            const timeString = room.tiempoRestante || room.timeRemaining;
+            const timeParts = timeString.split(':');
+            if (timeParts.length === 2) {
+              const hours = parseInt(timeParts[0]) || 0;
+              const minutes = parseInt(timeParts[1]) || 0;
+              const totalMinutes = hours * 60 + minutes;
+              
+              if (room.nombreHabitacion && room.nombreHabitacion.includes('PRUEBA')) {
+                console.log('🕐 [RoomsStore] Time from string:', {
+                  roomName: room.nombreHabitacion,
+                  timeString: timeString,
+                  totalMinutes: totalMinutes,
+                  isAboutToExpire: totalMinutes > 0 && totalMinutes <= 15
+                });
+              }
+              
+              return totalMinutes > 0 && totalMinutes <= 15;
+            }
+          }
+        }
         
-        // Calculate time left in minutes
-        const now = new Date();
-        const reservationDate = new Date(room.reservaActiva.fechaReserva);
-        const endTime = new Date(reservationDate.getTime() + 
-          (room.reservaActiva.totalHoras * 60 + room.reservaActiva.totalMinutos) * 60000);
-        
-        const timeLeft = Math.max(0, Math.floor((endTime - now) / 60000));
-        return timeLeft > 0 && timeLeft <= 15;
+        return false;
       });
     },
 

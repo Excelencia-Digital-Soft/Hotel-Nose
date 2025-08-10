@@ -292,6 +292,7 @@ const handleCaracteristicaCreada = async (nuevaCaracteristica) => {
          rounded-2xl shadow-2xl shadow-black/50 overflow-hidden;
 }
 
+
 .glass-button-gradient {
   @apply bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 
          hover:from-primary-500 hover:via-secondary-500 hover:to-accent-500 

@@ -11,15 +11,15 @@ export function useCaracteristicas() {
     nombre: '',
     descripcion: '',
     icono: null,
-    caracteristicaId: null
+    caracteristicaId: null,
   })
 
   // UI state
   const isEditMode = ref(false)
   const isSubmitting = ref(false)
   const isLoadingImage = ref(false)
-  const imagePreview = ref('https://static.vecteezy.com/system/resources/previews/004/141/669/original/no-photo-or-blank-image-icon-loading-images-or-missing-image-mark-image-not-available-or-image-coming-soon-sign-simple-nature-silhouette-in-frame-isolated-illustration-vector.jpg')
-  
+  const imagePreview = ref(new URL('../assets/sin-imagen.png', import.meta.url).href)
+
   // Data state
   const caracteristicas = ref([])
 
@@ -30,10 +30,11 @@ export function useCaracteristicas() {
 
   const isNameDuplicate = computed(() => {
     if (!caracteristicas.value || !formData.value.nombre) return false
-    
-    return caracteristicas.value.some((item) =>
-      item.nombre.toLowerCase() === formData.value.nombre.toLowerCase() &&
-      item.caracteristicaId !== formData.value.caracteristicaId
+
+    return caracteristicas.value.some(
+      (item) =>
+        item.nombre.toLowerCase() === formData.value.nombre.toLowerCase() &&
+        item.caracteristicaId !== formData.value.caracteristicaId
     )
   })
 
@@ -43,9 +44,9 @@ export function useCaracteristicas() {
       nombre: '',
       descripcion: '',
       icono: null,
-      caracteristicaId: null
+      caracteristicaId: null,
     }
-    imagePreview.value = 'https://static.vecteezy.com/system/resources/previews/004/141/669/original/no-photo-or-blank-image-icon-loading-images-or-missing-image-mark-image-not-available-or-image-coming-soon-sign-simple-nature-silhouette-in-frame-isolated-illustration-vector.jpg'
+    imagePreview.value = new URL('../assets/sin-imagen.png', import.meta.url).href
     isEditMode.value = false
   }
 
@@ -62,7 +63,7 @@ export function useCaracteristicas() {
       caracteristicaId: caracteristica.caracteristicaId,
       nombre: caracteristica.nombre,
       descripcion: caracteristica.descripcion || '',
-      icono: null
+      icono: null,
     }
     imagePreview.value = caracteristica.icono || imagePreview.value
   }
@@ -92,7 +93,7 @@ export function useCaracteristicas() {
       severity: 'success',
       summary: 'Éxito',
       detail: message,
-      life: 5000
+      life: 5000,
     })
   }
 
@@ -101,7 +102,7 @@ export function useCaracteristicas() {
       severity: 'error',
       summary: 'Error',
       detail: message,
-      life: 5000
+      life: 5000,
     })
   }
 
@@ -110,7 +111,7 @@ export function useCaracteristicas() {
       severity: 'info',
       summary: 'Información',
       detail: message,
-      life: 5000
+      life: 5000,
     })
   }
 
@@ -125,7 +126,7 @@ export function useCaracteristicas() {
         rejectLabel: 'Cancelar',
         acceptClass: 'p-button-danger',
         accept: () => resolve(true),
-        reject: () => resolve(false)
+        reject: () => resolve(false),
       })
     })
   }
@@ -137,14 +138,14 @@ export function useCaracteristicas() {
     isSubmitting,
     isLoadingImage,
     imagePreview,
-    
+
     // Data state
     caracteristicas,
-    
+
     // Computed
     isFormValid,
     isNameDuplicate,
-    
+
     // Methods
     resetForm,
     handleImageUpload,
@@ -154,6 +155,7 @@ export function useCaracteristicas() {
     showSuccess,
     showError,
     showInfo,
-    confirmDelete
+    confirmDelete,
   }
 }
+
