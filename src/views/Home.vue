@@ -10,7 +10,7 @@
       </div>
     </Transition>
 
-    <SignalRStatus />
+    <SignalRStatus v-if="isDevelopment" />
     <!-- Debug Panel (Development Only) -->
     <SignalRDebug v-if="isDevelopment" />
   </div>

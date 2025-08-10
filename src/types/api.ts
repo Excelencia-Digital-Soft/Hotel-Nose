@@ -9,4 +9,5 @@ export * from './promocion'
 export * from './menu'
 export * from './configuration'
 export * from './cierre-model'
+export * from './caracteristica'
 

@@ -83,14 +83,6 @@ export const operationalMenuConfig: MenuConfig[] = [
         description: 'Gestión completa del inventario general con API V1',
       },
       {
-        label: 'Inventario por Habitación',
-        route: { name: 'RoomInventoryManager' },
-        icon: 'hotel',
-        roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
-        badge: 'V1',
-        description: 'Administración de inventario específico por habitación',
-      },
-      {
         label: 'Alertas de Stock',
         route: { name: 'InventoryAlerts' },
         icon: 'notifications_active',
@@ -311,4 +303,3 @@ export function getMenuConfigForUser(user: User | null | undefined): UserMenuCon
     userRoles,
   }
 }
-

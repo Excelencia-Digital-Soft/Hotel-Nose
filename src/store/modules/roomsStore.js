@@ -90,7 +90,13 @@ export const useRoomsStore = defineStore('rooms', {
       return state.occupiedRooms.filter(room => {
         if (!room.reservaActiva) return false;
         
-        const timeLeft = state.getTimeLeftInMinutes(room);
+        // Calculate time left in minutes
+        const now = new Date();
+        const reservationDate = new Date(room.reservaActiva.fechaReserva);
+        const endTime = new Date(reservationDate.getTime() + 
+          (room.reservaActiva.totalHoras * 60 + room.reservaActiva.totalMinutos) * 60000);
+        
+        const timeLeft = Math.max(0, Math.floor((endTime - now) / 60000));
         return timeLeft > 0 && timeLeft <= 15;
       });
     },

@@ -10,7 +10,6 @@ import PawnManager from '../../views/PawnManager.vue'
 import { ROLE_GROUPS } from '../../utils/role-mapping'
 
 // V1 Inventory System Views (lazy-loaded for better performance)
-const RoomInventoryManager = () => import('../../views/RoomInventoryManager.vue')
 const InventoryAlerts = () => import('../../views/InventoryAlerts.vue')
 const InventoryTransfers = () => import('../../views/InventoryTransfers.vue')
 const InventoryManagerV1 = () => import('../../views/InventoryManagerV1.vue')
@@ -104,19 +103,6 @@ export const managementRoutes = [
       description: 'Advanced general inventory management with V1 API',
       category: 'Inventory Management',
       badge: 'V1 - New',
-    },
-  },
-  // V1 Inventory System Routes
-  {
-    path: '/inventory/rooms',
-    name: 'RoomInventoryManager',
-    component: RoomInventoryManager,
-    meta: {
-      requireAuth: true,
-      roles: [...ROLE_GROUPS.ADMIN_ACCESS, ...ROLE_GROUPS.INVENTORY_ACCESS],
-      description: 'Advanced room inventory management with V1 API',
-      category: 'Inventory Management',
-      badge: 'V1',
     },
   },
   {
