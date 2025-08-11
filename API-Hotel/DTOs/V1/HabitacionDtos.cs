@@ -1,13 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using hotel.DTOs.Caracteristicas;
 
 namespace hotel.DTOs;
-
-public class CaracteristicaDto
-{
-    public int CaracteristicaId { get; set; }
-    public string Nombre { get; set; } = null!;
-    public string? Descripcion { get; set; }
-}
 
 public class HabitacionDto
 {
@@ -107,16 +101,9 @@ public class HabitacionCompleteDto
     public ReservaActivaDto? Reserva { get; set; }
     public VisitaBasicDto? Visita { get; set; }
     public ICollection<int> Imagenes { get; set; } = new List<int>();
-    public ICollection<CaracteristicaCompleteDto> Caracteristicas { get; set; } = new List<CaracteristicaCompleteDto>();
+    public ICollection<CaracteristicaDto> Caracteristicas { get; set; } = new List<CaracteristicaDto>();
 }
 
-public class CaracteristicaCompleteDto
-{
-    public int CaracteristicaId { get; set; }
-    public string Nombre { get; set; } = null!;
-    public string? Descripcion { get; set; }
-    public string? Icono { get; set; }
-}
 
 public class ReservaActivaDto
 {

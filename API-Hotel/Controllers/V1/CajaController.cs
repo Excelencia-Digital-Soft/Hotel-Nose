@@ -203,7 +203,11 @@ public class CajaController : ControllerBase
             return BadRequest(ApiResponse.Failure("ID de institución requerido"));
         }
 
-        var result = await _cajaService.GetCierreByIdAsync(id, institucionId.Value, cancellationToken);
+        var result = await _cajaService.GetCierreByIdAsync(
+            id,
+            institucionId.Value,
+            cancellationToken
+        );
 
         if (result.IsSuccess)
         {
@@ -259,7 +263,11 @@ public class CajaController : ControllerBase
             return BadRequest(ApiResponse.Failure("ID de institución requerido"));
         }
 
-        var result = await _cajaService.GetCierreDetalleAsync(id, institucionId.Value, cancellationToken);
+        var result = await _cajaService.GetCierreDetalleAsync(
+            id,
+            institucionId.Value,
+            cancellationToken
+        );
 
         if (result.IsSuccess)
         {
@@ -307,14 +315,20 @@ public class CajaController : ControllerBase
             return BadRequest(ApiResponse.Failure("ID de institución requerido"));
         }
 
-        var result = await _cajaService.GetCierresyActualAsync(institucionId.Value, cancellationToken);
+        var currentUserId = this.GetCurrentUserId();
+
+        var result = await _cajaService.GetCierresyActualAsync(
+            institucionId.Value,
+            currentUserId,
+            cancellationToken
+        );
 
         if (result.IsSuccess)
         {
             _logger.LogInformation(
                 "Retrieved closures and current transactions for institution {InstitucionId} by user {UserId}",
                 institucionId.Value,
-                this.GetCurrentUserId()
+                currentUserId
             );
 
             return Ok(result);

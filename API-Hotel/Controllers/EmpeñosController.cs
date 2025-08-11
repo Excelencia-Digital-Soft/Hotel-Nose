@@ -3,14 +3,12 @@ using hotel.Models;
 using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace hotel.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Obsolete("This controller is deprecated. Use /api/v1/empenos instead for V1 endpoints with improved payment logic and authentication.")]
     public class EmpeñoController : ControllerBase
     {
         private readonly HotelDbContext _db;
@@ -22,7 +20,13 @@ namespace hotel.Controllers
 
         [HttpPost]
         [Route("AddEmpeno")]
-        public async Task<Respuesta> AddEmpeno(int institucionID, int visitaID, string detalle, double monto)
+        [Obsolete("Use POST /api/v1/empenos instead. This endpoint lacks authentication and proper validation.")]
+        public async Task<Respuesta> AddEmpeno(
+            int institucionID,
+            int visitaID,
+            string detalle,
+            double monto
+        )
         {
             Respuesta res = new Respuesta();
 
@@ -33,9 +37,9 @@ namespace hotel.Controllers
                     VisitaID = visitaID,
                     Detalle = detalle,
                     Monto = monto,
-                    FechaRegistro = DateTime.Now, 
+                    FechaRegistro = DateTime.Now,
                     InstitucionID = institucionID,
-                    Anulado = false 
+                    Anulado = false,
                 };
 
                 // Add the Encargo entity to the DbContext
@@ -58,6 +62,7 @@ namespace hotel.Controllers
 
         [HttpPost]
         [Route("ActualizarEmpeño")]
+        [Obsolete("Use PUT /api/v1/empenos/{id} instead. This endpoint lacks authentication and proper validation.")]
         public async Task<Respuesta> ActualizarEmpeño(int empeñoID, double nuevoMonto)
         {
             Respuesta res = new Respuesta();
@@ -101,6 +106,7 @@ namespace hotel.Controllers
 
         [HttpGet]
         [Route("GetEmpeno")]
+        [Obsolete("Use GET /api/v1/empenos/{id} instead. This endpoint lacks authentication and proper validation.")]
         public async Task<Respuesta> GetEmpeno(int empeñoID)
         {
             Respuesta res = new Respuesta();
@@ -128,9 +134,17 @@ namespace hotel.Controllers
 
             return res;
         }
+
         [HttpPost]
         [Route("PagarEmpeno")]
-        public async Task<Respuesta> PagarEmpeno(int empeñoID, string observacion, int? TarjetaID, decimal montoEfectivo = 0, decimal montoTarjeta = 0)
+        [Obsolete("Use POST /api/v1/empenos/{id}/payment instead. This endpoint has duplicate payment logic issues - V1 fixes this.")]
+        public async Task<Respuesta> PagarEmpeno(
+            int empeñoID,
+            string observacion,
+            int? TarjetaID,
+            decimal montoEfectivo = 0,
+            decimal montoTarjeta = 0
+        )
         {
             Respuesta res = new Respuesta();
 
@@ -146,14 +160,15 @@ namespace hotel.Controllers
                 }
 
                 // Step 2: Fetch the Movimiento corresponding to the VisitaID
-                var movimiento = await _db.Movimientos
-                    .Where(m => m.VisitaId == empeño.VisitaID)
+                var movimiento = await _db
+                    .Movimientos.Where(m => m.VisitaId == empeño.VisitaID)
                     .FirstOrDefaultAsync();
 
                 if (movimiento == null)
                 {
                     res.Ok = false;
-                    res.Message = $"No se encontró el movimiento para la visita con ID: {empeño.VisitaID}.";
+                    res.Message =
+                        $"No se encontró el movimiento para la visita con ID: {empeño.VisitaID}.";
                     return res;
                 }
                 var visita = await _db.Visitas.FindAsync(empeño.VisitaID);
@@ -163,7 +178,6 @@ namespace hotel.Controllers
                     res.Message = $"No se encontró la visita con ID: {empeño.VisitaID}.";
                     return res;
                 }
-
 
                 // Step 3: Create a new Movimiento with the same HabitacionId as the original Movimiento
                 var nuevoMovimiento = new Movimientos
@@ -208,7 +222,6 @@ namespace hotel.Controllers
                 // Return success response
                 res.Ok = true;
                 res.Message = "Empeño pagado y movimiento creado correctamente.";
-
             }
             catch (Exception ex)
             {
@@ -216,11 +229,12 @@ namespace hotel.Controllers
                 res.Ok = false;
             }
 
-                return res;
+            return res;
         }
 
         [HttpGet]
         [Route("GetAllEmpenos")]
+        [Obsolete("Use GET /api/v1/empenos instead. This endpoint lacks authentication and proper validation.")]
         public async Task<Respuesta> GetAllEmpeno(int institucionId)
         {
             Respuesta res = new Respuesta();
@@ -228,7 +242,13 @@ namespace hotel.Controllers
             try
             {
                 // Get all Encargos (orders)
-                var empeños = await _db.Empeño.Where(e => (e.Anulado == false || e.Anulado == null) && e.PagoID == null && e.InstitucionID == institucionId).ToListAsync();
+                var empeños = await _db
+                    .Empeño.Where(e =>
+                        (e.Anulado == false || e.Anulado == null)
+                        && e.PagoID == null
+                        && e.InstitucionID == institucionId
+                    )
+                    .ToListAsync();
 
                 // Check if any encargos were found
                 if (empeños == null || empeños.Count == 0)

@@ -27,6 +27,13 @@ namespace hotel.DTOs.HabitacionCategorias
         public decimal? PrecioNormal { get; set; }
 
         /// <summary>
+        /// Capacidad Máxima
+        /// </summary>
+        public int? CapacidadMaxima { get; set; }
+
+        public int PorcentajeXPersona { get; set; }
+
+        /// <summary>
         /// Special price for this category
         /// </summary>
         [Range(0.01, double.MaxValue, ErrorMessage = "El precio especial debe ser mayor que 0")]

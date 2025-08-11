@@ -1,4 +1,5 @@
 ﻿using System.Text.Json.Serialization;
+using hotel.Models.Identity;
 
 namespace hotel.Models;
 
@@ -20,6 +21,7 @@ public partial class Movimientos
 
     public decimal? TotalFacturado { get; set; }
 
+    [Obsolete("Use UserId instead for ASP.NET Identity")]
     public int? UsuarioId { get; set; }
 
     public DateTime? FechaRegistro { get; set; }
@@ -28,7 +30,11 @@ public partial class Movimientos
 
     public bool? Anulado { get; set; }
     public int InstitucionID { get; set; }
+    
+    // ASP.NET Identity User tracking
+    public string? UserId { get; set; }
 
+    // Navigation properties
     [JsonIgnore]
     public virtual ICollection<Consumo> Consumo { get; } = new List<Consumo>();
 
@@ -46,4 +52,6 @@ public partial class Movimientos
 
     [JsonIgnore]
     public virtual Visitas? Visita { get; set; }
+    
+    public virtual ApplicationUser? User { get; set; }
 }

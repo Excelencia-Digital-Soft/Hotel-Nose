@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ICaracteristicasService, CaracteristicasService>();
         services.AddScoped<ICategoriasService, CategoriasService>();
         services.AddScoped<IConsumosService, ConsumosService>();
+        services.AddScoped<IEmpenosService, EmpenosService>();
         services.AddScoped<IHabitacionesService, HabitacionesService>();
         services.AddScoped<IHabitacionCategoriasService, HabitacionCategoriasService>();
         services.AddScoped<IMovimientosService, MovimientosService>();

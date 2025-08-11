@@ -1,5 +1,5 @@
-using hotel.DTOs.Common;
 using hotel.DTOs.Caja;
+using hotel.DTOs.Common;
 
 namespace hotel.Interfaces;
 
@@ -12,17 +12,19 @@ public interface ICajaService
     /// Creates a new cash register entry
     /// </summary>
     Task<ApiResponse<CajaDto>> CrearCajaAsync(
-        CrearCajaDto crearCajaDto, 
-        int institucionId, 
+        CrearCajaDto crearCajaDto,
+        int institucionId,
         string? userId = null,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Gets all cash register closures for an institution
     /// </summary>
     Task<ApiResponse<IEnumerable<CajaDetalladaDto>>> GetCierresAsync(
-        int institucionId, 
-        CancellationToken cancellationToken = default);
+        int institucionId,
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Gets cash register closures with detailed payment information
@@ -30,7 +32,8 @@ public interface ICajaService
     Task<ApiResponse<CierresConPagosPaginadosDto>> GetCierresConPagosAsync(
         int institucionId,
         CierresConPagosFiltroDto filtro,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Gets a specific cash register closure by ID
@@ -38,7 +41,8 @@ public interface ICajaService
     Task<ApiResponse<CajaDetalladaDto>> GetCierreByIdAsync(
         int cierreId,
         int institucionId,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Gets complete details of a cash register closure including payments, cancellations, and expenses
@@ -46,12 +50,16 @@ public interface ICajaService
     Task<ApiResponse<CierreDetalleCompletoDto>> GetCierreDetalleAsync(
         int cierreId,
         int institucionId,
-        CancellationToken cancellationToken = default);
+        CancellationToken cancellationToken = default
+    );
 
     /// <summary>
     /// Gets all cash register closures and current pending transactions for an institution
     /// </summary>
     Task<ApiResponse<CierresyActualDto>> GetCierresyActualAsync(
         int institucionId,
-        CancellationToken cancellationToken = default);
+        string? userId = null,
+        CancellationToken cancellationToken = default
+    );
 }
+

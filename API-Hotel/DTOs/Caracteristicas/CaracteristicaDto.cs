@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace hotel.DTOs.Caracteristicas
 {
     /// <summary>
@@ -35,6 +33,8 @@ namespace hotel.DTOs.Caracteristicas
         /// <summary>
         /// URL to access the icon image
         /// </summary>
-        public string? IconUrl => HasIcon ? $"/api/v1/caracteristicas/{CaracteristicaId}/image" : null;
+        public string? IconUrl =>
+            HasIcon ? $"/api/v1/caracteristicas/{CaracteristicaId}/image" : null;
     }
 }
+

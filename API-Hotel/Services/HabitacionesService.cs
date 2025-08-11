@@ -1,5 +1,6 @@
 using hotel.Data;
 using hotel.DTOs;
+using hotel.DTOs.Caracteristicas;
 using hotel.DTOs.Common;
 using hotel.Interfaces;
 using hotel.Models;
@@ -492,6 +493,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                         CaracteristicaId = hc.CaracteristicaId,
                         Nombre = hc.Caracteristica?.Nombre ?? "",
                         Descripcion = hc.Caracteristica?.Descripcion,
+                        Icono = hc.Caracteristica?.Icono
                     })
                     .ToList() ?? [],
             Imagenes =
@@ -734,12 +736,12 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                                 : null,
                         Imagenes = imagenes,
                         Caracteristicas = caracteristicas
-                            .Select(c => new CaracteristicaCompleteDto
+                            .Select(c => new CaracteristicaDto
                             {
                                 CaracteristicaId = c.CaracteristicaId,
                                 Nombre = c.Nombre ?? "",
                                 Descripcion = c.Descripcion,
-                                Icono = c.Icono,
+                                Icono = c.Icono
                             })
                             .ToList(),
                     };

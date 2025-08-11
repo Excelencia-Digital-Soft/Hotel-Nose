@@ -49,46 +49,46 @@ public class CajaService : ICajaService
     )
     {
         return from pago in pagosSource
-               where pago.InstitucionID == institucionId
-               join tarjeta in _context.Tarjetas.AsNoTracking()
-                   on pago.TarjetaId equals tarjeta.TarjetaID
-                   into tarjetas
-               from tarjeta in tarjetas.DefaultIfEmpty()
-               join empeno in _context.Empeño.AsNoTracking()
-                   on pago.PagoId equals empeno.PagoID
-                   into empenos
-               from empeno in empenos.DefaultIfEmpty()
-               join movimiento in _context.Movimientos.AsNoTracking()
-                   on pago.PagoId equals movimiento.PagoId
-                   into movimientos
-               from movimiento in movimientos.DefaultIfEmpty()
-               join visita in _context.Visitas.AsNoTracking()
-                   on movimiento.VisitaId equals visita.VisitaId
-                   into visitas
-               from visita in visitas.DefaultIfEmpty()
-               join reserva in _context.Reservas.AsNoTracking()
-                   on visita.VisitaId equals reserva.VisitaId
-                   into reservas
-               from reserva in reservas.DefaultIfEmpty()
-               join habitacion in _context.Habitaciones.AsNoTracking()
-                   on reserva.HabitacionId equals habitacion.HabitacionId
-                   into habitaciones
-               from habitacion in habitaciones.DefaultIfEmpty()
-               join categoria in _context.CategoriasHabitaciones.AsNoTracking()
-                   on habitacion.CategoriaId equals categoria.CategoriaId
-                   into categorias
-               from categoria in categorias.DefaultIfEmpty()
-               select new PagoQueryResult
-               {
-                   Pago = pago,
-                   Tarjeta = tarjeta,
-                   Empeno = empeno,
-                   Movimiento = movimiento,
-                   Visita = visita,
-                   Reserva = reserva,
-                   Habitacion = habitacion,
-                   Categoria = categoria
-               };
+            where pago.InstitucionID == institucionId
+            join tarjeta in _context.Tarjetas.AsNoTracking()
+                on pago.TarjetaId equals tarjeta.TarjetaID
+                into tarjetas
+            from tarjeta in tarjetas.DefaultIfEmpty()
+            join empeno in _context.Empeño.AsNoTracking()
+                on pago.PagoId equals empeno.PagoID
+                into empenos
+            from empeno in empenos.DefaultIfEmpty()
+            join movimiento in _context.Movimientos.AsNoTracking()
+                on pago.PagoId equals movimiento.PagoId
+                into movimientos
+            from movimiento in movimientos.DefaultIfEmpty()
+            join visita in _context.Visitas.AsNoTracking()
+                on movimiento.VisitaId equals visita.VisitaId
+                into visitas
+            from visita in visitas.DefaultIfEmpty()
+            join reserva in _context.Reservas.AsNoTracking()
+                on visita.VisitaId equals reserva.VisitaId
+                into reservas
+            from reserva in reservas.DefaultIfEmpty()
+            join habitacion in _context.Habitaciones.AsNoTracking()
+                on reserva.HabitacionId equals habitacion.HabitacionId
+                into habitaciones
+            from habitacion in habitaciones.DefaultIfEmpty()
+            join categoria in _context.CategoriasHabitaciones.AsNoTracking()
+                on habitacion.CategoriaId equals categoria.CategoriaId
+                into categorias
+            from categoria in categorias.DefaultIfEmpty()
+            select new PagoQueryResult
+            {
+                Pago = pago,
+                Tarjeta = tarjeta,
+                Empeno = empeno,
+                Movimiento = movimiento,
+                Visita = visita,
+                Reserva = reserva,
+                Habitacion = habitacion,
+                Categoria = categoria,
+            };
     }
 
     /// <summary>
@@ -101,7 +101,7 @@ public class CajaService : ICajaService
     )
     {
         var baseQuery = BuildPagosBaseQuery(pagosSource, institucionId);
-        
+
         var pagosQuery = baseQuery.Select(x => new PagoDetalladoDto
         {
             PagoId = x.Pago.PagoId,
@@ -120,7 +120,7 @@ public class CajaService : ICajaService
             HoraIngreso = x.Reserva != null ? x.Reserva.FechaReserva : null,
             HoraSalida = x.Pago.fechaHora,
             Periodo = x.Movimiento != null ? x.Movimiento.TotalFacturado : 0,
-            TotalConsumo = 0 // Will be calculated separately
+            TotalConsumo = 0, // Will be calculated separately
         });
 
         var pagos = await pagosQuery.ToListAsync(cancellationToken);
@@ -138,7 +138,7 @@ public class CajaService : ICajaService
     )
     {
         var baseQuery = BuildPagosBaseQuery(pagosSource, institucionId);
-        
+
         var pagosQuery = baseQuery.Select(x => new PagoDetalleCompletoDto
         {
             PagoId = x.Pago.PagoId,
@@ -156,7 +156,7 @@ public class CajaService : ICajaService
             MontoDescuento = x.Pago.MontoDescuento,
             Observacion = x.Pago.Observacion,
             TipoHabitacion = x.Habitacion != null ? x.Habitacion.NombreHabitacion : null,
-            TipoTransaccion = x.Empeno != null ? "Empeño" : "Habitación"
+            TipoTransaccion = x.Empeno != null ? "Empeño" : "Habitación",
         });
 
         var pagos = await pagosQuery.ToListAsync(cancellationToken);
@@ -174,7 +174,7 @@ public class CajaService : ICajaService
     )
     {
         var baseQuery = BuildPagosBaseQuery(pagosSource, institucionId);
-        
+
         var pagosQuery = baseQuery.Select(x => new TransaccionPendienteDto
         {
             PagoId = x.Pago.PagoId,
@@ -193,7 +193,7 @@ public class CajaService : ICajaService
             MontoDescuento = x.Pago.MontoDescuento,
             Observacion = x.Pago.Observacion,
             TipoHabitacion = x.Habitacion != null ? x.Habitacion.NombreHabitacion : null,
-            TipoTransaccion = x.Empeno != null ? "Empeño" : "Habitación"
+            TipoTransaccion = x.Empeno != null ? "Empeño" : "Habitación",
         });
 
         var pagos = await pagosQuery.ToListAsync(cancellationToken);
@@ -207,27 +207,30 @@ public class CajaService : ICajaService
     private async Task EnrichWithConsumptionTotalsAsync<T>(
         List<T> payments,
         CancellationToken cancellationToken
-    ) where T : class
+    )
+        where T : class
     {
-        if (!payments.Any()) return;
+        if (!payments.Any())
+            return;
 
         // Get PagoId from the payment objects using reflection to handle different DTO types
         var pagoIdProperty = typeof(T).GetProperty("PagoId");
         var totalConsumoProperty = typeof(T).GetProperty("TotalConsumo");
-        
-        if (pagoIdProperty == null || totalConsumoProperty == null) return;
+
+        if (pagoIdProperty == null || totalConsumoProperty == null)
+            return;
 
         var pagoIds = payments
             .Select(p => (int)(pagoIdProperty.GetValue(p) ?? 0))
             .Where(id => id > 0)
             .ToList();
 
-        if (!pagoIds.Any()) return;
+        if (!pagoIds.Any())
+            return;
 
         var consumos = await (
             from c in _context.Consumo.AsNoTracking()
-            join m in _context.Movimientos.AsNoTracking()
-                on c.MovimientosId equals m.MovimientosId
+            join m in _context.Movimientos.AsNoTracking() on c.MovimientosId equals m.MovimientosId
             where pagoIds.Contains(m.PagoId ?? 0)
             group c by m.PagoId into g
             select new { PagoId = g.Key, Total = g.Sum(x => x.PrecioUnitario) }
@@ -244,8 +247,6 @@ public class CajaService : ICajaService
             }
         }
     }
-
-
 
     /// <summary>
     /// Common error handling wrapper for service methods
@@ -264,12 +265,12 @@ public class CajaService : ICajaService
         }
         catch (Exception ex)
         {
-            var contextInfo = institucionId.HasValue 
-                ? $" for institution {institucionId}" 
+            var contextInfo = institucionId.HasValue
+                ? $" for institution {institucionId}"
                 : string.Empty;
-                
+
             _logger.LogError(ex, "Error in {OperationName}{Context}", operationName, contextInfo);
-            
+
             return ApiResponse<T>.Failure(
                 $"Error en {operationName}",
                 "Ocurrió un error interno. Por favor, inténtelo nuevamente."
@@ -347,31 +348,35 @@ public class CajaService : ICajaService
         CancellationToken cancellationToken = default
     )
     {
-        return await ExecuteWithErrorHandlingAsync(async () =>
-        {
-            _logger.LogInformation(
-                "Retrieving cash register closures for institution {InstitucionId}",
-                institucionId
-            );
+        return await ExecuteWithErrorHandlingAsync(
+            async () =>
+            {
+                _logger.LogInformation(
+                    "Retrieving cash register closures for institution {InstitucionId}",
+                    institucionId
+                );
 
-            var cierres = await _context
-                .Cierre.AsNoTracking()
-                .Where(c => c.InstitucionID == institucionId)
-                .Include(c => c.Pagos)
-                .Include(c => c.User) // Use AspNetUsers instead of legacy Usuario
-                .OrderByDescending(c => c.FechaHoraCierre ?? DateTime.MinValue)
-                .ToListAsync(cancellationToken);
+                var cierres = await _context
+                    .Cierre.AsNoTracking()
+                    .Where(c => c.InstitucionID == institucionId)
+                    .Include(c => c.Pagos)
+                    .Include(c => c.User) // Use AspNetUsers instead of legacy Usuario
+                    .OrderByDescending(c => c.FechaHoraCierre ?? DateTime.MinValue)
+                    .ToListAsync(cancellationToken);
 
-            var cierresDto = cierres.Select(_mapper.MapToCajaDetalladaDto).ToList();
+                var cierresDto = cierres.Select(_mapper.MapToCajaDetalladaDto).ToList();
 
-            _logger.LogInformation(
-                "Retrieved {Count} cash register closures for institution {InstitucionId}",
-                cierresDto.Count,
-                institucionId
-            );
+                _logger.LogInformation(
+                    "Retrieved {Count} cash register closures for institution {InstitucionId}",
+                    cierresDto.Count,
+                    institucionId
+                );
 
-            return (IEnumerable<CajaDetalladaDto>)cierresDto;
-        }, "obtener los cierres de caja", institucionId);
+                return (IEnumerable<CajaDetalladaDto>)cierresDto;
+            },
+            "obtener los cierres de caja",
+            institucionId
+        );
     }
 
     /// <summary>
@@ -499,10 +504,15 @@ public class CajaService : ICajaService
         CancellationToken cancellationToken
     )
     {
-        var pagosSource = _context.Pagos.AsNoTracking()
+        var pagosSource = _context
+            .Pagos.AsNoTracking()
             .Where(p => cierreIds.Contains(p.CierreId ?? 0));
-            
-        return await GetPagosDetalladosOptimizedAsync(pagosSource, institucionId, cancellationToken);
+
+        return await GetPagosDetalladosOptimizedAsync(
+            pagosSource,
+            institucionId,
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -513,10 +523,13 @@ public class CajaService : ICajaService
         CancellationToken cancellationToken
     )
     {
-        var pagosSource = _context.Pagos.AsNoTracking()
-            .Where(p => p.CierreId == null);
-            
-        return await GetPagosDetalladosOptimizedAsync(pagosSource, institucionId, cancellationToken);
+        var pagosSource = _context.Pagos.AsNoTracking().Where(p => p.CierreId == null);
+
+        return await GetPagosDetalladosOptimizedAsync(
+            pagosSource,
+            institucionId,
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -528,37 +541,46 @@ public class CajaService : ICajaService
         CancellationToken cancellationToken = default
     )
     {
-        return await ExecuteWithErrorHandlingAsync(async () =>
-        {
-            _logger.LogInformation(
-                "Retrieving cash register closure {CierreId} for institution {InstitucionId}",
-                cierreId,
-                institucionId
-            );
-
-            var cierre = await _context
-                .Cierre.AsNoTracking()
-                .Where(c => c.CierreId == cierreId && c.InstitucionID == institucionId)
-                .Include(c => c.Pagos)
-                .Include(c => c.User) // Use AspNetUsers instead of legacy Usuario
-                .FirstOrDefaultAsync(cancellationToken);
-
-            if (cierre == null)
+        return await ExecuteWithErrorHandlingAsync(
+            async () =>
             {
-                _logger.LogWarning(
-                    "Cash register closure {CierreId} not found for institution {InstitucionId}",
+                _logger.LogInformation(
+                    "Retrieving cash register closure {CierreId} for institution {InstitucionId}",
                     cierreId,
                     institucionId
                 );
-                throw new InvalidOperationException("Cierre no encontrado");
-            }
 
-            var cierreDto = _mapper.MapToCajaDetalladaDto(cierre);
+                var cierre = await _context
+                    .Cierre.AsNoTracking()
+                    .Where(c => c.CierreId == cierreId && c.InstitucionID == institucionId)
+                    .Include(c => c.Pagos)
+                    .Include(c => c.User) // Use AspNetUsers instead of legacy Usuario
+                    .FirstOrDefaultAsync(cancellationToken);
 
-            _logger.LogInformation("Retrieved cash register closure {CierreId} for institution {InstitucionId}", cierreId, institucionId);
+                if (cierre == null)
+                {
+                    _logger.LogWarning(
+                        "Cash register closure {CierreId} not found for institution {InstitucionId}",
+                        cierreId,
+                        institucionId
+                    );
+                    throw new InvalidOperationException("Cierre no encontrado");
+                }
 
-            return cierreDto;
-        }, "obtener el cierre de caja", institucionId, new { cierreId });
+                var cierreDto = _mapper.MapToCajaDetalladaDto(cierre);
+
+                _logger.LogInformation(
+                    "Retrieved cash register closure {CierreId} for institution {InstitucionId}",
+                    cierreId,
+                    institucionId
+                );
+
+                return cierreDto;
+            },
+            "obtener el cierre de caja",
+            institucionId,
+            new { cierreId }
+        );
     }
 
     /// <summary>
@@ -700,10 +722,13 @@ public class CajaService : ICajaService
         CancellationToken cancellationToken
     )
     {
-        var pagosSource = _context.Pagos.AsNoTracking()
-            .Where(p => pagoIds.Contains(p.PagoId));
-            
-        return await GetPagosDetalleCompletoOptimizedAsync(pagosSource, institucionId, cancellationToken);
+        var pagosSource = _context.Pagos.AsNoTracking().Where(p => pagoIds.Contains(p.PagoId));
+
+        return await GetPagosDetalleCompletoOptimizedAsync(
+            pagosSource,
+            institucionId,
+            cancellationToken
+        );
     }
 
     /// <summary>
@@ -711,6 +736,7 @@ public class CajaService : ICajaService
     /// </summary>
     public async Task<ApiResponse<CierresyActualDto>> GetCierresyActualAsync(
         int institucionId,
+        string? userId = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -735,8 +761,9 @@ public class CajaService : ICajaService
 
             // Get pending payments (not associated with any closure)
             var pagosPendientes = await GetTransaccionesPendientesAsync(
-                institucionId, 
-                fechaUltimoCierre, 
+                institucionId,
+                fechaUltimoCierre,
+                userId,
                 cancellationToken
             );
 
@@ -756,7 +783,7 @@ public class CajaService : ICajaService
             {
                 Cierres = cierresDto,
                 TransaccionesPendientes = pagosPendientes,
-                EgresosPendientes = egresosPendientes
+                EgresosPendientes = egresosPendientes,
             };
 
             _logger.LogInformation(
@@ -788,26 +815,29 @@ public class CajaService : ICajaService
     private async Task<List<TransaccionPendienteDto>> GetTransaccionesPendientesAsync(
         int institucionId,
         DateTime fechaUltimoCierre,
-        CancellationToken cancellationToken
+        string? userId = null,
+        CancellationToken cancellationToken = default
     )
     {
         var transacciones = new List<TransaccionPendienteDto>();
 
         // Get pending payments using optimized query
-        var pagosSource = _context.Pagos.AsNoTracking()
-            .Where(p => p.CierreId == null);
-            
+        var pagosSource = _context
+            .Pagos.AsNoTracking()
+            .Where(p => p.CierreId == null && p.UserId == userId);
+
         var pagosPendientes = await GetTransaccionesPendientesOptimizedAsync(
-            pagosSource, institucionId, cancellationToken);
-            
+            pagosSource,
+            institucionId,
+            cancellationToken
+        );
+
         transacciones.AddRange(pagosPendientes);
 
         // Get canceled reservations since last closure
         var reservasAnuladas = await _context
             .Reservas.AsNoTracking()
-            .Where(r =>
-                r.FechaAnula > fechaUltimoCierre &&
-                r.InstitucionID == institucionId)
+            .Where(r => r.FechaAnula > fechaUltimoCierre && r.InstitucionID == institucionId)
             .Include(r => r.Habitacion)
             .ThenInclude(h => h!.Categoria)
             .ToListAsync(cancellationToken);

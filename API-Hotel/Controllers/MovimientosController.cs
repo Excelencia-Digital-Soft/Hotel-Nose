@@ -1,4 +1,5 @@
 ﻿using hotel.Data;
+using hotel.Extensions;
 using hotel.Models;
 using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace hotel.Controllers
 {
-    public class MovimientosController
+    public class MovimientosController : ControllerBase
     {
         private readonly HotelDbContext _db;
 
@@ -18,7 +19,7 @@ namespace hotel.Controllers
 
         [HttpPost]
         [Route("MovimientoHabitacion")]
-        [AllowAnonymous]
+        [Authorize(AuthenticationSchemes = "Bearer")]
         public async Task<int> CrearMovimientoHabitacion(
             int visitaId,
             int InstitucionID,
@@ -28,12 +29,17 @@ namespace hotel.Controllers
         {
             try
             {
+                // Obtener el usuario autenticado usando el extension method
+                var userId = this.GetCurrentUserId();
+
                 Movimientos nuevoMovimiento = new Movimientos
                 {
                     VisitaId = visitaId,
                     InstitucionID = InstitucionID,
                     TotalFacturado = totalFacturado,
                     HabitacionId = habitacionId,
+                    UserId = userId, // Asignar el UserId del usuario autenticado
+                    FechaRegistro = DateTime.Now, // Agregar fecha de registro
                 };
 
                 _db.Add(nuevoMovimiento);
@@ -42,9 +48,16 @@ namespace hotel.Controllers
 
                 return nuevoMovimiento.MovimientosId;
             }
+            catch (DbUpdateException dbEx)
+            {
+                // Log database update exceptions
+                Console.WriteLine($"Database update error: {dbEx.Message}");
+                return 0;
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                // Log general exceptions
+                Console.WriteLine($"Error creating movimiento: {ex.Message}");
                 return 0;
             }
         }

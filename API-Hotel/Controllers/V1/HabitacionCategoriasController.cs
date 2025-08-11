@@ -21,9 +21,12 @@ namespace hotel.Controllers.V1
 
         public HabitacionCategoriasController(
             IHabitacionCategoriasService habitacionCategoriasService,
-            ILogger<HabitacionCategoriasController> logger)
+            ILogger<HabitacionCategoriasController> logger
+        )
         {
-            _habitacionCategoriasService = habitacionCategoriasService ?? throw new ArgumentNullException(nameof(habitacionCategoriasService));
+            _habitacionCategoriasService =
+                habitacionCategoriasService
+                ?? throw new ArgumentNullException(nameof(habitacionCategoriasService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -33,28 +36,40 @@ namespace hotel.Controllers.V1
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>List of room categories</returns>
         [HttpGet]
-        [ProducesResponseType(typeof(ApiResponse<IEnumerable<HabitacionCategoriaDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(
+            typeof(ApiResponse<IEnumerable<HabitacionCategoriaDto>>),
+            StatusCodes.Status200OK
+        )]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<IEnumerable<HabitacionCategoriaDto>>>> GetHabitacionCategorias(
-            CancellationToken cancellationToken = default)
+        public async Task<
+            ActionResult<ApiResponse<IEnumerable<HabitacionCategoriaDto>>>
+        > GetHabitacionCategorias(CancellationToken cancellationToken = default)
         {
             var institucionId = this.GetCurrentInstitucionId();
             if (!institucionId.HasValue)
             {
-                _logger.LogWarning("Institution ID not found in user claims for user {UserId}", 
-                    this.GetCurrentUserId());
+                _logger.LogWarning(
+                    "Institution ID not found in user claims for user {UserId}",
+                    this.GetCurrentUserId()
+                );
                 return BadRequest(ApiResponse.Failure("ID de institución requerido"));
             }
 
-            _logger.LogInformation("Getting room categories for institution {InstitucionId} requested by user {UserId}", 
-                institucionId.Value, this.GetCurrentUserId());
+            _logger.LogInformation(
+                "Getting room categories for institution {InstitucionId} requested by user {UserId}",
+                institucionId.Value,
+                this.GetCurrentUserId()
+            );
 
-            var result = await _habitacionCategoriasService.GetAllByInstitutionAsync(institucionId.Value, cancellationToken);
-            
-            return result.IsSuccess 
-                ? Ok(result) 
+            var result = await _habitacionCategoriasService.GetAllByInstitutionAsync(
+                institucionId.Value,
+                cancellationToken
+            );
+
+            return result.IsSuccess
+                ? Ok(result)
                 : StatusCode(StatusCodes.Status500InternalServerError, result);
         }
 
@@ -72,7 +87,8 @@ namespace hotel.Controllers.V1
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ApiResponse<HabitacionCategoriaDto>>> GetHabitacionCategoria(
             int id,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
             if (id <= 0)
             {
@@ -85,11 +101,19 @@ namespace hotel.Controllers.V1
                 return BadRequest(ApiResponse.Failure("ID de institución requerido"));
             }
 
-            _logger.LogInformation("Getting room category {Id} for institution {InstitucionId} requested by user {UserId}", 
-                id, institucionId.Value, this.GetCurrentUserId());
+            _logger.LogInformation(
+                "Getting room category {Id} for institution {InstitucionId} requested by user {UserId}",
+                id,
+                institucionId.Value,
+                this.GetCurrentUserId()
+            );
 
-            var result = await _habitacionCategoriasService.GetByIdAsync(id, institucionId.Value, cancellationToken);
-            
+            var result = await _habitacionCategoriasService.GetByIdAsync(
+                id,
+                institucionId.Value,
+                cancellationToken
+            );
+
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -107,22 +131,28 @@ namespace hotel.Controllers.V1
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Created room category</returns>
         [HttpPost]
-        [ProducesResponseType(typeof(ApiResponse<HabitacionCategoriaDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(
+            typeof(ApiResponse<HabitacionCategoriaDto>),
+            StatusCodes.Status201Created
+        )]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<HabitacionCategoriaDto>>> CreateHabitacionCategoria(
+        public async Task<
+            ActionResult<ApiResponse<HabitacionCategoriaDto>>
+        > CreateHabitacionCategoria(
             [FromBody] HabitacionCategoriaCreateDto createDto,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
             if (!ModelState.IsValid)
             {
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
+                var errors = ModelState
+                    .Values.SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage)
                     .ToList();
-                
+
                 return BadRequest(ApiResponse.Failure(errors, "Datos de entrada inválidos"));
             }
 
@@ -132,17 +162,26 @@ namespace hotel.Controllers.V1
                 return BadRequest(ApiResponse.Failure("ID de institución requerido"));
             }
 
-            _logger.LogInformation("Creating room category '{Name}' for institution {InstitucionId} by user {UserId}", 
-                createDto.NombreCategoria, institucionId.Value, this.GetCurrentUserId());
+            _logger.LogInformation(
+                "Creating room category '{Name}' for institution {InstitucionId} by user {UserId}",
+                createDto.NombreCategoria,
+                institucionId.Value,
+                this.GetCurrentUserId()
+            );
 
-            var result = await _habitacionCategoriasService.CreateAsync(createDto, institucionId.Value, cancellationToken);
-            
+            var result = await _habitacionCategoriasService.CreateAsync(
+                createDto,
+                institucionId.Value,
+                cancellationToken
+            );
+
             if (result.IsSuccess)
             {
                 return CreatedAtAction(
                     nameof(GetHabitacionCategoria),
                     new { id = result.Data!.CategoriaId },
-                    result);
+                    result
+                );
             }
 
             return result.Errors.Any(e => e.Contains("nombre"))
@@ -164,10 +203,13 @@ namespace hotel.Controllers.V1
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status409Conflict)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ApiResponse<HabitacionCategoriaDto>>> UpdateHabitacionCategoria(
+        public async Task<
+            ActionResult<ApiResponse<HabitacionCategoriaDto>>
+        > UpdateHabitacionCategoria(
             int id,
             [FromBody] HabitacionCategoriaUpdateDto updateDto,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
             if (id <= 0)
             {
@@ -176,11 +218,11 @@ namespace hotel.Controllers.V1
 
             if (!ModelState.IsValid)
             {
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
+                var errors = ModelState
+                    .Values.SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage)
                     .ToList();
-                
+
                 return BadRequest(ApiResponse.Failure(errors, "Datos de entrada inválidos"));
             }
 
@@ -190,11 +232,20 @@ namespace hotel.Controllers.V1
                 return BadRequest(ApiResponse.Failure("ID de institución requerido"));
             }
 
-            _logger.LogInformation("Updating room category {Id} for institution {InstitucionId} by user {UserId}", 
-                id, institucionId.Value, this.GetCurrentUserId());
+            _logger.LogInformation(
+                "Updating room category {Id} for institution {InstitucionId} by user {UserId}",
+                id,
+                institucionId.Value,
+                this.GetCurrentUserId()
+            );
 
-            var result = await _habitacionCategoriasService.UpdateAsync(id, updateDto, institucionId.Value, cancellationToken);
-            
+            var result = await _habitacionCategoriasService.UpdateAsync(
+                id,
+                updateDto,
+                institucionId.Value,
+                cancellationToken
+            );
+
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -225,7 +276,8 @@ namespace hotel.Controllers.V1
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ApiResponse>> DeleteHabitacionCategoria(
             int id,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
             if (id <= 0)
             {
@@ -238,11 +290,19 @@ namespace hotel.Controllers.V1
                 return BadRequest(ApiResponse.Failure("ID de institución requerido"));
             }
 
-            _logger.LogInformation("Deleting room category {Id} for institution {InstitucionId} by user {UserId}", 
-                id, institucionId.Value, this.GetCurrentUserId());
+            _logger.LogInformation(
+                "Deleting room category {Id} for institution {InstitucionId} by user {UserId}",
+                id,
+                institucionId.Value,
+                this.GetCurrentUserId()
+            );
 
-            var result = await _habitacionCategoriasService.DeleteAsync(id, institucionId.Value, cancellationToken);
-            
+            var result = await _habitacionCategoriasService.DeleteAsync(
+                id,
+                institucionId.Value,
+                cancellationToken
+            );
+
             if (result.IsSuccess)
             {
                 return Ok(result);
@@ -253,7 +313,7 @@ namespace hotel.Controllers.V1
                 return NotFound(result);
             }
 
-            return result.Errors.Any(e => e.Contains("utilizada")))
+            return result.Errors.Any(e => e.Contains("utilizada"))
                 ? Conflict(result)
                 : StatusCode(StatusCodes.Status500InternalServerError, result);
         }
@@ -267,13 +327,16 @@ namespace hotel.Controllers.V1
         [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult Health()
         {
-            return Ok(new
-            {
-                service = "HabitacionCategoriasService V1",
-                status = "healthy",
-                timestamp = DateTime.UtcNow,
-                version = "1.0.0"
-            });
+            return Ok(
+                new
+                {
+                    service = "HabitacionCategoriasService V1",
+                    status = "healthy",
+                    timestamp = DateTime.UtcNow,
+                    version = "1.0.0",
+                }
+            );
         }
     }
 }
+

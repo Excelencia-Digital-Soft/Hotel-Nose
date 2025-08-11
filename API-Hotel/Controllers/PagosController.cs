@@ -3,6 +3,9 @@ using hotel.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using hotel.Models.Sistema;
+using hotel.Extensions;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace hotel.Controllers
 {
@@ -20,9 +23,15 @@ namespace hotel.Controllers
         #region Create Pago
         [HttpPost]
         [Route("PagarVisita")] // Paga todos los movimientos de una visita
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        [Obsolete("This endpoint is deprecated. Consider using /api/v1/pagos instead.")]
         public async Task<Respuesta> PagarVisita(int visitaId, decimal montoDescuento, decimal montoEfectivo, decimal montoTarjeta, decimal montoBillVirt, decimal adicional, int medioPagoId, string? comentario, decimal? montoRecargo, string? descripcionRecargo, int? tarjetaID)
         {
             Respuesta res = new Respuesta();
+            
+            // Use transaction for data consistency
+            using var transaction = await _db.Database.BeginTransactionAsync();
+            
             try
             {
                 // Step 1: Find the Visita by visitaId
@@ -55,12 +64,24 @@ namespace hotel.Controllers
                     return res;
                 }
 
-                // Step 4: Calculate the total amount to be paid (sum of all movimientos' totalFacturado)
+                // Step 4: Calculate the total amount to be paid and validate payment amounts
                 decimal totalFacturado = movimientos.Sum(m => m.TotalFacturado ?? 0);
-                string observacion = "-";
-                if (comentario != null) observacion = comentario;
+                decimal totalPagado = montoEfectivo + montoTarjeta + montoBillVirt + adicional - montoDescuento + (montoRecargo ?? 0);
+                
+                // Validate that payment amounts are not negative
+                if (montoEfectivo < 0 || montoTarjeta < 0 || montoBillVirt < 0)
+                {
+                    res.Ok = false;
+                    res.Message = "Los montos de pago no pueden ser negativos.";
+                    return res;
+                }
+                
+                string observacion = string.IsNullOrWhiteSpace(comentario) ? "-" : comentario;
 
-                // Step 5: Create a new Pago for the Visita with the respective payment methods
+                // Step 5: Create a new Pago for the Visita with the respective payment methods and UserId
+                // Get authenticated user ID
+                var userId = this.GetCurrentUserId();
+                
                 Pagos nuevoPago = new Pagos
                 {
                     MontoDescuento = montoDescuento,
@@ -73,39 +94,54 @@ namespace hotel.Controllers
                     MedioPagoId = medioPagoId,
                     fechaHora = DateTime.Now,
                     Observacion = observacion,
+                    UserId = userId // Track which user processed this payment
                 };
+                
                 _db.Pagos.Add(nuevoPago);
                 await _db.SaveChangesAsync();
 
-                if (montoRecargo != null)
+                // Add surcharge if provided
+                if (montoRecargo.HasValue && montoRecargo.Value > 0)
                 {
                     Recargos nuevoRecargo = new Recargos
                     {
                         Valor = montoRecargo,
-                        Descripcion = descripcionRecargo,
+                        Descripcion = descripcionRecargo ?? "Recargo aplicado",
                         PagoID = nuevoPago.PagoId,
                     };
                     _db.Recargos.Add(nuevoRecargo);
-
+                    await _db.SaveChangesAsync();
                 }
-                await _db.SaveChangesAsync();
 
                 // Step 6: Update all Movimientos related to the Visita to include the PagoId
                 foreach (var movimiento in movimientos)
                 {
                     movimiento.PagoId = nuevoPago.PagoId;
                 }
-
+                
+                _db.UpdateRange(movimientos);
                 await _db.SaveChangesAsync();
+                
+                // Commit transaction if everything succeeded
+                await transaction.CommitAsync();
 
                 res.Ok = true;
                 res.Message = "El pago de la visita se realizó correctamente.";
                 res.Data = nuevoPago;
             }
+            catch (DbUpdateException dbEx)
+            {
+                // Rollback transaction on database error
+                await transaction.RollbackAsync();
+                res.Ok = false;
+                res.Message = $"Error al actualizar la base de datos: {dbEx.Message}";
+            }
             catch (Exception ex)
             {
+                // Rollback transaction on any error
+                await transaction.RollbackAsync();
                 res.Ok = false;
-                res.Message = $"Error: {ex.Message} {ex.InnerException?.Message}";
+                res.Message = $"Error al procesar el pago: {ex.Message}";
             }
 
             return res;

@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace hotel.DTOs.HabitacionCategorias
 {
     /// <summary>
@@ -18,9 +16,9 @@ namespace hotel.DTOs.HabitacionCategorias
         public string NombreCategoria { get; set; } = string.Empty;
 
         /// <summary>
-        /// Category description
+        /// Capacidad Máxima
         /// </summary>
-        public string? Descripcion { get; set; }
+        public int? CapacidadMaxima { get; set; }
 
         /// <summary>
         /// Normal price for this category
@@ -42,10 +40,7 @@ namespace hotel.DTOs.HabitacionCategorias
         /// </summary>
         public bool Activo { get; set; } = true;
 
-        /// <summary>
-        /// Number of rooms in this category
-        /// </summary>
-        public int NumeroHabitaciones { get; set; }
+        public int PorcentajeXPersona { get; set; }
 
         /// <summary>
         /// Category creation date
@@ -58,3 +53,4 @@ namespace hotel.DTOs.HabitacionCategorias
         public DateTime? FechaModificacion { get; set; }
     }
 }
+
