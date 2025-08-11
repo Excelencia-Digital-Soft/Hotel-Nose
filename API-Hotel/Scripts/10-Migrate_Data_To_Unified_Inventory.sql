@@ -9,8 +9,20 @@ PRINT '======================================================'
 PRINT 'MIGRATING DATA TO UNIFIED INVENTORY TABLE'
 PRINT '======================================================'
 
--- STEP 1: Clear existing data in unified table (if any)
-IF EXISTS (SELECT 1 FROM InventarioUnificado)
+-- STEP 1: Handle existing data in unified table
+-- First check if there are dependent records in MovimientosInventario
+DECLARE @hasMovimientos INT
+SELECT @hasMovimientos = COUNT(*) 
+FROM MovimientosInventario mi 
+INNER JOIN InventarioUnificado iu ON mi.InventarioId = iu.InventarioId
+
+IF @hasMovimientos > 0
+BEGIN
+    PRINT 'Warning: Found existing inventory movements. Skipping data clear to preserve referential integrity.'
+    PRINT CONCAT('There are ', @hasMovimientos, ' movement records linked to existing inventory.')
+    PRINT 'Migration will merge with existing data...'
+END
+ELSE IF EXISTS (SELECT 1 FROM InventarioUnificado)
 BEGIN
     PRINT 'Clearing existing data from InventarioUnificado...'
     DELETE FROM InventarioUnificado
@@ -21,49 +33,81 @@ END
 PRINT ''
 PRINT 'Migrating room inventory (Inventarios)...'
 
-INSERT INTO [dbo].[InventarioUnificado] (
-    [ArticuloId], [Cantidad], [InstitucionID], [TipoUbicacion], [UbicacionId],
-    [FechaRegistro], [Anulado], [UsuarioRegistro], [Notas]
+-- Use MERGE to handle duplicates - update existing records or insert new ones
+MERGE [dbo].[InventarioUnificado] AS target
+USING (
+    SELECT 
+        i.[ArticuloId],
+        i.[Cantidad],
+        i.[InstitucionID],
+        1 as [TipoUbicacion], -- Room type
+        i.[HabitacionId] as [UbicacionId],
+        COALESCE(i.[FechaRegistro], GETDATE()) as [FechaRegistro],
+        i.[Anulado],
+        NULL as [UsuarioRegistro], -- Legacy data doesn't have user tracking
+        'Migrated from Inventarios table' as [Notas]
+    FROM [dbo].[Inventarios] i
+    WHERE i.[ArticuloId] IS NOT NULL
+) AS source ON (
+    target.[ArticuloId] = source.[ArticuloId] 
+    AND target.[TipoUbicacion] = source.[TipoUbicacion]
+    AND ISNULL(target.[UbicacionId], -1) = ISNULL(source.[UbicacionId], -1)
+    AND target.[InstitucionID] = source.[InstitucionID]
 )
-SELECT 
-    i.[ArticuloId],
-    i.[Cantidad],
-    i.[InstitucionID],
-    1 as [TipoUbicacion], -- Room type
-    i.[HabitacionId] as [UbicacionId],
-    COALESCE(i.[FechaRegistro], GETDATE()) as [FechaRegistro],
-    i.[Anulado],
-    NULL as [UsuarioRegistro], -- Legacy data doesn't have user tracking
-    'Migrated from Inventarios table' as [Notas]
-FROM [dbo].[Inventarios] i
-WHERE i.[ArticuloId] IS NOT NULL
-ORDER BY i.[InventarioId]
+WHEN MATCHED THEN
+    UPDATE SET 
+        target.[Cantidad] = source.[Cantidad],
+        target.[FechaRegistro] = source.[FechaRegistro],
+        target.[Anulado] = source.[Anulado],
+        target.[Notas] = 'Updated from Inventarios table on ' + CONVERT(VARCHAR(20), GETDATE(), 120)
+WHEN NOT MATCHED BY TARGET THEN
+    INSERT ([ArticuloId], [Cantidad], [InstitucionID], [TipoUbicacion], [UbicacionId],
+            [FechaRegistro], [Anulado], [UsuarioRegistro], [Notas])
+    VALUES (source.[ArticuloId], source.[Cantidad], source.[InstitucionID], 
+            source.[TipoUbicacion], source.[UbicacionId], source.[FechaRegistro], 
+            source.[Anulado], source.[UsuarioRegistro], source.[Notas]);
 
-PRINT CONCAT('Migrated ', @@ROWCOUNT, ' room inventory records.')
+PRINT CONCAT('Processed ', @@ROWCOUNT, ' room inventory records (inserted or updated).')
 
 -- STEP 3: Migrate general inventory (InventarioGeneral)
 PRINT ''
 PRINT 'Migrating general inventory (InventarioGeneral)...'
 
-INSERT INTO [dbo].[InventarioUnificado] (
-    [ArticuloId], [Cantidad], [InstitucionID], [TipoUbicacion], [UbicacionId],
-    [FechaRegistro], [Anulado], [UsuarioRegistro], [Notas]
+-- Use MERGE to handle duplicates - update existing records or insert new ones
+MERGE [dbo].[InventarioUnificado] AS target
+USING (
+    SELECT 
+        ig.[ArticuloId],
+        ig.[Cantidad],
+        ig.[InstitucionID],
+        0 as [TipoUbicacion], -- General type
+        NULL as [UbicacionId],
+        COALESCE(ig.[FechaRegistro], GETDATE()) as [FechaRegistro],
+        ig.[Anulado],
+        NULL as [UsuarioRegistro], -- Legacy data doesn't have user tracking
+        'Migrated from InventarioGeneral table' as [Notas]
+    FROM [dbo].[InventarioGeneral] ig
+    WHERE ig.[ArticuloId] IS NOT NULL
+) AS source ON (
+    target.[ArticuloId] = source.[ArticuloId] 
+    AND target.[TipoUbicacion] = source.[TipoUbicacion]
+    AND target.[UbicacionId] IS NULL
+    AND target.[InstitucionID] = source.[InstitucionID]
 )
-SELECT 
-    ig.[ArticuloId],
-    ig.[Cantidad],
-    ig.[InstitucionID],
-    0 as [TipoUbicacion], -- General type
-    NULL as [UbicacionId],
-    COALESCE(ig.[FechaRegistro], GETDATE()) as [FechaRegistro],
-    ig.[Anulado],
-    NULL as [UsuarioRegistro], -- Legacy data doesn't have user tracking
-    'Migrated from InventarioGeneral table' as [Notas]
-FROM [dbo].[InventarioGeneral] ig
-WHERE ig.[ArticuloId] IS NOT NULL
-ORDER BY ig.[InventarioId]
+WHEN MATCHED THEN
+    UPDATE SET 
+        target.[Cantidad] = source.[Cantidad],
+        target.[FechaRegistro] = source.[FechaRegistro],
+        target.[Anulado] = source.[Anulado],
+        target.[Notas] = 'Updated from InventarioGeneral table on ' + CONVERT(VARCHAR(20), GETDATE(), 120)
+WHEN NOT MATCHED BY TARGET THEN
+    INSERT ([ArticuloId], [Cantidad], [InstitucionID], [TipoUbicacion], [UbicacionId],
+            [FechaRegistro], [Anulado], [UsuarioRegistro], [Notas])
+    VALUES (source.[ArticuloId], source.[Cantidad], source.[InstitucionID], 
+            source.[TipoUbicacion], source.[UbicacionId], source.[FechaRegistro], 
+            source.[Anulado], source.[UsuarioRegistro], source.[Notas]);
 
-PRINT CONCAT('Migrated ', @@ROWCOUNT, ' general inventory records.')
+PRINT CONCAT('Processed ', @@ROWCOUNT, ' general inventory records (inserted or updated).')
 
 -- STEP 4: Verify migration
 PRINT ''

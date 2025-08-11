@@ -25,7 +25,7 @@ public static class MiddlewareExtensions
         // app.UseHttpsRedirection();
 
         // CORS
-        app.UseCors("NuevaPolitica");
+        app.UseCors("ProductionCorsPolicy");
 
         // Authentication & Authorization
         app.UseAuthentication();

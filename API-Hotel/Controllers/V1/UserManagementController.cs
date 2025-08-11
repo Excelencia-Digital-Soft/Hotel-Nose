@@ -206,7 +206,6 @@ public class UserManagementController : ControllerBase
     /// <param name="updateRequest">User update request with optional data and roles</param>
     /// <returns>Update result</returns>
     [HttpPut("users/{userId}")]
-    [Authorize(Roles = "Administrator")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]

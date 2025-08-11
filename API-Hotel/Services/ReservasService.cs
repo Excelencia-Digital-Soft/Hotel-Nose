@@ -673,9 +673,14 @@ public class ReservasService : IReservasService
             // 6. Mark the visit as cancelled
             reserva.Visita.Anulado = true;
 
-            // 7. Create audit log entry using RegistrosService
+            // 7. Save all changes
+            await _context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            // 8. Create audit log entry using RegistrosService (after transaction commit)
+            // Note: We include ReservaId in the message content rather than as a foreign key
             await _registrosService.LogAuditAsync(
-                $"Cancelación de Ocupación - Habitación: {reserva.HabitacionId} - Motivo: {reason ?? "Sin motivo"}",
+                $"Cancelación de Ocupación - Reserva #{reserva.ReservaId} - Habitación: {reserva.HabitacionId} - Motivo: {reason ?? "Sin motivo"}",
                 ModuloSistema.RESERVAS,
                 institucionId,
                 userId,
@@ -683,18 +688,15 @@ public class ReservasService : IReservasService
                 System.Text.Json.JsonSerializer.Serialize(
                     new
                     {
+                        ReservaId = reserva.ReservaId,
                         HabitacionId = reserva.HabitacionId,
                         Motivo = reason,
                         FechaCancelacion = DateTime.UtcNow,
                     }
                 ),
-                reserva.ReservaId,
+                null, // Don't pass ReservaId as foreign key to avoid FK constraint issues
                 cancellationToken
             );
-
-            // Save all changes
-            await _context.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Comprehensive cancellation completed for reservation {ReservaId} in institution {InstitucionId} by user {UserId}",
@@ -940,9 +942,13 @@ public class ReservasService : IReservasService
             // 7. Save changes
             await _context.SaveChangesAsync(cancellationToken);
 
-            // 8. Create audit log entry using RegistrosService
+            // 8. Commit transaction
+            await transaction.CommitAsync(cancellationToken);
+
+            // 9. Create audit log entry using RegistrosService (after transaction commit)
+            // Note: We include ReservaId in the message content rather than as a foreign key
             await _registrosService.LogAuditAsync(
-                $"Nueva Reserva - Habitación: {habitacion.HabitacionId} - Huésped: {visita.Identificador ?? "Sin identificación"} - Usuario: {userId}",
+                $"Nueva Reserva #{reserva.ReservaId} - Habitación: {habitacion.HabitacionId} - Huésped: {visita.Identificador ?? "Sin identificación"} - Usuario: {userId}",
                 ModuloSistema.RESERVAS,
                 institucionId,
                 userId,
@@ -950,18 +956,16 @@ public class ReservasService : IReservasService
                 System.Text.Json.JsonSerializer.Serialize(
                     new
                     {
+                        ReservaId = reserva.ReservaId,
                         habitacion.HabitacionId,
                         HuespedIdentificador = visita.Identificador,
                         TarifaId = createDto.PromocionId,
                         FechaCreacion = DateTime.UtcNow,
                     }
                 ),
-                reserva.ReservaId,
+                null, // Don't pass ReservaId as foreign key to avoid FK constraint issues
                 cancellationToken
             );
-
-            // 9. Commit transaction
-            await transaction.CommitAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Reservation created successfully: ReservaId={ReservaId}, HabitacionId={HabitacionId}, VisitaId={VisitaId}, TotalAmount={TotalAmount}",

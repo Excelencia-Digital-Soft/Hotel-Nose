@@ -12,28 +12,38 @@ public static class CorsExtensions
     {
         services.AddCors(options =>
         {
-            options.AddPolicy("NuevaPolitica", builder =>
-            {
-                builder.SetIsOriginAllowed(_ => true)
-                       .AllowAnyHeader()
-                       .AllowAnyMethod()
-                       .AllowCredentials()
-                       // Optimize for SignalR
-                       .WithExposedHeaders("Connection", "Upgrade")
-                       .SetPreflightMaxAge(TimeSpan.FromMinutes(5));
-            });
+            options.AddPolicy(
+                "NuevaPolitica",
+                builder =>
+                {
+                    builder
+                        .SetIsOriginAllowed(_ => true)
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials()
+                        // Optimize for SignalR
+                        .WithExposedHeaders("Connection", "Upgrade")
+                        .SetPreflightMaxAge(TimeSpan.FromMinutes(5));
+                }
+            );
 
             // Alternative policy for production (more restrictive)
-            options.AddPolicy("ProductionCorsPolicy", builder =>
-            {
-                builder.WithOrigins(
-                    "https://localhost:3000",
-                    "https://yourdomain.com"
-                )
-                .AllowAnyHeader()
-                .AllowAnyMethod()
-                .AllowCredentials();
-            });
+            options.AddPolicy(
+                "ProductionCorsPolicy",
+                builder =>
+                {
+                    builder
+                        .WithOrigins(
+                            "http://localhost:3000",
+                            "http://localhost:3001",
+                            "https://excelencia.myiphost.com:86",
+                            "https://excelencia.myiphost.com"
+                        )
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                }
+            );
         });
 
         return services;

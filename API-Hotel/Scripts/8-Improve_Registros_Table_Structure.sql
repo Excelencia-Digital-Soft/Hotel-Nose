@@ -160,6 +160,34 @@ BEGIN
     IF EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'Reservas')
        AND NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS WHERE CONSTRAINT_NAME = 'FK_Registros_Reservas')
     BEGIN
+        -- Primero, limpiar referencias huérfanas (ReservaId que no existen en Reservas)
+        PRINT 'Verificando referencias huérfanas de ReservaId...'
+        
+        DECLARE @orphanedCount INT
+        SELECT @orphanedCount = COUNT(*) 
+        FROM Registros r 
+        WHERE r.ReservaId IS NOT NULL 
+          AND NOT EXISTS (SELECT 1 FROM Reservas res WHERE res.ReservaId = r.ReservaId)
+        
+        IF @orphanedCount > 0
+        BEGIN
+            PRINT 'Encontradas ' + CAST(@orphanedCount AS VARCHAR(10)) + ' referencias huérfanas. Estableciendo a NULL...'
+            
+            -- Actualizar registros huérfanos a NULL
+            UPDATE r
+            SET ReservaId = NULL
+            FROM Registros r
+            WHERE r.ReservaId IS NOT NULL 
+              AND NOT EXISTS (SELECT 1 FROM Reservas res WHERE res.ReservaId = r.ReservaId)
+            
+            PRINT 'Referencias huérfanas actualizadas a NULL'
+        END
+        ELSE
+        BEGIN
+            PRINT 'No se encontraron referencias huérfanas'
+        END
+        
+        -- Ahora crear la foreign key
         ALTER TABLE Registros 
         ADD CONSTRAINT FK_Registros_Reservas 
         FOREIGN KEY (ReservaId) REFERENCES Reservas(ReservaId)
