@@ -44,10 +44,12 @@
     </div>
 
     <!-- Current Session Section -->
-    <div v-if="hasCurrentSession" class="glass-container mb-6 p-6">
+    <div v-if="canCloseCash" class="glass-container mb-6 p-6">
       <div class="flex items-center mb-4">
-        <i class="pi pi-clock text-green-400 text-xl mr-2"></i>
-        <h3 class="text-xl font-bold text-white">🟢 Sesión Actual</h3>
+        <i :class="hasCurrentSession ? 'pi pi-clock text-green-400' : 'pi pi-circle text-blue-400'" class="text-xl mr-2"></i>
+        <h3 class="text-xl font-bold text-white">
+          {{ hasCurrentSession ? '🟢 Sesión Actual' : '🔵 Cierre de Caja' }}
+        </h3>
       </div>
 
       <div
@@ -57,20 +59,33 @@
         <div class="flex items-center justify-between">
           <div class="flex items-center">
             <div
-              class="bg-gradient-to-r from-green-400 to-emerald-500 p-4 rounded-full mr-4 group-hover:scale-110 transition-transform"
+              :class="hasCurrentSession 
+                ? 'bg-gradient-to-r from-green-400 to-emerald-500' 
+                : 'bg-gradient-to-r from-blue-400 to-indigo-500'"
+              class="p-4 rounded-full mr-4 group-hover:scale-110 transition-transform"
             >
-              <i class="pi pi-play text-white text-2xl"></i>
+              <i :class="hasCurrentSession ? 'pi pi-play' : 'pi pi-calculator'" class="text-white text-2xl"></i>
             </div>
             <div>
-              <h4 class="text-xl font-bold text-white mb-1">💸 Cierre Actual</h4>
-              <p class="text-gray-300">Sesión activa - Haz clic para ver detalles</p>
+              <h4 class="text-xl font-bold text-white mb-1">
+                {{ hasCurrentSession ? '💸 Cierre Actual' : '💰 Listo para Cierre' }}
+              </h4>
+              <p class="text-gray-300">
+                {{ hasCurrentSession 
+                  ? 'Sesión activa - Haz clic para ver detalles' 
+                  : 'Sin movimientos - Haz clic para cerrar caja' }}
+              </p>
             </div>
           </div>
           <div class="flex items-center space-x-2">
-            <div class="bg-green-500/20 px-3 py-1 rounded-full border border-green-500/30">
-              <span class="text-green-400 text-sm font-semibold flex items-center">
-                <i class="pi pi-circle-fill mr-1 animate-pulse"></i>
-                Activo
+            <div :class="hasCurrentSession 
+              ? 'bg-green-500/20 border-green-500/30' 
+              : 'bg-blue-500/20 border-blue-500/30'" 
+              class="px-3 py-1 rounded-full border">
+              <span :class="hasCurrentSession ? 'text-green-400' : 'text-blue-400'" 
+                class="text-sm font-semibold flex items-center">
+                <i :class="hasCurrentSession ? 'pi pi-circle-fill animate-pulse' : 'pi pi-circle-fill'" class="mr-1"></i>
+                {{ hasCurrentSession ? 'Activo' : 'Listo' }}
               </span>
             </div>
             <i
@@ -167,8 +182,8 @@
       </div>
     </div>
 
-    <!-- Access Denied for Regular Users -->
-    <AccessDenied v-else />
+    <!-- Access Denied for Users Without Permissions -->
+    <AccessDenied v-if="!canCloseCash" />
 
     <!-- Modals -->
     <ModalCierre
@@ -229,6 +244,7 @@ const {
   hasHistoricalClosures,
   hasCurrentSession,
   totalCierres,
+  canCloseCash,
   canViewHistorical,
   canGoNext,
   canGoPrevious,

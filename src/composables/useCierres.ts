@@ -37,6 +37,7 @@ export interface UseCierresReturn {
   hasHistoricalClosures: Ref<boolean>
   hasCurrentSession: Ref<boolean>
   totalCierres: Ref<number>
+  canCloseCash: Ref<boolean>
   canViewHistorical: Ref<boolean>
   canGoNext: Ref<boolean>
   canGoPrevious: Ref<boolean>
@@ -95,6 +96,11 @@ export function useCierres(): UseCierresReturn {
   const totalCierres = computed<number>(() => totalRecords.value || cierres.value.length)
   const canGoNext = computed<boolean>(() => currentPage.value < totalPages.value)
   const canGoPrevious = computed<boolean>(() => currentPage.value > 1)
+
+  // Check if user can close cash register (any authenticated user with roles)
+  const canCloseCash = computed<boolean>(() => {
+    return authStore.user?.roles && authStore.user.roles.length > 0
+  })
 
   // Check if user has access to historical closures
   const canViewHistorical = computed<boolean>(() => {
@@ -566,6 +572,7 @@ export function useCierres(): UseCierresReturn {
     hasHistoricalClosures,
     hasCurrentSession,
     totalCierres,
+    canCloseCash,
     canViewHistorical,
     canGoNext,
     canGoPrevious,
