@@ -10,4 +10,5 @@ export * from './menu'
 export * from './configuration'
 export * from './cierre-model'
 export * from './caracteristica'
+export * from './pawn'
 

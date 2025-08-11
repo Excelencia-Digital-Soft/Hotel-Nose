@@ -5,6 +5,7 @@
 
 import { ref, computed } from 'vue'
 import { useToast } from 'primevue/usetoast'
+// @ts-ignore
 import { useAuthStore } from '../store/auth.js'
 import { CierresService } from '../services/cierresService'
 import type {
@@ -599,4 +600,3 @@ export function useCierres(): UseCierresReturn {
  * Export the main composable
  */
 export { useCierres as default }
-

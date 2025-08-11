@@ -6,19 +6,63 @@
       <div class="glass-card mb-8">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-3xl font-bold text-white lexend-exa mb-2">
-              Gestión de Empeños
-            </h1>
+            <h1 class="text-3xl font-bold text-white lexend-exa mb-2">Gestión de Empeños</h1>
             <p class="text-white/70">Administrar empeños y procesar pagos</p>
           </div>
           <div class="flex items-center space-x-4">
             <div class="text-right">
               <div class="text-2xl font-bold text-white">{{ statistics.total }}</div>
-              <div class="text-white/70 text-sm">Empeños Activos</div>
+              <div class="text-white/70 text-sm">
+                {{ viewMode === 'active' ? 'Empeños Activos' : 'Total Empeños' }}
+              </div>
             </div>
             <div class="text-right">
               <div class="text-2xl font-bold text-white">{{ statistics.totalAmount }}</div>
               <div class="text-white/70 text-sm">Valor Total</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- View Mode Toggle -->
+      <div class="glass-card mb-6">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4">
+            <span class="text-white font-medium">Vista:</span>
+            <div class="flex bg-white/5 rounded-xl p-1">
+              <button
+                @click="changeFilter('active')"
+                :class="[
+                  'px-4 py-2 rounded-lg transition-all duration-300 text-sm font-medium',
+                  viewMode === 'active'
+                    ? 'bg-primary-500 text-white shadow-md'
+                    : 'text-white/70 hover:text-white hover:bg-white/10',
+                ]"
+              >
+                <i class="pi pi-clock mr-2"></i>
+                Activos
+              </button>
+              <button
+                @click="changeFilter('all')"
+                :class="[
+                  'px-4 py-2 rounded-lg transition-all duration-300 text-sm font-medium',
+                  viewMode === 'all'
+                    ? 'bg-secondary-500 text-white shadow-md'
+                    : 'text-white/70 hover:text-white hover:bg-white/10',
+                ]"
+              >
+                <i class="pi pi-history mr-2"></i>
+                Historial
+              </button>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-sm text-white/70">
+              {{
+                viewMode === 'active'
+                  ? 'Empeños pendientes de pago'
+                  : 'Todos los empeños (incluye pagados)'
+              }}
             </div>
           </div>
         </div>
@@ -31,27 +75,28 @@
           <div class="space-y-2">
             <label class="block text-white font-medium text-sm">Buscar</label>
             <div class="relative">
-              <i class="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70"></i>
-              <input 
+              <i
+                class="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70"
+              ></i>
+              <input
                 v-model="searchTerm"
-                type="text" 
+                type="text"
                 placeholder="ID, detalle, monto..."
                 class="glass-input w-full pl-10"
               />
             </div>
           </div>
-          
+
           <!-- Status Filter -->
-          <div class="space-y-2">
+          <div v-if="viewMode === 'all'" class="space-y-2">
             <label class="block text-white font-medium text-sm">Estado</label>
             <select v-model="statusFilter" class="glass-input w-full">
               <option value="all">Todos los Estados</option>
-              <option value="active">Activo</option>
-              <option value="warning">En Alerta</option>
-              <option value="overdue">Vencido</option>
+              <option value="paid">Pagados</option>
+              <option value="unpaid">Sin Pagar</option>
             </select>
           </div>
-          
+
           <!-- Sort By -->
           <div class="space-y-2">
             <label class="block text-white font-medium text-sm">Ordenar por</label>
@@ -61,11 +106,11 @@
               <option value="status">Estado</option>
             </select>
           </div>
-          
+
           <!-- Refresh Button -->
           <div class="space-y-2">
             <label class="block text-white font-medium text-sm opacity-0">Acciones</label>
-            <button 
+            <button
               @click="fetchPawns"
               :disabled="isLoading"
               class="glass-button w-full py-3 px-4 rounded-xl font-medium transition-all duration-300 hover:scale-105"
@@ -92,7 +137,7 @@
             </div>
           </div>
         </div>
-        
+
         <!-- Total Amount -->
         <div class="glass-stats-card">
           <div class="flex items-center justify-between">
@@ -105,20 +150,41 @@
             </div>
           </div>
         </div>
-        
-        <!-- Overdue -->
+
+        <!-- Overdue / Paid Stats -->
         <div class="glass-stats-card">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-white/70 text-sm">Vencidos</p>
-              <p class="text-2xl font-bold text-red-400">{{ statistics.overdue }}</p>
+              <p class="text-white/70 text-sm">
+                {{ viewMode === 'active' ? 'Vencidos' : 'Pagados' }}
+              </p>
+              <p
+                :class="[
+                  'text-2xl font-bold',
+                  viewMode === 'active' ? 'text-red-400' : 'text-green-400',
+                ]"
+              >
+                {{ statistics.overdue }}
+              </p>
             </div>
-            <div class="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center">
-              <i class="pi pi-exclamation-triangle text-red-400 text-xl"></i>
+            <div
+              :class="[
+                'w-12 h-12 rounded-xl flex items-center justify-center',
+                viewMode === 'active' ? 'bg-red-500/20' : 'bg-green-500/20',
+              ]"
+            >
+              <i
+                :class="[
+                  'text-xl',
+                  viewMode === 'active'
+                    ? 'pi pi-exclamation-triangle text-red-400'
+                    : 'pi pi-check-circle text-green-400',
+                ]"
+              ></i>
             </div>
           </div>
         </div>
-        
+
         <!-- Average Amount -->
         <div class="glass-stats-card">
           <div class="flex items-center justify-between">
@@ -137,45 +203,65 @@
       <div class="glass-card">
         <div class="flex items-center justify-between mb-6">
           <h2 class="text-xl text-white lexend-exa font-bold">
-            Lista de Empeños ({{ filteredPawns.length }})
+            {{ viewMode === 'active' ? 'Empeños Activos' : 'Historial de Empeños' }} ({{
+              filteredPawns.length
+            }})
           </h2>
         </div>
-        
+
         <div v-if="isLoading" class="text-center py-12">
           <i class="pi pi-spin pi-spinner text-4xl text-white/50 mb-4 block"></i>
           <p class="text-white/70 text-lg">Cargando empeños...</p>
         </div>
-        
+
         <div v-else-if="filteredPawns.length === 0" class="text-center py-12">
           <i class="pi pi-inbox text-4xl text-white/50 mb-4 block"></i>
           <p class="text-white/70 text-lg">No se encontraron empeños</p>
           <p class="text-white/50 text-sm">Ajusta los filtros o verifica la conexión</p>
         </div>
-        
+
         <div v-else class="space-y-4">
-          <div v-for="pawn in filteredPawns" :key="pawn.empeñoID"
-            class="glass-pawn-card group">
+          <div v-for="pawn in filteredPawns" :key="pawn.empeñoId" class="glass-pawn-card group">
             <div class="p-6">
               <div class="flex items-start justify-between">
                 <!-- Pawn Info -->
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center space-x-3 mb-3">
-                    <span class="glass-badge text-sm">
-                      #{{ pawn.empeñoID }}
+                    <span class="glass-badge text-sm"> #{{ pawn.empeñoId }} </span>
+
+                    <!-- Payment Status Badge (only in 'all' view) -->
+                    <span
+                      v-if="viewMode === 'all'"
+                      :class="[
+                        'px-2 py-1 rounded-lg text-xs font-medium border',
+                        pawn.estado === 'pagado'
+                          ? 'bg-green-500/20 text-green-400 border-green-400/30'
+                          : 'bg-red-500/20 text-red-400 border-red-400/30',
+                      ]"
+                    >
+                      <i
+                        :class="
+                          pawn.estadoPago === 'Pagado'
+                            ? 'pi pi-check-circle mr-1'
+                            : 'pi pi-clock mr-1'
+                        "
+                      ></i>
+                      {{ pawn.estadoPago }}
                     </span>
+
+                    <!-- Time Status Badge (always shown) -->
                     <span :class="['text-sm font-medium', getStatusColor(pawn.status)]">
                       <i :class="['pi mr-1', getStatusIcon(pawn.status)]"></i>
                       {{ getStatusText(pawn.status) }}
                     </span>
-                    <span class="text-white/60 text-sm">
-                      {{ pawn.daysOverdue }} días
-                    </span>
+
+                    <span class="text-white/60 text-sm"> {{ pawn.daysOverdue }} días </span>
                   </div>
-                  
+
                   <h3 class="text-lg font-semibold text-white mb-2">
                     {{ pawn.detalle || 'Sin descripción' }}
                   </h3>
-                  
+
                   <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
                       <span class="text-white/70">Monto:</span>
@@ -187,7 +273,7 @@
                     </div>
                     <div>
                       <span class="text-white/70">Visita:</span>
-                      <span class="text-white font-semibold ml-2">#{{ pawn.visitaID }}</span>
+                      <span class="text-white font-semibold ml-2">#{{ pawn.visitaId }}</span>
                     </div>
                     <div>
                       <span class="text-white/70">Estado:</span>
@@ -197,16 +283,24 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <!-- Payment Button -->
                 <div class="flex-shrink-0 ml-6">
-                  <button 
+                  <button
+                    v-if="pawn.estadoPago === 'Pendiente'"
                     @click="openPaymentModal(pawn)"
                     class="glass-button-primary py-3 px-6 rounded-xl font-medium transition-all duration-300 hover:scale-105"
                   >
                     <i class="pi pi-credit-card mr-2"></i>
                     Pagar
                   </button>
+                  <div
+                    v-else
+                    class="px-6 py-3 rounded-xl bg-green-500/20 border border-green-400/30 text-green-400 font-medium"
+                  >
+                    <i class="pi pi-check-circle mr-2"></i>
+                    Pagado
+                  </div>
                 </div>
               </div>
             </div>
@@ -223,135 +317,98 @@
       @close="closePaymentModal"
       @payment-completed="handlePaymentCompleted"
     />
+
+    <!-- Confirmation Dialog -->
+    <ConfirmDialog />
+
+    <!-- Toast Messages -->
+    <Toast />
   </div>
 </template>
 
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { usePawnManager } from '../composables/usePawnManager.js'
-import { PawnService } from '../services/pawnService.js'
-import { useAuthStore } from '../store/auth.js'
-import PawnPaymentModal from '../components/PawnPaymentModal.vue'
+<script setup lang="ts">
+  import { ref, onMounted } from 'vue'
+  import { usePawnManager } from '../composables/usePawnManager'
+  import { PawnService } from '../services/pawnService'
+  import { useAuthStore } from '../store/auth.js'
+  import PawnPaymentModal from '../components/PawnPaymentModal.vue'
+  import ConfirmDialog from 'primevue/confirmdialog'
+  import Toast from 'primevue/toast'
+  import type { PawnDto, PawnStatus } from '../types'
 
-// Feature flag for V1 API (set to false to use legacy endpoints)
-const USE_V1_API = false
+  // Auth store
+  const authStore = useAuthStore()
 
-// Auth store
-const authStore = useAuthStore()
+  // Composable
+  const {
+    pawns,
+    paymentCards,
+    isLoading,
+    showPaymentModal,
+    selectedPawn,
+    viewMode,
+    filteredPawns,
+    statistics,
+    searchTerm,
+    statusFilter,
+    sortBy,
+    openPaymentModal,
+    closePaymentModal,
+    fetchPaymentCards,
+    fetchPawns,
+    toggleViewMode,
+    getStatusColor,
+    getStatusIcon,
+    showSuccess,
+    showError,
+  } = usePawnManager()
 
-// Composable
-const {
-  pawns,
-  paymentCards,
-  isLoading,
-  showPaymentModal,
-  selectedPawn,
-  filteredPawns,
-  statistics,
-  searchTerm,
-  statusFilter,
-  sortBy,
-  openPaymentModal,
-  closePaymentModal,
-  getStatusColor,
-  getStatusIcon,
-  showSuccess,
-  showError
-} = usePawnManager()
-
-// Computed
-const getStatusText = (status) => {
-  switch (status) {
-    case 'overdue': return 'Vencido'
-    case 'warning': return 'En Alerta'
-    case 'active': return 'Activo'
-    default: return 'Desconocido'
+  // Utility functions
+  const getStatusText = (status: PawnStatus): string => {
+    switch (status) {
+      case 'overdue':
+        return 'Vencido'
+      case 'warning':
+        return 'En Alerta'
+      case 'active':
+        return 'Activo'
+      default:
+        return 'Desconocido'
+    }
   }
-}
 
-// Lifecycle
-onMounted(() => {
-  Promise.all([
-    fetchPawns(),
-    fetchPaymentCards()
-  ])
-})
+  // Lifecycle
+  onMounted(() => {
+    Promise.all([fetchPawns('active'), fetchPaymentCards()])
+  })
 
-// Methods
-const fetchPawns = async () => {
-  try {
-    isLoading.value = true
-    const institucionId = authStore.institucionID
-    
-    if (!institucionId) {
-      showError('No se pudo obtener el ID de la institución. Por favor inicia sesión nuevamente.')
-      return
-    }
-
-    let response
-    if (USE_V1_API) {
-      response = await PawnService.getPawns(institucionId)
-    } else {
-      response = await PawnService.legacyGetPawns(institucionId)
-    }
-
-    if (response && response.data) {
-      pawns.value = response.data
-    } else {
-      showError('Error al cargar los empeños')
-    }
-  } catch (error) {
-    console.error('Error fetching pawns:', error)
-    showError('Error al cargar los empeños')
-  } finally {
-    isLoading.value = false
+  const changeFilter = async (typeFilter: 'active' | 'all') => {
+    viewMode.value = typeFilter
+    await fetchPawns(typeFilter)
   }
-}
 
-const fetchPaymentCards = async () => {
-  try {
-    const institucionId = authStore.institucionID
-    
-    if (!institucionId) return
-
-    let response
-    if (USE_V1_API) {
-      response = await PawnService.getPaymentCards(institucionId)
-    } else {
-      response = await PawnService.legacyGetPaymentCards(institucionId)
-    }
-
-    if (response && response.data) {
-      paymentCards.value = response.data
-    }
-  } catch (error) {
-    console.error('Error fetching payment cards:', error)
-    showError('Error al cargar las tarjetas de pago')
+  const handlePaymentCompleted = async (): Promise<void> => {
+    showSuccess('Pago procesado exitosamente')
+    closePaymentModal()
+    await fetchPawns(viewMode.value)
   }
-}
-
-const handlePaymentCompleted = async () => {
-  showSuccess('Pago procesado exitosamente')
-  closePaymentModal()
-  await fetchPawns()
-}
 </script>
 
 <style scoped>
-.glass-stats-card {
-  @apply bg-neutral-900/90 backdrop-blur-xl rounded-xl border border-white/20 p-6 shadow-lg hover:shadow-xl transition-all duration-300;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-  backdrop-filter: blur(20px);
-}
+  .glass-stats-card {
+    @apply bg-neutral-900/90 backdrop-blur-xl rounded-xl border border-white/20 p-6 shadow-lg hover:shadow-xl transition-all duration-300;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(20px);
+  }
 
-.glass-pawn-card {
-  @apply bg-neutral-900/90 backdrop-blur-xl rounded-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02];
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-  backdrop-filter: blur(20px);
-}
+  .glass-pawn-card {
+    @apply bg-neutral-900/90 backdrop-blur-xl rounded-xl border border-white/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02];
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(20px);
+  }
 
-.glass-pawn-card:hover {
-  border-color: rgba(244, 63, 184, 0.3);
-  box-shadow: 0 8px 32px rgba(244, 63, 184, 0.15);
-}
+  .glass-pawn-card:hover {
+    border-color: rgba(244, 63, 184, 0.3);
+    box-shadow: 0 8px 32px rgba(244, 63, 184, 0.15);
+  }
 </style>
