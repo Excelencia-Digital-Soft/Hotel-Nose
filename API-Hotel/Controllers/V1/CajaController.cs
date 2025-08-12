@@ -316,6 +316,11 @@ public class CajaController : ControllerBase
         }
 
         var currentUserId = this.GetCurrentUserId();
+        if (string.IsNullOrEmpty(currentUserId))
+        {
+            _logger.LogWarning("User ID not found in claims for GetCierresyActual request");
+            return BadRequest(ApiResponse.Failure("ID de usuario requerido"));
+        }
 
         var result = await _cajaService.GetCierresyActualAsync(
             institucionId.Value,
