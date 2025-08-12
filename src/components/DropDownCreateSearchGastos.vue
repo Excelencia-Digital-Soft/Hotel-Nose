@@ -21,7 +21,7 @@
             placeholder="Buscar..."
           />
           <button @click.prevent="validarGasto" id="searcher" class="btn-primary p-1 top-0 right-0 absolute flex justify-center items-center cursor-pointer border-2 bg-gradient-to-r from-indigo-300 via-purple-400 to-purple-300 text-white shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors">
-            <img src="../assets/add-circle.svg" alt="search">
+            <PlusCircleIcon class="h-6 w-6 text-white" aria-hidden="true" />
           </button>
 
           <ListboxOption
@@ -52,7 +52,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import axiosClient from '../axiosClient';
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue';
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid';
+import { CheckIcon, ChevronUpDownIcon, PlusCircleIcon } from '@heroicons/vue/20/solid';
 import ModalAcept from '../components/ModalAcept.vue';
 
 const keyword = ref('');

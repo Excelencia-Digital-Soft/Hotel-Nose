@@ -45,17 +45,6 @@ const initializeSignalR = async () => {
 
     // Only initialize if user is authenticated
     if (authStore.isAuthenticated && authStore.token) {
-      // 🔍 Debug token information
-      const tokenPreview = authStore.token ? authStore.token.substring(0, 20) + '...' : 'No token'
-      console.log(`🔐 [Main] Auth store token: ${tokenPreview}`)
-      console.log(`🔐 [Main] Auth store isAuthenticated: ${authStore.isAuthenticated}`)
-      
-      // Also check localStorage tokens for comparison
-      const lsAuthToken = localStorage.getItem('auth-token')
-      const lsJwtToken = localStorage.getItem('jwt_token')
-      console.log(`🔐 [Main] localStorage auth-token: ${lsAuthToken ? lsAuthToken.substring(0, 20) + '...' : 'None'}`)
-      console.log(`🔐 [Main] localStorage jwt_token: ${lsJwtToken ? lsJwtToken.substring(0, 20) + '...' : 'None'}`)
-
       const signalRConfig: SignalRConfig = {
         serverUrl:
           import.meta.env.VITE_SIGNALR_HUB_URL || 'http://localhost:5000/api/v1/notifications',
@@ -113,4 +102,3 @@ authStore.$subscribe((_: any, state: any) => {
 
 // Initialize SignalR if user is already authenticated on app start
 initializeSignalR()
-
