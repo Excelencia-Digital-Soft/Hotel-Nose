@@ -3,7 +3,7 @@
     <!-- Search input -->
     <div class="relative group">
       <div class="absolute inset-0 bg-gradient-to-r from-primary-500/20 to-secondary-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      <div class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center hover:bg-white/15 transition-all duration-300" :class="searchInputClasses">
+      <div class="relative bg-white/10 glass-dropdown border border-white/20 rounded-2xl flex items-center hover:bg-white/15 transition-all duration-300" :class="searchInputClasses">
         <span class="material-symbols-outlined text-primary-300" :class="iconClasses">search</span>
         <input 
           :value="searchTerm"
@@ -26,7 +26,7 @@
     <!-- Category filter -->
     <div class="relative group">
       <div class="absolute inset-0 bg-gradient-to-r from-secondary-500/20 to-accent-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      <div class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center hover:bg-white/15 transition-all duration-300" :class="selectClasses">
+      <div class="relative bg-white/10 glass-dropdown border border-white/20 rounded-2xl flex items-center hover:bg-white/15 transition-all duration-300" :class="selectClasses">
         <span class="material-symbols-outlined text-secondary-300" :class="iconClasses">filter_list</span>
         <select 
           :value="selectedCategory"
@@ -47,7 +47,7 @@
     <!-- Show only occupied filter -->
     <div class="relative group">
       <div class="absolute inset-0 bg-gradient-to-r from-red-500/20 to-rose-500/20 rounded-2xl blur opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      <div class="relative bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl flex items-center hover:bg-white/15 transition-all duration-300" :class="checkboxClasses">
+      <div class="relative bg-white/10 glass-dropdown border border-white/20 rounded-2xl flex items-center hover:bg-white/15 transition-all duration-300" :class="checkboxClasses">
         <span class="material-symbols-outlined text-red-300" :class="iconClasses">hotel</span>
         <label class="flex items-center gap-2 cursor-pointer">
           <input 

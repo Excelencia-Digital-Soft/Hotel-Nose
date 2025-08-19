@@ -79,7 +79,7 @@
 
       <!-- Error display -->
       <div v-if="roomsStore.hasErrors" class="mb-6">
-        <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 backdrop-blur-md">
+        <div class="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 glass-dropdown">
           <div class="flex items-center gap-3">
             <span class="material-symbols-outlined text-red-400">error</span>
             <div>
@@ -116,7 +116,7 @@
           <!-- Free & Maintenance rooms panel -->
           <div class="space-y-6">
             <div
-              class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+              class="bg-white/5 glass-panel border border-white/10 p-6"
             >
               <div class="flex items-center gap-4 mb-6">
                 <div
@@ -176,7 +176,7 @@
           <!-- Occupied rooms panel -->
           <div class="space-y-6">
             <div
-              class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+              class="bg-white/5 glass-panel border border-white/10 p-6"
             >
               <div class="flex items-center gap-4 mb-6">
                 <div
@@ -208,7 +208,7 @@
         <div v-else class="space-y-6 grid grid-cols-2 gap-4 content-start">
           <!-- Free & Maintenance rooms list -->
           <div
-            class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+            class="bg-white/5 glass-panel border border-white/10 overflow-hidden"
           >
             <div
               class="p-6 bg-gradient-to-r from-green-600/20 to-emerald-600/20 border-b border-green-500/30"
@@ -255,7 +255,7 @@
                         : openFreeRoomModal(room)
                     "
                     :class="[
-                      'group flex items-center gap-4 p-4 backdrop-blur-md rounded-2xl transition-all duration-300 cursor-pointer border border-white/10 hover:scale-105',
+                      'group flex items-center gap-4 p-4 glass-dropdown rounded-2xl transition-all duration-300 cursor-pointer border border-white/10 hover:scale-105',
                       room.estadoHabitacion === 'Mantenimiento'
                         ? 'bg-yellow-500/10 hover:bg-yellow-500/20 hover:border-yellow-400/50'
                         : 'bg-white/5 hover:bg-green-500/10 hover:border-green-400/50',
@@ -304,7 +304,7 @@
 
           <!-- Occupied rooms list -->
           <div
-            class="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl content-start"
+            class="bg-white/5 glass-panel border border-white/10 overflow-hidden content-start"
           >
             <div
               class="p-6 bg-gradient-to-r from-red-600/20 to-rose-600/20 border-b border-red-500/30"
@@ -320,7 +320,7 @@
                   v-for="room in filteredOccupiedRooms"
                   :key="room.habitacionId"
                   @click="openOccupiedRoomModal(room)"
-                  class="group flex items-center gap-4 p-4 bg-white/5 backdrop-blur-md rounded-2xl hover:bg-white/10 transition-all duration-300 cursor-pointer border border-white/10 hover:border-gray-400/50 hover:scale-[1.02]"
+                  class="group flex items-center gap-4 p-4 bg-white/5 glass-dropdown rounded-2xl hover:bg-white/10 transition-all duration-300 cursor-pointer border border-white/10 hover:border-gray-400/50 hover:scale-[1.02]"
                 >
                   <div :class="roomUtils.getStatusIndicator(room)"></div>
                   <div class="flex-1">
@@ -615,14 +615,8 @@
     background-clip: content-box;
   }
 
-  /* Enhanced glassmorphism effects */
-  .backdrop-blur-xl {
-    backdrop-filter: blur(20px);
-  }
-
-  .backdrop-blur-md {
-    backdrop-filter: blur(12px);
-  }
+  /* Adaptive glassmorphism effects handled by CSS variables */
+  /* Removed fixed backdrop-blur values - now using adaptive classes */
 
   /* Responsive adjustments */
   @media (max-width: 1024px) {

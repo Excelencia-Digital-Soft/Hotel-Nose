@@ -8,6 +8,14 @@
     
     <!-- Global Toast component -->
     <Toast />
+    
+    <!-- Performance Indicator (configurable by environment) -->
+    <div v-if="showPerformanceIndicator" class="perf-indicator">
+      {{ performanceLevel.toUpperCase() }} MODE
+    </div>
+    
+    <!-- Performance Panel (development only) -->
+    <PerformancePanel v-if="showPerformancePanel" />
   </div>
 </template>
 
@@ -17,14 +25,31 @@
   import Toast from 'primevue/toast'
   import { useAuthStore } from './store/auth.js'
   import MenuCoordinationProvider from './components/NavBar/MenuCoordinationProvider.vue'
+  import PerformancePanel from './components/PerformancePanel.vue'
   import { setGlobalToastInstance } from './utils/toast'
+  import { usePerformanceOptimization } from './composables/usePerformanceOptimization.js'
 
   const authStore = useAuthStore()
   const toast = useToast()
+  
+  // Initialize performance optimization
+  const { performanceLevel, initializeOptimization } = usePerformanceOptimization()
+  
+  // Environment-based feature flags
+  const showPerformanceIndicator = import.meta.env.VITE_ENABLE_PERFORMANCE_INDICATOR === 'true'
+  const showPerformancePanel = import.meta.env.VITE_ENABLE_PERFORMANCE_PANEL === 'true'
 
   onMounted(() => {
+    // Add production class to body if in production mode
+    if (import.meta.env.PROD) {
+      document.body.classList.add('production-mode')
+    }
+    
     // Initialize global toast instance for use from services/stores
     setGlobalToastInstance(toast)
+    
+    // Initialize performance optimization system
+    initializeOptimization()
     
     // Initialize auth store if needed
     if (localStorage.getItem('token')) {

@@ -156,7 +156,7 @@
 
   const cardClasses = computed(() => {
     const baseClasses =
-      'group relative overflow-hidden rounded-2xl transition-all duration-500 cursor-pointer backdrop-blur-md hover:scale-105 hover:shadow-2xl'
+      'group relative overflow-hidden rounded-2xl transition-all duration-500 cursor-pointer glass-card hover:scale-105 hover:shadow-2xl'
 
     const roomStatus = roomUtils.getRoomStatus(props.room)
 
@@ -200,12 +200,12 @@
         return `${baseClasses} ${sizeClasses} bg-gradient-to-r from-green-400/20 to-emerald-500/20 border-green-400/30`
       case 'occupied':
       default:
-        return `${baseClasses} ${sizeClasses} bg-black/20 backdrop-blur-sm border-white/20`
+        return `${baseClasses} ${sizeClasses} bg-black/20 glass-dropdown border-white/20`
     }
   })
 
   const categoryBadgeClasses = computed(() => {
-    const baseClasses = 'px-2 py-1 rounded-lg text-xs font-medium backdrop-blur-sm'
+    const baseClasses = 'px-2 py-1 rounded-lg text-xs font-medium glass-dropdown'
 
     const roomStatus = roomUtils.getRoomStatus(props.room)
 

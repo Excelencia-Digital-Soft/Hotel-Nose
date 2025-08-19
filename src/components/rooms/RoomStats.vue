@@ -3,7 +3,7 @@
     <!-- Free rooms stat -->
     <div class="group relative">
       <div class="absolute inset-0 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-      <div class="relative bg-white/5 backdrop-blur-md border border-green-500/20 rounded-2xl hover:bg-white/10 transition-all duration-300" :class="statCardClasses">
+      <div class="relative bg-white/5 glass-dropdown border border-green-500/20 rounded-2xl hover:bg-white/10 transition-all duration-300" :class="statCardClasses">
         <div class="flex items-center" :class="statContentClasses">
           <div :class="statIconClasses('green')">
             <span class="material-symbols-outlined text-green-300">hotel_class</span>
@@ -19,7 +19,7 @@
     <!-- Occupied rooms stat -->
     <div class="group relative">
       <div class="absolute inset-0 bg-gradient-to-r from-red-500/20 to-rose-500/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-      <div class="relative bg-white/5 backdrop-blur-md border border-red-500/20 rounded-2xl hover:bg-white/10 transition-all duration-300" :class="statCardClasses">
+      <div class="relative bg-white/5 glass-dropdown border border-red-500/20 rounded-2xl hover:bg-white/10 transition-all duration-300" :class="statCardClasses">
         <div class="flex items-center" :class="statContentClasses">
           <div :class="statIconClasses('red')">
             <span class="material-symbols-outlined text-red-300">hotel</span>
@@ -35,7 +35,7 @@
     <!-- About to expire stat -->
     <div class="group relative">
       <div class="absolute inset-0 bg-gradient-to-r from-yellow-500/20 to-amber-500/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-      <div class="relative bg-white/5 backdrop-blur-md border border-yellow-500/20 rounded-2xl hover:bg-white/10 transition-all duration-300" :class="statCardClasses">
+      <div class="relative bg-white/5 glass-dropdown border border-yellow-500/20 rounded-2xl hover:bg-white/10 transition-all duration-300" :class="statCardClasses">
         <div class="flex items-center" :class="statContentClasses">
           <div :class="statIconClasses('yellow')">
             <span class="material-symbols-outlined text-yellow-300">schedule</span>
@@ -51,7 +51,7 @@
     <!-- Occupancy rate stat (only in normal mode) -->
     <div v-if="!compactMode" class="group relative">
       <div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-      <div class="relative bg-white/5 backdrop-blur-md border border-blue-500/20 rounded-2xl hover:bg-white/10 transition-all duration-300" :class="statCardClasses">
+      <div class="relative bg-white/5 glass-dropdown border border-blue-500/20 rounded-2xl hover:bg-white/10 transition-all duration-300" :class="statCardClasses">
         <div class="flex items-center" :class="statContentClasses">
           <div :class="statIconClasses('blue')">
             <span class="material-symbols-outlined text-blue-300">analytics</span>
@@ -67,7 +67,7 @@
     <!-- Total rooms stat (only in normal mode) -->
     <div v-if="!compactMode" class="group relative">
       <div class="absolute inset-0 bg-gradient-to-r from-purple-500/20 to-violet-500/20 rounded-2xl blur opacity-75 group-hover:opacity-100 transition-opacity duration-300"></div>
-      <div class="relative bg-white/5 backdrop-blur-md border border-purple-500/20 rounded-2xl hover:bg-white/10 transition-all duration-300" :class="statCardClasses">
+      <div class="relative bg-white/5 glass-dropdown border border-purple-500/20 rounded-2xl hover:bg-white/10 transition-all duration-300" :class="statCardClasses">
         <div class="flex items-center" :class="statContentClasses">
           <div :class="statIconClasses('purple')">
             <span class="material-symbols-outlined text-purple-300">domain</span>
@@ -121,7 +121,7 @@ const statContentClasses = computed(() => {
 
 const statIconClasses = (color) => {
   const sizeClasses = props.compactMode ? 'w-8 h-8' : 'w-12 h-12';
-  const baseClasses = `${sizeClasses} backdrop-blur-md rounded-xl flex items-center justify-center border`;
+  const baseClasses = `${sizeClasses} glass-dropdown rounded-xl flex items-center justify-center border`;
   
   const colorClasses = {
     green: 'bg-green-500/20 border-green-500/30',

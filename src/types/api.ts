@@ -11,4 +11,5 @@ export * from './configuration'
 export * from './cierre-model'
 export * from './caracteristica'
 export * from './pawn'
+export * from './composables'
 

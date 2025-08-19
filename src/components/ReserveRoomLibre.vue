@@ -5,7 +5,7 @@
     <Transition name="modal-outer" appear>
       <div
         v-if="room"
-        class="fixed w-full h-full bg-black z-30 bg-opacity-80 backdrop-blur-lg top-0 left-0 flex justify-center items-center px-4 py-4">
+        class="glass-modal-overlay bg-black/80 px-4 py-4 z-30">
         <Transition name="modal-inner">
           <div
             class="relative w-full max-w-5xl h-[90vh] flex flex-col bg-neutral-900 border-x-8 border-secondary-400 rounded-xl overflow-hidden">

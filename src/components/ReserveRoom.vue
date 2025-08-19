@@ -6,23 +6,23 @@
 
     <Transition name="modal-outer" appear>
       <div
-        class="fixed w-full h-full bg-black/60 backdrop-blur-xl top-0 left-0 flex justify-center items-center px-4 py-4 z-50"
+        class="glass-modal-overlay bg-black/60 px-4 py-4"
       >
         <Transition name="modal-inner">
           <div
-            class="relative w-full max-w-7xl h-[95vh] flex flex-col bg-white/5 backdrop-blur-2xl border border-white/20 rounded-3xl overflow-hidden shadow-2xl"
+            class="relative w-full max-w-7xl h-[95vh] flex flex-col bg-white/5 glass-modal-container overflow-hidden"
           >
             <!-- Header Compacto -->
             <div
-              class="flex-shrink-0 px-4 py-3 bg-white/5 backdrop-blur-md border-b border-white/10"
+              class="flex-shrink-0 px-4 py-3 bg-white/5 glass-dropdown border-b border-white/10"
             >
               <div class="flex justify-between items-center">
                 <!-- Timer Section Compacto -->
                 <div
-                  class="timer-container flex items-center bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg"
+                  class="timer-container flex items-center bg-white/10 glass-dropdown border border-white/20 rounded-xl shadow-lg"
                 >
                   <div
-                    class="timer flex items-center border border-primary-400/50 rounded-xl shadow-lg px-3 py-2 bg-white/5 backdrop-blur-sm"
+                    class="timer flex items-center border border-primary-400/50 rounded-xl shadow-lg px-3 py-2 bg-white/5 glass-dropdown"
                   >
                     <p class="text-primary-400 text-xs font-semibold mr-2">Tiempo:</p>
                     <p class="time mr-2 text-lg font-bold">
@@ -41,7 +41,7 @@
                             : 'Ignorar tiempo extra en facturación'
                         "
                         :class="[
-                          'w-8 h-8 font-semibold text-white text-xs rounded-lg transition-all flex items-center justify-center backdrop-blur-sm',
+                          'w-8 h-8 font-semibold text-white text-xs rounded-lg transition-all flex items-center justify-center glass-button',
                           {
                             'bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 transform scale-95 border border-white/30':
                               ignorarTiempo,
@@ -56,7 +56,7 @@
                         @click="toggleTimeExtensionPopover"
                         type="button"
                         v-tooltip.top="'Extender tiempo de ocupación'"
-                        class="px-2 py-1 font-semibold text-white text-xs bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 hover:from-primary-500 hover:via-secondary-500 hover:to-accent-500 rounded-lg transition-all backdrop-blur-sm border border-white/30"
+                        class="px-2 py-1 font-semibold text-white text-xs bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400 hover:from-primary-500 hover:via-secondary-500 hover:to-accent-500 rounded-lg transition-all glass-dropdown border border-white/30"
                       >
                         +Tiempo
                       </button>
@@ -73,7 +73,7 @@
 
                 <!-- Close Button -->
                 <button
-                  class="text-xl w-10 h-10 text-white bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500/70 rounded-full transition-all duration-300 flex items-center justify-center backdrop-blur-sm"
+                  class="text-xl w-10 h-10 text-white bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 hover:border-red-500/70 rounded-full transition-all duration-300 flex items-center justify-center glass-dropdown"
                   @click="$emit('close-modal')"
                 >
                   ✕
@@ -88,7 +88,7 @@
                 <div class="flex flex-col gap-3 min-h-0">
                   <!-- Customer Information -->
                   <div
-                    class="flex-1 grid grid-cols-1 gap-2 relative drop-shadow-xl overflow-hidden rounded-xl bg-white/5 backdrop-blur-md border border-white/20"
+                    class="flex-1 grid grid-cols-1 gap-2 relative drop-shadow-xl overflow-hidden rounded-xl bg-white/5 glass-dropdown border border-white/20"
                   >
                     <div class="flex flex-col text-white z-[1] rounded-xl p-3 h-full">
                       <h3 class="text-sm font-semibold text-white flex items-center gap-2 mb-2">
@@ -106,7 +106,7 @@
                           </label>
                           <input
                             type="text"
-                            class="text-xs text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg py-1 px-2 focus:ring-primary-400 focus:border-primary-400 transition placeholder-gray-300"
+                            class="text-xs text-white bg-white/10 glass-dropdown border border-white/30 rounded-lg py-1 px-2 focus:ring-primary-400 focus:border-primary-400 transition placeholder-gray-300"
                             v-model="selectedRoom.Identificador"
                             placeholder="Cliente"
                             maxlength="40"
@@ -121,7 +121,7 @@
                           </label>
                           <input
                             type="datetime-local"
-                            class="text-xs text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg py-1 px-2"
+                            class="text-xs text-white bg-white/10 glass-dropdown border border-white/30 rounded-lg py-1 px-2"
                             v-model="horaEntrada"
                             readonly
                           />
@@ -135,7 +135,7 @@
                           </label>
                           <input
                             type="text"
-                            class="text-xs text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg py-1 px-2 focus:ring-primary-400 focus:border-primary-400 transition placeholder-gray-300"
+                            class="text-xs text-white bg-white/10 glass-dropdown border border-white/30 rounded-lg py-1 px-2 focus:ring-primary-400 focus:border-primary-400 transition placeholder-gray-300"
                             v-model="selectedRoom.PatenteVehiculo"
                             placeholder="ABC123"
                           />
@@ -149,7 +149,7 @@
                           </label>
                           <input
                             type="text"
-                            class="text-xs text-white bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg py-1 px-2 focus:ring-primary-400 focus:border-primary-400 transition placeholder-gray-300"
+                            class="text-xs text-white bg-white/10 glass-dropdown border border-white/30 rounded-lg py-1 px-2 focus:ring-primary-400 focus:border-primary-400 transition placeholder-gray-300"
                             maxlength="11"
                             v-model="selectedRoom.NumeroTelefono"
                             placeholder="264 123-4567"
@@ -160,7 +160,7 @@
 
                     <!-- Promotions Section -->
                     <div
-                      class="flex flex-col text-white z-[1] rounded-xl bg-white/5 backdrop-blur-md border border-white/20 p-3"
+                      class="flex flex-col text-white z-[1] rounded-xl bg-white/5 glass-dropdown border border-white/20 p-3"
                     >
                       <div class="flex items-center gap-2 mb-2">
                         <span class="material-symbols-outlined text-purple-400 text-sm"
