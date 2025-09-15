@@ -34,6 +34,7 @@
                 v-model="form.contraseña"
                 type="password"
                 class="w-full p-2 border rounded mb-4"
+                autocomplete="new-password"
                 required
               />
 
@@ -151,6 +152,6 @@ onMounted(() => {
 });
 const InstitucionID = ref(null);
 function getDatosLogin() {
-  InstitucionID.value = authStore.auth?.institucionID;
+  InstitucionID.value = authStore.institucionID;
 }
 </script>

@@ -1,4 +1,3 @@
-<!-- DropDownCreateSearchGastos.vue -->
 <template>
   <Listbox as="div" v-model="selected">
     <ListboxLabel class="text-sm font-medium leading-6 text-white">Cuenta Gasto</ListboxLabel>
@@ -22,7 +21,7 @@
             placeholder="Buscar..."
           />
           <button @click.prevent="validarGasto" id="searcher" class="btn-primary p-1 top-0 right-0 absolute flex justify-center items-center cursor-pointer border-2 bg-gradient-to-r from-indigo-300 via-purple-400 to-purple-300 text-white shadow-lg hover:shadow-purple-500/50 border-purple-200 rounded-3xl transition-colors">
-            <img src="../assets/add-circle.svg" alt="search">
+            <PlusCircleIcon class="h-6 w-6 text-white" aria-hidden="true" />
           </button>
 
           <ListboxOption
@@ -53,7 +52,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import axiosClient from '../axiosClient';
 import { Listbox, ListboxButton, ListboxLabel, ListboxOption, ListboxOptions } from '@headlessui/vue';
-import { CheckIcon, ChevronUpDownIcon } from '@heroicons/vue/20/solid';
+import { CheckIcon, ChevronUpDownIcon, PlusCircleIcon } from '@heroicons/vue/20/solid';
 import ModalAcept from '../components/ModalAcept.vue';
 
 const keyword = ref('');
@@ -65,7 +64,7 @@ const emits = defineEmits(['addGasto']);
 // Fetch the list of TipoEgresos from the API
 const fetchTipoEgresos = async () => {
   try {
-    const response = await axiosClient.get('/GetTipoEgresos');
+    const response = await axiosClient.get(`/GetTipoEgresos?InstitucionID=${InstitucionID.value}`);
     if (response.data.ok) {
       tiposCuentaGastos.value = response.data.data;
     } else {
@@ -75,6 +74,7 @@ const fetchTipoEgresos = async () => {
     console.error('Error fetching TipoEgresos:', error);
   }
 };
+onMounted(getDatosLogin)
 
 onMounted(fetchTipoEgresos);
 
@@ -97,14 +97,20 @@ const toggleModalAceptar = () => {
   ModalAceptar.value = !ModalAceptar.value;
 };
 
-const confirmAndSend = () => {
+const confirmAndSend = (tipoEgresoId) => {
   fetchTipoEgresos();
-  const nuevoGasto = {
-    TipoId: Date.now(), // Generate a temporary unique ID
-    nombre: keyword.value,
-  };
+  if (tipoEgresoId) {
+    const nuevoGasto = {
+      TipoId: tipoEgresoId,
+      nombre: keyword.value,
+    };
+    emits('addGasto', nuevoGasto); // Emit the new gasto to the parent
+  } else {
+    // Handle the error case where tipoEgresoId is null
+    console.error('Failed to create TipoEgreso.  tipoEgresoId is null.');
+    // Display an error message to the user, or take other appropriate action
+  }
 
-  emits('addGasto', nuevoGasto); // Emit the new gasto to the parent
   toggleModalAceptar(); // Close the modal
   keyword.value = ''; // Clear the input field
 };
@@ -121,6 +127,13 @@ const validarGasto = () => {
 
   toggleModalAceptar();
 
+}
+  import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+    InstitucionID.value = authStore.institucionID;
+  }
   
-};
+
 </script>

@@ -29,7 +29,7 @@
   
   <script setup>
 import axiosClient from '../axiosClient';
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
   
   const props = defineProps({
     egresos: {
@@ -37,7 +37,7 @@ import { ref } from 'vue';
       required: true,
     },
   });
-  
+  onMounted(getDatosLogin);
   const emit = defineEmits(['close', 'success']);
   
   const isLoading = ref(false);
@@ -57,7 +57,7 @@ import { ref } from 'vue';
         fecha: new Date().toISOString(),
       };
 
-      await axiosClient.post('/CreateEgreso', payload);
+      await axiosClient.post(`/CreateEgreso?InstitucionID=${InstitucionID.value}`, payload);
     }
 
     emit('success'); // Notify the parent that egresos were successfully created
@@ -69,5 +69,13 @@ import { ref } from 'vue';
     isLoading.value = false;
   }
 };
+
+import { useAuthStore } from '../store/auth.js'; // Import the auth store
+const InstitucionID = ref(null);
+const authStore = useAuthStore();
+function getDatosLogin(){
+    InstitucionID.value = authStore.institucionID;
+  }
+  
   </script>
   

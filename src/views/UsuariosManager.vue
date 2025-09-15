@@ -1,5 +1,21 @@
+<!--
+  @deprecated Esta vista está obsoleta. Use UsersManagement.vue en su lugar.
+  @since 2024-01-01
+  @todo Remover en la próxima versión mayor
+-->
 <template>
   <div class="p-4">
+    <!-- Banner de advertencia de vista obsoleta -->
+    <div class="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+      <div class="flex items-center">
+        <i class="fas fa-exclamation-triangle mr-2"></i>
+        <div>
+          <p class="font-bold">Vista Obsoleta</p>
+          <p class="text-sm">Esta vista está obsoleta. Use <strong>UsersManagement</strong> en su lugar.</p>
+        </div>
+      </div>
+    </div>
+    
     <div alt="MOTEL X" class="h-auto mb-4 text-xs flex bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent lexend-exa md:text-3xl font-bold"
           >Gestión de Usuarios
         </div>
@@ -38,6 +54,9 @@ import { ref, onMounted } from 'vue';
 import axiosClient from '../axiosClient';
 import UserForm from '../components/UserForm.vue'
 import { useAuthStore } from '../store/auth.js';
+
+// Advertencia de vista obsoleta
+console.warn('⚠️  DEPRECATED: UsuariosManager.vue está obsoleta. Use UsersManagement.vue en su lugar.');
 
 const authStore = useAuthStore();
 const usuarios = ref([]);
@@ -91,7 +110,7 @@ onMounted(() => {
 });
 const InstitucionID = ref(null)
 function getDatosLogin(){
-    InstitucionID.value = authStore.auth?.institucionID;
+    InstitucionID.value = authStore.institucionID;
   }
   
 </script>

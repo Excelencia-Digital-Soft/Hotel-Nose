@@ -1,349 +1,724 @@
 <template>
-  <Teleport to="body" class="overflow-hidden">
-    <div class="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center">
-      <div class="relative bg-white rounded-lg p-8 w-1/3 h-auto">
-        <button @click="$emit('close')" class="absolute top-2 right-2 btn-danger p-4 rounded-md">X</button>
+  <Teleport to="body">
+    <Transition name="modal-outer" appear>
+      <div
+        class="fixed inset-0 bg-black/60 backdrop-blur-xl flex justify-center items-center z-[60] p-4"
+      >
+        <Transition name="modal-inner">
+          <div class="relative glass-container max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <!-- Header -->
+            <div class="sticky top-0 glass-card p-6 mb-6 border-b border-white/10">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                  <div class="bg-gradient-to-r from-green-400 to-blue-400 p-3 rounded-full mr-4">
+                    <i class="pi pi-credit-card text-white text-2xl"></i>
+                  </div>
+                  <div>
+                    <h2 class="text-2xl font-bold text-white mb-1">💳 Procesar Pago</h2>
+                    <p class="text-gray-300">Gestiona el pago de la habitación</p>
+                  </div>
+                </div>
 
-        <h2 class="text-xl font-bold ">Detalles de Pago</h2>
-        <table class=" w-full  text-left">
-          <tbody>
-            <tr>
-              <td class="p-1 font-semibold">Periodo</td>
-              <td class="p-1 text-right">${{ periodo }}</td>
-            </tr>
-            <tr>
-              <td class="p-1 font-semibold">Consumision</td>
-              <td class="p-1 text-right text-teal-400">${{ consumo }}</td>
-            </tr>
-            <tr>
-              <td class="p-1 font-semibold">Adicional</td>
-              <td class="p-1 text-right">${{ adicional.toFixed(2) }}</td>
-            </tr>
-            <tr>
-              <td class="p-1 font-semibold">Descuento</td>
-              <td class="p-1 text-right">
-                <input
-                  type="number"
-                  class="border rounded p-1 w-full"
-                  v-model.number="descuento"
-                  placeholder="0.00"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td class="p-1 font-semibold">Efectivo</td>
-              <td class="p-1 text-right">
-                <input type="number" class="border rounded p-1 w-full" v-model.number="efectivo"
-                  placeholder="0.00" />
-              </td>
-            </tr>
-            <tr>
-              <td class="p-1 font-semibold">Tarjeta</td>
-              <td class="p-1 text-right">
-                <input
-                  type="number"
-                  class="border rounded p-1 w-full"
-                  v-model.number="tarjeta"
-                  placeholder="0.00"
-                  :disabled="selectedTarjeta !== null"
-                  :class="{ 'bg-gray-300': selectedTarjeta !== null }"
-                />
-              </td>
-            </tr>
-            <!-- REMOVED MERCADOPAGO INPUT -->
-            <tr>
-              <td class="p-1 font-semibold">Seleccionar Tarjeta</td>
-              <td class="p-1 text-right">
-                <select v-model="selectedTarjeta" class="border rounded p-1 w-full" @change="updateRecargo">
-                  <option :value="null">Sin tarjeta seleccionada</option>
-                  <option v-for="tarjeta in tarjetas" :key="tarjeta.tarjetaID" :value="tarjeta" 
+                <button
+                  @click="emit('close')"
+                  class="glass-button p-3 text-white hover:text-red-300 hover:bg-red-500/20 transition-all rounded-full"
+                >
+                  <i class="pi pi-times text-xl"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Payment Summary -->
+            <div class="glass-card p-6 mb-6">
+              <div class="flex items-center mb-4">
+                <i class="pi pi-calculator text-blue-400 text-xl mr-3"></i>
+                <h3 class="text-xl font-bold text-white">📊 Resumen de Cobro</h3>
+              </div>
+
+              <div class="grid grid-cols-2 gap-4">
+                <!-- Left Column - Charges -->
+                <div class="space-y-3">
+                  <div class="flex justify-between items-center py-2 border-b border-white/10">
+                    <span class="text-gray-300 font-medium">Periodo:</span>
+                    <span class="text-white font-bold">${{ paymentData.periodo.toFixed(2) }}</span>
+                  </div>
+
+                  <div class="flex justify-between items-center py-2 border-b border-white/10">
+                    <span class="text-gray-300 font-medium">Consumos:</span>
+                    <span class="text-emerald-400 font-bold"
+                      >${{ paymentData.consumo.toFixed(2) }}</span
+                    >
+                  </div>
+
+                  <div class="flex justify-between items-center py-2 border-b border-white/10">
+                    <span class="text-gray-300 font-medium">Adicional:</span>
+                    <span class="text-white font-bold"
+                      >${{ paymentData.adicional.toFixed(2) }}</span
+                    >
+                  </div>
+
+                  <div
+                    v-if="paymentData.recargoMonto > 0"
+                    class="flex justify-between items-center py-2 border-b border-white/10"
                   >
-                    {{ tarjeta.nombre }}
-                  </option>
-                </select>
-              </td>
-            </tr>
+                    <span class="text-gray-300 font-medium">Recargo:</span>
+                    <span class="text-red-400 font-bold"
+                      >+${{ paymentData.recargoMonto.toFixed(2) }}</span
+                    >
+                  </div>
+                </div>
 
-            <tr v-if="empenoMonto > 0">
-              <td class="p-1 font-semibold">Empeño</td>
-              <td class="p-1 text-right text-green-500">-${{ empenoMonto.toFixed(2) }}</td>
-            </tr>
-            <tr v-if="recargoMonto > 0">
-              <td class="p-1 font-semibold">Recargo</td>
-              <td class="p-1 text-right text-red-500">${{ recargoMonto.toFixed(2) }}</td>
-            </tr>
-            <tr>
-              <td class="p-1 font-semibold">Total</td>
-              <td class="p-1 text-right text-red-500">${{ totalPago.toFixed(2) }}</td>
-            </tr>
-            <tr>
-              <td class="p-1 font-semibold">Falta por pagar</td>
-              <td class="p-1 text-right text-red-500">${{ faltaPorPagar.toFixed(2) }}</td>
-            </tr>
-            <tr>
-              <td class="p-1 font-semibold">Comentario</td>
-              <td class="p-1 text-right">
-                <textarea class="border rounded p-1 w-full" :class="{ 'border-red-500': descuento > 0 && !comentario }"
-                  v-model="comentario" placeholder="Escribe un comentario..."></textarea>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <div class="flex justify-end space-x-4">
-          <button v-if="!props.pausa" @click.prevent="PausarTimer" class="btn-secondary p-2 rounded-md"><span
-              class="material-symbols-outlined">
-              pause
-            </span>
-            Pausar
-          </button>
-          <button v-if="props.pausa" @click.prevent="RecalcularTimer" class="btn-secondary p-2 rounded-md">
-            Recalcular<span class="material-symbols-outlined">
-              play_arrow
-            </span>
-          </button>
+                <!-- Right Column - Payments -->
+                <div class="space-y-3">
+                  <div
+                    v-if="paymentData.descuento > 0"
+                    class="flex justify-between items-center py-2 border-b border-white/10"
+                  >
+                    <span class="text-gray-300 font-medium">Descuento:</span>
+                    <span class="text-green-400 font-bold"
+                      >-${{ paymentData.descuento.toFixed(2) }}</span
+                    >
+                  </div>
 
-          <button @click.prevent="toggleEmpenoModal" class="btn-third p-2 rounded-md">Empeño</button>
-          <button @click.prevent="toggleRecargoModal" class="btn-third p-2 rounded-md">Recargo</button>
+                  <div
+                    v-if="paymentData.empenoMonto > 0"
+                    class="flex justify-between items-center py-2 border-b border-white/10"
+                  >
+                    <span class="text-gray-300 font-medium">Empeño:</span>
+                    <span class="text-green-400 font-bold"
+                      >-${{ paymentData.empenoMonto.toFixed(2) }}</span
+                    >
+                  </div>
 
-        </div>
-        <button :disabled="faltaPorPagar !== 0 || (descuento > 0 && !comentario)" @click.prevent="crearMovimientoAdicional"
-          class="w-full mt-4 rounded-xl p-2" :class="!isButtonDisabled ? ' btn-primary' : 'btn-disabled'">
-          Confirmar
-        </button>
+                  <div class="flex justify-between items-center py-3 bg-white/5 rounded-lg px-3">
+                    <span class="text-white font-bold text-lg">Total:</span>
+                    <span class="text-blue-400 font-bold text-xl"
+                      >${{ calculatedTotal.toFixed(2) }}</span
+                    >
+                  </div>
+
+                  <div
+                    class="flex justify-between items-center py-3 rounded-lg px-3"
+                    :class="faltaPorPagar > 0 ? 'bg-red-500/20' : 'bg-green-500/20'"
+                  >
+                    <span
+                      class="font-bold"
+                      :class="faltaPorPagar > 0 ? 'text-red-300' : 'text-green-300'"
+                    >
+                      {{ faltaPorPagar > 0 ? 'Falta por pagar:' : 'Pago completo:' }}
+                    </span>
+                    <span
+                      class="font-bold text-xl"
+                      :class="faltaPorPagar > 0 ? 'text-red-400' : 'text-green-400'"
+                    >
+                      ${{ Math.abs(faltaPorPagar).toFixed(2) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment Methods -->
+            <div class="glass-card p-6 mb-6">
+              <div class="flex items-center mb-4">
+                <i class="pi pi-wallet text-green-400 text-xl mr-3"></i>
+                <h3 class="text-xl font-bold text-white">💰 Métodos de Pago</h3>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Cash Payment -->
+                <div class="glass-card p-4">
+                  <label class="flex items-center mb-3">
+                    <i class="pi pi-money-bill text-green-400 mr-2"></i>
+                    <span class="text-white font-semibold">Efectivo</span>
+                  </label>
+                  <input
+                    type="number"
+                    v-model.number="paymentData.efectivo"
+                    class="glass-input w-full px-4 py-3 text-lg font-bold text-center"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+
+                <!-- Card Payment -->
+                <div class="glass-card p-4">
+                  <label class="flex items-center mb-3">
+                    <i class="pi pi-credit-card text-blue-400 mr-2"></i>
+                    <span class="text-white font-semibold">Tarjeta</span>
+                    <span
+                      v-if="paymentData.selectedTarjeta && paymentData.porcentajeRecargo > 0"
+                      class="ml-2 px-2 py-1 bg-orange-500/20 text-orange-300 rounded-full text-xs"
+                    >
+                      +{{ paymentData.porcentajeRecargo }}%
+                    </span>
+                  </label>
+
+                  <!-- PrimeVue Dropdown with Clear Button -->
+                  <div class="relative mb-3">
+                    <Dropdown
+                      v-model="paymentData.selectedTarjeta"
+                      :options="tarjetas"
+                      filter
+                      optionLabel="nombre"
+                      placeholder="Seleccionar tarjeta"
+                      class="w-full glass-select"
+                      :class="{ 'pr-12': paymentData.selectedTarjeta }"
+                      :pt="{
+                        root: 'glass-input-select',
+                        input: 'glass-select-input',
+                        trigger: 'glass-select-trigger',
+                        panel: 'glass-select-panel',
+                        list: 'glass-select-list',
+                        item: 'glass-select-item',
+                      }"
+                    >
+                      <template #value="slotProps">
+                        <div
+                          v-if="slotProps.value"
+                          class="flex items-center justify-between w-full"
+                        >
+                          <div class="flex items-center">
+                            <i class="pi pi-credit-card text-blue-400 mr-2 text-sm"></i>
+                            <span class="text-white font-medium">{{ slotProps.value.nombre }}</span>
+                          </div>
+                          <span
+                            v-if="slotProps.value.montoPorcentual > 0"
+                            class="px-2 py-1 bg-orange-500/20 text-orange-300 rounded-full text-xs font-semibold"
+                          >
+                            +{{ slotProps.value.montoPorcentual }}%
+                          </span>
+                        </div>
+                        <span v-else class="text-gray-400">Seleccionar tarjeta</span>
+                      </template>
+
+                      <template #option="slotProps">
+                        <div class="flex items-center justify-between w-full p-2">
+                          <div class="flex items-center">
+                            <i class="pi pi-credit-card text-blue-400 mr-3 text-sm"></i>
+                            <span class="text-white font-medium">{{
+                              slotProps.option.nombre
+                            }}</span>
+                          </div>
+                          <span
+                            v-if="slotProps.option.montoPorcentual > 0"
+                            class="px-2 py-1 bg-orange-500/20 text-orange-300 rounded-full text-xs font-semibold"
+                          >
+                            +{{ slotProps.option.montoPorcentual }}%
+                          </span>
+                        </div>
+                      </template>
+                    </Dropdown>
+
+                    <!-- Clear Button -->
+                    <button
+                      v-if="paymentData.selectedTarjeta"
+                      @click="clearSelectedCard"
+                      class="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 glass-button p-1 w-6 h-6 flex items-center justify-center hover:bg-red-500/20 hover:border-red-400/50 transition-all group"
+                      type="button"
+                    >
+                      <i class="pi pi-times text-gray-400 text-xs group-hover:text-red-400"></i>
+                    </button>
+                  </div>
+
+                  <input
+                    type="number"
+                    v-model.number="paymentData.tarjeta"
+                    class="glass-input w-full px-4 py-3 text-lg font-bold text-center"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    :disabled="paymentData.selectedTarjeta !== null"
+                    :class="{
+                      'opacity-50 cursor-not-allowed': paymentData.selectedTarjeta !== null,
+                    }"
+                  />
+                </div>
+
+                <!-- Discount -->
+                <div class="glass-card p-4">
+                  <label class="flex items-center mb-3">
+                    <i class="pi pi-percentage text-yellow-400 mr-2"></i>
+                    <span class="text-white font-semibold">Descuento</span>
+                  </label>
+                  <input
+                    type="number"
+                    v-model.number="paymentData.descuento"
+                    class="glass-input w-full px-4 py-3 text-lg font-bold text-center"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                  />
+                  <p v-if="paymentData.descuento > 0" class="text-yellow-400 text-xs mt-1">
+                    ⚠️ Comentario obligatorio
+                  </p>
+                </div>
+
+                <!-- Comment -->
+                <div class="glass-card p-4">
+                  <label class="flex items-center mb-3">
+                    <i class="pi pi-comment text-purple-400 mr-2"></i>
+                    <span class="text-white font-semibold">Comentario</span>
+                    <span v-if="paymentData.descuento > 0" class="text-red-400 ml-1">*</span>
+                  </label>
+                  <textarea
+                    v-model="paymentData.comentario"
+                    class="glass-input w-full px-4 py-3 h-20 resize-none"
+                    :class="{
+                      'border-red-500/50': paymentData.descuento > 0 && !paymentData.comentario,
+                    }"
+                    placeholder="Escribe un comentario..."
+                  ></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="glass-card p-6 mb-6">
+              <div class="flex items-center mb-4">
+                <i class="pi pi-cog text-orange-400 text-xl mr-3"></i>
+                <h3 class="text-xl font-bold text-white">⚙️ Acciones Adicionales</h3>
+              </div>
+
+              <div class="flex flex-wrap gap-3 mb-4">
+                <!-- Timer Controls -->
+                <button
+                  v-if="!paymentData.pausa"
+                  @click="handlePauseTimer"
+                  :disabled="isProcessing"
+                  class="glass-button px-4 py-2 text-white hover:bg-yellow-500/20 disabled:opacity-50 transition-all"
+                >
+                  <i class="pi pi-pause mr-2"></i>
+                  Pausar Timer
+                </button>
+
+                <button
+                  v-else
+                  @click="handleRecalculateTimer"
+                  :disabled="isProcessing"
+                  class="glass-button px-4 py-2 text-white hover:bg-green-500/20 disabled:opacity-50 transition-all"
+                >
+                  <i class="pi pi-play mr-2"></i>
+                  Recalcular Timer
+                </button>
+
+                <!-- Additional Options -->
+                <button
+                  @click="paymentData.showEmpenoModal = true"
+                  :disabled="isProcessing"
+                  class="glass-button px-4 py-2 text-white hover:bg-blue-500/20 disabled:opacity-50 transition-all"
+                >
+                  <i class="pi pi-bookmark mr-2"></i>
+                  Empeño
+                </button>
+
+                <button
+                  @click="paymentData.showRecargoModal = true"
+                  :disabled="isProcessing"
+                  class="glass-button px-4 py-2 text-white hover:bg-orange-500/20 disabled:opacity-50 transition-all"
+                >
+                  <i class="pi pi-plus-circle mr-2"></i>
+                  Recargo
+                </button>
+              </div>
+
+              <!-- Maintenance Checkbox -->
+              <div class="glass-card p-4 mb-4">
+                <label class="flex items-center cursor-pointer group">
+                  <div class="relative">
+                    <input
+                      type="checkbox"
+                      v-model="paymentData.enviarAMantenimiento"
+                      class="sr-only"
+                    />
+                    <div
+                      class="w-6 h-6 border-2 border-white/30 rounded-lg transition-all duration-300 group-hover:border-yellow-400/50"
+                      :class="
+                        paymentData.enviarAMantenimiento
+                          ? 'bg-gradient-to-r from-yellow-400 to-orange-500 border-yellow-400'
+                          : 'bg-white/5'
+                      "
+                    >
+                      <i
+                        v-if="paymentData.enviarAMantenimiento"
+                        class="pi pi-check text-white text-sm absolute top-0 left-0 w-full h-full flex items-center justify-center"
+                      ></i>
+                    </div>
+                  </div>
+                  <div class="ml-3 flex items-center">
+                    <i class="pi pi-wrench text-yellow-400 mr-2"></i>
+                    <div>
+                      <span class="text-white font-medium">Enviar a Mantenimiento</span>
+                      <p class="text-gray-300 text-sm">
+                        La habitación será marcada para mantenimiento después del checkout
+                      </p>
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              <!-- Main Action Button -->
+              <button
+                @click="handleConfirmPayment"
+                :disabled="!isPaymentValid || isProcessing"
+                class="w-full py-4 rounded-xl font-bold text-lg transition-all transform hover:scale-105"
+                :class="
+                  isPaymentValid && !isProcessing
+                    ? 'bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white shadow-lg'
+                    : 'glass-button text-gray-400 cursor-not-allowed'
+                "
+              >
+                <i :class="isProcessing ? 'pi pi-spinner pi-spin' : 'pi pi-check'" class="mr-2"></i>
+                {{ isProcessing ? 'Procesando...' : 'Confirmar Pago' }}
+              </button>
+
+              <!-- Validation Messages -->
+              <div
+                v-if="!isPaymentValid"
+                class="mt-3 p-3 bg-red-500/20 border border-red-500/30 rounded-lg"
+              >
+                <div class="flex items-center text-red-300">
+                  <i class="pi pi-exclamation-triangle mr-2"></i>
+                  <div class="text-sm">
+                    <p v-if="faltaPorPagar !== 0">
+                      El pago debe estar completo (falta: ${{ faltaPorPagar.toFixed(2) }})
+                    </p>
+                    <p v-if="paymentData.descuento > 0 && !paymentData.comentario">
+                      El comentario es obligatorio con descuento
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Loading Overlay -->
+            <div
+              v-if="isProcessing"
+              class="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center rounded-3xl"
+            >
+              <div class="glass-card p-6 text-center">
+                <div
+                  class="bg-gradient-to-r from-blue-400 to-purple-400 p-4 rounded-full mx-auto mb-4 w-16 h-16 flex items-center justify-center"
+                >
+                  <i class="pi pi-spinner pi-spin text-white text-2xl"></i>
+                </div>
+                <p class="text-white font-semibold">Procesando pago...</p>
+                <p class="text-gray-300 text-sm">Por favor espera</p>
+              </div>
+            </div>
+          </div>
+        </Transition>
       </div>
+    </Transition>
 
-      <RecargoModal v-if="showRecargoModal" @close="showRecargoModal = false" @confirm-recargo="confirmoRecargo" />
-      <EmpenoModal v-if="showEmpenoModal" @close="showEmpenoModal = false" @confirm-empeno="confirmoEmpeno" />
-    </div>
+    <!-- Child Modals -->
+    <RecargoModal
+      v-if="paymentData.showRecargoModal"
+      @close="paymentData.showRecargoModal = false"
+      @confirm-recargo="confirmarRecargo"
+    />
+
+    <EmpenoModal
+      v-if="paymentData.showEmpenoModal"
+      @close="paymentData.showEmpenoModal = false"
+      @confirm-empeno="confirmarEmpeno"
+    />
+
+    <!-- Toast for notifications -->
+    <Toast />
   </Teleport>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
-import axiosClient from '../axiosClient';
-import EmpenoModal from './EmpenoModal.vue';
-import RecargoModal from './RecargoModal.vue';
+  import { computed } from 'vue'
+  import { useToast } from 'primevue/usetoast'
+  import { usePaymentConsumer } from '../composables/usePaymentProvider'
+  import EmpenoModal from './EmpenoModal.vue'
+  import RecargoModal from './RecargoModal.vue'
+  import Toast from 'primevue/toast'
+  import Dropdown from 'primevue/dropdown'
 
-const props = defineProps({
-  periodo: { type: Number, required: true },
-  consumo: { type: Number, required: true },
-  total: {type: Number, required: true},
-  adicional: { type: Number, required: true },
-  visitaId: { type: Number, required: true },
-  habitacionId: { type: Number, required: true },
-  pausa: { type: Boolean, required: true },
-});
+  // Define emits
+  const emit = defineEmits(['close', 'confirm-payment'])
 
-const descuento = ref(0);
-const efectivo = ref(0);
-const tarjeta = ref(0);
-//const mercadoPago = ref(0); REMOVED
-const empenoMonto = ref(0);
-const empenoDetalle = ref('');
-const recargoMonto = ref(0);
-const recargoDetalle = ref('');
-const comentario = ref('');
-const totalPago = ref(0);
-const tarjetas = ref([]);
-const selectedTarjeta = ref(null);
-const showEmpenoModal = ref(false);
-const showRecargoModal = ref(false);
-const isButtonDisabled = ref(false);
-const extraTarjeta = ref(0);
-const porcentajeRecargo = ref(0);
+  // Use payment provider (no props needed!)
+  const {
+    paymentData,
+    tarjetas,
+    loading,
+    calculatedTotal,
+    faltaPorPagar,
+    isPaymentValid,
+    confirmarEmpeno,
+    confirmarRecargo,
+    crearMovimientoAdicional,
+    pagarVisita,
+    finalizarReserva,
+    pausarTimer,
+    recalcularTimer,
+  } = usePaymentConsumer()
 
-// Computed property to calculate the total
-const calculatedTotal = computed(() => {
-  return props.total + props.adicional + extraTarjeta.value;
-});
+  const toast = useToast()
 
-// Watch the calculated total and update totalPago
-watch(calculatedTotal, (newTotal) => {
-  totalPago.value = Number(newTotal || 0);
-});
+  // Computed
+  const isProcessing = computed(() => paymentData.value.isProcessing)
 
-
-const faltaPorPagar = computed(() => {
-  return (
-    props.total +
-    props.adicional -
-    (descuento.value + efectivo.value + tarjeta.value + empenoMonto.value - extraTarjeta.value) +
-    recargoMonto.value
-  );
-});
-
-const fetchTarjetas = async () => {
-  try {
-    const response = await axiosClient.get('/GetTarjetas');
-    tarjetas.value = [...response.data.data];
-  } catch (error) {
-    console.error('Error fetching tarjetas:', error);
+  // Methods
+  const clearSelectedCard = () => {
+    paymentData.value.selectedTarjeta = null
+    paymentData.value.tarjeta = 0
+    paymentData.value.porcentajeRecargo = 0
   }
-};
 
-
-const calculoInicial = async () => {
-  totalPago.value = props.total + props.adicional;
-};
-onMounted(getDatosLogin);
-onMounted(fetchTarjetas);
-onMounted(calculoInicial);
-
-const updateRecargo = () => {
-  const subtotal = props.total + props.adicional - descuento.value - efectivo.value - empenoMonto.value;
-
-  if (selectedTarjeta.value) {
-    porcentajeRecargo.value = selectedTarjeta.value.montoPorcentual;
-    const newTarjetaValue = Number((subtotal * (1 + (selectedTarjeta.value.montoPorcentual / 100))).toFixed(2));
-    extraTarjeta.value = Number((newTarjetaValue - subtotal).toFixed(2));
-    tarjeta.value = newTarjetaValue;
-  } else {
-    tarjeta.value = 0;
-    extraTarjeta.value = 0;
-    porcentajeRecargo.value = 0;
-  }
-};
-
-watch(
-  () => selectedTarjeta.value,
-  (newVal, oldVal) => {
-    if (newVal !== oldVal) {
-      updateRecargo();
-    }
-  },
-  { immediate: true } // This is important to run the watcher on component mount
-);
-
-const toggleEmpenoModal = () => {
-  showEmpenoModal.value = !showEmpenoModal.value;
-};
-
-const toggleRecargoModal = () => {
-  showRecargoModal.value = true;
-};
-
-const confirmoEmpeno = ({ monto, detalle }) => {
-  empenoMonto.value = monto;
-  empenoDetalle.value = detalle;
-  comentario.value = `Empeño de ${detalle} por un valor de $${monto.toFixed(2)}. ` + comentario.value;
-  showEmpenoModal.value = false;
-};
-
-const confirmoRecargo = (recargo) => {
-  recargoMonto.value = recargo.monto;
-  recargoDetalle.value = recargo.detalle;
-  comentario.value += `Recargo por ${recargo.detalle} con un valor de $${recargo.monto.toFixed(2)}. `;
-  showRecargoModal.value = false;
-
-};
-
-const crearMovimientoAdicional = async () => {
-  if (descuento.value > 0 && !comentario.value) {
-    console.log("Test");
-    alert('El comentario es obligatorio cuando se aplica un descuento.');
-    isButtonDisabled.value = false;
-    return;
-  }
-  if (isButtonDisabled.value) return;
-
-  isButtonDisabled.value = true; // Deshabilitar el botón
-
-  if (empenoMonto.value > 0) {
-    try {
-      await axiosClient.post(
-        `api/Empeño/AddEmpeno?institucionID=${InstitucionID.value}&visitaID=${props.visitaId}&detalle=${empenoDetalle.value}&monto=${empenoMonto.value}`
-      );
-    } catch (error) {
-      console.error('Error al crear el empeño:', error);
-      isButtonDisabled.value = false;
-      return;
+  // Methods
+  const handlePauseTimer = async () => {
+    const success = await pausarTimer()
+    if (success) {
+      emit('confirm-payment', { paused: true })
     }
   }
 
-  try {
-    await axiosClient.post(
-      `/MovimientoHabitacion?totalFacturado=${props.adicional}&habitacionId=${props.habitacionId}&visitaId=${props.visitaId}&comentario=${comentario.value}`
-    );
-    pagarVisita();
-  } catch (error) {
-    console.error('Error al agregar movimiento:', error);
-    isButtonDisabled.value = false;
-  }
-};
-
-const pagarVisita = async () => {
-  try {
-    const data = {
-      visitaId: props.visitaId,
-      montoDescuento: descuento.value,
-      montoEfectivo: efectivo.value,
-      montoTarjeta: tarjeta.value,
-      montoBillVirt: 0, //Hardcoded to 0
-      medioPagoId: 1,
-      comentario: comentario.value,
-      montoRecargo: recargoMonto.value,
-      descripcionRecargo: recargoDetalle.value,
-    };
-    var tarjetaSeleccionada = 0
-    if(selectedTarjeta.value != null){tarjetaSeleccionada = selectedTarjeta.value.tarjetaID}
-    const url = recargoMonto.value > 0
-      ? `/api/Pago/PagarVisita?visitaId=${data.visitaId}&montoDescuento=${data.montoDescuento}&montoEfectivo=${data.montoEfectivo}&montoTarjeta=${data.montoTarjeta}&montoBillVirt=${data.montoBillVirt}&adicional=${props.adicional}&medioPagoId=${data.medioPagoId}&comentario=${data.comentario}&montoRecargo=${data.montoRecargo}&descripcionRecargo=${data.descripcionRecargo}&tarjetaID=${tarjetaSeleccionada}`
-      : `/api/Pago/PagarVisita?visitaId=${data.visitaId}&montoDescuento=${data.montoDescuento}&montoEfectivo=${data.montoEfectivo}&montoTarjeta=${data.montoTarjeta}&montoBillVirt=${data.montoBillVirt}&adicional=${props.adicional}&medioPagoId=${data.medioPagoId}&comentario=${data.comentario}&tarjetaID=${tarjetaSeleccionada}`;
-
-    await axiosClient.post(url);
-    finalizarReserva(props.habitacionId);
-  } catch (error) {
-    console.error('Error al realizar el pago:', error);
-    isButtonDisabled.value = false;
-  }
-};
-
-const finalizarReserva = async (idHabitacion) => {
-  try {
-    await axiosClient.put(`/FinalizarReserva?idHabitacion=${idHabitacion}`);
-    window.location.reload();
-  } catch (error) {
-    console.error('Error al finalizar reserva:', error);
-    isButtonDisabled.value = false;
-  }
-}
-
-
-const PausarTimer = async () => {
-  try {
-    await axiosClient.put(`/PausarOcupacion?visitaId=${props.visitaId}`);
-    window.location.reload();
-  } catch (error) {
-    console.error('Error al pausar la reserva:', error);
-  }
-}
-
-const RecalcularTimer = async () => {
-  try {
-    await axiosClient.put(`/RecalcularOcupacion?visitaId=${props.visitaId}`);
-    window.location.reload();
-  } catch (error) {
-    console.error('Error al reanudar la reserva:', error);
-  }
-};
-
-watch(
-  () => [descuento.value, comentario.value],
-  () => {
-    isButtonDisabled.value = false;
-  }
-);
-
-import { useAuthStore } from '../store/auth.js'; // Import the auth store
-
-const authStore = useAuthStore();
-const InstitucionID = ref(null)
-function getDatosLogin(){
-    InstitucionID.value = authStore.auth?.institucionID;
+  const handleRecalculateTimer = async () => {
+    const success = await recalcularTimer()
+    if (success) {
+      emit('confirm-payment', { recalculated: true })
+    }
   }
 
+  const handleConfirmPayment = async () => {
+    // Step 1: Create additional movement
+    const movementSuccess = await crearMovimientoAdicional()
+    if (!movementSuccess) return
+
+    // Step 2: Process payment
+    const paymentSuccess = await pagarVisita()
+    if (!paymentSuccess) return
+
+    // Step 3: Finalize reservation
+    const finalizeSuccess = await finalizarReserva()
+    if (finalizeSuccess) {
+      emit('confirm-payment', {
+        habitacionId: paymentData.value.habitacionId,
+        completed: true,
+      })
+    }
+  }
 </script>
 
+<style scoped>
+  /* PrimeVue Dropdown Glassmorphism Styling */
+  :deep(.glass-select .p-dropdown) {
+    background: rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(8px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 0.5rem !important;
+    color: white !important;
+    padding-right: 3rem !important; /* Space for clear button when active */
+  }
+
+  :deep(.glass-select.pr-12 .p-dropdown) {
+    padding-right: 3rem !important;
+  }
+
+  :deep(.glass-select .p-dropdown:hover) {
+    background: rgba(255, 255, 255, 0.15) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+  }
+
+  :deep(.glass-select .p-dropdown:focus) {
+    outline: none !important;
+    border-color: rgba(96, 165, 250, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
+  }
+
+  :deep(.glass-select .p-dropdown-label) {
+    color: white !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  :deep(.glass-select .p-dropdown-trigger) {
+    color: rgba(156, 163, 175, 1) !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  :deep(.glass-select .p-dropdown-trigger:hover) {
+    color: rgba(96, 165, 250, 1) !important;
+  }
+
+  /* Panel Styling */
+  :deep(.p-dropdown-overlay) {
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 0.75rem !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+  }
+
+  /* Panel Background - Add stronger black background */
+  :deep(.p-dropdown-panel) {
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+  }
+
+  /* Styling using data-pc-section attributes */
+  :deep([data-pc-section='header']) {
+    background: rgba(0, 0, 0, 0.9) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 0.75rem !important;
+  }
+
+  :deep([data-pc-section='wrapper']) {
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+  }
+
+  /* Filter input styling */
+  :deep([data-pc-section='filterinput']) {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 0.5rem !important;
+    color: white !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  :deep([data-pc-section='filterinput']:focus) {
+    outline: none !important;
+    border-color: rgba(96, 165, 250, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
+  }
+
+  :deep([data-pc-section='filterinput']::placeholder) {
+    color: rgba(156, 163, 175, 0.8) !important;
+  }
+
+  :deep(.p-dropdown-list) {
+    padding: 0.5rem !important;
+    background: transparent !important;
+  }
+
+  :deep(.p-dropdown-option) {
+    color: white !important;
+    border-radius: 0.5rem !important;
+    margin: 0.125rem 0 !important;
+    padding: 0.5rem !important;
+    transition: all 0.2s ease !important;
+  }
+
+  :deep(.p-dropdown-option:hover) {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(96, 165, 250, 1) !important;
+  }
+
+  :deep(.p-dropdown-option[aria-selected='true']) {
+    background: rgba(96, 165, 250, 0.2) !important;
+    color: rgba(96, 165, 250, 1) !important;
+  }
+
+  /* Scrollbar for dropdown */
+  :deep(.p-dropdown-list::-webkit-scrollbar) {
+    width: 6px;
+  }
+
+  :deep(.p-dropdown-list::-webkit-scrollbar-track) {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+
+  :deep(.p-dropdown-list::-webkit-scrollbar-thumb) {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+  }
+
+  :deep(.p-dropdown-list::-webkit-scrollbar-thumb:hover) {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Modal animations (existing) */
+  .modal-outer-enter-active,
+  .modal-outer-leave-active {
+    transition: opacity 0.3s ease;
+  }
+
+  .modal-outer-enter-from,
+  .modal-outer-leave-to {
+    opacity: 0;
+  }
+
+  .modal-inner-enter-active,
+  .modal-inner-leave-active {
+    transition: all 0.3s ease;
+  }
+
+  .modal-inner-enter-from,
+  .modal-inner-leave-to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+</style>
+
 <style>
-/* Add your styles here */
+  /* Global styles for PrimeVue Dropdown - data-pc-section targeting */
+  [data-pc-section='header'] {
+    background: rgba(0, 0, 0, 0.9) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    padding: 0.75rem !important;
+  }
+
+  [data-pc-section='wrapper'] {
+    background: rgba(0, 0, 0, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    border-radius: 0.75rem !important;
+  }
+
+  /* Filter input styling */
+  [data-pc-section='filterinput'] {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-radius: 0.5rem !important;
+    color: white !important;
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  [data-pc-section='filterinput']:focus {
+    outline: none !important;
+    border-color: rgba(96, 165, 250, 0.6) !important;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2) !important;
+  }
+
+  [data-pc-section='filterinput']::placeholder {
+    color: rgba(156, 163, 175, 0.8) !important;
+  }
+
+  /* List container */
+  [data-pc-section='list'] {
+    background: transparent !important;
+  }
+
+  /* Individual items */
+  [data-pc-section='item'] {
+    color: white !important;
+    border-radius: 0.5rem !important;
+    margin: 0.125rem 0 !important;
+    padding: 0.5rem !important;
+    transition: all 0.2s ease !important;
+  }
+
+  [data-pc-section='item']:hover {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: rgba(96, 165, 250, 1) !important;
+  }
+
+  [data-pc-section='item'][aria-selected='true'] {
+    background: rgba(96, 165, 250, 0.2) !important;
+    color: rgba(96, 165, 250, 1) !important;
+  }
+
+  /* Empty message */
+  [data-pc-section='emptymessage'] {
+    color: rgba(156, 163, 175, 1) !important;
+    padding: 1rem !important;
+    text-align: center !important;
+  }
 </style>

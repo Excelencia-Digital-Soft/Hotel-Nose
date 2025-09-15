@@ -31,7 +31,6 @@
   <script setup>
   import { ref, onMounted } from 'vue';
   import axiosClient from '../axiosClient';
-  import { defineEmits } from 'vue';
   const emit = defineEmits(['category-created', 'close-modal']);
 
   const categoryName = ref('');
@@ -64,7 +63,7 @@ import { useAuthStore } from '../store/auth.js'; // Import the auth store
 const InstitucionID = ref(null);
 const authStore = useAuthStore();
 function getDatosLogin(){
-    InstitucionID.value = authStore.auth?.institucionID;
+    InstitucionID.value = authStore.institucionID;
   }
   onMounted(() => {
   getDatosLogin();
