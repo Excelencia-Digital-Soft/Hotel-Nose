@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import axiosClient from '../axiosClient';
 
 const emit = defineEmits(['category-updated', 'close-modal']);

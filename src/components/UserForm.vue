@@ -34,6 +34,7 @@
                 v-model="form.contraseña"
                 type="password"
                 class="w-full p-2 border rounded mb-4"
+                autocomplete="new-password"
                 required
               />
 

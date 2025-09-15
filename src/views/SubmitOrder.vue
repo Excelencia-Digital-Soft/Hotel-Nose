@@ -141,7 +141,7 @@ const fetchVisitaId = () => {
         console.log('VisitaID:', visitaId.value);
         if (!response.data.ok) {
           alert('Esta habitacion no tiene permitido hacer pedidos')
-          router.push({ name: 'home' });
+          router.push({ name: 'Home' });
         }
       })
       .catch(error => {
@@ -151,12 +151,12 @@ const fetchVisitaId = () => {
 
   } else {
     alert('Esta habitacion no tiene permitido hacer pedidos')
-    router.push({ name: 'home' });
+    router.push({ name: 'Home' });
   }
 };
 
 const fetchCategories = () => {
-  axiosClient.get(`/api/CategoriaArticulos/GetCategorias?InstitucionID=0`)
+  axiosClient.get(`/api/CategoriaArticulos/GetCategorias?InstitucionID=1`)
     .then(({ data }) => {
       if (data && data.ok) {
         categories.value = [{ categoriaId: null, nombreCategoria: "Todos" }, ...data.data];
