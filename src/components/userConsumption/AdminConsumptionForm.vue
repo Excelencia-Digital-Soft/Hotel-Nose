@@ -28,52 +28,100 @@
         <form @submit.prevent="handleSubmit" class="space-y-6">
           <!-- User Selection (Admin Only) -->
           <div class="space-y-2 bg-orange-500/10 p-4 rounded-lg border border-orange-500/30">
-            <label class="block text-white font-semibold">
-              <i class="pi pi-users text-orange-400 mr-2"></i>
-              Seleccionar Usuario *
-            </label>
-            <div class="relative">
+            <div class="flex justify-between items-center">
+              <label class="block text-white font-semibold">
+                <i class="pi pi-users text-orange-400 mr-2"></i>
+                Seleccionar Usuario *
+              </label>
+              <button
+                type="button"
+                @click="loadUsers"
+                :disabled="loadingUsers"
+                class="text-xs glass-button px-2 py-1 text-gray-300 hover:text-white"
+              >
+                <i
+                  :class="loadingUsers ? 'pi pi-spinner pi-spin' : 'pi pi-refresh'"
+                  class="mr-1"
+                ></i>
+                {{ loadingUsers ? 'Cargando...' : 'Recargar' }}
+              </button>
+            </div>
+            <div class="relative mt-2">
               <input
                 v-model="userSearchTerm"
                 type="text"
-                placeholder="Buscar usuario por nombre, username o ID..."
+                placeholder="Buscar usuario por nombre, username, email o ID..."
                 class="glass-input w-full px-4 py-3 pr-10"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
                 @input="searchUsers"
                 @focus="showUserDropdown = true"
                 required
               />
-              <i class="pi pi-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <i
+                class="pi pi-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              ></i>
             </div>
-            
+
             <!-- Users Dropdown -->
-            <div v-if="showUserDropdown && filteredUsers.length > 0" 
-                 class="glass-card mt-2 max-h-48 overflow-y-auto z-50">
+            <div
+              v-if="showUserDropdown && filteredUsers.length > 0"
+              class="glass-card mt-2 max-h-48 overflow-y-auto z-50"
+            >
               <div
                 v-for="user in filteredUsers"
-                :key="user.id"
+                :key="user.userId"
                 @click="selectUser(user)"
                 class="p-3 hover:bg-white/10 cursor-pointer transition-colors border-b border-white/10 last:border-b-0"
               >
                 <div class="flex justify-between items-center">
                   <div>
-                    <p class="text-white font-medium">{{ user.fullName }}</p>
-                    <p class="text-gray-400 text-sm">@{{ user.userName }} • ID: {{ user.id }}</p>
+                    <p class="text-white font-medium">{{ user.firstName }} {{ user.lastName }}</p>
+                    <p class="text-gray-400 text-sm">@{{ user.userName }} • {{ user.email }}</p>
                   </div>
                   <div class="text-right">
-                    <span class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs">
-                      {{ user.role }}
+                    <span
+                      v-if="user.roles && user.roles.length > 0"
+                      class="bg-blue-500/20 text-blue-300 px-2 py-1 rounded text-xs"
+                    >
+                      {{ user.roles[0] }}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
 
+            <!-- Loading indicator for users -->
+            <div v-if="showUserDropdown && loadingUsers" class="glass-card mt-2 p-4 text-center">
+              <i class="pi pi-spinner pi-spin text-white mr-2"></i>
+              <span class="text-gray-300">Cargando usuarios...</span>
+            </div>
+
+            <!-- Empty state for users -->
+            <div
+              v-if="
+                showUserDropdown && !loadingUsers && userSearchTerm && filteredUsers.length === 0
+              "
+              class="glass-card mt-2 p-4 text-center"
+            >
+              <p class="text-gray-400">No se encontraron usuarios</p>
+            </div>
+
             <!-- Selected User Display -->
-            <div v-if="form.userId" class="glass-card p-4 bg-orange-500/10 border-orange-500/30 mt-3">
+            <div
+              v-if="form.userId"
+              class="glass-card p-4 bg-orange-500/10 border-orange-500/30 mt-3"
+            >
               <div class="flex justify-between items-center">
                 <div>
-                  <p class="text-white font-medium">👤 {{ selectedUser?.fullName }}</p>
-                  <p class="text-gray-400 text-sm">@{{ selectedUser?.userName }} • {{ selectedUser?.role }}</p>
+                  <p class="text-white font-medium">
+                    👤 {{ selectedUser?.firstName }} {{ selectedUser?.lastName }}
+                  </p>
+                  <p class="text-gray-400 text-sm">
+                    @{{ selectedUser?.userName }} • {{ selectedUser?.email }}
+                  </p>
                 </div>
                 <button
                   type="button"
@@ -88,36 +136,58 @@
 
           <!-- Article Selection -->
           <div class="space-y-2">
-            <label class="block text-white font-semibold">
-              <i class="pi pi-tag text-primary-400 mr-2"></i>
-              Artículo *
-            </label>
-            <div class="relative">
+            <div class="flex justify-between items-center">
+              <label class="block text-white font-semibold">
+                <i class="pi pi-tag text-primary-400 mr-2"></i>
+                Artículo *
+              </label>
+              <button
+                type="button"
+                @click="loadArticles"
+                :disabled="loadingArticles"
+                class="text-xs glass-button px-2 py-1 text-gray-300 hover:text-white"
+              >
+                <i
+                  :class="loadingArticles ? 'pi pi-spinner pi-spin' : 'pi pi-refresh'"
+                  class="mr-1"
+                ></i>
+                {{ loadingArticles ? 'Cargando...' : 'Recargar' }}
+              </button>
+            </div>
+            <div class="relative mt-2">
               <input
                 v-model="articleSearchTerm"
                 type="text"
-                placeholder="Buscar artículo por nombre o código..."
+                placeholder="Buscar artículo por nombre o ID..."
                 class="glass-input w-full px-4 py-3 pr-10"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
                 @input="searchArticles"
                 @focus="showArticleDropdown = true"
                 required
               />
-              <i class="pi pi-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <i
+                class="pi pi-search absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              ></i>
             </div>
-            
+
             <!-- Articles Dropdown -->
-            <div v-if="showArticleDropdown && filteredArticles.length > 0" 
-                 class="glass-card mt-2 max-h-48 overflow-y-auto">
+            <div
+              v-if="showArticleDropdown && filteredArticles.length > 0"
+              class="glass-card mt-2 max-h-48 overflow-y-auto"
+            >
               <div
                 v-for="article in filteredArticles"
-                :key="article.id"
+                :key="article.articuloID"
                 @click="selectArticle(article)"
                 class="p-3 hover:bg-white/10 cursor-pointer transition-colors border-b border-white/10 last:border-b-0"
               >
                 <div class="flex justify-between items-center">
                   <div>
-                    <p class="text-white font-medium">{{ article.nombre }}</p>
-                    <p class="text-gray-400 text-sm">Código: {{ article.codigo }}</p>
+                    <p class="text-white font-medium">{{ article.nombreArticulo }}</p>
+                    <p class="text-gray-400 text-sm">ID: {{ article.articuloID }}</p>
                   </div>
                   <div class="text-right">
                     <p class="text-green-400 font-semibold">{{ formatCurrency(article.precio) }}</p>
@@ -126,12 +196,34 @@
               </div>
             </div>
 
+            <!-- Loading indicator for articles -->
+            <div
+              v-if="showArticleDropdown && loadingArticles"
+              class="glass-card mt-2 p-4 text-center"
+            >
+              <i class="pi pi-spinner pi-spin text-white mr-2"></i>
+              <span class="text-gray-300">Cargando artículos...</span>
+            </div>
+
+            <!-- Empty state for articles -->
+            <div
+              v-if="
+                showArticleDropdown &&
+                !loadingArticles &&
+                articleSearchTerm &&
+                filteredArticles.length === 0
+              "
+              class="glass-card mt-2 p-4 text-center"
+            >
+              <p class="text-gray-400">No se encontraron artículos</p>
+            </div>
+
             <!-- Selected Article Display -->
             <div v-if="form.articuloId" class="glass-card p-4 bg-green-500/10 border-green-500/30">
               <div class="flex justify-between items-center">
                 <div>
-                  <p class="text-white font-medium">{{ selectedArticle?.nombre }}</p>
-                  <p class="text-gray-400 text-sm">Código: {{ selectedArticle?.codigo }}</p>
+                  <p class="text-white font-medium">{{ selectedArticle?.nombreArticulo }}</p>
+                  <p class="text-gray-400 text-sm">ID: {{ selectedArticle?.articuloID }}</p>
                 </div>
                 <button
                   type="button"
@@ -176,7 +268,8 @@
               class="glass-input w-full px-4 py-3"
             />
             <p class="text-gray-400 text-xs">
-              💡 Si no se especifica, se usará el precio del artículo: {{ formatCurrency(selectedArticle?.precio || 0) }}
+              💡 Si no se especifica, se usará el precio del artículo:
+              {{ formatCurrency(selectedArticle?.precio || 0) }}
             </p>
           </div>
 
@@ -189,14 +282,17 @@
             <select
               v-model="form.habitacionId"
               class="glass-input w-full px-4 py-3"
+              :disabled="loadingRooms"
             >
-              <option value="">Seleccionar habitación...</option>
+              <option value="">
+                {{ loadingRooms ? 'Cargando habitaciones...' : 'Seleccionar habitación...' }}
+              </option>
               <option
                 v-for="room in availableRooms"
-                :key="room.id"
-                :value="room.id"
+                :key="room.habitacionId"
+                :value="room.habitacionId"
               >
-                Habitación {{ room.numero }} - {{ room.categoria }}
+                {{ room.nombreHabitacion }}
               </option>
             </select>
           </div>
@@ -207,10 +303,7 @@
               <i class="pi pi-tags text-purple-400 mr-2"></i>
               Tipo de Consumo
             </label>
-            <select
-              v-model="form.tipoConsumo"
-              class="glass-input w-full px-4 py-3"
-            >
+            <select v-model="form.tipoConsumo" class="glass-input w-full px-4 py-3">
               <option value="">Seleccionar tipo...</option>
               <option value="Servicio">Servicio</option>
               <option value="Habitacion">Habitación</option>
@@ -252,7 +345,9 @@
           <div v-if="totalPreview > 0" class="glass-card p-4 bg-blue-500/10 border-blue-500/30">
             <div class="flex justify-between items-center">
               <div>
-                <p class="text-white font-semibold">Total a registrar para {{ selectedUser?.fullName }}:</p>
+                <p class="text-white font-semibold">
+                  Total a registrar para {{ selectedUser?.firstName }} {{ selectedUser?.lastName }}:
+                </p>
                 <p class="text-gray-400 text-sm">
                   {{ form.cantidad || 0 }} × {{ formatCurrency(effectivePrice) }}
                 </p>
@@ -273,15 +368,11 @@
               <i class="pi pi-times mr-2"></i>
               Cancelar
             </button>
-            
+
             <button
               type="submit"
               :disabled="!isFormValid || loading"
-              class="bg-gradient-to-r from-orange-400 to-red-400 
-                     hover:from-orange-500 hover:to-red-500 
-                     disabled:opacity-50 disabled:cursor-not-allowed
-                     text-white font-bold py-3 px-6 rounded-lg 
-                     transition-all duration-300 transform hover:scale-105"
+              class="bg-gradient-to-r from-orange-400 to-red-400 hover:from-orange-500 hover:to-red-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105"
             >
               <i :class="loading ? 'pi pi-spinner pi-spin' : 'pi pi-user-plus'" class="mr-2"></i>
               {{ loading ? 'Creando...' : '👥 Crear Consumo para Usuario' }}
@@ -294,249 +385,365 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useToast } from 'primevue/usetoast'
+  import { ref, computed, onMounted, watch } from 'vue'
+  import { useToast } from 'primevue/usetoast'
+  import { userService } from '../../services/userService'
+  import { ArticleService } from '../../services/ArticleService'
+  import HabitacionService from '../../services/habitacionService'
 
-const emit = defineEmits(['close', 'created'])
-const toast = useToast()
+  const emit = defineEmits(['close', 'created'])
+  const toast = useToast()
 
-// Props to receive the createConsumption method and loading state
-const props = defineProps({
-  createConsumption: {
-    type: Function,
-    required: true
-  },
-  loading: {
-    type: Boolean,
-    default: false
+  // Props to receive the createConsumption method and loading state
+  const props = defineProps({
+    createConsumption: {
+      type: Function,
+      required: true,
+    },
+    loading: {
+      type: Boolean,
+      default: false,
+    },
+  })
+
+  // Form state
+  const form = ref({
+    userId: null,
+    articuloId: null,
+    cantidad: 1,
+    precioUnitario: null,
+    habitacionId: null,
+    reservaId: null,
+    tipoConsumo: '',
+    observaciones: '',
+    notasAdmin: '',
+  })
+
+  // UI state
+  const userSearchTerm = ref('')
+  const articleSearchTerm = ref('')
+  const showUserDropdown = ref(false)
+  const showArticleDropdown = ref(false)
+  const selectedUser = ref(null)
+  const selectedArticle = ref(null)
+  const loadingUsers = ref(false)
+  const loadingArticles = ref(false)
+  const loadingRooms = ref(false)
+
+  // Data from API
+  const availableUsers = ref([])
+  const availableArticles = ref([])
+  const availableRooms = ref([])
+
+  // Debounce timers
+  let userSearchDebounceTimer = null
+  let articleSearchDebounceTimer = null
+
+  // Computed properties
+  const filteredUsers = computed(() => {
+    if (!userSearchTerm.value) return availableUsers.value
+
+    const term = userSearchTerm.value.toLowerCase()
+    return availableUsers.value.filter((user) => {
+      const fullName = `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase()
+      const userName = (user.userName || '').toLowerCase()
+      const email = (user.email || '').toLowerCase()
+      const userId = (user.id || '').toLowerCase()
+
+      return (
+        fullName.includes(term) ||
+        userName.includes(term) ||
+        email.includes(term) ||
+        userId.includes(term)
+      )
+    })
+  })
+
+  const filteredArticles = computed(() => {
+    if (!articleSearchTerm.value) return availableArticles.value
+
+    const term = articleSearchTerm.value.toLowerCase()
+    return availableArticles.value.filter(
+      (article) =>
+        article.nombreArticulo?.toLowerCase().includes(term) ||
+        article.articuloID?.toString().includes(term)
+    )
+  })
+
+  const effectivePrice = computed(() => {
+    return form.value.precioUnitario || selectedArticle.value?.precio || 0
+  })
+
+  const totalPreview = computed(() => {
+    return (form.value.cantidad || 0) * effectivePrice.value
+  })
+
+  const isFormValid = computed(() => {
+    return (
+      form.value.userId &&
+      form.value.articuloId &&
+      form.value.cantidad &&
+      form.value.cantidad > 0 &&
+      effectivePrice.value > 0
+    )
+  })
+
+  // Methods
+  const searchUsers = () => {
+    showUserDropdown.value = true
+    // If we have a search term but no users loaded yet, try to load them
+    if (userSearchTerm.value && availableUsers.value.length === 0) {
+      loadUsers()
+    }
   }
-})
 
-// Form state
-const form = ref({
-  userId: null,
-  articuloId: null,
-  cantidad: 1,
-  precioUnitario: null,
-  habitacionId: null,
-  reservaId: null,
-  tipoConsumo: '',
-  observaciones: '',
-  notasAdmin: ''
-})
-
-// UI state
-const userSearchTerm = ref('')
-const articleSearchTerm = ref('')
-const showUserDropdown = ref(false)
-const showArticleDropdown = ref(false)
-const selectedUser = ref(null)
-const selectedArticle = ref(null)
-
-// Mock data - in real app, these would come from API
-const availableUsers = ref([
-  { id: '001', userName: 'admin', fullName: 'Administrador Sistema', role: 'Admin' },
-  { id: '002', userName: 'juan.perez', fullName: 'Juan Pérez García', role: 'Usuario' },
-  { id: '003', userName: 'maria.lopez', fullName: 'María López Torres', role: 'Usuario' },
-  { id: '004', userName: 'carlos.ruiz', fullName: 'Carlos Ruiz Mendoza', role: 'Director' },
-  { id: '005', userName: 'ana.torres', fullName: 'Ana Torres Silva', role: 'Cajero' },
-  { id: '006', userName: 'pedro.silva', fullName: 'Pedro Silva Mora', role: 'Usuario' },
-  { id: '007', userName: 'laura.garcia', fullName: 'Laura García Vega', role: 'Mucama' },
-  { id: '008', userName: 'diego.luna', fullName: 'Diego Luna Castillo', role: 'Cajero Stock' }
-])
-
-const availableArticles = ref([
-  { id: 1, nombre: 'Coca Cola', codigo: 'CC001', precio: 2.50 },
-  { id: 2, nombre: 'Agua Mineral', codigo: 'AM001', precio: 1.50 },
-  { id: 3, nombre: 'Cerveza', codigo: 'CV001', precio: 5.00 },
-  { id: 4, nombre: 'Sandwich', codigo: 'SW001', precio: 8.00 },
-  { id: 5, nombre: 'Pizza Personal', codigo: 'PP001', precio: 15.00 },
-  { id: 6, nombre: 'Café', codigo: 'CF001', precio: 3.00 },
-  { id: 7, nombre: 'Galletas', codigo: 'GL001', precio: 4.50 },
-  { id: 8, nombre: 'Jugo Natural', codigo: 'JN001', precio: 6.00 }
-])
-
-const availableRooms = ref([
-  { id: 1, numero: '101', categoria: 'Standard' },
-  { id: 2, numero: '102', categoria: 'Standard' },
-  { id: 3, numero: '201', categoria: 'Superior' },
-  { id: 4, numero: '301', categoria: 'Suite' }
-])
-
-// Computed properties
-const filteredUsers = computed(() => {
-  if (!userSearchTerm.value) return availableUsers.value
-  
-  const term = userSearchTerm.value.toLowerCase()
-  return availableUsers.value.filter(user =>
-    user.fullName.toLowerCase().includes(term) ||
-    user.userName.toLowerCase().includes(term) ||
-    user.id.includes(term)
-  )
-})
-
-const filteredArticles = computed(() => {
-  if (!articleSearchTerm.value) return availableArticles.value
-  
-  const term = articleSearchTerm.value.toLowerCase()
-  return availableArticles.value.filter(article =>
-    article.nombre.toLowerCase().includes(term) ||
-    article.codigo.toLowerCase().includes(term)
-  )
-})
-
-const effectivePrice = computed(() => {
-  return form.value.precioUnitario || selectedArticle.value?.precio || 0
-})
-
-const totalPreview = computed(() => {
-  return (form.value.cantidad || 0) * effectivePrice.value
-})
-
-const isFormValid = computed(() => {
-  return form.value.userId && 
-         form.value.articuloId && 
-         form.value.cantidad && 
-         form.value.cantidad > 0 &&
-         effectivePrice.value > 0
-})
-
-// Methods
-const searchUsers = () => {
-  showUserDropdown.value = true
-}
-
-const searchArticles = () => {
-  showArticleDropdown.value = true
-}
-
-const selectUser = (user) => {
-  form.value.userId = user.id
-  selectedUser.value = user
-  userSearchTerm.value = user.fullName
-  showUserDropdown.value = false
-}
-
-const selectArticle = (article) => {
-  form.value.articuloId = article.id
-  selectedArticle.value = article
-  articleSearchTerm.value = article.nombre
-  showArticleDropdown.value = false
-  
-  // Auto-fill price if not manually set
-  if (!form.value.precioUnitario) {
-    form.value.precioUnitario = article.precio
+  const searchArticles = () => {
+    showArticleDropdown.value = true
+    // If we have a search term but no articles loaded yet, try to load them
+    if (articleSearchTerm.value && availableArticles.value.length === 0) {
+      loadArticles()
+    }
   }
-}
 
-const clearUser = () => {
-  form.value.userId = null
-  selectedUser.value = null
-  userSearchTerm.value = ''
-}
+  const selectUser = (user) => {
+    form.value.userId = user.id
+    selectedUser.value = user
+    userSearchTerm.value = `${user.firstName || ''} ${user.lastName || ''}`
+    showUserDropdown.value = false
+  }
 
-const clearArticle = () => {
-  form.value.articuloId = null
-  selectedArticle.value = null
-  articleSearchTerm.value = ''
-  form.value.precioUnitario = null
-}
+  const selectArticle = (article) => {
+    form.value.articuloId = article.articuloId
+    selectedArticle.value = article
+    articleSearchTerm.value = article.nombreArticulo
+    showArticleDropdown.value = false
 
-const formatCurrency = (amount) => {
-  if (amount == null || amount == undefined) return 'S/ 0.00'
-  return new Intl.NumberFormat('es-PE', {
-    style: 'currency',
-    currency: 'PEN'
-  }).format(amount)
-}
+    // Auto-fill price if not manually set
+    if (!form.value.precioUnitario) {
+      form.value.precioUnitario = article.precio
+    }
+  }
 
-const handleSubmit = async () => {
-  if (!isFormValid.value) return
+  const clearUser = () => {
+    form.value.userId = null
+    selectedUser.value = null
+    userSearchTerm.value = ''
+  }
 
-  try {
-    const consumptionData = {
-      userId: form.value.userId, // This is the key difference - specify target user
-      articuloId: form.value.articuloId,
-      cantidad: form.value.cantidad,
-      precioUnitario: form.value.precioUnitario || selectedArticle.value?.precio,
-      habitacionId: form.value.habitacionId || null,
-      reservaId: form.value.reservaId || null,
-      tipoConsumo: form.value.tipoConsumo || 'Servicio',
-      observaciones: form.value.observaciones || null,
-      notasAdmin: form.value.notasAdmin || null
+  const clearArticle = () => {
+    form.value.articuloId = null
+    selectedArticle.value = null
+    articleSearchTerm.value = ''
+    form.value.precioUnitario = null
+  }
+
+  const formatCurrency = (amount) => {
+    if (amount == null || amount == undefined) return 'S/ 0.00'
+    return new Intl.NumberFormat('es-PE', {
+      style: 'currency',
+      currency: 'PEN',
+    }).format(amount)
+  }
+
+  const handleSubmit = async () => {
+    if (!isFormValid.value) return
+
+    try {
+      const fullName = `${selectedUser.value?.firstName || ''} ${selectedUser.value?.lastName || ''}`
+      const consumptionData = {
+        userId: form.value.userId, // This is the key difference - specify target user
+        articuloId: form.value.articuloId,
+        cantidad: form.value.cantidad,
+        precioUnitario: form.value.precioUnitario || selectedArticle.value?.precio,
+        habitacionId: form.value.habitacionId || null,
+        reservaId: form.value.reservaId || null,
+        tipoConsumo: form.value.tipoConsumo || 'Servicio',
+        observaciones: form.value.observaciones || null,
+        notasAdmin: form.value.notasAdmin || null,
+      }
+
+      const result = await props.createConsumption(consumptionData)
+
+      toast.add({
+        severity: 'success',
+        summary: 'Éxito',
+        detail: `Consumo creado exitosamente para ${fullName}`,
+        life: 5000,
+      })
+
+      emit('created', result)
+    } catch (error) {
+      console.error('Error creating consumption for user:', error)
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Error al crear el consumo para el usuario',
+        life: 5000,
+      })
+    }
+  }
+
+  // Load users from API
+  const loadUsers = async () => {
+    loadingUsers.value = true
+    try {
+      const response = await userService.getUsers()
+      if (response.isSuccess && response.data) {
+        availableUsers.value = response.data
+      } else {
+        console.warn('Failed to load users:', response.message)
+        toast.add({
+          severity: 'warn',
+          summary: 'Advertencia',
+          detail: 'No se pudieron cargar los usuarios disponibles',
+          life: 3000,
+        })
+      }
+    } catch (error) {
+      console.error('Error loading users:', error)
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Error al cargar los usuarios',
+        life: 3000,
+      })
+    } finally {
+      loadingUsers.value = false
+    }
+  }
+
+  // Load articles from API
+  const loadArticles = async () => {
+    loadingArticles.value = true
+    try {
+      const response = await ArticleService.getArticles()
+      if (response.isSuccess && response.data) {
+        availableArticles.value = response.data
+      } else {
+        console.warn('Failed to load articles:', response.message)
+        toast.add({
+          severity: 'warn',
+          summary: 'Advertencia',
+          detail: 'No se pudieron cargar los artículos disponibles',
+          life: 3000,
+        })
+      }
+    } catch (error) {
+      console.error('Error loading articles:', error)
+      toast.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Error al cargar los artículos',
+        life: 3000,
+      })
+    } finally {
+      loadingArticles.value = false
+    }
+  }
+
+  // Load rooms from API
+  const loadRooms = async () => {
+    loadingRooms.value = true
+    try {
+      const response = await HabitacionService.getRooms()
+      if (response.isSuccess && response.data) {
+        availableRooms.value = response.data
+      } else {
+        console.warn('Failed to load rooms:', response.message)
+        // Rooms are optional, so we don't show a warning toast
+      }
+    } catch (error) {
+      console.error('Error loading rooms:', error)
+      // Rooms are optional, so we don't show an error toast
+    } finally {
+      loadingRooms.value = false
+    }
+  }
+
+  // Close dropdowns when clicking outside
+  const handleClickOutside = (event) => {
+    if (!event.target.closest('.relative')) {
+      showUserDropdown.value = false
+      showArticleDropdown.value = false
+    }
+  }
+
+  onMounted(async () => {
+    document.addEventListener('click', handleClickOutside)
+
+    // Load initial data
+    await Promise.all([loadUsers(), loadArticles(), loadRooms()])
+  })
+
+  // Watch for user search term changes with debounce
+  watch(userSearchTerm, (newValue) => {
+    if (userSearchDebounceTimer) {
+      clearTimeout(userSearchDebounceTimer)
     }
 
-    const result = await props.createConsumption(consumptionData)
-    
-    toast.add({
-      severity: 'success',
-      summary: 'Éxito',
-      detail: `Consumo creado exitosamente para ${selectedUser.value.fullName}`,
-      life: 5000
-    })
+    if (newValue) {
+      userSearchDebounceTimer = setTimeout(() => {
+        showUserDropdown.value = true
+      }, 300)
+    } else {
+      showUserDropdown.value = false
+    }
+  })
 
-    emit('created', result)
-  } catch (error) {
-    console.error('Error creating consumption for user:', error)
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: 'Error al crear el consumo para el usuario',
-      life: 5000
-    })
-  }
-}
+  // Watch for article search term changes with debounce
+  watch(articleSearchTerm, (newValue) => {
+    if (articleSearchDebounceTimer) {
+      clearTimeout(articleSearchDebounceTimer)
+    }
 
-// Close dropdowns when clicking outside
-const handleClickOutside = (event) => {
-  if (!event.target.closest('.relative')) {
-    showUserDropdown.value = false
-    showArticleDropdown.value = false
-  }
-}
-
-onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
-})
+    if (newValue) {
+      articleSearchDebounceTimer = setTimeout(() => {
+        showArticleDropdown.value = true
+      }, 300)
+    } else {
+      showArticleDropdown.value = false
+    }
+  })
 </script>
 
 <style scoped>
-.glass-container {
-  @apply bg-white/5 backdrop-blur-2xl border border-white/20 rounded-3xl;
-}
+  .glass-container {
+    @apply bg-white/5 backdrop-blur-2xl border border-white/20 rounded-3xl;
+  }
 
-.glass-card {
-  @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-xl;
-}
+  .glass-card {
+    @apply bg-white/10 backdrop-blur-md border border-white/20 rounded-xl;
+  }
 
-.glass-button {
-  @apply bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg transition-all;
-}
+  .glass-button {
+    @apply bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/30 rounded-lg transition-all;
+  }
 
-.glass-input {
-  @apply bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-gray-300;
-}
+  .glass-input {
+    @apply bg-white/10 backdrop-blur-sm border border-white/30 rounded-lg text-white placeholder-gray-300;
+  }
 
-.glass-input:focus {
-  @apply ring-2 ring-primary-400 border-primary-400 outline-none;
-}
+  .glass-input:focus {
+    @apply ring-2 ring-primary-400 border-primary-400 outline-none;
+  }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
 
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-}
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
 </style>
+
