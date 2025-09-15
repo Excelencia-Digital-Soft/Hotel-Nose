@@ -18,19 +18,6 @@
             Control completo de consumos personales y administración 📊
           </p>
         </div>
-
-        <!-- Service Health -->
-        <div class="glass-card p-4" v-if="serviceHealth">
-          <div class="text-center">
-            <div
-              class="bg-gradient-to-r from-green-400 to-green-500 text-white p-3 rounded-full mx-auto w-12 h-12 flex items-center justify-center mb-2"
-            >
-              <i class="pi pi-check-circle text-lg"></i>
-            </div>
-            <p class="text-white font-bold text-sm">{{ serviceHealth.service }}</p>
-            <p class="text-gray-300 text-xs">{{ serviceHealth.status }}</p>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -117,7 +104,14 @@
             class="bg-gradient-to-r from-green-400 to-green-500 hover:from-green-500 hover:to-green-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105"
           >
             <i class="pi pi-plus mr-2"></i>
-            ➕ Nuevo Consumo
+            Nuevo Consumo
+          </button>
+          <button
+            @click="showAdminCreateForm = true"
+            class="bg-gradient-to-r from-red-400 to-orange-400 hover:from-red-500 hover:to-orange-500 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105"
+          >
+            <i class="pi pi-user-plus mr-2"></i>
+            Consumo para Usuario
           </button>
         </div>
 
@@ -257,6 +251,14 @@
       @close="showCreateForm = false"
       @created="handleConsumptionCreated"
     />
+    <!-- Admin Create Form Modal -->
+    <AdminConsumptionForm
+      v-if="showAdminCreateForm"
+      :createConsumption="createConsumptionForUser"
+      :loading="loading"
+      @close="handleAdminFormClose"
+      @created="handleAdminFormCreated"
+    />
 
     <!-- Empty State -->
     <div v-if="!hasAnyData && !loading" class="text-center py-16">
@@ -309,6 +311,7 @@
   import ConsumptionCharts from '../components/userConsumption/ConsumptionCharts.vue'
   import ConsumptionForm from '../components/userConsumption/ConsumptionForm.vue'
   import AdminConsumptionPanel from '../components/userConsumption/AdminConsumptionPanel.vue'
+  import AdminConsumptionForm from '../components/userConsumption/AdminConsumptionForm.vue'
   import Toast from 'primevue/toast'
   import ConfirmDialog from 'primevue/confirmdialog'
 
@@ -347,6 +350,7 @@
   // Local reactive state
   const activeTab = ref('consumption')
   const showCreateForm = ref(false)
+  const showAdminCreateForm = ref(false)
   const selectedRange = ref('thisMonth')
   const customStartDate = ref('')
   const customEndDate = ref('')
@@ -488,6 +492,23 @@
     return `${start} - ${end}`
   }
 
+  // Admin form handlers
+  const handleAdminFormClose = () => {
+    showAdminCreateForm.value = false
+  }
+
+  const handleAdminFormCreated = (result) => {
+    showAdminCreateForm.value = false
+    toast.add({
+      severity: 'success',
+      summary: 'Consumo Creado',
+      detail: 'El consumo ha sido registrado exitosamente para el usuario',
+      life: 5000,
+    })
+    // Refresh data if needed
+    emit('fetchAll')
+  }
+
   // Initialize component
   onMounted(async () => {
     // Set default date range
@@ -555,4 +576,3 @@
     background: rgba(255, 255, 255, 0.5);
   }
 </style>
-

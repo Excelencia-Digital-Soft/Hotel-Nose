@@ -15,10 +15,11 @@ export default defineConfig(({ command, mode }) => {
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src'),
+        'primeicons': resolve(__dirname, 'node_modules/primeicons'),
       },
     },
     optimizeDeps: {
-      include: ['primeicons'],
+      include: [],
       exclude: isProduction ? [] : [],
     },
     define: {
@@ -30,17 +31,19 @@ export default defineConfig(({ command, mode }) => {
       sourcemap: !isProduction,
       cssCodeSplit: isProduction,
       
-      // Terser options for production
-      terserOptions: isProduction ? {
-        compress: {
-          drop_console: true,
-          drop_debugger: true,
-          pure_funcs: ['console.log', 'console.info', 'console.debug'],
-        },
-        mangle: {
-          safari10: true,
-        },
-      } : {},
+      // Terser options for production (only when using terser)
+      ...(isProduction && {
+        terserOptions: {
+          compress: {
+            drop_console: true,
+            drop_debugger: true,
+            pure_funcs: ['console.log', 'console.info', 'console.debug'],
+          },
+          mangle: {
+            safari10: true,
+          },
+        }
+      }),
       
       // Rollup options
       rollupOptions: {

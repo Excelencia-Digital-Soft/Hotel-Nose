@@ -50,7 +50,7 @@
         v-if="roomUtils.getRoomStatus(room) === 'free' && !isCompact"
         class="mt-auto pt-4 border-t border-white/10"
       >
-        <div class="flex items-center justify-between">
+        <div class="flex items-center flex-col">
           <div class="text-gray-400 text-sm">Precio/hora</div>
           <div class="text-green-300 font-bold text-lg">${{ room.precio }}</div>
         </div>
@@ -73,23 +73,22 @@
       </div>
 
       <!-- Occupied room details -->
-      <div v-if="!room.disponible" class="space-y-2 mb-4 flex-1">
+      <div v-if="!room.disponible && !isCompact" class="space-y-2 mb-4 flex-1">
         <!-- Customer info or status -->
-        <div v-if="!isCompact" class="flex items-center gap-2 text-gray-300 text-sm">
+        <div class="flex items-center truncate gap-2 text-gray-300 text-sm">
           <span class="material-symbols-outlined text-xs">person</span>
-          <span class="truncate">{{ getGuestInfo(room) }}</span>
+          <span class="">{{ getGuestInfo(room) }}</span>
         </div>
 
         <!-- Sync issue indicator -->
         <div
-          v-if="!isCompact && showSyncWarning(room)"
-          class="flex items-center flex-col gap-2 text-orange-300 text-xs bg-orange-500/10 border border-orange-400/30 rounded px-2 py-1 mt-1"
+          v-if="showSyncWarning(room)"
+          class="flex items-center gap-1 text-orange-300 text-xs bg-orange-500/10 border border-orange-400/30 rounded px-2 py-1 mt-1"
         >
           <span class="material-symbols-outlined text-xs animate-pulse">sync_problem</span>
-          <span>Los datos pueden estar desactualizados</span>
           <button
             @click.stop="$emit('refresh-room', room.habitacionId)"
-            class="ml-1 text-orange-200 hover:text-white underline"
+            class="text-orange-200 hover:text-white underline text-xs"
           >
             Actualizar
           </button>
@@ -156,7 +155,7 @@
 
   const cardClasses = computed(() => {
     const baseClasses =
-      'group relative overflow-hidden rounded-2xl transition-all duration-500 cursor-pointer glass-card hover:scale-105 hover:shadow-2xl'
+      'group relative overflow-hidden rounded-2xl transition-all duration-500 cursor-pointer hover:scale-105 hover:shadow-2xl'
 
     const roomStatus = roomUtils.getRoomStatus(props.room)
 
@@ -167,7 +166,7 @@
         return `${baseClasses} bg-gradient-to-br from-white/10 to-white/5 border border-white/20 hover:border-green-400/50 hover:shadow-green-500/25`
       case 'occupied':
       default:
-        return `${baseClasses} ${roomUtils.getOccupiedRoomStyles(props.room)}`
+        return `${baseClasses} bg-gradient-to-br from-primary-900/30 to-primary-800/30 border border-primary-500/40 hover:border-primary-400/60 hover:shadow-primary-500/25`
     }
   })
 
@@ -200,12 +199,12 @@
         return `${baseClasses} ${sizeClasses} bg-gradient-to-r from-green-400/20 to-emerald-500/20 border-green-400/30`
       case 'occupied':
       default:
-        return `${baseClasses} ${sizeClasses} bg-black/20 glass-dropdown border-white/20`
+        return `${baseClasses} ${sizeClasses} bg-gradient-to-r from-primary-400/20 to-primary-500/20 border-primary-400/30`
     }
   })
 
   const categoryBadgeClasses = computed(() => {
-    const baseClasses = 'px-2 py-1 rounded-lg text-xs font-medium glass-dropdown'
+    const baseClasses = 'px-2 py-1 rounded-lg text-xs font-medium'
 
     const roomStatus = roomUtils.getRoomStatus(props.room)
 
@@ -216,7 +215,7 @@
         return `${baseClasses} bg-green-500/20 border border-green-400/30 text-green-300`
       case 'occupied':
       default:
-        return `${baseClasses} bg-black/30 border border-white/20 text-white`
+        return `${baseClasses} bg-primary-500/20 border border-primary-400/30 text-primary-200`
     }
   })
 
