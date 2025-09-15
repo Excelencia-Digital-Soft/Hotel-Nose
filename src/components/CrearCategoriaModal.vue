@@ -31,7 +31,6 @@
   <script setup>
   import { ref, onMounted } from 'vue';
   import axiosClient from '../axiosClient';
-  import { defineEmits } from 'vue';
   const emit = defineEmits(['category-created', 'close-modal']);
 
   const categoryName = ref('');

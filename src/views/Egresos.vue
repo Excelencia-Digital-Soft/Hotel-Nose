@@ -72,7 +72,7 @@
 
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import DropDownCreateSearchGastos from '../components/DropDownCreateSearchGastos.vue';
 import ConfirmarEgreso from '../components/ConfirmarEgreso.vue'; // Import the modal component
 
@@ -119,4 +119,5 @@ const handleSuccess = () => {
   alert('Egresos confirmados exitosamente.');
   gastos.value = []; // Optionally clear the list after confirmation
 }
+
 </script>
