@@ -59,7 +59,7 @@ const authStore = useAuthStore();
 
 const fetchHabitaciones = () => {
   // Use the institucionID from the auth store
-  const institucionID = authStore.auth?.institucionID;
+  const institucionID = authStore.institucionID;
 
   if (institucionID == null) {
     console.warn('InstitucionID is not available.  Please ensure the user is logged in.');

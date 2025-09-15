@@ -156,7 +156,7 @@ const authStore = useAuthStore();
 
 const InstitucionID = ref(null)
 function getDatosLogin(){
-    InstitucionID.value = authStore.auth?.institucionID;
+    InstitucionID.value = authStore.institucionID;
   }
   
   </script>

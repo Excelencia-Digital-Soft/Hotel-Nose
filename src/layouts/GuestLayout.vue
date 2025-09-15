@@ -42,6 +42,19 @@
 						
 						Iniciar Sesión
 					</button>
+					 <!-- Modal para seleccionar institución -->
+    <div v-if="showInstitucionModal" class="absolute institucionModalSelector inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+      <div class="bg-white p-6 rounded-lg">
+        <h2 class="text-xl font-bold mb-4">Selecciona una institución</h2>
+        <ul>
+          <li v-for="institucion in authStore.instituciones" :key="institucion.institucionId" class="mb-2">
+            <button @click="selectInstitucion(institucion.institucionId)" class="w-full text-left p-2 hover:bg-gray-100">
+              {{ institucion.nombre }}
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
 				</form>
 			</div>
 			<div class="overlay-container">
@@ -71,11 +84,13 @@ import { useAuthStore } from '../store/auth';
 import { useRouter } from 'vue-router';
 import ProgressSpinner from 'primevue/progressspinner';
 const router = useRouter();
+const authStore = useAuthStore();
 const isSignUp = ref(false);
 let isLoading = ref(false);
 //Login
 let username = ref('');
 let password = ref('');
+let showInstitucionModal = ref(false); // Controlar la visibilidad del modal
 
 //Register
 let registerUserName = ref('')
@@ -84,31 +99,44 @@ let registerName = ref('')
 let registerPassword = ref('')
 let registerRepeatPass = ref('')
 
-//functions
 
+// Login
 const authUser = async () => {
-	if (isLoading.value) return; // Evitar múltiples solicitudes
-	isLoading.value = true; // Activar indicador de carga
+  if (isLoading.value) return; // Evitar múltiples solicitudes
+  isLoading.value = true; // Activar indicador de carga
 
-	try {
-		
-		let credentials = {
-			nombreUsuario: username.value,
-			contraseña: password.value,
-		};
-		const auth = useAuthStore();
-		const success = await auth.login(credentials);
+  try {
+    let credentials = {
+      nombreUsuario: username.value,
+      contraseña: password.value,
+    };
 
-		if (success) {
-			router.push('/'); // Redirigir al home
-		} else {
-			alert('Usuario incorrecto');
-		}
-	} catch (error) {
-		console.error('Error al autenticar:', error);
-	} finally {
-		isLoading.value = false; // Desactivar indicador de carga
-	}
+    const success = await authStore.login(credentials);
+
+    if (success) {
+      // Si hay más de una institución, mostrar el modal de selección
+      if (authStore.instituciones.length > 1) {
+        showInstitucionModal.value = true;
+      } else {
+        // Si solo hay una, redirigir al home
+        router.push('/');
+      }
+    } else {
+      alert('Usuario incorrecto');
+    }
+  } catch (error) {
+    console.error('Error al autenticar:', error);
+  } finally {
+    isLoading.value = false; // Desactivar indicador de carga
+  }
+};
+
+// Seleccionar institución
+const selectInstitucion = (id) => {
+  authStore.selectInstitucion(id); // Asignar la institución seleccionada
+  showInstitucionModal.value = false; // Cerrar el modal
+	console.log("Esto tiene",authStore.institucion)
+  router.push('/'); // Redirigir al home
 };
 
 const togglePanel = () => {

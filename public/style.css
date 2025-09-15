@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+.principal-convination-color {
+  @apply bg-gradient-to-r from-primary-400 via-secondary-400 to-accent-400
+}
+.secondary-convination-color {
+  @apply bg-gradient-to-r from-accent-200 via-accent-300 to-accent-200
+}
+.primary-convination-color {
+  @apply bg-gradient-to-r from-primary-200 via-primary-400 to-primary-600
+}
+.other-convination-color {
+  @apply bg-gradient-to-r from-secondary-400 via-secondary-500 to-secondary-600
+}
+.btn-primary {
+  @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-800 hover:via-secondary-700 hover:to-accent-800 transition duration-150 ease-in-out md:ease-in border-purple-200;
+}
+.btn-secondary {
+  @apply flex justify-center items-center shadow-lg border-2 bg-gradient-to-r from-accent-200 via-accent-300 to-accent-200  text-white hover:shadow-lg hover:shadow-accent-500/50 hover:from-accent-400 hover:via-accent-400 hover:to-accent-400 transition duration-150 ease-in-out md:ease-in border-lime-100;
+}
+.btn-third {
+  @apply flex justify-center items-center shadow-lg bg-gradient-to-r from-primary-200 via-primary-400 to-primary-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-400 hover:via-primary-600 hover:to-primary-500 transition duration-150 ease-in-out md:ease-in border-white;
+}
+
+.btn-big {
+  @apply flex justify-center items-center shadow-lg border-8 bg-gradient-to-r from-indigo-300 via-purple-400 to-purple-500  text-white hover:shadow-lg hover:shadow-purple-500/50 hover:from-indigo-500 hover:via-purple-600 hover:to-purple-500 transition duration-150 ease-in-out md:ease-in border-purple-200;
+}
+.btn-light {
+  @apply flex justify-center items-center shadow-lg  bg-gradient-to-r from-indigo-300 via-purple-400 to-purple-300  text-white hover:shadow-lg hover:shadow-purple-500/50 hover:from-indigo-500 hover:via-purple-600 hover:to-purple-500 transition duration-150 ease-in-out md:ease-in border-purple-200;
+}
+.btn-danger {
+  @apply flex justify-center items-center shadow-lg  bg-gradient-to-r from-rose-400 via-rose-500 to-red-500  text-white hover:shadow-lg hover:shadow-red-500/50 hover:from-rose-400 hover:via-rose-500 hover:to-red-400 transition duration-150 ease-in-out md:ease-in;
+}
+.btn-disabled {
+  @apply flex justify-center items-center shadow-lg border-2 bg-gray-500  text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-800 hover:via-secondary-700 hover:to-accent-800 transition duration-150 ease-in-out md:ease-in border-purple-200;
+}
+.option-menu{
+  @apply w-full h-12 flex items-center justify-start py-2 px-1 pl-3 hover:bg-white hover:text-accent-400 shadow-md cursor-pointer rounded-lg;
+}
+.menu-column{
+  @apply shadow-xl text-white border-4 border-accent-200 bg-secondary-600 rounded-xl transition duration-200 ease-out md:ease-in
+}
+.colors-input-login{
+  @apply hover:shadow-lg hover:shadow-secondary-500/50 border-blue-200 rounded-3xl transition-colors focus:ring-secondary-300 focus:border-secondary-400 border-2;
+}
+.btn-login-style {
+  @apply bg-gradient-to-r from-primary-500 via-secondary-500 to-accent-500 font-semibold tracking-wide text-white hover:shadow-lg hover:shadow-primary-500/50 hover:from-primary-900 hover:via-secondary-600 hover:to-accent-800 transition duration-150 ease-out md:ease-in border-blue-200 rounded-full shadow-lg;
+}
+.btn-switch{
+  @apply hover:scale-110 font-semibold text-white hover:text-white shadow-lg hover:bg-primary-500/50 shadow-secondary-500/50 hover:shadow-secondary-500/50 transition duration-150 ease-out md:ease-in border-white hover:border-white rounded-3xl;
+
+}
+:root {
+    /* Definir fuentes */
+    --font-primary: 'Lexend', sans-serif;
+    --font-lexend-exa: 'Lexend Exa', sans-serif;
+  /* Colores primarios */
+  --primary-50: 253, 232, 240;
+  --primary-100: 251, 201, 224;
+  --primary-200: 249, 157, 206;
+  --primary-300: 246, 108, 194;
+  --primary-400: 255, 73, 209;
+  --primary-500: 244, 63, 184; /* Color principal */
+  --primary-600: 230, 57, 179;
+  --primary-700: 212, 49, 158;
+  --primary-800: 185, 42, 139;
+  --primary-900: 163, 33, 117;
+  
+  /* Colores secundarios */
+  --secondary-50:  245, 243, 255;
+  --secondary-100: 237, 233, 254;
+  --secondary-200: 221, 214, 254;
+  --secondary-300: 196, 181, 253;
+  --secondary-400: 167, 139, 250;
+  --secondary-500: 139, 92, 246; /* Color principal */
+  --secondary-600: 124, 58, 237;
+  --secondary-700: 109, 40, 217;
+  --secondary-800: 91, 33, 182;
+  --secondary-900: 76, 29, 149;
+  --secondary-950: 46, 16, 101;
+  
+  
+  /* Colores de acento */
+  --accent-50: 224, 232, 255;
+  --accent-100: 179, 197, 255;
+  --accent-200: 141, 161, 255;
+  --accent-300: 95, 123, 255;
+  --accent-400: 59, 92, 255;
+  --accent-500: 84, 148, 251; /* Color de acento */
+  --accent-600: 70, 129, 226;
+  --accent-700: 45, 101, 180;
+  --accent-800: 29, 74, 142;
+  --accent-900: 15, 46, 107;
+
+  /* Colores de superficie (mantener los valores originales si los usas) */
+  --surface-0: 255, 255, 255;
+  --surface-50: 248, 250, 252;
+  --surface-100: 241, 245, 249;
+  --surface-200: 226, 232, 240;
+  --surface-300: 203, 213, 225;
+  --surface-400: 148, 163, 184;
+  --surface-500: 100, 116, 139;
+  --surface-600: 71, 85, 105;
+  --surface-700: 45, 55, 72;
+  --surface-800: 30, 41, 59;
+  --surface-900: 15, 23, 42;
+  --surface-950: 3, 6, 23;
+}
+
+/* Estilo personalizado para el scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #2c2c2c;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #848484;
+  border-radius: 10px;
+  border: 2px solid #2c2c2c;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #f531ca;
+}
+
+body {
+  font-family: var(--font-primary);
+}
+
+.lexend-exa {
+  font-family: var(--font-lexend-exa);
+}

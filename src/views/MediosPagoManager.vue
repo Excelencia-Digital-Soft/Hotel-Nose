@@ -296,7 +296,7 @@ import { useAuthStore } from '../store/auth.js'; // Import the auth store
 const InstitucionID = ref(null);
 const authStore = useAuthStore();
 function getDatosLogin(){
-    InstitucionID.value = authStore.auth?.institucionID;
+    InstitucionID.value = authStore.institucionID;
   }
 </script>
 

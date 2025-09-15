@@ -183,7 +183,7 @@ const roomToInventory = ref(null)
 
 // Fetch rooms and categories initially
 const fetchHabitaciones = () => {
-  const institucionID = authStore.auth?.institucionID;
+  const institucionID = authStore.institucionID;
 
 if (institucionID == null) {
   console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
@@ -204,7 +204,7 @@ axiosClient.get(`/GetHabitaciones?InstitucionID=${institucionID}`)
 };
 
 const fetchCategorias = () => {
-  const institucionID = authStore.auth?.institucionID;
+  const institucionID = authStore.institucionID;
 
   if (institucionID == null) {
   console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
@@ -256,7 +256,7 @@ function cancelUpdateRoom() {
 
 // Create a new room
 const createRoom = async () => {
-  const institucionID = authStore.auth?.institucionID;
+  const institucionID = authStore.institucionID;
   const usuarioID = authStore.auth?.usuarioID;
 if (institucionID == null) {
 console.warn('InstitucionID is not available.  Please ensure the user is logged in.');
