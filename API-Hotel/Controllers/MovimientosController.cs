@@ -1,0 +1,848 @@
+﻿using hotel.Data;
+using hotel.Extensions;
+using hotel.Models;
+using hotel.Models.Sistema;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace hotel.Controllers
+{
+    public class MovimientosController : ControllerBase
+    {
+        private readonly HotelDbContext _db;
+
+        public MovimientosController(HotelDbContext db)
+        {
+            _db = db;
+        }
+
+        [HttpPost]
+        [Route("MovimientoHabitacion")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<int> CrearMovimientoHabitacion(
+            int visitaId,
+            int InstitucionID,
+            decimal totalFacturado,
+            int habitacionId
+        )
+        {
+            try
+            {
+                // Obtener el usuario autenticado usando el extension method
+                var userId = this.GetCurrentUserId();
+
+                Movimientos nuevoMovimiento = new Movimientos
+                {
+                    VisitaId = visitaId,
+                    InstitucionID = InstitucionID,
+                    TotalFacturado = totalFacturado,
+                    HabitacionId = habitacionId,
+                    UserId = userId, // Asignar el UserId del usuario autenticado
+                    FechaRegistro = DateTime.Now, // Agregar fecha de registro
+                };
+
+                _db.Add(nuevoMovimiento);
+
+                await _db.SaveChangesAsync();
+
+                return nuevoMovimiento.MovimientosId;
+            }
+            catch (DbUpdateException dbEx)
+            {
+                // Log database update exceptions
+                Console.WriteLine($"Database update error: {dbEx.Message}");
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                // Log general exceptions
+                Console.WriteLine($"Error creating movimiento: {ex.Message}");
+                return 0;
+            }
+        }
+
+        [HttpPost]
+        [Route("ConsumoHabitacion")]
+        [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/room instead.")]
+        public async Task<Respuesta> ConsumirArticulos(
+            [FromBody] List<ArticuloConsumoDTO> articulos,
+            int habitacionId,
+            int visitaId
+        )
+        {
+            Respuesta res = new Respuesta();
+
+            using (var transaction = await _db.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    var habitacion = await _db.Habitaciones.FindAsync(habitacionId);
+                    if (habitacion == null)
+                    {
+                        res.Message = "Habitación no encontrada.";
+                        res.Ok = false;
+                        return res;
+                    }
+                    decimal? totalFacturado = 0;
+                    List<Consumo> consumosToAdd = new List<Consumo>();
+                    Movimientos nuevoMovimiento = new Movimientos
+                    {
+                        HabitacionId = habitacionId,
+                        VisitaId = visitaId,
+                        InstitucionID = habitacion.InstitucionID,
+                        FechaRegistro = DateTime.Now,
+                        Anulado = false,
+                    };
+
+                    _db.Movimientos.Add(nuevoMovimiento);
+                    await _db.SaveChangesAsync(); // Save Movimiento first to generate MovimientosId
+
+                    // Step 1: Process each Articulo in the list
+                    foreach (var articuloDTO in articulos)
+                    {
+                        // Step 2: Retrieve the Articulo to get the price
+                        var articulo = await _db.Articulos.FindAsync(articuloDTO.ArticuloId);
+                        if (articulo == null)
+                        {
+                            res.Ok = false;
+                            res.Message = $"Articulo with ID {articuloDTO.ArticuloId} not found.";
+                            return res;
+                        }
+                        if (articulo.Precio == 0 || articuloDTO.Cantidad == 0)
+                        {
+                            res.Ok = false;
+                            res.Message = $"Error con el precio del articulo";
+                            return res;
+                        }
+                        // Step 3: Retrieve the Inventario for the specific Articulo and Habitacion
+                        var inventario = await _db.Inventarios.FirstOrDefaultAsync(i =>
+                            i.ArticuloId == articuloDTO.ArticuloId && i.HabitacionId == habitacionId
+                        );
+
+                        if (inventario == null || inventario.Cantidad < articuloDTO.Cantidad)
+                        {
+                            res.Ok = false;
+                            res.Message = $"No hay suficiente producto";
+                            return res;
+                        }
+                        else
+                        {
+                            // Step 5: Deduct the quantity from the Inventario
+                            inventario.Cantidad -= articuloDTO.Cantidad;
+                            if (inventario.Cantidad < 0)
+                            {
+                                res.Ok = false;
+                                res.Message = $"No hay suficiente producto en la habitación";
+                                return res;
+                            }
+                            _db.Inventarios.Update(inventario);
+                        }
+
+                        // Step 6: Calculate total for this articulo (price * quantity)
+                        decimal totalArticulo = articulo.Precio * articuloDTO.Cantidad;
+                        totalFacturado += totalArticulo;
+
+                        // Step 7: Create a new Consumo for each Articulo and add it to the list
+                        Consumo nuevoConsumo = new Consumo
+                        {
+                            ArticuloId = articulo.ArticuloId,
+                            Cantidad = articuloDTO.Cantidad,
+                            PrecioUnitario = articulo.Precio,
+                            MovimientosId = nuevoMovimiento.MovimientosId,
+                            Anulado = false,
+                            EsHabitacion = true,
+                        };
+
+                        consumosToAdd.Add(nuevoConsumo);
+                    }
+
+                    // Step 8: Save all Consumos in one go
+                    _db.Consumo.AddRange(consumosToAdd);
+
+                    // Step 9: Update Movimiento with the total facturado for all items
+                    nuevoMovimiento.TotalFacturado = totalFacturado;
+                    _db.Movimientos.Update(nuevoMovimiento);
+
+                    // Step 10: Save all changes to the database
+                    await _db.SaveChangesAsync();
+
+                    // Step 11: Load the related data (Habitacion and Visita) to return in the response
+                    await _db.Entry(nuevoMovimiento).Reference(m => m.Habitacion).LoadAsync();
+                    await _db.Entry(nuevoMovimiento).Reference(m => m.Visita).LoadAsync();
+
+                    // Step 12: Commit the transaction
+                    await transaction.CommitAsync();
+
+                    // Set response on success
+                    res.Ok = true;
+                    res.Message = "Consumos created and stock updated successfully.";
+                    res.Data = nuevoMovimiento; // Return the created movimiento with Habitacion and Visita info
+                }
+                catch (Exception ex)
+                {
+                    // Rollback transaction on error
+                    await transaction.RollbackAsync();
+                    res.Message = $"Error: {ex.Message}";
+                    res.Ok = false;
+                }
+            }
+
+            return res;
+        }
+
+        [HttpPost]
+        [Route("ConsumoGeneral")]
+        [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/general instead.")]
+        public async Task<Respuesta> ConsumirArticulosGeneral(
+            [FromBody] List<ArticuloConsumoDTO> articulos,
+            int habitacionId,
+            int visitaId
+        )
+        {
+            Respuesta res = new Respuesta();
+
+            using (var transaction = await _db.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    var habitacion = await _db.Habitaciones.FindAsync(habitacionId);
+                    if (habitacion == null)
+                    {
+                        res.Message = "Habitación no encontrada.";
+                        res.Ok = false;
+                        return res;
+                    }
+                    decimal? totalFacturado = 0;
+                    List<Consumo> consumosToAdd = new List<Consumo>();
+                    Movimientos nuevoMovimiento = new Movimientos
+                    {
+                        HabitacionId = habitacionId,
+                        VisitaId = visitaId,
+                        InstitucionID = habitacion.InstitucionID,
+                        FechaRegistro = DateTime.Now,
+                        Anulado = false,
+                    };
+
+                    _db.Movimientos.Add(nuevoMovimiento);
+                    await _db.SaveChangesAsync(); // Save Movimiento first to generate MovimientosId
+
+                    // Step 1: Process each Articulo in the list
+                    foreach (var articuloDTO in articulos)
+                    {
+                        // Step 2: Retrieve the Articulo to get the price
+                        var articulo = await _db.Articulos.FindAsync(articuloDTO.ArticuloId);
+                        if (articulo == null)
+                        {
+                            res.Ok = false;
+                            res.Message = $"Articulo with ID {articuloDTO.ArticuloId} not found.";
+                            return res;
+                        }
+                        if (articulo.Precio == 0 || articuloDTO.Cantidad == 0)
+                        {
+                            res.Ok = false;
+                            res.Message = $"Error con el precio del articulo";
+                            return res;
+                        }
+                        // Step 3: Retrieve the Inventario for the specific Articulo and Habitacion
+                        var inventario = await _db.InventarioGeneral.FirstOrDefaultAsync(i =>
+                            i.ArticuloId == articuloDTO.ArticuloId
+                        );
+
+                        if (inventario == null || inventario.Cantidad < articuloDTO.Cantidad)
+                        {
+                            if (inventario!.Cantidad < 0)
+                            {
+                                res.Ok = false;
+                                res.Message = $"No hay suficiente producto";
+                                return res;
+                            }
+                        }
+                        else
+                        {
+                            // Step 5: Deduct the quantity from the Inventario
+                            inventario.Cantidad -= articuloDTO.Cantidad;
+                            if (inventario.Cantidad < 0)
+                            {
+                                res.Ok = false;
+                                res.Message =
+                                    $"No hay suficiente producto en el inventario general";
+                                return res;
+                            }
+                            _db.InventarioGeneral.Update(inventario);
+                        }
+
+                        // Step 6: Calculate total for this articulo (price * quantity)
+                        decimal totalArticulo = articulo.Precio * articuloDTO.Cantidad;
+                        totalFacturado += totalArticulo;
+
+                        // Step 7: Create a new Consumo for each Articulo and add it to the list
+                        Consumo nuevoConsumo = new Consumo
+                        {
+                            ArticuloId = articulo.ArticuloId,
+                            Cantidad = articuloDTO.Cantidad,
+                            PrecioUnitario = articulo.Precio,
+                            MovimientosId = nuevoMovimiento.MovimientosId,
+                            Anulado = false,
+                            EsHabitacion = false,
+                        };
+
+                        consumosToAdd.Add(nuevoConsumo);
+                    }
+
+                    // Step 8: Save all Consumos in one go
+                    _db.Consumo.AddRange(consumosToAdd);
+
+                    // Step 9: Update Movimiento with the total facturado for all items
+                    nuevoMovimiento.TotalFacturado = totalFacturado;
+                    _db.Movimientos.Update(nuevoMovimiento);
+
+                    // Step 10: Save all changes to the database
+                    await _db.SaveChangesAsync();
+
+                    // Step 11: Load the related data (Habitacion and Visita) to return in the response
+                    await _db.Entry(nuevoMovimiento).Reference(m => m.Habitacion).LoadAsync();
+                    await _db.Entry(nuevoMovimiento).Reference(m => m.Visita).LoadAsync();
+
+                    // Step 12: Commit the transaction
+                    await transaction.CommitAsync();
+
+                    // Set response on success
+                    res.Ok = true;
+                    res.Message = "Consumos created and stock updated successfully.";
+                    res.Data = nuevoMovimiento; // Return the created movimiento with Habitacion and Visita info
+                }
+                catch (Exception ex)
+                {
+                    // Rollback transaction on error
+                    await transaction.RollbackAsync();
+                    res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                    res.Ok = false;
+                }
+            }
+
+            return res;
+        }
+
+        [HttpDelete]
+        [Route("AnularConsumo")]
+        [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/{id} DELETE instead.")]
+        public async Task<Respuesta> AnularConsumo(int idConsumo)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var consumo = await _db
+                    .Consumo.FromSqlRaw(
+                        "SELECT * FROM Consumo WITH (UPDLOCK, ROWLOCK) WHERE ConsumoId = {0} AND Anulado != 1",
+                        idConsumo
+                    )
+                    .SingleOrDefaultAsync();
+
+                if (consumo != null)
+                {
+                    var movimiento = await _db.Movimientos.FirstAsync(m =>
+                        m.MovimientosId == consumo.MovimientosId
+                    );
+                    consumo.Anulado = true;
+                    movimiento.TotalFacturado -= consumo.PrecioUnitario * consumo.Cantidad;
+
+                    if (consumo.EsHabitacion == true)
+                    {
+                        var inventario = await _db.Inventarios.FirstAsync(i =>
+                            i.ArticuloId == consumo.ArticuloId
+                            && i.HabitacionId == movimiento.HabitacionId
+                        );
+                        inventario.Cantidad += consumo.Cantidad;
+                    }
+                    else
+                    {
+                        var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i =>
+                            i.ArticuloId == consumo.ArticuloId
+                        );
+                        inventarioGeneral.Cantidad += consumo.Cantidad;
+                    }
+                    await _db.SaveChangesAsync();
+                }
+                else
+                {
+                    res.Message = "Consumo no encontrado.";
+                    res.Ok = false;
+                    return res;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                res.Ok = false;
+            }
+            res.Message = "Consumo anulado";
+            res.Ok = true;
+            return res;
+        }
+
+        [HttpPut]
+        [Route("UpdateConsumo")]
+        [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/{id} PUT instead.")]
+        public async Task<Respuesta> UpdateConsumo(int idConsumo, int Cantidad)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var consumo = await _db
+                    .Consumo.FromSqlRaw(
+                        "SELECT * FROM Consumo WITH (UPDLOCK, ROWLOCK) WHERE ConsumoId = {0} AND Anulado != 1",
+                        idConsumo
+                    )
+                    .SingleOrDefaultAsync();
+
+                if (consumo != null)
+                {
+                    var movimiento = await _db.Movimientos.FirstAsync(m =>
+                        m.MovimientosId == consumo.MovimientosId
+                    );
+                    int? viejaCantidad = consumo.Cantidad;
+                    movimiento.TotalFacturado -= consumo.PrecioUnitario * consumo.Cantidad;
+                    consumo.Cantidad = Cantidad;
+                    movimiento.TotalFacturado += consumo.PrecioUnitario * consumo.Cantidad;
+
+                    if (consumo.EsHabitacion == true)
+                    {
+                        var inventario = await _db.Inventarios.FirstAsync(i =>
+                            i.ArticuloId == consumo.ArticuloId
+                            && i.HabitacionId == movimiento.HabitacionId
+                        );
+                        inventario.Cantidad -= consumo.Cantidad;
+                        inventario.Cantidad += viejaCantidad;
+                    }
+                    else
+                    {
+                        var inventarioGeneral = await _db.InventarioGeneral.FirstAsync(i =>
+                            i.ArticuloId == consumo.ArticuloId
+                        );
+                        inventarioGeneral.Cantidad -= consumo.Cantidad;
+                        inventarioGeneral.Cantidad += viejaCantidad;
+                    }
+                    await _db.SaveChangesAsync();
+                }
+                else
+                {
+                    res.Message = "Consumo no encontrado.";
+                    res.Ok = false;
+                    return res;
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message} {ex.InnerException}";
+                res.Ok = false;
+            }
+            res.Message = "Consumo actualizado correctamente";
+            res.Ok = true;
+            return res;
+        }
+
+        [HttpGet]
+        [Route("GetConsumosVisita")]
+        [AllowAnonymous]
+        [Obsolete("This endpoint is deprecated. Use /api/v1/consumos/visita/{id} instead.")]
+        public async Task<Respuesta> GetConsumosVisita(int VisitaID)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                // Get the Movimientos associated with the given VisitaID
+                var movimientos = await _db
+                    .Movimientos.Where(t => t.VisitaId == VisitaID && t.Anulado == false)
+                    .ToListAsync();
+
+                // Check if there are any Movimientos found
+                if (movimientos.Count > 0)
+                {
+                    // Extract the MovimientosIDs from the Movimientos
+                    // Extract the MovimientosIDs from the Movimientos
+                    var movimientoIds = movimientos
+                        .Select(m => m.MovimientosId) // Select MovimientosID
+                        .ToList(); // Create a list of IDs
+
+                    // Get the Consumos associated with the found MovimientosIDs
+                    var consumos = await _db
+                        .Consumo.Where(c =>
+                            movimientoIds.Contains(c.MovimientosId.GetValueOrDefault())
+                            && c.Anulado == false
+                        )
+                        .Join(
+                            _db.Articulos,
+                            c => c.ArticuloId,
+                            a => a.ArticuloId,
+                            (c, a) =>
+                                new
+                                {
+                                    c.ConsumoId,
+                                    c.ArticuloId,
+                                    ArticleName = a.NombreArticulo, // Assuming 'NombreArticulo' is the name column in Articulos table
+                                    c.Cantidad,
+                                    c.PrecioUnitario,
+                                    c.EsHabitacion,
+                                    Total = c.Cantidad * c.PrecioUnitario,
+                                }
+                        )
+                        .ToListAsync();
+
+                    res.Ok = true;
+                    res.Data = consumos; // Return the list of consumos
+                }
+                else
+                {
+                    res.Ok = false;
+                    res.Message = "No se encontraron movimientos para esta visita.";
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Ok = false;
+                res.Message = "Error al obtener los consumos: " + ex.Message;
+            }
+
+            return res;
+        }
+
+        [HttpGet]
+        [Route("GetMovimiento")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
+        [AllowAnonymous]
+        public async Task<Respuesta> GetMovimiento(int id)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var Objeto = await _db.Movimientos.Where(t => t.MovimientosId == id).ToListAsync();
+                res.Ok = true;
+                res.Data = Objeto[0];
+                return res;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        [HttpGet]
+        [Route("GetMovimientos")] // Obtiene un paciente basado en su idPaciente. Se obtiene la lista de los idPaciente con el metodo GetPacientes
+        [AllowAnonymous]
+        public async Task<Respuesta> GetMovimientos(int institucionID)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var Objeto = await _db
+                    .Movimientos.Where(m => m.InstitucionID == institucionID)
+                    .ToListAsync();
+                res.Ok = true;
+                res.Data = Objeto;
+                return res;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        [HttpDelete]
+        [Route("AnularMovimiento")] // Encuentra el ID del paciente para luego eliminarlo
+        [AllowAnonymous]
+        public async Task<Respuesta> AnularMovimiento(int id, bool Estado)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var movimiento = await _db.Movimientos.FindAsync(id);
+
+                if (movimiento == null)
+                {
+                    res.Ok = false;
+                    res.Message = $"El movimiento con el id {id} no se encontró.";
+                }
+                else
+                {
+                    movimiento.Anulado = Estado;
+                    await _db.SaveChangesAsync();
+
+                    res.Ok = true;
+                    res.Message = $"Se cambió el estado correctamente";
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Ok = false;
+                res.Message = $"Ocurrió un error: {ex.Message}";
+            }
+
+            return res;
+        }
+
+        [HttpGet]
+        [Route("GetMovimientosVisita")] // Obtiene un paciente basado en su idPaciente. Se obtiene la l
+        [AllowAnonymous]
+        public async Task<Respuesta> GetMovimientosVisita(int id)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var Objeto = await _db.Movimientos.Where(t => t.VisitaId == id).ToListAsync();
+                res.Ok = true;
+                res.Data = Objeto;
+                return res;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        [HttpGet]
+        [Route("GetTotalVisita")] // Obtiene el total facturado para una visita
+        [AllowAnonymous]
+        public async Task<Respuesta> GetTotalVisita(int id)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                // Step 1: Retrieve the list of Movimientos for the given VisitaId
+                var movimientos = await _db
+                    .Movimientos.Where(t => t.VisitaId == id)
+                    .Include(m => m.Habitacion)
+                    .ToListAsync();
+                var movimiento = new Movimientos();
+                movimiento = movimientos.First();
+                var reserva = await _db
+                    .Reservas.Where(r => r.MovimientoId == movimiento.MovimientosId)
+                    .Include(r => r.Promocion)
+                    .FirstAsync();
+
+                // Step 2: Calculate the total sum of TotalFacturado
+                var totalFacturado = movimientos.Sum(m => m.TotalFacturado);
+                decimal? facturadoEstadia = 0;
+                if (reserva.Promocion != null)
+                    facturadoEstadia =
+                        reserva.Promocion.Tarifa * (reserva.TotalHoras + reserva.TotalMinutos / 60);
+                else
+                    facturadoEstadia = movimiento.TotalFacturado;
+                // Step 3: Return the result
+                res.Ok = true;
+                res.Data = totalFacturado! + facturadoEstadia!; // return the total sum
+                res.Message = "Total facturado calculado correctamente.";
+            }
+            catch (Exception ex)
+            {
+                res.Message = $"Error: {ex.Message}";
+                res.Ok = false;
+            }
+
+            return res;
+        }
+
+        [HttpGet]
+        [Route("GetEgresosSegunTipo")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetEgresosSegunTipo(int institucionID, int tipoEgresoID)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var egresos = await _db
+                    .Egresos.Where(e =>
+                        e.TipoEgresoId == tipoEgresoID && e.InstitucionID == institucionID
+                    )
+                    .ToListAsync();
+
+                res.Ok = true;
+                res.Data = egresos;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        // Get a single Egreso by ID
+        [HttpGet]
+        [Route("GetEgreso")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetEgreso(int id)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var egreso = await _db.Egresos.FindAsync(id);
+                if (egreso != null)
+                {
+                    res.Ok = true;
+                    res.Data = egreso;
+                }
+                else
+                {
+                    res.Ok = false;
+                    res.Message = "Egreso not found.";
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        // Get a single Egreso by ID
+        [HttpGet]
+        [Route("GetEgresoMovimiento")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetEgresoMovimiento(int idMovimiento)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var egreso = await _db
+                    .Egresos.Where(e => e.Movimiento.MovimientosId == idMovimiento)
+                    .FirstOrDefaultAsync();
+                if (egreso != null)
+                {
+                    res.Ok = true;
+                    res.Data = egreso;
+                }
+                else
+                {
+                    res.Ok = false;
+                    res.Message = "Egreso not found.";
+                }
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        // Get all TipoEgresos
+        [HttpGet]
+        [Route("GetTipoEgresos")]
+        [AllowAnonymous]
+        public async Task<Respuesta> GetTipoEgresos(int institucionID)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                var tipoEgresos = await _db
+                    .TipoEgreso.Where(t => t.InstitucionID == institucionID)
+                    .ToListAsync();
+                res.Ok = true;
+                res.Data = tipoEgresos;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        // Create a new Egreso
+        [HttpPost]
+        [Route("CreateEgreso")]
+        [AllowAnonymous]
+        public async Task<Respuesta> CreateEgreso(int InstitucionID, [FromBody] Egresos newEgreso)
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                if (newEgreso == null || newEgreso.TipoEgresoId == null)
+                {
+                    res.Ok = false;
+                    res.Message = "Invalid Egreso data.";
+                    return res;
+                }
+
+                // Calculate the total facturado as a negative amount for an egreso
+                decimal totalFacturado = -Math.Abs(newEgreso.Precio * newEgreso.Cantidad); // Ensure it's negative
+
+                // Create the new Movimiento
+                Movimientos nuevoMovimiento = new Movimientos
+                {
+                    InstitucionID = InstitucionID,
+                    TotalFacturado = totalFacturado,
+                    FechaRegistro = DateTime.Now, // Assuming you have a Fecha field
+                };
+
+                // Add the Movimiento to the database
+                newEgreso.MovimientoId = nuevoMovimiento.MovimientosId;
+                _db.Movimientos.Add(nuevoMovimiento);
+                await _db.SaveChangesAsync();
+                newEgreso.InstitucionID = InstitucionID;
+                // Link the Movimiento to the Egreso via MovimientoId
+                newEgreso.MovimientoId = nuevoMovimiento.MovimientosId;
+                _db.Egresos.Add(newEgreso);
+                await _db.SaveChangesAsync();
+
+                res.Ok = true;
+                res.Data = newEgreso;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+
+        [HttpPost]
+        [Route("CreateTipoEgreso")]
+        [AllowAnonymous]
+        public async Task<Respuesta> CreateTipoEgreso(
+            int InstitucionID,
+            [FromBody] TipoEgreso newTipoEgreso
+        )
+        {
+            Respuesta res = new Respuesta();
+            try
+            {
+                if (newTipoEgreso == null || newTipoEgreso.Nombre == null)
+                {
+                    res.Ok = false;
+                    res.Message = "Invalid Egreso data.";
+                    return res;
+                }
+                newTipoEgreso.InstitucionID = InstitucionID;
+                _db.TipoEgreso.Add(newTipoEgreso);
+                await _db.SaveChangesAsync();
+
+                res.Ok = true;
+                res.Data = newTipoEgreso;
+            }
+            catch (Exception ex)
+            {
+                res.Message = ex.ToString();
+                res.Ok = false;
+            }
+            return res;
+        }
+    }
+
+    public class ArticuloConsumoDTO
+    {
+        public int ArticuloId { get; set; }
+        public int Cantidad { get; set; }
+    }
+}
