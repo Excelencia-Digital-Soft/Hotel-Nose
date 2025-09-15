@@ -18,6 +18,7 @@ public class MovimientoDto
     public string? Descripcion { get; set; }
     public int TotalConsumos { get; set; }
     public decimal TotalConsumosAmount { get; set; }
+    public string? UserId { get; set; }
 }
 
 public class MovimientoCreateDto
@@ -33,3 +34,4 @@ public class MovimientoUpdateDto
     public decimal? TotalFacturado { get; set; }
     public string? Descripcion { get; set; }
 }
+

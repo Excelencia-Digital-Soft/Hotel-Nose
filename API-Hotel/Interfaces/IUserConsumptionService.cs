@@ -43,4 +43,11 @@ public interface IUserConsumptionService
         int institucionId,
         string adminUserId,
         CancellationToken cancellationToken = default);
+    
+    Task<ApiResponse> CancelConsumptionAsync(
+        int consumptionId,
+        string userId,
+        int institucionId,
+        string? reason = null,
+        CancellationToken cancellationToken = default);
 }

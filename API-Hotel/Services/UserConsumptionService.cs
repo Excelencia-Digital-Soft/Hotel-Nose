@@ -1,22 +1,41 @@
 using hotel.Data;
 using hotel.DTOs.Common;
+using hotel.DTOs.Inventory;
 using hotel.DTOs.UserConsumption;
 using hotel.Interfaces;
 using hotel.Models;
+using hotel.Models.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace hotel.Services;
 
+/// <summary>
+/// Refactored UserConsumptionService with reduced code duplication and better separation of concerns
+/// Uses InventoryUnifiedService for all inventory operations
+/// </summary>
 public class UserConsumptionService : IUserConsumptionService
 {
     private readonly HotelDbContext _context;
     private readonly ILogger<UserConsumptionService> _logger;
+    private readonly IInventoryService _inventoryService;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public UserConsumptionService(HotelDbContext context, ILogger<UserConsumptionService> logger)
+    public UserConsumptionService(
+        HotelDbContext context,
+        ILogger<UserConsumptionService> logger,
+        IInventoryService inventoryService,
+        UserManager<ApplicationUser> userManager
+    )
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _inventoryService =
+            inventoryService ?? throw new ArgumentNullException(nameof(inventoryService));
+        _userManager = userManager ?? throw new ArgumentNullException(nameof(userManager));
     }
+
+    #region Read Operations
 
     public async Task<ApiResponse<IEnumerable<UserConsumptionDto>>> GetUserConsumptionAsync(
         string userId,
@@ -28,54 +47,18 @@ public class UserConsumptionService : IUserConsumptionService
     {
         try
         {
-            var query = _context
-                .Consumo.AsNoTracking()
-                .Include(c => c.Articulo)
-                .Include(c => c.Movimientos!)
-                .ThenInclude(m => m.Habitacion)
-                .Where(c =>
-                    c.Movimientos != null
-                    && c.Movimientos.UsuarioId != null
-                    && c.Movimientos.UsuarioId.ToString() == userId
-                    && c.Movimientos.InstitucionID == institucionId
-                    && (c.Anulado == null || c.Anulado == false)
-                );
+            var query = BuildBaseConsumptionQuery(institucionId)
+                .Where(c => c.Movimientos!.UserId == userId);
 
-            if (startDate.HasValue)
-                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro >= startDate.Value);
+            query = ApplyDateFilters(query, startDate, endDate);
 
-            if (endDate.HasValue)
-                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro <= endDate.Value);
-
-            var consumos = await query
-                .Select(c => new UserConsumptionDto
-                {
-                    Id = c.ConsumoId,
-                    UserId = userId,
-                    UserName = userId,
-                    UserFullName = userId,
-                    ArticuloId = c.ArticuloId ?? 0,
-                    ArticuloNombre =
-                        c.Articulo != null
-                            ? c.Articulo.NombreArticulo ?? string.Empty
-                            : string.Empty,
-                    ArticuloCodigo = string.Empty,
-                    Cantidad = c.Cantidad ?? 0,
-                    PrecioUnitario = c.PrecioUnitario ?? 0,
-                    Total = (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0),
-                    FechaConsumo = c.Movimientos != null ? c.Movimientos.FechaRegistro ?? DateTime.Now : DateTime.Now,
-                    HabitacionId = c.Movimientos != null ? c.Movimientos.HabitacionId : null,
-                    HabitacionNumero =
-                        c.Movimientos != null && c.Movimientos.Habitacion != null
-                            ? c.Movimientos.Habitacion.NombreHabitacion
-                            : null,
-                    ReservaId = null,
-                    TipoConsumo = c.EsHabitacion == true ? "Habitacion" : "Servicio",
-                    Observaciones = c.Movimientos != null ? c.Movimientos.Descripcion : null,
-                    Anulado = c.Anulado ?? false,
-                })
-                .OrderByDescending(c => c.FechaConsumo)
+            var consumosData = await query
+                .OrderByDescending(c => c.Movimientos!.FechaRegistro)
                 .ToListAsync(cancellationToken);
+
+            var consumos = consumosData
+                .Select(c => MapToUserConsumptionDto(c, userId))
+                .ToList();
 
             _logger.LogInformation(
                 "Retrieved {Count} consumption records for user {UserId} in institution {InstitucionId}",
@@ -88,15 +71,11 @@ public class UserConsumptionService : IUserConsumptionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            return LogAndReturnError<IEnumerable<UserConsumptionDto>>(
                 ex,
                 "Error retrieving user consumption for user {UserId} in institution {InstitucionId}",
                 userId,
                 institucionId
-            );
-            return ApiResponse<IEnumerable<UserConsumptionDto>>.Failure(
-                "Error retrieving user consumption",
-                "An error occurred while retrieving consumption records"
             );
         }
     }
@@ -114,56 +93,16 @@ public class UserConsumptionService : IUserConsumptionService
             var periodStart = startDate ?? DateTime.Now.AddMonths(-1);
             var periodEnd = endDate ?? DateTime.Now;
 
-            var query = _context
-                .Consumo.AsNoTracking()
-                .Include(c => c.Articulo)
-                .Include(c => c.Movimientos)
+            var query = BuildBaseConsumptionQuery(institucionId)
+                .Where(c => c.Movimientos!.UserId == userId)
                 .Where(c =>
-                    c.Movimientos != null
-                    && c.Movimientos.UsuarioId != null
-                    && c.Movimientos.UsuarioId.ToString() == userId
-                    && c.Movimientos.InstitucionID == institucionId
-                    && (c.Anulado == null || c.Anulado == false)
-                    && c.Movimientos.FechaRegistro >= periodStart
-                    && c.Movimientos.FechaRegistro <= periodEnd
+                    c.Movimientos!.FechaRegistro >= periodStart
+                    && c.Movimientos!.FechaRegistro <= periodEnd
                 );
 
             var consumos = await query.ToListAsync(cancellationToken);
 
-            var summary = new UserConsumptionSummaryDto
-            {
-                UserId = userId,
-                UserName = userId,
-                UserFullName = userId,
-                PeriodStart = periodStart,
-                PeriodEnd = periodEnd,
-                TotalItems = consumos.Count(),
-                TotalQuantity = consumos.Sum(c => c.Cantidad ?? 0),
-                TotalAmount = consumos.Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0)),
-            };
-
-            // Group by type
-            summary.AmountByType = consumos
-                .GroupBy(c => c.EsHabitacion == true ? "Habitacion" : "Servicio")
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0))
-                );
-
-            // Top consumed items
-            summary.TopConsumedItems = consumos
-                .Where(c => c.ArticuloId.HasValue)
-                .GroupBy(c => new { c.ArticuloId, NombreArticulo = c.Articulo?.NombreArticulo })
-                .Select(g => new TopConsumedItem
-                {
-                    ArticuloId = g.Key.ArticuloId ?? 0,
-                    ArticuloNombre = g.Key.NombreArticulo ?? string.Empty,
-                    TotalQuantity = g.Sum(c => c.Cantidad ?? 0),
-                    TotalAmount = g.Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0)),
-                })
-                .OrderByDescending(i => i.TotalAmount)
-                .Take(10)
-                .ToList();
+            var summary = BuildUserConsumptionSummary(consumos, userId, periodStart, periodEnd);
 
             _logger.LogInformation(
                 "Generated consumption summary for user {UserId} in institution {InstitucionId}",
@@ -175,15 +114,11 @@ public class UserConsumptionService : IUserConsumptionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            return LogAndReturnError<UserConsumptionSummaryDto>(
                 ex,
                 "Error generating consumption summary for user {UserId} in institution {InstitucionId}",
                 userId,
                 institucionId
-            );
-            return ApiResponse<UserConsumptionSummaryDto>.Failure(
-                "Error generating consumption summary",
-                "An error occurred while generating the consumption summary"
             );
         }
     }
@@ -197,47 +132,15 @@ public class UserConsumptionService : IUserConsumptionService
     {
         try
         {
-            var query = _context
-                .Consumo.AsNoTracking()
-                .Include(c => c.Articulo)
-                .Include(c => c.Movimientos!)
-                .ThenInclude(m => m.Habitacion)
-                .Where(c =>
-                    c.Movimientos != null
-                    && c.Movimientos.InstitucionID == institucionId
-                    && (c.Anulado == null || c.Anulado == false)
-                );
+            var query = BuildBaseConsumptionQueryWithUser(institucionId);
+            query = ApplyDateFiltersWithUser(query, startDate, endDate);
 
-            if (startDate.HasValue)
-                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro >= startDate.Value);
-
-            if (endDate.HasValue)
-                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro <= endDate.Value);
-
-            var consumosData = await query.ToListAsync(cancellationToken);
+            var consumosData = await query
+                .OrderByDescending(c => c.Movimientos!.FechaRegistro)
+                .ToListAsync(cancellationToken);
 
             var consumos = consumosData
-                .Select(c => new UserConsumptionDto
-                {
-                    Id = c.ConsumoId,
-                    UserId = c.Movimientos?.UsuarioId?.ToString() ?? string.Empty,
-                    UserName = c.Movimientos?.UsuarioId?.ToString() ?? string.Empty,
-                    UserFullName = c.Movimientos?.UsuarioId?.ToString() ?? string.Empty,
-                    ArticuloId = c.ArticuloId ?? 0,
-                    ArticuloNombre = c.Articulo?.NombreArticulo ?? string.Empty,
-                    ArticuloCodigo = string.Empty,
-                    Cantidad = c.Cantidad ?? 0,
-                    PrecioUnitario = c.PrecioUnitario ?? 0,
-                    Total = (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0),
-                    FechaConsumo = c.Movimientos?.FechaRegistro ?? DateTime.Now,
-                    HabitacionId = c.Movimientos?.HabitacionId,
-                    HabitacionNumero = c.Movimientos?.Habitacion?.NombreHabitacion,
-                    ReservaId = null,
-                    TipoConsumo = c.EsHabitacion == true ? "Habitacion" : "Servicio",
-                    Observaciones = c.Movimientos?.Descripcion,
-                    Anulado = c.Anulado ?? false,
-                })
-                .OrderByDescending(c => c.FechaConsumo)
+                .Select(c => MapToUserConsumptionDtoWithUserInfo(c))
                 .ToList();
 
             _logger.LogInformation(
@@ -250,263 +153,10 @@ public class UserConsumptionService : IUserConsumptionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            return LogAndReturnError<IEnumerable<UserConsumptionDto>>(
                 ex,
                 "Error retrieving all users consumption for institution {InstitucionId}",
                 institucionId
-            );
-            return ApiResponse<IEnumerable<UserConsumptionDto>>.Failure(
-                "Error retrieving consumption records",
-                "An error occurred while retrieving consumption records"
-            );
-        }
-    }
-
-    public async Task<ApiResponse<UserConsumptionDto>> RegisterConsumptionAsync(
-        UserConsumptionCreateDto createDto,
-        string userId,
-        int institucionId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        try
-        {
-            // Get article price if not provided
-            decimal precioUnitario = createDto.PrecioUnitario ?? 0;
-            if (precioUnitario == 0)
-            {
-                var articulo = await _context
-                    .Articulos.AsNoTracking()
-                    .FirstOrDefaultAsync(
-                        a =>
-                            a.ArticuloId == createDto.ArticuloId
-                            && a.InstitucionID == institucionId,
-                        cancellationToken
-                    );
-
-                if (articulo == null)
-                {
-                    return ApiResponse<UserConsumptionDto>.Failure("Article not found");
-                }
-
-                precioUnitario = articulo.Precio;
-            }
-
-            // Create movement
-            var movimiento = new Movimientos
-            {
-                InstitucionID = institucionId,
-                UsuarioId = int.TryParse(userId, out var uid) ? uid : null,
-                FechaRegistro = DateTime.Now,
-                TotalFacturado = createDto.Cantidad * precioUnitario,
-                HabitacionId = createDto.HabitacionId,
-                Descripcion = createDto.Observaciones,
-            };
-
-            _context.Movimientos.Add(movimiento);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // Create consumption
-            var consumo = new Consumo
-            {
-                MovimientosId = movimiento.MovimientosId,
-                ArticuloId = createDto.ArticuloId,
-                Cantidad = createDto.Cantidad,
-                PrecioUnitario = precioUnitario,
-                EsHabitacion = createDto.TipoConsumo == "Habitacion",
-                Anulado = false,
-            };
-
-            _context.Consumo.Add(consumo);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
-
-            // Retrieve the created consumption with related data
-            var result = await _context
-                .Consumo.AsNoTracking()
-                .Include(c => c.Articulo)
-                .Include(c => c.Movimientos!)
-                .ThenInclude(m => m.Habitacion)
-                .FirstOrDefaultAsync(c => c.ConsumoId == consumo.ConsumoId, cancellationToken);
-
-            var dto = new UserConsumptionDto
-            {
-                Id = result?.ConsumoId ?? 0,
-                UserId = userId,
-                UserName = userId,
-                UserFullName = userId,
-                ArticuloId = result?.ArticuloId ?? 0,
-                ArticuloNombre = result?.Articulo?.NombreArticulo ?? string.Empty,
-                ArticuloCodigo = string.Empty,
-                Cantidad = result?.Cantidad ?? 0,
-                PrecioUnitario = result?.PrecioUnitario ?? 0,
-                Total = (result?.Cantidad ?? 0) * (result?.PrecioUnitario ?? 0),
-                FechaConsumo = result?.Movimientos?.FechaRegistro ?? DateTime.Now,
-                HabitacionId = result?.Movimientos?.HabitacionId,
-                HabitacionNumero = result?.Movimientos?.Habitacion?.NombreHabitacion,
-                ReservaId = null,
-                TipoConsumo = result?.EsHabitacion == true ? "Habitacion" : "Servicio",
-                Observaciones = result?.Movimientos?.Descripcion,
-                Anulado = result?.Anulado ?? false,
-            };
-
-            _logger.LogInformation(
-                "Registered consumption {ConsumoId} for user {UserId} in institution {InstitucionId}",
-                consumo.ConsumoId,
-                userId,
-                institucionId
-            );
-
-            return ApiResponse<UserConsumptionDto>.Success(
-                dto,
-                "Consumption registered successfully"
-            );
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(
-                ex,
-                "Error registering consumption for user {UserId} in institution {InstitucionId}",
-                userId,
-                institucionId
-            );
-            return ApiResponse<UserConsumptionDto>.Failure(
-                "Error registering consumption",
-                "An error occurred while registering the consumption"
-            );
-        }
-    }
-
-    public async Task<ApiResponse<UserConsumptionDto>> AdminCreateConsumptionForUserAsync(
-        AdminUserConsumptionCreateDto createDto,
-        int institucionId,
-        string adminUserId,
-        CancellationToken cancellationToken = default
-    )
-    {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        try
-        {
-            // Validate that the target user exists and belongs to the institution
-            var targetUser = await _context
-                .Users.AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == createDto.UserId, cancellationToken);
-
-            if (targetUser == null)
-            {
-                return ApiResponse<UserConsumptionDto>.Failure("Target user not found");
-            }
-
-            // Get article price if not provided
-            decimal precioUnitario = createDto.PrecioUnitario ?? 0;
-            if (precioUnitario == 0)
-            {
-                var articulo = await _context
-                    .Articulos.AsNoTracking()
-                    .FirstOrDefaultAsync(
-                        a =>
-                            a.ArticuloId == createDto.ArticuloId
-                            && a.InstitucionID == institucionId,
-                        cancellationToken
-                    );
-
-                if (articulo == null)
-                {
-                    return ApiResponse<UserConsumptionDto>.Failure("Article not found");
-                }
-
-                precioUnitario = articulo.Precio;
-            }
-
-            // Create movement for the target user
-            var movimiento = new Movimientos
-            {
-                InstitucionID = institucionId,
-                UsuarioId = int.TryParse(createDto.UserId, out var uid) ? uid : null,
-                FechaRegistro = DateTime.Now,
-                TotalFacturado = createDto.Cantidad * precioUnitario,
-                HabitacionId = createDto.HabitacionId,
-                Descripcion =
-                    createDto.Observaciones ?? $"Consumo asignado por administrador {adminUserId}",
-            };
-
-            _context.Movimientos.Add(movimiento);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // Create consumption
-            var consumo = new Consumo
-            {
-                MovimientosId = movimiento.MovimientosId,
-                ArticuloId = createDto.ArticuloId,
-                Cantidad = createDto.Cantidad,
-                PrecioUnitario = precioUnitario,
-                EsHabitacion = createDto.TipoConsumo == "Habitacion",
-                Anulado = false,
-            };
-
-            _context.Consumo.Add(consumo);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            await transaction.CommitAsync(cancellationToken);
-
-            // Retrieve the created consumption with related data
-            var result = await _context
-                .Consumo.AsNoTracking()
-                .Include(c => c.Articulo)
-                .Include(c => c.Movimientos!)
-                .ThenInclude(m => m.Habitacion)
-                .FirstOrDefaultAsync(c => c.ConsumoId == consumo.ConsumoId, cancellationToken);
-
-            var dto = new UserConsumptionDto
-            {
-                Id = result?.ConsumoId ?? 0,
-                UserId = createDto.UserId,
-                UserName = targetUser?.UserName ?? createDto.UserId,
-                UserFullName = $"{targetUser?.FirstName} {targetUser?.LastName}".Trim(),
-                ArticuloId = result?.ArticuloId ?? 0,
-                ArticuloNombre = result?.Articulo?.NombreArticulo ?? string.Empty,
-                ArticuloCodigo = string.Empty,
-                Cantidad = result?.Cantidad ?? 0,
-                PrecioUnitario = result?.PrecioUnitario ?? 0,
-                Total = (result?.Cantidad ?? 0) * (result?.PrecioUnitario ?? 0),
-                FechaConsumo = result?.Movimientos?.FechaRegistro ?? DateTime.Now,
-                HabitacionId = result?.Movimientos?.HabitacionId,
-                HabitacionNumero = result?.Movimientos?.Habitacion?.NombreHabitacion,
-                ReservaId = createDto.ReservaId,
-                TipoConsumo = result?.EsHabitacion == true ? "Habitacion" : "Servicio",
-                Observaciones = result?.Movimientos?.Descripcion,
-                Anulado = result?.Anulado ?? false,
-            };
-
-            _logger.LogInformation(
-                "Admin {AdminUserId} created consumption {ConsumoId} for user {UserId} in institution {InstitucionId}",
-                adminUserId,
-                consumo.ConsumoId,
-                createDto.UserId,
-                institucionId
-            );
-
-            return ApiResponse<UserConsumptionDto>.Success(
-                dto,
-                "Consumption created successfully for user"
-            );
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(
-                ex,
-                "Error creating consumption for user {UserId} by admin {AdminUserId} in institution {InstitucionId}",
-                createDto.UserId,
-                adminUserId,
-                institucionId
-            );
-            return ApiResponse<UserConsumptionDto>.Failure(
-                "Error creating consumption for user",
-                "An error occurred while creating the consumption for the user"
             );
         }
     }
@@ -523,64 +173,13 @@ public class UserConsumptionService : IUserConsumptionService
     {
         try
         {
-            var query = _context
-                .Consumo.AsNoTracking()
-                .Include(c => c.Articulo)
-                .Include(c => c.Movimientos)
-                .Where(c =>
-                    c.Movimientos != null
-                    && c.Movimientos.UsuarioId != null
-                    && c.Movimientos.UsuarioId.ToString() == userId
-                    && c.Movimientos.InstitucionID == institucionId
-                    && (c.Anulado == null || c.Anulado == false)
-                );
+            var query = BuildBaseConsumptionQuery(institucionId)
+                .Where(c => c.Movimientos!.UserId == userId);
 
-            if (startDate.HasValue)
-                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro >= startDate.Value);
-
-            if (endDate.HasValue)
-                query = query.Where(c => c.Movimientos != null && c.Movimientos.FechaRegistro <= endDate.Value);
-
+            query = ApplyDateFilters(query, startDate, endDate);
             var consumos = await query.ToListAsync(cancellationToken);
 
-            var totalAmount = consumos.Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0));
-
-            var result = consumos
-                .GroupBy(c => c.EsHabitacion == true ? "Habitacion" : "Servicio")
-                .Select(g =>
-                {
-                    var serviceAmount = g.Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0));
-                    return new UserConsumptionByServiceDto
-                    {
-                        ServiceType = g.Key,
-                        TotalItems = g.Count(),
-                        TotalAmount = serviceAmount,
-                        Percentage = totalAmount > 0 ? (serviceAmount / totalAmount) * 100 : 0,
-                        Items = g.Where(c => c.ArticuloId.HasValue)
-                            .GroupBy(c => new
-                            {
-                                c.ArticuloId,
-                                NombreArticulo = c.Articulo?.NombreArticulo,
-                            })
-                            .Select(itemGroup => new ServiceItemDetail
-                            {
-                                ArticuloId = itemGroup.Key.ArticuloId ?? 0,
-                                ArticuloNombre = itemGroup.Key.NombreArticulo ?? string.Empty,
-                                Quantity = itemGroup.Sum(c => c.Cantidad ?? 0),
-                                Amount = itemGroup.Sum(c =>
-                                    (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0)
-                                ),
-                                LastConsumedDate = itemGroup.Max(c =>
-                                    c.Movimientos?.FechaRegistro ?? DateTime.Now
-                                ),
-                            })
-                            .OrderByDescending(i => i.Amount)
-                            .Take(5)
-                            .ToList(),
-                    };
-                })
-                .OrderByDescending(s => s.TotalAmount)
-                .ToList();
+            var result = BuildConsumptionByServiceSummary(consumos);
 
             _logger.LogInformation(
                 "Retrieved consumption by service for user {UserId} in institution {InstitucionId}",
@@ -592,17 +191,842 @@ public class UserConsumptionService : IUserConsumptionService
         }
         catch (Exception ex)
         {
-            _logger.LogError(
+            return LogAndReturnError<IEnumerable<UserConsumptionByServiceDto>>(
                 ex,
                 "Error retrieving consumption by service for user {UserId} in institution {InstitucionId}",
                 userId,
                 institucionId
             );
-            return ApiResponse<IEnumerable<UserConsumptionByServiceDto>>.Failure(
-                "Error retrieving consumption by service",
-                "An error occurred while retrieving consumption by service"
+        }
+    }
+
+    #endregion
+
+    #region Write Operations
+
+    public async Task<ApiResponse<UserConsumptionDto>> RegisterConsumptionAsync(
+        UserConsumptionCreateDto createDto,
+        string userId,
+        int institucionId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // Get article price
+            var precioUnitario = await GetArticlePriceAsync(
+                createDto.ArticuloId,
+                createDto.PrecioUnitario,
+                institucionId,
+                cancellationToken
+            );
+            if (!precioUnitario.HasValue)
+            {
+                return ApiResponse<UserConsumptionDto>.Failure("Article not found");
+            }
+
+            // Validate and consume inventory
+            var inventoryResult = await ValidateAndConsumeInventoryAsync(
+                createDto.ArticuloId,
+                createDto.Cantidad,
+                createDto.TipoConsumo ?? "Servicio",
+                createDto.HabitacionId,
+                institucionId,
+                userId,
+                "Consumo de usuario",
+                cancellationToken
+            );
+
+            if (!inventoryResult.IsSuccess)
+            {
+                return ApiResponse<UserConsumptionDto>.Failure(
+                    inventoryResult.Errors,
+                    inventoryResult.Message ?? "Error processing inventory"
+                );
+            }
+
+            // Create movement and consumption
+            var movimiento = CreateMovimiento(
+                userId,
+                institucionId,
+                createDto,
+                precioUnitario.Value
+            );
+            _context.Movimientos.Add(movimiento);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            var consumo = CreateConsumo(movimiento.MovimientosId, createDto, precioUnitario.Value);
+            _context.Consumo.Add(consumo);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+
+            // Return created consumption
+            var result = await GetCreatedConsumptionDto(
+                consumo.ConsumoId,
+                userId,
+                cancellationToken
+            );
+
+            _logger.LogInformation(
+                "Registered consumption {ConsumoId} for user {UserId} in institution {InstitucionId}",
+                consumo.ConsumoId,
+                userId,
+                institucionId
+            );
+
+            return ApiResponse<UserConsumptionDto>.Success(
+                result,
+                "Consumption registered successfully"
+            );
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return LogAndReturnError<UserConsumptionDto>(
+                ex,
+                "Error registering consumption for user {UserId} in institution {InstitucionId}",
+                userId,
+                institucionId
             );
         }
     }
-}
 
+    public async Task<ApiResponse<UserConsumptionDto>> AdminCreateConsumptionForUserAsync(
+        AdminUserConsumptionCreateDto createDto,
+        int institucionId,
+        string adminUserId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // Validate target user
+            var targetUser = await _userManager.FindByIdAsync(createDto.UserId);
+            if (targetUser == null)
+            {
+                return ApiResponse<UserConsumptionDto>.Failure("Target user not found");
+            }
+
+            // Get article price
+            var precioUnitario = await GetArticlePriceAsync(
+                createDto.ArticuloId,
+                createDto.PrecioUnitario,
+                institucionId,
+                cancellationToken
+            );
+            if (!precioUnitario.HasValue)
+            {
+                return ApiResponse<UserConsumptionDto>.Failure("Article not found");
+            }
+
+            // Validate and consume inventory
+            var inventoryResult = await ValidateAndConsumeInventoryAsync(
+                createDto.ArticuloId,
+                createDto.Cantidad,
+                createDto.TipoConsumo ?? "Servicio",
+                createDto.HabitacionId,
+                institucionId,
+                adminUserId,
+                $"Consumo asignado por administrador {adminUserId}",
+                cancellationToken
+            );
+
+            if (!inventoryResult.IsSuccess)
+            {
+                return ApiResponse<UserConsumptionDto>.Failure(
+                    inventoryResult.Errors,
+                    inventoryResult.Message ?? "Error processing inventory"
+                );
+            }
+
+            // Create movement for target user
+            var movimiento = CreateMovimientoForAdmin(
+                createDto,
+                adminUserId,
+                institucionId,
+                precioUnitario.Value
+            );
+            _context.Movimientos.Add(movimiento);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // Create consumption
+            var consumo = CreateConsumoFromAdmin(
+                movimiento.MovimientosId,
+                createDto,
+                precioUnitario.Value
+            );
+            _context.Consumo.Add(consumo);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
+
+            // Return created consumption with user info
+            var result = await GetCreatedConsumptionDtoWithUserInfo(
+                consumo.ConsumoId,
+                createDto,
+                targetUser,
+                cancellationToken
+            );
+
+            _logger.LogInformation(
+                "Admin {AdminUserId} created consumption {ConsumoId} for user {UserId} in institution {InstitucionId}",
+                adminUserId,
+                consumo.ConsumoId,
+                createDto.UserId,
+                institucionId
+            );
+
+            return ApiResponse<UserConsumptionDto>.Success(
+                result,
+                "Consumption created successfully for user"
+            );
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return LogAndReturnError<UserConsumptionDto>(
+                ex,
+                "Error creating consumption for user {UserId} by admin {AdminUserId} in institution {InstitucionId}",
+                createDto.UserId,
+                adminUserId,
+                institucionId
+            );
+        }
+    }
+
+    public async Task<ApiResponse> CancelConsumptionAsync(
+        int consumptionId,
+        string userId,
+        int institucionId,
+        string? reason = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // Find and validate consumption
+            var consumo = await FindConsumptionForCancellation(
+                consumptionId,
+                institucionId,
+                cancellationToken
+            );
+            if (consumo == null)
+            {
+                return ApiResponse.Failure("Consumption not found");
+            }
+
+            if (consumo.Anulado == true)
+            {
+                return ApiResponse.Failure("Consumption is already cancelled");
+            }
+
+            // Mark as cancelled
+            consumo.Anulado = true;
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // Restore inventory
+            if (consumo.ArticuloId.HasValue && consumo.Cantidad.HasValue)
+            {
+                var restoreResult = await RestoreInventoryForCancelledConsumptionAsync(
+                    consumo.ArticuloId.Value,
+                    consumo.Cantidad.Value,
+                    consumo.EsHabitacion == true,
+                    consumo.Movimientos?.HabitacionId,
+                    reason ?? "Consumo anulado",
+                    consumo.ConsumoId.ToString(),
+                    institucionId,
+                    userId,
+                    cancellationToken
+                );
+
+                if (!restoreResult.IsSuccess)
+                {
+                    _logger.LogWarning(
+                        "Failed to restore inventory for cancelled consumption {ConsumoId}: {Error}",
+                        consumo.ConsumoId,
+                        restoreResult.Message
+                    );
+                }
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Consumption {ConsumoId} cancelled by user {UserId} in institution {InstitucionId}",
+                consumptionId,
+                userId,
+                institucionId
+            );
+
+            return ApiResponse.Success("Consumption cancelled successfully");
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            _logger.LogError(
+                ex,
+                "Error cancelling consumption {ConsumoId} for institution {InstitucionId}",
+                consumptionId,
+                institucionId
+            );
+            return ApiResponse.Failure(
+                "Error cancelling consumption",
+                "An error occurred while cancelling the consumption"
+            );
+        }
+    }
+
+    #endregion
+
+    #region Private Helper Methods - Query Building
+
+    private IQueryable<Consumo> BuildBaseConsumptionQuery(int institucionId)
+    {
+        return _context
+            .Consumo.AsNoTracking()
+            .Include(c => c.Articulo)
+            .Include(c => c.Movimientos!)
+            .ThenInclude(m => m.Habitacion)
+            .Where(c =>
+                c.Movimientos != null
+                && c.Movimientos.InstitucionID == institucionId
+                && (c.Anulado == null || c.Anulado == false)
+            );
+    }
+
+    private IQueryable<Consumo> BuildBaseConsumptionQueryWithUser(int institucionId)
+    {
+        return _context
+            .Consumo.AsNoTracking()
+            .Include(c => c.Articulo)
+            .Include(c => c.Movimientos!)
+            .ThenInclude(m => m.Habitacion)
+            .Include(c => c.Movimientos!)
+            .ThenInclude(m => m.User)
+            .Where(c =>
+                c.Movimientos != null
+                && c.Movimientos.InstitucionID == institucionId
+                && (c.Anulado == null || c.Anulado == false)
+            );
+    }
+
+    private IQueryable<Consumo> ApplyDateFilters(
+        IQueryable<Consumo> query,
+        DateTime? startDate,
+        DateTime? endDate
+    )
+    {
+        if (startDate.HasValue)
+            query = query.Where(c => c.Movimientos!.FechaRegistro >= startDate.Value);
+
+        if (endDate.HasValue)
+            query = query.Where(c => c.Movimientos!.FechaRegistro <= endDate.Value);
+
+        return query;
+    }
+
+    private IQueryable<Consumo> ApplyDateFiltersWithUser(
+        IQueryable<Consumo> query,
+        DateTime? startDate,
+        DateTime? endDate
+    )
+    {
+        return ApplyDateFilters(query, startDate, endDate);
+    }
+
+    #endregion
+
+    #region Private Helper Methods - Mapping
+
+    private static UserConsumptionDto MapToUserConsumptionDto(Consumo c, string userId)
+    {
+        return new UserConsumptionDto
+        {
+            Id = c.ConsumoId,
+            UserId = userId,
+            UserName = userId,
+            UserFullName = userId,
+            ArticuloId = c.ArticuloId ?? 0,
+            ArticuloNombre = c.Articulo?.NombreArticulo ?? string.Empty,
+            ArticuloCodigo = string.Empty,
+            Cantidad = c.Cantidad ?? 0,
+            PrecioUnitario = c.PrecioUnitario ?? 0,
+            Total = (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0),
+            FechaConsumo = c.Movimientos?.FechaRegistro ?? DateTime.Now,
+            HabitacionId = c.Movimientos?.HabitacionId,
+            HabitacionNumero = c.Movimientos?.Habitacion?.NombreHabitacion,
+            ReservaId = null,
+            TipoConsumo = c.EsHabitacion == true ? "Habitacion" : "Servicio",
+            Observaciones = c.Movimientos?.Descripcion,
+            Anulado = c.Anulado ?? false,
+        };
+    }
+
+    private static UserConsumptionDto MapToUserConsumptionDtoWithUserInfo(Consumo c)
+    {
+        var user = c.Movimientos?.User;
+        var userId = c.Movimientos?.UserId ?? string.Empty;
+        
+        return new UserConsumptionDto
+        {
+            Id = c.ConsumoId,
+            UserId = userId,
+            UserName = user?.UserName ?? userId,
+            UserFullName = !string.IsNullOrEmpty(user?.FirstName) || !string.IsNullOrEmpty(user?.LastName)
+                ? $"{user?.FirstName} {user?.LastName}".Trim()
+                : user?.UserName ?? userId,
+            ArticuloId = c.ArticuloId ?? 0,
+            ArticuloNombre = c.Articulo?.NombreArticulo ?? string.Empty,
+            ArticuloCodigo = string.Empty,
+            Cantidad = c.Cantidad ?? 0,
+            PrecioUnitario = c.PrecioUnitario ?? 0,
+            Total = (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0),
+            FechaConsumo = c.Movimientos?.FechaRegistro ?? DateTime.Now,
+            HabitacionId = c.Movimientos?.HabitacionId,
+            HabitacionNumero = c.Movimientos?.Habitacion?.NombreHabitacion,
+            ReservaId = null,
+            TipoConsumo = c.EsHabitacion == true ? "Habitacion" : "Servicio",
+            Observaciones = c.Movimientos?.Descripcion,
+            Anulado = c.Anulado ?? false,
+        };
+    }
+
+    private static UserConsumptionSummaryDto BuildUserConsumptionSummary(
+        List<Consumo> consumos,
+        string userId,
+        DateTime periodStart,
+        DateTime periodEnd
+    )
+    {
+        var summary = new UserConsumptionSummaryDto
+        {
+            UserId = userId,
+            UserName = userId,
+            UserFullName = userId,
+            PeriodStart = periodStart,
+            PeriodEnd = periodEnd,
+            TotalItems = consumos.Count(),
+            TotalQuantity = consumos.Sum(c => c.Cantidad ?? 0),
+            TotalAmount = consumos.Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0)),
+        };
+
+        // Group by type
+        summary.AmountByType = consumos
+            .GroupBy(c => c.EsHabitacion == true ? "Habitacion" : "Servicio")
+            .ToDictionary(g => g.Key, g => g.Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0)));
+
+        // Top consumed items
+        summary.TopConsumedItems = consumos
+            .Where(c => c.ArticuloId.HasValue)
+            .GroupBy(c => new { c.ArticuloId, NombreArticulo = c.Articulo?.NombreArticulo })
+            .Select(g => new TopConsumedItem
+            {
+                ArticuloId = g.Key.ArticuloId ?? 0,
+                ArticuloNombre = g.Key.NombreArticulo ?? string.Empty,
+                TotalQuantity = g.Sum(c => c.Cantidad ?? 0),
+                TotalAmount = g.Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0)),
+            })
+            .OrderByDescending(i => i.TotalAmount)
+            .Take(10)
+            .ToList();
+
+        return summary;
+    }
+
+    private static List<UserConsumptionByServiceDto> BuildConsumptionByServiceSummary(
+        List<Consumo> consumos
+    )
+    {
+        var totalAmount = consumos.Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0));
+
+        return consumos
+            .GroupBy(c => c.EsHabitacion == true ? "Habitacion" : "Servicio")
+            .Select(g =>
+            {
+                var serviceAmount = g.Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0));
+                return new UserConsumptionByServiceDto
+                {
+                    ServiceType = g.Key,
+                    TotalItems = g.Count(),
+                    TotalAmount = serviceAmount,
+                    Percentage = totalAmount > 0 ? (serviceAmount / totalAmount) * 100 : 0,
+                    Items = g.Where(c => c.ArticuloId.HasValue)
+                        .GroupBy(c => new
+                        {
+                            c.ArticuloId,
+                            NombreArticulo = c.Articulo?.NombreArticulo,
+                        })
+                        .Select(itemGroup => new ServiceItemDetail
+                        {
+                            ArticuloId = itemGroup.Key.ArticuloId ?? 0,
+                            ArticuloNombre = itemGroup.Key.NombreArticulo ?? string.Empty,
+                            Quantity = itemGroup.Sum(c => c.Cantidad ?? 0),
+                            Amount = itemGroup.Sum(c =>
+                                (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0)
+                            ),
+                            LastConsumedDate = itemGroup.Max(c =>
+                                c.Movimientos?.FechaRegistro ?? DateTime.Now
+                            ),
+                        })
+                        .OrderByDescending(i => i.Amount)
+                        .Take(5)
+                        .ToList(),
+                };
+            })
+            .OrderByDescending(s => s.TotalAmount)
+            .ToList();
+    }
+
+    #endregion
+
+    #region Private Helper Methods - Business Logic
+
+    private async Task<decimal?> GetArticlePriceAsync(
+        int articuloId,
+        decimal? providedPrice,
+        int institucionId,
+        CancellationToken cancellationToken
+    )
+    {
+        if (providedPrice.HasValue && providedPrice.Value > 0)
+            return providedPrice.Value;
+
+        var articulo = await _context
+            .Articulos.AsNoTracking()
+            .FirstOrDefaultAsync(
+                a => a.ArticuloId == articuloId && a.InstitucionID == institucionId,
+                cancellationToken
+            );
+
+        return articulo?.Precio;
+    }
+
+    private async Task<ApiResponse> ValidateAndConsumeInventoryAsync(
+        int articuloId,
+        int cantidad,
+        string tipoConsumo,
+        int? habitacionId,
+        int institucionId,
+        string userId,
+        string motivo,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            // Determine inventory location
+            var locationType =
+                tipoConsumo == "Habitacion"
+                    ? InventoryLocationType.Room
+                    : InventoryLocationType.General;
+
+            var locationId = tipoConsumo == "Habitacion" ? habitacionId : null;
+
+            // Validate stock
+            var stockValidation = await _inventoryService.ValidateStockAsync(
+                articuloId,
+                cantidad,
+                locationType,
+                locationId,
+                institucionId,
+                cancellationToken
+            );
+
+            if (!stockValidation.IsSuccess)
+            {
+                return ApiResponse.Failure(
+                    "Error validating stock",
+                    stockValidation.Message ?? "Stock validation failed"
+                );
+            }
+
+            if (!stockValidation.Data!.IsValid)
+            {
+                return ApiResponse.Failure(
+                    $"Insufficient stock. Available: {stockValidation.Data.AvailableQuantity}, Requested: {cantidad}"
+                );
+            }
+
+            // Find inventory and register movement
+            var inventory = await _context.InventarioUnificado.FirstOrDefaultAsync(
+                i =>
+                    i.ArticuloId == articuloId
+                    && i.TipoUbicacion == (int)locationType
+                    && i.UbicacionId == locationId
+                    && i.InstitucionID == institucionId,
+                cancellationToken
+            );
+
+            if (inventory == null)
+            {
+                return ApiResponse.Failure("Inventory not found for article in specified location");
+            }
+
+            // Register movement to reduce stock
+            var movementResult = await _inventoryService.RegisterMovementAsync(
+                new MovimientoInventarioCreateDto
+                {
+                    InventarioId = inventory.InventarioId,
+                    TipoMovimiento = "Salida",
+                    CantidadAnterior = inventory.Cantidad,
+                    CantidadNueva = inventory.Cantidad - cantidad,
+                    CantidadCambiada = -cantidad,
+                    Motivo = $"{motivo} - {tipoConsumo}",
+                    NumeroDocumento = $"CONSUMO-{DateTime.UtcNow:yyyyMMddHHmmss}",
+                },
+                institucionId,
+                userId,
+                cancellationToken: cancellationToken
+            );
+
+            return movementResult.IsSuccess
+                ? ApiResponse.Success("Inventory updated successfully")
+                : ApiResponse.Failure(
+                    "Error updating inventory",
+                    movementResult.Message ?? "Failed to register inventory movement"
+                );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error validating and consuming inventory for article {ArticuloId}",
+                articuloId
+            );
+            return ApiResponse.Failure(
+                "Error processing inventory",
+                "An unexpected error occurred while processing inventory"
+            );
+        }
+    }
+
+    private async Task<ApiResponse> RestoreInventoryForCancelledConsumptionAsync(
+        int articuloId,
+        int cantidad,
+        bool esHabitacion,
+        int? habitacionId,
+        string motivo,
+        string numeroDocumento,
+        int institucionId,
+        string userId,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            var locationType = esHabitacion
+                ? InventoryLocationType.Room
+                : InventoryLocationType.General;
+            var locationId = esHabitacion ? habitacionId : null;
+
+            var inventory = await _context.InventarioUnificado.FirstOrDefaultAsync(
+                i =>
+                    i.ArticuloId == articuloId
+                    && i.TipoUbicacion == (int)locationType
+                    && i.UbicacionId == locationId
+                    && i.InstitucionID == institucionId,
+                cancellationToken
+            );
+
+            if (inventory == null)
+            {
+                return ApiResponse.Failure(
+                    "Inventory not found for article in specified location during restoration"
+                );
+            }
+
+            var movementResult = await _inventoryService.RegisterMovementAsync(
+                new MovimientoInventarioCreateDto
+                {
+                    InventarioId = inventory.InventarioId,
+                    TipoMovimiento = "Entrada",
+                    CantidadAnterior = inventory.Cantidad,
+                    CantidadNueva = inventory.Cantidad + cantidad,
+                    CantidadCambiada = cantidad,
+                    Motivo = motivo,
+                    NumeroDocumento = $"CANCEL-{numeroDocumento}",
+                },
+                institucionId,
+                userId,
+                cancellationToken: cancellationToken
+            );
+
+            return movementResult.IsSuccess
+                ? ApiResponse.Success("Inventory restored successfully")
+                : ApiResponse.Failure(
+                    "Error restoring inventory",
+                    movementResult.Message ?? "Failed to register inventory restoration movement"
+                );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error restoring inventory for cancelled consumption of article {ArticuloId}",
+                articuloId
+            );
+            return ApiResponse.Failure(
+                "Error restoring inventory",
+                "An unexpected error occurred while restoring inventory"
+            );
+        }
+    }
+
+    #endregion
+
+    #region Private Helper Methods - Entity Creation
+
+    private static Movimientos CreateMovimiento(
+        string userId,
+        int institucionId,
+        UserConsumptionCreateDto createDto,
+        decimal precioUnitario
+    )
+    {
+        return new Movimientos
+        {
+            InstitucionID = institucionId,
+            UserId = userId,
+            FechaRegistro = DateTime.Now,
+            TotalFacturado = createDto.Cantidad * precioUnitario,
+            HabitacionId = createDto.HabitacionId,
+            Descripcion = createDto.Observaciones,
+        };
+    }
+
+    private static Movimientos CreateMovimientoForAdmin(
+        AdminUserConsumptionCreateDto createDto,
+        string adminUserId,
+        int institucionId,
+        decimal precioUnitario
+    )
+    {
+        return new Movimientos
+        {
+            InstitucionID = institucionId,
+            UserId = createDto.UserId,
+            FechaRegistro = DateTime.Now,
+            TotalFacturado = createDto.Cantidad * precioUnitario,
+            HabitacionId = createDto.HabitacionId,
+            Descripcion =
+                createDto.Observaciones ?? $"Consumo asignado por administrador {adminUserId}",
+        };
+    }
+
+    private static Consumo CreateConsumo(
+        int movimientosId,
+        UserConsumptionCreateDto createDto,
+        decimal precioUnitario
+    )
+    {
+        return new Consumo
+        {
+            MovimientosId = movimientosId,
+            ArticuloId = createDto.ArticuloId,
+            Cantidad = createDto.Cantidad,
+            PrecioUnitario = precioUnitario,
+            EsHabitacion = createDto.TipoConsumo == "Habitacion",
+            Anulado = false,
+        };
+    }
+
+    private static Consumo CreateConsumoFromAdmin(
+        int movimientosId,
+        AdminUserConsumptionCreateDto createDto,
+        decimal precioUnitario
+    )
+    {
+        return new Consumo
+        {
+            MovimientosId = movimientosId,
+            ArticuloId = createDto.ArticuloId,
+            Cantidad = createDto.Cantidad,
+            PrecioUnitario = precioUnitario,
+            EsHabitacion = createDto.TipoConsumo == "Habitacion",
+            Anulado = false,
+        };
+    }
+
+    #endregion
+
+    #region Private Helper Methods - Data Retrieval
+
+    private async Task<UserConsumptionDto> GetCreatedConsumptionDto(
+        int consumoId,
+        string userId,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await _context
+            .Consumo.AsNoTracking()
+            .Include(c => c.Articulo)
+            .Include(c => c.Movimientos!)
+            .ThenInclude(m => m.Habitacion)
+            .FirstOrDefaultAsync(c => c.ConsumoId == consumoId, cancellationToken);
+
+        return MapToUserConsumptionDto(result!, userId);
+    }
+
+    private async Task<UserConsumptionDto> GetCreatedConsumptionDtoWithUserInfo(
+        int consumoId,
+        AdminUserConsumptionCreateDto createDto,
+        ApplicationUser targetUser,
+        CancellationToken cancellationToken
+    )
+    {
+        var result = await _context
+            .Consumo.AsNoTracking()
+            .Include(c => c.Articulo)
+            .Include(c => c.Movimientos!)
+            .ThenInclude(m => m.Habitacion)
+            .FirstOrDefaultAsync(c => c.ConsumoId == consumoId, cancellationToken);
+
+        var dto = MapToUserConsumptionDto(result!, createDto.UserId);
+        dto.UserName = targetUser.UserName ?? createDto.UserId;
+        dto.UserFullName = $"{targetUser.FirstName} {targetUser.LastName}".Trim();
+        dto.ReservaId = createDto.ReservaId;
+
+        return dto;
+    }
+
+    private async Task<Consumo?> FindConsumptionForCancellation(
+        int consumptionId,
+        int institucionId,
+        CancellationToken cancellationToken
+    )
+    {
+        return await _context
+            .Consumo.Include(c => c.Articulo)
+            .Include(c => c.Movimientos)
+            .FirstOrDefaultAsync(
+                c =>
+                    c.ConsumoId == consumptionId
+                    && c.Movimientos != null
+                    && c.Movimientos.InstitucionID == institucionId,
+                cancellationToken
+            );
+    }
+
+    #endregion
+
+    #region Private Helper Methods - Error Handling
+
+    private ApiResponse<T> LogAndReturnError<T>(
+        Exception ex,
+        string messageTemplate,
+        params object[] args
+    )
+    {
+        _logger.LogError(ex, messageTemplate, args);
+        return ApiResponse<T>.Failure(
+            "Error processing request",
+            "An error occurred while processing the request"
+        );
+    }
+
+    #endregion
+}

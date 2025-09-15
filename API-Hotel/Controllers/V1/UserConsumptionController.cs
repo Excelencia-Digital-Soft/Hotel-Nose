@@ -142,7 +142,7 @@ public class UserConsumptionController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [Authorize(Roles = "Administrator,Director")]
+    [Authorize(Roles = "Administrator,Director, Cajero Stock")]
     public async Task<
         ActionResult<ApiResponse<IEnumerable<UserConsumptionDto>>>
     > GetUserConsumption(
@@ -174,7 +174,7 @@ public class UserConsumptionController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [Authorize(Roles = "Administrator,Director")]
+    [Authorize(Roles = "Administrator,Director,Cajero Stock")]
     public async Task<
         ActionResult<ApiResponse<UserConsumptionSummaryDto>>
     > GetUserConsumptionSummary(
@@ -284,7 +284,7 @@ public class UserConsumptionController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status403Forbidden)]
-    [Authorize(Roles = "Administrator,Director")]
+    [Authorize(Roles = "Administrator,Director,Cajero Stock")]
     public async Task<ActionResult<ApiResponse<UserConsumptionDto>>> AdminCreateConsumptionForUser(
         [FromBody] AdminUserConsumptionCreateDto createDto,
         CancellationToken cancellationToken = default
@@ -320,7 +320,11 @@ public class UserConsumptionController : ControllerBase
 
         if (result.IsSuccess)
         {
-            return CreatedAtAction(nameof(GetUserConsumption), new { userId = createDto.UserId }, result);
+            return CreatedAtAction(
+                nameof(GetUserConsumption),
+                new { userId = createDto.UserId },
+                result
+            );
         }
 
         return StatusCode(500, result);
@@ -368,4 +372,3 @@ public class UserConsumptionController : ControllerBase
     }
     #endregion
 }
-

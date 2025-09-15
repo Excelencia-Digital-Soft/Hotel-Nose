@@ -16,21 +16,24 @@ public class MovimientosService : IMovimientosService
     public MovimientosService(
         HotelDbContext context,
         ILogger<MovimientosService> logger,
-        IRegistrosService registrosService)
+        IRegistrosService registrosService
+    )
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _registrosService = registrosService ?? throw new ArgumentNullException(nameof(registrosService));
+        _registrosService =
+            registrosService ?? throw new ArgumentNullException(nameof(registrosService));
     }
 
     public async Task<ApiResponse<IEnumerable<MovimientoDto>>> GetAllAsync(
         int institucionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
-            var movimientos = await _context.Movimientos
-                .AsNoTracking()
+            var movimientos = await _context
+                .Movimientos.AsNoTracking()
                 .Include(m => m.Visita)
                 .Include(m => m.Habitacion)
                 .Include(m => m.Pago)
@@ -44,38 +47,43 @@ public class MovimientosService : IMovimientosService
             _logger.LogInformation(
                 "Retrieved {Count} movements for institution {InstitucionId}",
                 movimientosDto.Count,
-                institucionId);
+                institucionId
+            );
 
             return ApiResponse<IEnumerable<MovimientoDto>>.Success(movimientosDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(
+                ex,
                 "Error retrieving movements for institution {InstitucionId}",
-                institucionId);
+                institucionId
+            );
             return ApiResponse<IEnumerable<MovimientoDto>>.Failure(
                 "Error retrieving movements",
-                "An error occurred while retrieving the movements");
+                "An error occurred while retrieving the movements"
+            );
         }
     }
 
     public async Task<ApiResponse<MovimientoDto>> GetByIdAsync(
         int id,
         int institucionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
-            var movimiento = await _context.Movimientos
-                .AsNoTracking()
+            var movimiento = await _context
+                .Movimientos.AsNoTracking()
                 .Include(m => m.Visita)
                 .Include(m => m.Habitacion)
                 .Include(m => m.Pago)
                 .Include(m => m.Consumo)
-                .FirstOrDefaultAsync(m => 
-                    m.MovimientosId == id && 
-                    m.InstitucionID == institucionId,
-                    cancellationToken);
+                .FirstOrDefaultAsync(
+                    m => m.MovimientosId == id && m.InstitucionID == institucionId,
+                    cancellationToken
+                );
 
             if (movimiento == null)
             {
@@ -87,26 +95,31 @@ public class MovimientosService : IMovimientosService
             _logger.LogInformation(
                 "Retrieved movement {MovimientoId} for institution {InstitucionId}",
                 id,
-                institucionId);
+                institucionId
+            );
 
             return ApiResponse<MovimientoDto>.Success(movimientoDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(
+                ex,
                 "Error retrieving movement {MovimientoId} for institution {InstitucionId}",
                 id,
-                institucionId);
+                institucionId
+            );
             return ApiResponse<MovimientoDto>.Failure(
                 "Error retrieving movement",
-                "An error occurred while retrieving the movement");
+                "An error occurred while retrieving the movement"
+            );
         }
     }
 
     public async Task<ApiResponse<Movimientos>> CreateMovimientoAsync(
         MovimientoCreateDto createDto,
         int institucionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
@@ -118,7 +131,7 @@ public class MovimientosService : IMovimientosService
                 HabitacionId = createDto.HabitacionId,
                 FechaRegistro = DateTime.Now,
                 Anulado = false,
-                Descripcion = createDto.Descripcion
+                Descripcion = createDto.Descripcion,
             };
 
             _context.Movimientos.Add(movimiento);
@@ -131,31 +144,38 @@ public class MovimientosService : IMovimientosService
                 institucionId,
                 null,
                 null,
-                System.Text.Json.JsonSerializer.Serialize(new 
-                {
-                    MovimientoId = movimiento.MovimientosId,
-                    VisitaId = movimiento.VisitaId,
-                    Total = movimiento.TotalFacturado,
-                    HabitacionId = movimiento.HabitacionId
-                }),
+                System.Text.Json.JsonSerializer.Serialize(
+                    new
+                    {
+                        MovimientoId = movimiento.MovimientosId,
+                        VisitaId = movimiento.VisitaId,
+                        Total = movimiento.TotalFacturado,
+                        HabitacionId = movimiento.HabitacionId,
+                    }
+                ),
                 movimiento.MovimientosId,
-                cancellationToken);
+                cancellationToken
+            );
 
             _logger.LogInformation(
                 "Created movement {MovimientoId} for institution {InstitucionId}",
                 movimiento.MovimientosId,
-                institucionId);
+                institucionId
+            );
 
             return ApiResponse<Movimientos>.Success(movimiento, "Movement created successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(
+                ex,
                 "Error creating movement for institution {InstitucionId}",
-                institucionId);
+                institucionId
+            );
             return ApiResponse<Movimientos>.Failure(
                 "Error creating movement",
-                "An error occurred while creating the movement");
+                "An error occurred while creating the movement"
+            );
         }
     }
 
@@ -165,7 +185,8 @@ public class MovimientosService : IMovimientosService
         decimal totalFacturado,
         int habitacionId,
         string? descripcion = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
@@ -177,7 +198,7 @@ public class MovimientosService : IMovimientosService
                 HabitacionId = habitacionId,
                 FechaRegistro = DateTime.Now,
                 Anulado = false,
-                Descripcion = descripcion ?? "Movimiento por habitación"
+                Descripcion = descripcion ?? "Movimiento por habitación",
             };
 
             _context.Movimientos.Add(movimiento);
@@ -190,33 +211,43 @@ public class MovimientosService : IMovimientosService
                 institucionId,
                 null,
                 null,
-                System.Text.Json.JsonSerializer.Serialize(new 
-                {
-                    MovimientoId = movimiento.MovimientosId,
-                    VisitaId = visitaId,
-                    HabitacionId = habitacionId,
-                    Total = totalFacturado
-                }),
+                System.Text.Json.JsonSerializer.Serialize(
+                    new
+                    {
+                        MovimientoId = movimiento.MovimientosId,
+                        VisitaId = visitaId,
+                        HabitacionId = habitacionId,
+                        Total = totalFacturado,
+                    }
+                ),
                 movimiento.MovimientosId,
-                cancellationToken);
+                cancellationToken
+            );
 
             _logger.LogInformation(
                 "Created room movement {MovimientoId} for visit {VisitaId} in institution {InstitucionId}",
                 movimiento.MovimientosId,
                 visitaId,
-                institucionId);
+                institucionId
+            );
 
-            return ApiResponse<Movimientos>.Success(movimiento, "Room movement created successfully");
+            return ApiResponse<Movimientos>.Success(
+                movimiento,
+                "Room movement created successfully"
+            );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(
+                ex,
                 "Error creating room movement for visit {VisitaId} in institution {InstitucionId}",
                 visitaId,
-                institucionId);
+                institucionId
+            );
             return ApiResponse<Movimientos>.Failure(
                 "Error creating room movement",
-                "An error occurred while creating the room movement");
+                "An error occurred while creating the room movement"
+            );
         }
     }
 
@@ -224,15 +255,15 @@ public class MovimientosService : IMovimientosService
         int id,
         MovimientoUpdateDto updateDto,
         int institucionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
-            var movimiento = await _context.Movimientos
-                .FirstOrDefaultAsync(m => 
-                    m.MovimientosId == id && 
-                    m.InstitucionID == institucionId,
-                    cancellationToken);
+            var movimiento = await _context.Movimientos.FirstOrDefaultAsync(
+                m => m.MovimientosId == id && m.InstitucionID == institucionId,
+                cancellationToken
+            );
 
             if (movimiento == null)
             {
@@ -246,7 +277,7 @@ public class MovimientosService : IMovimientosService
 
             if (updateDto.TotalFacturado.HasValue)
                 movimiento.TotalFacturado = updateDto.TotalFacturado.Value;
-            
+
             if (!string.IsNullOrEmpty(updateDto.Descripcion))
                 movimiento.Descripcion = updateDto.Descripcion;
 
@@ -254,8 +285,8 @@ public class MovimientosService : IMovimientosService
             await _context.SaveChangesAsync(cancellationToken);
 
             // Retrieve with includes for response
-            var updatedMovimiento = await _context.Movimientos
-                .AsNoTracking()
+            var updatedMovimiento = await _context
+                .Movimientos.AsNoTracking()
                 .Include(m => m.Visita)
                 .Include(m => m.Habitacion)
                 .Include(m => m.Pago)
@@ -267,19 +298,26 @@ public class MovimientosService : IMovimientosService
             _logger.LogInformation(
                 "Updated movement {MovimientoId} for institution {InstitucionId}",
                 id,
-                institucionId);
+                institucionId
+            );
 
-            return ApiResponse<MovimientoDto>.Success(movimientoDto, "Movement updated successfully");
+            return ApiResponse<MovimientoDto>.Success(
+                movimientoDto,
+                "Movement updated successfully"
+            );
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(
+                ex,
                 "Error updating movement {MovimientoId} for institution {InstitucionId}",
                 id,
-                institucionId);
+                institucionId
+            );
             return ApiResponse<MovimientoDto>.Failure(
                 "Error updating movement",
-                "An error occurred while updating the movement");
+                "An error occurred while updating the movement"
+            );
         }
     }
 
@@ -287,17 +325,18 @@ public class MovimientosService : IMovimientosService
         int id,
         int institucionId,
         string? reason = null,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            var movimiento = await _context.Movimientos
-                .Include(m => m.Consumo)
-                .FirstOrDefaultAsync(m => 
-                    m.MovimientosId == id && 
-                    m.InstitucionID == institucionId,
-                    cancellationToken);
+            var movimiento = await _context
+                .Movimientos.Include(m => m.Consumo)
+                .FirstOrDefaultAsync(
+                    m => m.MovimientosId == id && m.InstitucionID == institucionId,
+                    cancellationToken
+                );
 
             if (movimiento == null)
             {
@@ -313,7 +352,8 @@ public class MovimientosService : IMovimientosService
             {
                 return ApiResponse.Failure(
                     "Cannot cancel paid movement",
-                    "This movement has been paid and cannot be cancelled");
+                    "This movement has been paid and cannot be cancelled"
+                );
             }
 
             movimiento.Anulado = true;
@@ -334,52 +374,54 @@ public class MovimientosService : IMovimientosService
                 institucionId,
                 null,
                 null,
-                System.Text.Json.JsonSerializer.Serialize(new 
-                {
-                    MovimientoId = movimiento.MovimientosId,
-                    Motivo = reason
-                }),
+                System.Text.Json.JsonSerializer.Serialize(
+                    new { MovimientoId = movimiento.MovimientosId, Motivo = reason }
+                ),
                 movimiento.MovimientosId,
-                cancellationToken);
+                cancellationToken
+            );
 
             await transaction.CommitAsync(cancellationToken);
 
             _logger.LogInformation(
                 "Cancelled movement {MovimientoId} for institution {InstitucionId}",
                 id,
-                institucionId);
+                institucionId
+            );
 
             return ApiResponse.Success("Movement cancelled successfully");
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(ex,
+            _logger.LogError(
+                ex,
                 "Error cancelling movement {MovimientoId} for institution {InstitucionId}",
                 id,
-                institucionId);
+                institucionId
+            );
             return ApiResponse.Failure(
                 "Error cancelling movement",
-                "An error occurred while cancelling the movement");
+                "An error occurred while cancelling the movement"
+            );
         }
     }
 
     public async Task<ApiResponse<IEnumerable<MovimientoDto>>> GetByVisitaAsync(
         int visitaId,
         int institucionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
-            var movimientos = await _context.Movimientos
-                .AsNoTracking()
+            var movimientos = await _context
+                .Movimientos.AsNoTracking()
                 .Include(m => m.Visita)
                 .Include(m => m.Habitacion)
                 .Include(m => m.Pago)
                 .Include(m => m.Consumo)
-                .Where(m => 
-                    m.VisitaId == visitaId && 
-                    m.InstitucionID == institucionId)
+                .Where(m => m.VisitaId == visitaId && m.InstitucionID == institucionId)
                 .OrderByDescending(m => m.FechaRegistro)
                 .ToListAsync(cancellationToken);
 
@@ -389,53 +431,61 @@ public class MovimientosService : IMovimientosService
                 "Retrieved {Count} movements for visit {VisitaId} in institution {InstitucionId}",
                 movimientosDto.Count,
                 visitaId,
-                institucionId);
+                institucionId
+            );
 
             return ApiResponse<IEnumerable<MovimientoDto>>.Success(movimientosDto);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(
+                ex,
                 "Error retrieving movements for visit {VisitaId} in institution {InstitucionId}",
                 visitaId,
-                institucionId);
+                institucionId
+            );
             return ApiResponse<IEnumerable<MovimientoDto>>.Failure(
                 "Error retrieving movements",
-                "An error occurred while retrieving the movements");
+                "An error occurred while retrieving the movements"
+            );
         }
     }
 
     public async Task<ApiResponse<decimal>> GetTotalByVisitaAsync(
         int visitaId,
         int institucionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
-            var total = await _context.Movimientos
-                .Where(m => 
-                    m.VisitaId == visitaId && 
-                    m.InstitucionID == institucionId &&
-                    m.Anulado != true)
+            var total = await _context
+                .Movimientos.Where(m =>
+                    m.VisitaId == visitaId && m.InstitucionID == institucionId && m.Anulado != true
+                )
                 .SumAsync(m => m.TotalFacturado ?? 0, cancellationToken);
 
             _logger.LogInformation(
                 "Calculated total {Total} for visit {VisitaId} in institution {InstitucionId}",
                 total,
                 visitaId,
-                institucionId);
+                institucionId
+            );
 
             return ApiResponse<decimal>.Success(total);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(
+                ex,
                 "Error calculating total for visit {VisitaId} in institution {InstitucionId}",
                 visitaId,
-                institucionId);
+                institucionId
+            );
             return ApiResponse<decimal>.Failure(
                 "Error calculating total",
-                "An error occurred while calculating the total");
+                "An error occurred while calculating the total"
+            );
         }
     }
 
@@ -443,15 +493,15 @@ public class MovimientosService : IMovimientosService
         int movimientoId,
         int pagoId,
         int institucionId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         try
         {
-            var movimiento = await _context.Movimientos
-                .FirstOrDefaultAsync(m => 
-                    m.MovimientosId == movimientoId && 
-                    m.InstitucionID == institucionId,
-                    cancellationToken);
+            var movimiento = await _context.Movimientos.FirstOrDefaultAsync(
+                m => m.MovimientosId == movimientoId && m.InstitucionID == institucionId,
+                cancellationToken
+            );
 
             if (movimiento == null)
             {
@@ -472,19 +522,23 @@ public class MovimientosService : IMovimientosService
                 "Updated payment {PagoId} for movement {MovimientoId} in institution {InstitucionId}",
                 pagoId,
                 movimientoId,
-                institucionId);
+                institucionId
+            );
 
             return ApiResponse.Success("Payment updated successfully");
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(
+                ex,
                 "Error updating payment for movement {MovimientoId} in institution {InstitucionId}",
                 movimientoId,
-                institucionId);
+                institucionId
+            );
             return ApiResponse.Failure(
                 "Error updating payment",
-                "An error occurred while updating the payment");
+                "An error occurred while updating the payment"
+            );
         }
     }
 
@@ -502,14 +556,16 @@ public class MovimientosService : IMovimientosService
             HabitacionId = movimiento.HabitacionId,
             HabitacionNombre = movimiento.Habitacion?.NombreHabitacion,
             FechaRegistro = movimiento.FechaRegistro,
-            UsuarioId = movimiento.UsuarioId,
+            UserId = movimiento.UserId,
             UsuarioNombre = null, // TODO: Add user navigation if needed
             Anulado = movimiento.Anulado,
             Descripcion = movimiento.Descripcion,
             TotalConsumos = movimiento.Consumo?.Count(c => c.Anulado != true) ?? 0,
-            TotalConsumosAmount = movimiento.Consumo?
-                .Where(c => c.Anulado != true)
-                .Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0)) ?? 0
+            TotalConsumosAmount =
+                movimiento
+                    .Consumo?.Where(c => c.Anulado != true)
+                    .Sum(c => (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0)) ?? 0,
         };
     }
 }
+
