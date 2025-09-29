@@ -1,4 +1,5 @@
 <template>
+  
   <div class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-6">
     <!-- Glass Container -->
     <div class="max-w-7xl mx-auto">
@@ -37,69 +38,80 @@
                 Ya existe una categoría con este nombre
               </p>
             </div>
+  <!-- Alerta emergente -->
+<transition name="fade">
+  <div
+    v-if="alertaVisible"
+    class="fixed top-12 left-0 w-full bg-yellow-400 text-yellow-900 text-center font-medium py-2 shadow-lg z-50"
+  >
+   Estas editando la categoría <strong>"{{ formData.nombreCategoria }}"</strong>
+  </div>
+</transition>
+          <!-- Price -->
+<div class="space-y-2">
+  <label class="block text-white font-medium text-sm"> Precio Base * </label>
 
-            <!-- Price -->
-            <div class="space-y-2">
-              <label class="block text-white font-medium text-sm"> Precio Base * </label>
-              <div class="relative">
-                <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70"
-                  >$</span
-                >
-                <input
-                  v-model="formData.precioNormal"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  class="glass-input w-full pl-8"
-                  required
-                />
-              </div>
-              <p class="text-white/60 text-xs">Precio base por noche</p>
-            </div>
+  <div class="glass-input flex items-center">
+    <span class="text-white/70 ml-3 mr-2">$</span>
+    <input
+      v-model="formData.precioNormal"
+      type="number"
+      min="0"
+      step="0.01"
+      placeholder="0.00"
+      class="bg-transparent w-full text-white placeholder-white/50 focus:outline-none"
+      required
+    />
+  </div>
 
+  <p class="text-white/60 text-xs">Precio base por noche</p>
+</div>
             <!-- Capacity -->
-            <div class="space-y-2">
-              <label class="block text-white font-medium text-sm"> Capacidad Máxima * </label>
-              <div class="relative">
-                <input
-                  v-model="formData.capacidadMaxima"
-                  type="number"
-                  min="1"
-                  max="20"
-                  placeholder="2"
-                  class="glass-input w-full"
-                  required
-                />
-                <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70">
-                  <i class="pi pi-users text-sm"></i>
-                </span>
-              </div>
-              <p class="text-white/60 text-xs">Número máximo de personas</p>
-            </div>
+<div class="space-y-2">
+  <label class="block text-white font-medium text-sm"> Capacidad Máxima * </label>
 
-            <!-- Percentage per person -->
-            <div class="space-y-2">
-              <label class="block text-white font-medium text-sm">
-                Porcentaje por Persona Adicional *
-              </label>
-              <div class="relative">
-                <input
-                  v-model="formData.porcentajeXPersona"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  placeholder="0.0"
-                  class="glass-input w-full pr-8"
-                  required
-                />
-                <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-white/70"
-                  >%</span
-                >
-              </div>
-              <p class="text-white/60 text-xs">Incremento del precio base por persona adicional</p>
-            </div>
+  <div class="glass-input flex items-center">
+    <input
+      v-model="formData.capacidadMaxima"
+      type="number"
+      min="1"
+      max="20"
+      placeholder="2"
+      class="bg-transparent w-full text-white placeholder-white/50 focus:outline-none"
+      required
+    />
+    <span class="text-white/70 mr-3">
+      <i class="pi pi-users text-sm"></i>
+    </span>
+  </div>
+
+  <p class="text-white/60 text-xs">Número máximo de personas</p>
+</div>
+
+<!-- Percentage per person -->
+<div class="space-y-2">
+  <label class="block text-white font-medium text-sm">
+    Porcentaje por Persona Adicional *
+  </label>
+
+  <div class="glass-input flex items-center">
+    <input
+      v-model="formData.porcentajeXPersona"
+      type="number"
+      min="0"
+      max="100"
+      step="0.1"
+      placeholder="0.0"
+      class="bg-transparent w-full text-white placeholder-white/50 focus:outline-none"
+      required
+    />
+    <span class="text-white/70 mr-3">%</span>
+  </div>
+
+  <p class="text-white/60 text-xs">
+    Incremento del precio base por persona adicional
+  </p>
+</div>
 
             <!-- Price Calculator -->
             <div
@@ -257,23 +269,24 @@
                 </div>
               </div>
 
-              <!-- Action Buttons -->
-              <div class="grid grid-cols-2 gap-2">
-                <button
-                  @click="startEdit(categoria)"
-                  class="glass-action-button text-blue-400 hover:text-blue-300"
-                >
-                  <i class="pi pi-pencil text-sm"></i>
-                  <span class="text-xs mt-1">Editar</span>
-                </button>
-                <button
-                  @click="deleteCategory(categoria)"
-                  class="glass-action-button text-red-400 hover:text-red-300"
-                >
-                  <i class="pi pi-trash text-sm"></i>
-                  <span class="text-xs mt-1">Eliminar</span>
-                </button>
-              </div>
+             <!-- Action Buttons -->
+<div class="grid grid-cols-2 gap-2">
+  <button
+    @click="handleEdit(categoria)"
+    class="glass-action-button text-blue-400 hover:text-blue-300"
+  >
+    <i class="pi pi-pencil text-sm"></i>
+    <span class="text-xs mt-1">Editar</span>
+  </button>
+
+  <button
+    @click="deleteCategory(categoria)"
+    class="glass-action-button text-red-400 hover:text-red-300"
+  >
+    <i class="pi pi-trash text-sm"></i>
+    <span class="text-xs mt-1">Eliminar</span>
+  </button>
+</div>
             </div>
           </div>
         </div>
@@ -316,6 +329,20 @@
     const total = categorias.value.reduce((sum, cat) => sum + cat.precioNormal, 0)
     return formatPrice(total / categorias.value.length)
   })
+
+  //Mensaje de alerta de edicion
+  const alertaVisible = ref(false)
+
+const handleEdit = (categoria) => {
+  startEdit(categoria) // tu funcionalidad original
+  window.scrollTo({ top: 0, behavior: "smooth" }) // desliza hacia arriba
+
+  // mostrar la alerta emergente una vez
+  alertaVisible.value = true
+  setTimeout(() => {
+    alertaVisible.value = false
+  }, 3000) // se oculta a los 3 segundos
+}
 
   // Lifecycle
   onMounted(() => {

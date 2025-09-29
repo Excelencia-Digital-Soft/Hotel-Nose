@@ -15,7 +15,7 @@
             <h1 class="text-3xl lg:text-4xl font-bold text-white">¡Gestiona tus Artículos!</h1>
           </div>
           <p class="text-gray-300 text-lg">
-            Crea, edita y organiza tu inventario de manera fácil y divertida 🎉
+            Crea, edita y organiza tu inventario de manera fácil
           </p>
         </div>
 
@@ -77,7 +77,7 @@
               {{
                 isEditMode
                   ? '¡Actualiza la información de tu artículo!'
-                  : '¡Haz clic aquí para agregar algo increíble!'
+                  : '¡Haz clic aquí para agregar articulos a tu inventario!'
               }}
             </p>
           </div>
@@ -100,20 +100,15 @@
               </h2>
             </div>
             <div class="flex space-x-2">
-              <button
-                v-if="isEditMode"
-                @click="cancelEdit"
-                class="glass-button px-4 py-2 text-white hover:text-red-300 transform hover:scale-105 transition-all"
-              >
-                <i class="pi pi-times mr-2"></i>
-                Cancelar
-              </button>
-              <button
-                @click="toggleCreateForm"
-                class="glass-button px-4 py-2 text-white hover:text-gray-300 transform hover:scale-105 transition-all"
-              >
-                <i class="pi pi-chevron-up"></i>
-              </button>
+   
+           <button
+  @click.stop="resetFormAndCollapse"
+  class="glass-button px-4 py-2 text-white hover:text-gray-300 transform hover:scale-105 transition-all"
+  title="Limpiar formulario y cerrar"
+>
+  <i class="pi pi-chevron-up mr-1"></i>
+  <i class="pi pi-refresh text-xs"></i>
+</button>
             </div>
           </div>
 
@@ -359,7 +354,7 @@
                   <span>
                     {{
                       isSubmitting
-                        ? '✨ Procesando magia...'
+                        ? '✨ Procesando...'
                         : isEditMode
                           ? '🎉 ¡Actualizar Artículo!'
                           : '🚀 ¡Crear Artículo!'
@@ -377,7 +372,7 @@
     <div class="glass-container mb-6 p-6">
       <div class="flex items-center mb-4">
         <i class="pi pi-search text-accent-400 text-xl mr-2"></i>
-        <h3 class="text-xl font-bold text-white">🔍 Encuentra tus artículos</h3>
+        <h3 class="text-xl font-bold text-white"> Encuentra tus artículos</h3>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -388,7 +383,7 @@
             v-model="searchTerm"
             type="text"
             class="glass-input w-full pl-12 pr-4 py-3"
-            placeholder="🔎 Buscar por nombre..."
+            placeholder="     Buscar por nombre..."
           />
           <div v-if="searchTerm" class="absolute right-4 top-4">
             <button @click="searchTerm = ''" class="text-gray-400 hover:text-white">
@@ -440,7 +435,7 @@
           <h3 class="text-xl font-bold text-white">
             {{
               (filteredArticles?.length || 0) > 0
-                ? `🎉 ${filteredArticles.length} artículos encontrados`
+                ? `🎉 "${filteredArticles.length}"  artículos encontrados`
                 : '📦 Tu inventario'
             }}
           </h3>
@@ -530,7 +525,7 @@
               {{
                 searchTerm
                   ? 'Intenta con otros términos de búsqueda o ajusta los filtros'
-                  : '¡Es hora de agregar tu primer artículo increíble!'
+                  : '¡Es hora de agregar tu primer artículo!'
               }}
             </p>
           </div>
@@ -651,7 +646,26 @@
       }
     }, 150)
   }
-
+  const resetFormAndCollapse = (): void => {
+  // Resetear el formulario usando la función del composable
+  resetForm()
+  
+  // Limpiar estados locales
+  isDragging.value = false
+  
+  // Limpiar el input de archivo
+  if (imageInput.value) {
+    imageInput.value.value = ''
+  }
+  
+  // Colapsar el formulario
+  showCreateForm.value = false
+  
+  // Si está en modo edición, cancelar edición
+  if (isEditMode.value) {
+    cancelEdit()
+  }
+}
   const handleImageChange = (event: Event): void => {
     const target = event.target as HTMLInputElement
     const file = target.files?.[0]

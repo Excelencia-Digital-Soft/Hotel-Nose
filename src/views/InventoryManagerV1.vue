@@ -102,7 +102,7 @@
             v-model="filters.search"
             type="text"
             class="glass-input-enhanced w-full pl-12 pr-12"
-            placeholder="Buscar productos..."
+            placeholder="        Buscar productos..."
             @input="debouncedSearch"
           />
           <button
@@ -1265,5 +1265,49 @@ watch(currentPage, () => {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
+}
+/* Fix para las opciones del dropdown */
+.glass-select {
+  color-scheme: dark;
+  background-color: rgba(26, 26, 26, 0.9) !important;
+  color: white !important;
+}
+
+.glass-select option {
+  background-color: #1a1a1a !important;
+  color: white !important;
+  padding: 0.5rem 1rem;
+}
+
+.glass-select option:hover {
+  background-color: rgba(217, 70, 239, 0.3) !important;
+  color: white !important;
+}
+
+.glass-select option:checked,
+.glass-select option:focus {
+  background-color: #d946ef !important;
+  color: white !important;
+}
+
+/* Para navegadores WebKit */
+.glass-select::-webkit-scrollbar {
+  width: 8px;
+}
+
+.glass-select::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.glass-select::-webkit-scrollbar-thumb {
+  background: rgba(217, 70, 239, 0.5);
+  border-radius: 4px;
+}
+
+/* Asegurar que se vea bien en todos los estados */
+.glass-select:focus {
+  background-color: rgba(26, 26, 26, 0.95) !important;
+  color: white !important;
+  border-color: theme('colors.primary.400') !important;
 }
 </style>

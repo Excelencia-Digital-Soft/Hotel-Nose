@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import axios from 'axios'
 import axiosClient from '../axiosClient'
 
 export const useAuthStore = defineStore('auth', {
@@ -7,6 +8,9 @@ export const useAuthStore = defineStore('auth', {
       user: null,
       token: null,
       isAuthenticated: false,
+      usuarioId: null,
+      usuarioId: null,
+      rolId: null,
       loading: false,
       errors: [],
       institucionID: null,
@@ -21,6 +25,7 @@ export const useAuthStore = defineStore('auth', {
     selectedInstitution: (state) =>
       state.instituciones.find((inst) => inst.institucionId === state.institucionID),
   },
+  
   actions: {
     async login(credentials) {
       this.loading = true
@@ -216,3 +221,4 @@ export const useAuthStore = defineStore('auth', {
     },
   },
 })
+

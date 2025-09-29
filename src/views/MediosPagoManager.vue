@@ -65,89 +65,104 @@
               </h2>
             </div>
             <div class="flex space-x-2">
-              <button
-                v-if="isEditMode"
-                @click="cancelEdit"
-                class="glass-button px-4 py-2 text-white hover:text-red-300 transform hover:scale-105 transition-all"
-              >
+             <button
+  v-if="isEditMode"
+  @click.stop="cancelEdit"
+  class="glass-button px-4 py-2 text-white hover:text-red-300 transform hover:scale-105 transition-all"
+>
                 <i class="pi pi-times mr-2"></i>
                 Cancelar
               </button>
               <button
-                @click="toggleCreateForm"
-                class="glass-button px-4 py-2 text-white hover:text-gray-300 transform hover:scale-105 transition-all"
-              >
-                <i class="pi pi-chevron-up"></i>
-              </button>
+  @click.stop="resetFormAndCollapse"
+  class="glass-button px-4 py-2 text-white hover:text-gray-300 transform hover:scale-105 transition-all"
+  title="Limpiar formulario y cerrar"
+>
+  <i class="pi pi-chevron-up mr-1"></i>
+  <i class="pi pi-refresh text-xs"></i>
+</button>
             </div>
           </div>
 
           <!-- Friendly Form -->
           <form @submit.prevent="handleSubmit" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Left Column - Form Fields -->
-            <div class="space-y-6">
-              <!-- Name Field -->
-              <div class="glass-card p-4 hover:bg-white/15 transition-all duration-300">
-                <label class="flex items-center text-white font-semibold mb-3">
-                  <i class="pi pi-tag text-primary-400 mr-2"></i>
-                  ¿Cómo se llama la tarjeta? *
-                </label>
-                <div class="relative">
-                  <input
-                    v-model="formData.nombre"
-                    type="text"
-                    class="glass-input w-full px-4 py-3 pl-12 text-lg"
-                    placeholder="Ej: Visa, MasterCard 💳"
-                    :class="{ 'border-red-500 shake': isDuplicateName }"
-                    required
-                  />
-                  <i class="pi pi-credit-card absolute left-4 top-4 text-accent-400"></i>
-                </div>
-                <div v-if="isDuplicateName" class="mt-2 p-2 bg-red-500/20 rounded-lg border border-red-500/30">
-                  <p class="text-red-300 text-sm flex items-center">
-                    <i class="pi pi-exclamation-triangle mr-2"></i>
-                    ¡Ups! Ya tienes una tarjeta con este nombre
-                  </p>
-                </div>
-                <div v-if="formData.nombre && !isDuplicateName" class="mt-2 p-2 bg-green-500/20 rounded-lg border border-green-500/30">
-                  <p class="text-green-300 text-sm flex items-center">
-                    <i class="pi pi-check mr-2"></i>
-                    ¡Perfecto! Este nombre está disponible
-                  </p>
-                </div>
-              </div>
+            <!-- Name Field -->
+<div class="glass-card p-4 hover:bg-white/15 transition-all duration-300">
+  <label class="flex items-center text-white font-semibold mb-3">
+    <i class="pi pi-tag text-primary-400 mr-2"></i>
+    ¿Cómo se llama la tarjeta? *
+  </label>
 
-              <!-- Percentage Field -->
-              <div class="glass-card p-4 hover:bg-white/15 transition-all duration-300">
-                <label class="flex items-center text-white font-semibold mb-3">
-                  <i class="pi pi-percentage text-secondary-400 mr-2"></i>
-                  ¿Qué porcentaje de recargo tiene? *
-                </label>
-                <div class="relative">
-                  <input
-                    v-model.number="formData.montoPorcentual"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    class="glass-input w-full px-4 py-3 pr-12 text-lg"
-                    placeholder="0.00"
-                    required
-                  />
-                  <span class="absolute right-4 top-4 text-accent-400 font-bold text-lg">%</span>
-                  <div v-if="formData.montoPorcentual !== null && formData.montoPorcentual !== ''" class="absolute left-4 top-4">
-                    <i class="pi pi-chart-line text-green-400 animate-pulse"></i>
-                  </div>
-                </div>
-                <div class="mt-2 p-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
-                  <p class="text-blue-300 text-sm flex items-center">
-                    <i class="pi pi-info-circle mr-2"></i>
-                    El porcentaje debe estar entre 0% y 100%
-                  </p>
-                </div>
-              </div>
-            </div>
+  <div class="flex items-center gap-3">
+    <!-- Ícono fuera del input, fijo y alineado -->
+    <div class="w-12 h-12 flex items-center justify-center">
+      <i class="pi pi-credit-card text-accent-400 text-xl" aria-hidden="true"></i>
+    </div>
 
+    <!-- Input ocupa el resto -->
+    <div class="flex-1">
+      <input
+        v-model="formData.nombre"
+        type="text"
+        class="glass-input w-full px-4 py-3 text-lg"
+        placeholder="Ej: Visa, MasterCard 💳"
+        :class="{ 'border-red-500 shake': isDuplicateName }"
+        required
+      />
+
+      <div v-if="isDuplicateName" class="mt-2 p-2 bg-red-500/20 rounded-lg border border-red-500/30">
+        <p class="text-red-300 text-sm flex items-center">
+          <i class="pi pi-exclamation-triangle mr-2"></i>
+          ¡Ups! Ya tienes una tarjeta con este nombre
+        </p>
+      </div>
+
+      <div v-if="formData.nombre && !isDuplicateName" class="mt-2 p-2 bg-green-500/20 rounded-lg border border-green-500/30">
+        <p class="text-green-300 text-sm flex items-center">
+          <i class="pi pi-check mr-2"></i>
+          ¡Perfecto! Este nombre está disponible
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Percentage Field -->
+<div class="glass-card p-4 hover:bg-white/15 transition-all duration-300">
+  <label class="flex items-center text-white font-semibold mb-3">
+    <i class="pi pi-percentage text-secondary-400 mr-2"></i>
+    ¿Qué porcentaje de recargo tiene? *
+  </label>
+
+  <div class="flex items-center gap-3">
+    <!-- Ícono fijo a la izquierda -->
+    <div class="w-12 h-12 flex items-center justify-center">
+      <i class="pi pi-chart-line text-green-400 text-xl animate-pulse"></i>
+    </div>
+
+    <!-- Input con símbolo % a la derecha -->
+    <div class="flex-1 relative">
+      <input
+        v-model.number="formData.montoPorcentual"
+        type="number"
+        step="0.01"
+        min="0"
+        max="100"
+        class="glass-input w-full px-4 py-3 text-lg pr-10"
+        placeholder="0.00"
+        required
+      />
+      <span class="absolute right-3 top-1/2 -translate-y-1/2 text-accent-400 font-bold text-lg"></span>
+    </div>
+  </div>
+
+  <div class="mt-2 p-2 bg-blue-500/20 rounded-lg border border-blue-500/30">
+    <p class="text-blue-300 text-sm flex items-center">
+      <i class="pi pi-info-circle mr-2"></i>
+      El porcentaje debe estar entre 0% y 100%
+    </p>
+  </div>
+</div>
             <!-- Right Column - Preview Card -->
             <div class="space-y-6">
               <!-- Card Preview -->
@@ -170,7 +185,7 @@
                     
                     <div class="mt-6">
                       <p class="text-sm opacity-80">Recargo aplicado</p>
-                      <p class="text-3xl font-bold">{{ formData.montoPorcentual || 0 }}%</p>
+                      <p class="text-3xl font-bold">{{ formData.montoPorcentual || 0 }}</p>
                     </div>
                     
                     <div class="mt-4 flex justify-between items-center">
@@ -437,6 +452,31 @@ const toggleCreateForm = () => {
   }
 }
 
+// Nueva función para resetear formulario y colapsar
+const resetFormAndCollapse = () => {
+  // Limpiar todos los campos del formulario
+  formData.value = {
+    tarjetaID: null,
+    nombre: '',
+    montoPorcentual: null
+  }
+  
+  // Resetear estados del formulario
+  isEditMode.value = false
+  isSubmitting.value = false
+  
+  // Contraer/ocultar el formulario
+  showCreateForm.value = false
+  
+  // Mostrar mensaje de confirmación
+  toast.add({
+    severity: 'info',
+    summary: 'Formulario limpiado',
+    detail: 'Formulario contraído y datos limpiados',
+    life: 3000
+  })
+}
+
 const resetForm = () => {
   formData.value = {
     tarjetaID: null,
@@ -472,13 +512,13 @@ const handleSubmit = async () => {
       await axiosClient.put(
         `/UpdateTarjeta?id=${formData.value.tarjetaID}&Nombre=${encodeURIComponent(formData.value.nombre)}&Monto=${formData.value.montoPorcentual}`
       )
-      showSuccess('🎉 ¡Tarjeta actualizada exitosamente!')
+      showSuccess('Tarjeta actualizada exitosamente!')
     } else {
       // Create new card
       await axiosClient.post(
         `/CrearRecargoTarjeta?Nombre=${encodeURIComponent(formData.value.nombre)}&Monto=${formData.value.montoPorcentual}&InstitucionID=${authStore.institucionID}`
       )
-      showSuccess('🚀 ¡Nueva tarjeta creada con éxito!')
+      showSuccess('Nueva tarjeta creada con éxito!')
     }
     
     resetForm()
@@ -487,7 +527,7 @@ const handleSubmit = async () => {
     
   } catch (error) {
     console.error('Error:', error)
-    showError(isEditMode.value ? '❌ Error al actualizar la tarjeta' : '❌ Error al crear la tarjeta')
+    showError(isEditMode.value ? 'Error al actualizar la tarjeta' : 'Error al crear la tarjeta')
   } finally {
     isSubmitting.value = false
   }
@@ -510,19 +550,27 @@ const handleDelete = async (tarjeta) => {
   if (!confirmed) return
 
   try {
-    // Note: API endpoint for deletion would need to be implemented
-    // await axiosClient.delete(`/DeleteTarjeta?id=${tarjeta.tarjetaID}`)
-    showSuccess('🗑️ Tarjeta eliminada correctamente')
-    await fetchTarjetas()
+    // CORREGIDO: Usar el endpoint correcto y eliminar del array local
+    const response = await axiosClient.delete(`/DeleteTarjeta/${tarjeta.tarjetaID}`)
+    
+    if (response.status === 200 || response.status === 204) {
+      // Eliminar de la lista local inmediatamente
+      tarjetas.value = tarjetas.value.filter(t => t.tarjetaID !== tarjeta.tarjetaID)
+      showSuccess('Tarjeta eliminada correctamente')
+    } else {
+      throw new Error('Error en la respuesta del servidor')
+    }
   } catch (error) {
     console.error('Error deleting card:', error)
-    showError('❌ Error al eliminar la tarjeta')
+    showError('Error al eliminar la tarjeta')
+    // Recargar la lista en caso de error para sincronizar
+    await fetchTarjetas()
   }
 }
 
 const fetchTarjetas = async () => {
   if (!authStore.institucionID) {
-    showError('❌ No se pudo obtener la información de la institución')
+    showError('No se pudo obtener la información de la institución')
     return
   }
 
@@ -532,14 +580,13 @@ const fetchTarjetas = async () => {
     
     if (response.data?.ok) {
       tarjetas.value = response.data.data || []
-      showSuccess('💳 Tarjetas cargadas correctamente')
     } else {
       console.error('Error fetching tarjetas:', response.data?.message)
-      showError('❌ Error al cargar las tarjetas')
+      showError('Error al cargar las tarjetas')
     }
   } catch (error) {
     console.error('Error fetching tarjetas:', error)
-    showError('❌ Error al cargar las tarjetas')
+    showError('Error al cargar las tarjetas')
   } finally {
     isLoading.value = false
   }
@@ -575,10 +622,10 @@ const editOrSaveEfectivo = async () => {
         await axiosClient.post(`/CrearDescuentoEfectivo?Monto=${editingEfectivoMonto.value}`)
       }
       await fetchDescuentoEfectivo()
-      showSuccess('💵 Descuento en efectivo actualizado')
+      showSuccess('Descuento en efectivo actualizado')
     } catch (error) {
       console.error('Error updating/creating descuento en efectivo:', error)
-      showError('❌ Error al actualizar el descuento')
+      showError('Error al actualizar el descuento')
     }
     editingEfectivo.value = false
   } else {
