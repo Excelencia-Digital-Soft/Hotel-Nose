@@ -102,7 +102,7 @@
             v-model="filters.search"
             type="text"
             class="glass-input-enhanced w-full pl-12 pr-12"
-            placeholder="        Buscar productos..."
+            placeholder="      Buscar productos..."
             @input="debouncedSearch"
           />
           <button
@@ -279,9 +279,23 @@
 
               <!-- Product Image/Icon -->
               <div class="relative mb-4">
-                <div class="aspect-square bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center">
+                <!-- <div class="aspect-square bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center">
                   <i class="pi pi-box text-5xl text-white/30"></i>
+                  <img :src="'https://excelencia.myiphost.com:86/apihotalnose/uploads/' + item.articuloImagenUrl" />
+                </div>-->
+                <div class="aspect-square bg-gradient-to-br from-white/5 to-white/10 rounded-xl flex items-center justify-center">
+                  <!-- Mostrar icono cuando no haya imagen -->
+                  <i v-if="!item.articuloImagenUrl" class="pi pi-box text-5xl text-white/30"></i>
+                  
+                  <!-- Mostrar imagen cuando exista -->
+                  <img 
+                    v-else
+                    :src="getArticleImage(item.articuloImagenUrl)" 
+                    class="object-contain max-h-full max-w-full"
+                    alt="Imagen artículo"
+                  />
                 </div>
+
                 <div
                   class="absolute -bottom-2 -right-2 w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
                   :class="{
@@ -650,6 +664,7 @@ import ConfirmDialog from 'primevue/confirmdialog'
 import { useInventoryV1 } from '../composables/useInventoryV1'
 import { debounce } from '../utils/helpers'
 import type { InventoryDto } from '../types'
+import { removeTrailingSlash } from '@/utils/url-helpers'
 
 // Types for component state
 interface Filters {
@@ -778,6 +793,8 @@ const totalPages: ComputedRef<number> = computed(() =>
 const paginatedInventory: ComputedRef<EnrichedInventoryDto[]> = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage.value
   const end = start + itemsPerPage.value
+  console.log("AQUI EL TEST")
+  console.log(filteredInventory)
   return filteredInventory.value.slice(start, end)
 })
 
@@ -806,6 +823,21 @@ const visiblePages: ComputedRef<(number | string)[]> = computed(() => {
 })
 
 // Methods
+
+const getArticleImage = (url?: string): string => {
+    try {
+      if (url) {
+        const baseUrl = removeTrailingSlash(import.meta.env.VITE_API_BASE_URL || '')
+
+        return `${baseUrl}/apihotalnose/uploads/${url}`
+      }
+    } catch (error) {
+      console.error('Error getting article image:', error)
+    }
+
+    return defaultProductImage
+  }
+
 const debouncedSearch = debounce(() => {
   currentPage.value = 1
 }, 300)
@@ -1265,49 +1297,5 @@ watch(currentPage, () => {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.5);
-}
-/* Fix para las opciones del dropdown */
-.glass-select {
-  color-scheme: dark;
-  background-color: rgba(26, 26, 26, 0.9) !important;
-  color: white !important;
-}
-
-.glass-select option {
-  background-color: #1a1a1a !important;
-  color: white !important;
-  padding: 0.5rem 1rem;
-}
-
-.glass-select option:hover {
-  background-color: rgba(217, 70, 239, 0.3) !important;
-  color: white !important;
-}
-
-.glass-select option:checked,
-.glass-select option:focus {
-  background-color: #d946ef !important;
-  color: white !important;
-}
-
-/* Para navegadores WebKit */
-.glass-select::-webkit-scrollbar {
-  width: 8px;
-}
-
-.glass-select::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.glass-select::-webkit-scrollbar-thumb {
-  background: rgba(217, 70, 239, 0.5);
-  border-radius: 4px;
-}
-
-/* Asegurar que se vea bien en todos los estados */
-.glass-select:focus {
-  background-color: rgba(26, 26, 26, 0.95) !important;
-  color: white !important;
-  border-color: theme('colors.primary.400') !important;
 }
 </style>

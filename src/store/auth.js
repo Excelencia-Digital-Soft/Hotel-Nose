@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia'
-import axios from 'axios'
 import axiosClient from '../axiosClient'
 
 export const useAuthStore = defineStore('auth', {
@@ -8,7 +7,6 @@ export const useAuthStore = defineStore('auth', {
       user: null,
       token: null,
       isAuthenticated: false,
-      usuarioId: null,
       usuarioId: null,
       rolId: null,
       loading: false,
@@ -22,10 +20,25 @@ export const useAuthStore = defineStore('auth', {
     isLoggedIn: (state) => state.isAuthenticated && !!state.token,
     currentUser: (state) => state.user,
     hasErrors: (state) => state.errors.length > 0,
+
+    // Nuevo getter: devuelve el nombre según el ID
+    institucionNombre: (state) => {
+      switch (state.institucionID) {
+        case 1:
+          return 'NOSE'
+        case 2:
+          return 'TAOS'
+        case 3:
+          return 'El Sitio'
+        default:
+          return 'Hotel'
+      }
+    },
+
     selectedInstitution: (state) =>
       state.instituciones.find((inst) => inst.institucionId === state.institucionID),
   },
-  
+
   actions: {
     async login(credentials) {
       this.loading = true
@@ -61,7 +74,7 @@ export const useAuthStore = defineStore('auth', {
             this.instituciones = [
               {
                 institucionId: user.institucionId,
-                nombre: user.institucionName || 'Hotel',
+                nombre: this.institucionNombre, // ya usamos el getter
               },
             ]
           }
@@ -79,7 +92,6 @@ export const useAuthStore = defineStore('auth', {
           return { success: false, errors: this.errors }
         }
       } catch (error) {
-        // Handle new API error structure
         if (error.response?.data) {
           const errorData = error.response.data
           if (errorData.errors && errorData.errors.length > 0) {
@@ -120,7 +132,6 @@ export const useAuthStore = defineStore('auth', {
           return { success: false, errors: this.errors, message: response.data.message }
         }
       } catch (error) {
-        // Handle new API error structure
         if (error.response?.data) {
           const errorData = error.response.data
           if (errorData.errors && errorData.errors.length > 0) {
@@ -148,7 +159,6 @@ export const useAuthStore = defineStore('auth', {
 
         if (response.data.isSuccess) {
           this.user = response.data.data
-          // Update institution info if present
           if (this.user.institucionId) {
             this.institucionID = this.user.institucionId
           }
@@ -157,7 +167,6 @@ export const useAuthStore = defineStore('auth', {
       } catch (error) {
         console.error('Get current user error:', error)
         if (error.response?.status === 401) {
-          // Silently logout without showing connection error on login page
           this.logout()
         }
       }
@@ -221,4 +230,3 @@ export const useAuthStore = defineStore('auth', {
     },
   },
 })
-

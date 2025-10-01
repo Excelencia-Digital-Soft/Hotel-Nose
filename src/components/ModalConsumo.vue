@@ -374,7 +374,7 @@
     selectedCategory.value = null
   }
 
-  // Efficient image URL function (same as ArticleCreate)
+
   const getArticleImage = (url?: string): string => {
     try {
       if (url) {

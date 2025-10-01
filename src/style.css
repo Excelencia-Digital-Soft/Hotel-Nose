@@ -768,3 +768,37 @@ html body div[data-pc-name="toast"] .p-toast-message.p-toast-message-info * {
 .fade-leave-to {
   opacity: 0;
 }
+
+/* ====== FIX global para selects ====== */
+
+/* Estilo base */
+select, 
+select option {
+  background-color: #222;   /* fondo oscuro por defecto */
+  color: #fff;              /* texto blanco */
+}
+
+/* Cuando el tema es claro (High o Medium) */
+.theme-high select,
+.theme-high select option,
+.theme-medium select,
+.theme-medium select option {
+  background-color: #fff;   /* fondo blanco */
+  color: #000;              /* texto negro */
+}
+
+/* Cuando el tema es oscuro (Low o Minimal) */
+.theme-low select,
+.theme-low select option,
+.theme-minimal select,
+.theme-minimal select option {
+  background-color: #222;   /* fondo oscuro */
+  color: #fff;              /* texto blanco */
+}
+
+/* Para navegadores que aplican estilos raros en <option> */
+option:checked,
+option:hover {
+  background-color: #444 !important;
+  color: #fff !important;
+}
