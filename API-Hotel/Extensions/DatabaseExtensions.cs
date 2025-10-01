@@ -172,11 +172,11 @@ public static class DatabaseExtensions
     {
         var defaultRoles = new[]
         {
-            new { Name = "Administrator", Description = "System Administrator with full access" },
-            new { Name = "Director", Description = "Hotel Director with management access" },
-            new { Name = "Mucama", Description = "Housekeeping staff member" },
-            new { Name = "Cajero", Description = "Cashier with financial transaction access" },
-            new { Name = "Cajero Stock", Description = "Stock cashier with inventory access" },
+            new { Name = "Administrator", Description = "Administrador de sistemas con acceso completo" },
+            new { Name = "Director", Description = "Director de hotel con acceso a la gestión" },
+            new { Name = "Mucama", Description = "Miembro del personal de limpieza" },
+            new { Name = "Cajero", Description = "Cajero con acceso a transacciones financieras" },
+            new { Name = "Cajero Stock", Description = "Cajero de stock con acceso al inventario" },
             new { Name = "User", Description = "Basic user with minimal access" }
         };
 
