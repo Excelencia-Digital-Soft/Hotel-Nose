@@ -1,18 +1,19 @@
-﻿using hotel.Models;
+﻿using AutoMapper;
 using hotel.Auth; // Para usar JwtService
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using hotel.Data;
 using hotel.DTOs;
-using AutoMapper;
+using hotel.Models;
 using hotel.Models.Sistema;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace hotel.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsuariosController(HotelDbContext context, JwtService jwtService, IMapper mapper) : ControllerBase
+    public class UsuariosController(HotelDbContext context, JwtService jwtService, IMapper mapper)
+        : ControllerBase
     {
         private readonly HotelDbContext _context = context;
         private readonly JwtService _jwtService = jwtService;
@@ -24,8 +25,8 @@ namespace hotel.Controllers
         {
             try
             {
-                var usuarios = await _context.UsuariosInstituciones
-                    .Where(ui => ui.InstitucionID == institucionID)
+                var usuarios = await _context
+                    .UsuariosInstituciones.Where(ui => ui.InstitucionID == institucionID)
                     .Include(ui => ui.Usuario)
                     .ThenInclude(u => u.Rol)
                     .Select(ui => ui.Usuario)
@@ -36,7 +37,10 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Error al obtener usuarios", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new { Message = "Error al obtener usuarios", Error = ex.Message }
+                );
             }
         }
 
@@ -46,8 +50,8 @@ namespace hotel.Controllers
         {
             try
             {
-                var usuario = await _context.Usuarios
-                    .Include(u => u.Rol)
+                var usuario = await _context
+                    .Usuarios.Include(u => u.Rol)
                     .FirstOrDefaultAsync(u => u.UsuarioId == id);
 
                 if (usuario == null)
@@ -58,7 +62,10 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Error al obtener usuario", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new { Message = "Error al obtener usuario", Error = ex.Message }
+                );
             }
         }
 
@@ -68,51 +75,71 @@ namespace hotel.Controllers
         {
             try
             {
-                var instituciones = await _context.UsuariosInstituciones
-                    .Where(ui => ui.UsuarioId == usuarioID)
+                var instituciones = await _context
+                    .UsuariosInstituciones.Where(ui => ui.UsuarioId == usuarioID)
                     .Select(ui => ui.InstitucionID)
                     .ToListAsync();
 
                 if (instituciones == null || instituciones.Count == 0)
-                    return NotFound(new { Message = "El usuario no está asociado a ninguna institución" });
+                    return NotFound(
+                        new { Message = "El usuario no está asociado a ninguna institución" }
+                    );
 
                 return Ok(instituciones);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Error al obtener instituciones del usuario", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new
+                    {
+                        Message = "Error al obtener instituciones del usuario",
+                        Error = ex.Message,
+                    }
+                );
             }
         }
 
         [HttpGet("GetInstitucionesPorUsuario")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<object>>> GetInstitucionesPorUsuario(int usuarioId)
+        public async Task<ActionResult<IEnumerable<object>>> GetInstitucionesPorUsuario(
+            int usuarioId
+        )
         {
             try
             {
-                var instituciones = await _context.UsuariosInstituciones
-                    .Where(ui => ui.UsuarioId == usuarioId)
+                var instituciones = await _context
+                    .UsuariosInstituciones.Where(ui => ui.UsuarioId == usuarioId)
                     .Include(ui => ui.Institucion)
-                    .Select(ui => new { 
-                        InstitucionID = ui.InstitucionID, 
-                        Nombre = ui.Institucion.Nombre 
+                    .Select(ui => new
+                    {
+                        InstitucionID = ui.InstitucionID,
+                        Nombre = ui.Institucion.Nombre,
                     })
                     .ToListAsync();
 
                 if (instituciones == null || instituciones.Count == 0)
-                    return NotFound(new { Message = "El usuario no está asociado a ninguna institución" });
+                    return NotFound(
+                        new { Message = "El usuario no está asociado a ninguna institución" }
+                    );
 
                 return Ok(instituciones);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Error al obtener instituciones", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new { Message = "Error al obtener instituciones", Error = ex.Message }
+                );
             }
         }
 
         [HttpPost("CrearUsuario")]
         [Authorize]
-        public async Task<ActionResult<UsuarioResponseDTO>> PostUsuario(int InstitucionID, UsuarioCreateDTO UsuarioCreateDTO)
+        public async Task<ActionResult<UsuarioResponseDTO>> PostUsuario(
+            int InstitucionID,
+            UsuarioCreateDTO UsuarioCreateDTO
+        )
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -124,7 +151,7 @@ namespace hotel.Controllers
                 {
                     NombreUsuario = UsuarioCreateDTO.NombreUsuario,
                     Contraseña = BCrypt.Net.BCrypt.HashPassword(UsuarioCreateDTO.Contraseña),
-                    RolId = UsuarioCreateDTO.RolId
+                    RolId = UsuarioCreateDTO.RolId,
                 };
 
                 _context.Usuarios.Add(usuario);
@@ -133,7 +160,7 @@ namespace hotel.Controllers
                 var usuarioInstitucion = new UsuariosInstituciones
                 {
                     UsuarioId = usuario.UsuarioId,
-                    InstitucionID = InstitucionID
+                    InstitucionID = InstitucionID,
                 };
 
                 _context.UsuariosInstituciones.Add(usuarioInstitucion);
@@ -143,7 +170,7 @@ namespace hotel.Controllers
                 {
                     UsuarioId = usuario.UsuarioId,
                     NombreUsuario = usuario.NombreUsuario,
-                    RolId = usuario.RolId
+                    RolId = usuario.RolId,
                 };
 
                 await transaction.CommitAsync();
@@ -152,13 +179,20 @@ namespace hotel.Controllers
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, new { Message = "Error al crear usuario", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new { Message = "Error al crear usuario", Error = ex.Message }
+                );
             }
         }
 
         [HttpPut("ActualizarUsuario")]
         [Authorize]
-        public async Task<ActionResult<Respuesta>> ActualizarUsuario(int id, string? contraseña, int RolID = 404)
+        public async Task<ActionResult<Respuesta>> ActualizarUsuario(
+            int id,
+            string? contraseña,
+            int RolID = 404
+        )
         {
             var res = new Respuesta();
             try
@@ -211,39 +245,54 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Error al eliminar usuario", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new { Message = "Error al eliminar usuario", Error = ex.Message }
+                );
             }
         }
 
         [HttpPost("Login")]
         [AllowAnonymous]
-        public async Task<IActionResult> Login([FromBody] LegacyLoginDto loginDto)
+        public async Task<IActionResult> Login([FromBody] Usuarios loginDto)
         {
             try
             {
-                var usuario = await _context.Usuarios
-                    .Include(u => u.Rol)
+                var usuario = await _context
+                    .Usuarios.Include(u => u.Rol)
                     .Include(u => u.UsuariosInstituciones)
                     .ThenInclude(ui => ui.Institucion)
                     .FirstOrDefaultAsync(u => u.NombreUsuario == loginDto.NombreUsuario);
 
-                if (usuario == null || !BCrypt.Net.BCrypt.Verify(loginDto.Contraseña, usuario.Contraseña))
-                    return Unauthorized(new { Message = "Nombre de usuario o contraseña incorrectos" });
+                if (
+                    usuario == null
+                    || !BCrypt.Net.BCrypt.Verify(loginDto.Contraseña, usuario.Contraseña)
+                )
+                    return Unauthorized(
+                        new { Message = "Nombre de usuario o contraseña incorrectos" }
+                    );
 
-                var token = _jwtService.GenerateToken(usuario.UsuarioId.ToString(), usuario.Rol.NombreRol);
+                var token = _jwtService.GenerateToken(
+                    usuario.UsuarioId.ToString(),
+                    usuario.Rol.NombreRol
+                );
 
-                return Ok(new
-                {
-                    Token = token,
-                    Rol = usuario.Rol.RolId,
-                    UsuarioID = usuario.UsuarioId,
-                    UsuarioName = usuario.NombreUsuario,
-                    Instituciones = usuario.UsuariosInstituciones.Select(ui => new
+                return Ok(
+                    new
                     {
-                        InstitucionId = ui.Institucion.InstitucionId,
-                        Nombre = ui.Institucion.Nombre
-                    }).ToList()
-                });
+                        Token = token,
+                        Rol = usuario.Rol.RolId,
+                        UsuarioID = usuario.UsuarioId,
+                        UsuarioName = usuario.NombreUsuario,
+                        Instituciones = usuario
+                            .UsuariosInstituciones.Select(ui => new
+                            {
+                                InstitucionId = ui.Institucion.InstitucionId,
+                                Nombre = ui.Institucion.Nombre,
+                            })
+                            .ToList(),
+                    }
+                );
             }
             catch (Exception ex)
             {
@@ -263,26 +312,35 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Error al obtener roles", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new { Message = "Error al obtener roles", Error = ex.Message }
+                );
             }
         }
 
         [HttpPost("AsignarUsuarioAInstitucion")]
         [Authorize]
-        public async Task<IActionResult> AsignarUsuarioAInstitucion(int usuarioId, int institucionId)
+        public async Task<IActionResult> AsignarUsuarioAInstitucion(
+            int usuarioId,
+            int institucionId
+        )
         {
             try
             {
-                var existeRelacion = await _context.UsuariosInstituciones
-                    .AnyAsync(ui => ui.UsuarioId == usuarioId && ui.InstitucionID == institucionId);
+                var existeRelacion = await _context.UsuariosInstituciones.AnyAsync(ui =>
+                    ui.UsuarioId == usuarioId && ui.InstitucionID == institucionId
+                );
 
                 if (existeRelacion)
-                    return BadRequest(new { Message = "El usuario ya pertenece a esta institución" });
+                    return BadRequest(
+                        new { Message = "El usuario ya pertenece a esta institución" }
+                    );
 
                 var nuevaRelacion = new UsuariosInstituciones
                 {
                     UsuarioId = usuarioId,
-                    InstitucionID = institucionId
+                    InstitucionID = institucionId,
                 };
 
                 _context.UsuariosInstituciones.Add(nuevaRelacion);
@@ -292,18 +350,25 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Error al asignar usuario", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new { Message = "Error al asignar usuario", Error = ex.Message }
+                );
             }
         }
 
         [HttpDelete("EliminarUsuarioDeInstitucion")]
         [Authorize]
-        public async Task<IActionResult> EliminarUsuarioDeInstitucion(int usuarioId, int institucionId)
+        public async Task<IActionResult> EliminarUsuarioDeInstitucion(
+            int usuarioId,
+            int institucionId
+        )
         {
             try
             {
-                var relacion = await _context.UsuariosInstituciones
-                    .FirstOrDefaultAsync(ui => ui.UsuarioId == usuarioId && ui.InstitucionID == institucionId);
+                var relacion = await _context.UsuariosInstituciones.FirstOrDefaultAsync(ui =>
+                    ui.UsuarioId == usuarioId && ui.InstitucionID == institucionId
+                );
 
                 if (relacion == null)
                     return NotFound(new { Message = "No se encontró la relación" });
@@ -315,7 +380,10 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Error al eliminar relación", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new { Message = "Error al eliminar relación", Error = ex.Message }
+                );
             }
         }
 
@@ -325,8 +393,8 @@ namespace hotel.Controllers
         {
             try
             {
-                var usuario = await _context.Usuarios
-                    .Include(u => u.Rol)
+                var usuario = await _context
+                    .Usuarios.Include(u => u.Rol)
                     .Include(u => u.UsuariosInstituciones)
                     .ThenInclude(ui => ui.Institucion)
                     .FirstOrDefaultAsync(u => u.UsuarioId == usuarioId);
@@ -334,21 +402,25 @@ namespace hotel.Controllers
                 if (usuario == null)
                     return NotFound(new { Message = "Usuario no encontrado" });
 
-                var institucion = usuario.UsuariosInstituciones.FirstOrDefault()?.Institucion?.Nombre
-                                  ?? "Institución desconocida";
+                var institucion =
+                    usuario.UsuariosInstituciones.FirstOrDefault()?.Institucion?.Nombre
+                    ?? "Institución desconocida";
 
                 var dto = new hotel.DTOs.Identity.UserInfoDto
                 {
                     UsuarioName = usuario.NombreUsuario,
                     Hotel = institucion,
-                    Rol = usuario.Rol?.NombreRol ?? "Sin rol"
+                    Rol = usuario.Rol?.NombreRol ?? "Sin rol",
                 };
 
                 return Ok(dto);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Error al obtener información del usuario", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new { Message = "Error al obtener información del usuario", Error = ex.Message }
+                );
             }
         }
 
@@ -362,8 +434,9 @@ namespace hotel.Controllers
                 int targetUserId;
 
                 // Intentar obtener del token JWT primero
-                var userIdClaim = User.FindFirst("UsuarioId")?.Value ?? User.FindFirst("sub")?.Value;
-                
+                var userIdClaim =
+                    User.FindFirst("UsuarioId")?.Value ?? User.FindFirst("sub")?.Value;
+
                 if (userIdClaim != null && int.TryParse(userIdClaim, out int jwtUserId))
                 {
                     targetUserId = jwtUserId;
@@ -378,8 +451,8 @@ namespace hotel.Controllers
                     return BadRequest(new { Message = "No se pudo determinar el ID del usuario" });
                 }
 
-                var usuario = await _context.Usuarios
-                    .Include(u => u.Rol)
+                var usuario = await _context
+                    .Usuarios.Include(u => u.Rol)
                     .Include(u => u.UsuariosInstituciones)
                     .ThenInclude(ui => ui.Institucion)
                     .FirstOrDefaultAsync(u => u.UsuarioId == targetUserId);
@@ -387,25 +460,28 @@ namespace hotel.Controllers
                 if (usuario == null)
                     return NotFound(new { Message = "Usuario no encontrado" });
 
-                return Ok(new
-                {
-                    UsuarioId = usuario.UsuarioId,
-                    NombreUsuario = usuario.NombreUsuario,
-                    Rol = new
+                return Ok(
+                    new
                     {
-                        Id = usuario.Rol?.RolId,
-                        Nombre = usuario.Rol?.NombreRol
-                    },
-                    Instituciones = usuario.UsuariosInstituciones.Select(ui => new
-                    {
-                        Id = ui.Institucion?.InstitucionId,
-                        Nombre = ui.Institucion?.Nombre
-                    }).ToList()
-                });
+                        UsuarioId = usuario.UsuarioId,
+                        NombreUsuario = usuario.NombreUsuario,
+                        Rol = new { Id = usuario.Rol?.RolId, Nombre = usuario.Rol?.NombreRol },
+                        Instituciones = usuario
+                            .UsuariosInstituciones.Select(ui => new
+                            {
+                                Id = ui.Institucion?.InstitucionId,
+                                Nombre = ui.Institucion?.Nombre,
+                            })
+                            .ToList(),
+                    }
+                );
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Error al obtener usuario actual", Error = ex.Message });
+                return StatusCode(
+                    500,
+                    new { Message = "Error al obtener usuario actual", Error = ex.Message }
+                );
             }
         }
 
@@ -416,3 +492,4 @@ namespace hotel.Controllers
         }
     }
 }
+
