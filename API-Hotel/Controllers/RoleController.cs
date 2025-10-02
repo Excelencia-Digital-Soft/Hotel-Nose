@@ -27,10 +27,11 @@ public class RoleController : ControllerBase
         {
             var roles = new[]
             {
-                new ApplicationRole { Name = "Administrator", Description = "System Administrator with full access" },
-                new ApplicationRole { Name = "Manager", Description = "Hotel Manager with management privileges" },
-                new ApplicationRole { Name = "Employee", Description = "Hotel Employee with limited access" },
-                new ApplicationRole { Name = "User", Description = "Basic user with minimal access" }
+new ApplicationRole { Name = "Administrator", Description = "Administrador del sistema con acceso completo" },
+new ApplicationRole { Name = "Manager", Description = "Gerente de hotel con privilegios de gestión" },
+new ApplicationRole { Name = "Employee", Description = "Empleado de hotel con acceso limitado" },
+new ApplicationRole { Name = "User", Description = "Usuario básico con acceso mínimo" }
+
             };
 
             var createdRoles = new List<string>();
