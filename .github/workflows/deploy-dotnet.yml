@@ -34,7 +34,7 @@ jobs:
       - name: Deploy to IIS Application
         shell: powershell
         run: |
-          ./Deploy-IIS.ps1 -WebsiteName "Default Web Site" ` # <-- Asi esta en IIS.
-                                       -ApplicationName "ApiHotalNoSe" ` # <-- Con error esta en iis
-                                       -SourcePath "./publish" `
-                                       -DestinationPath "C:\AddWeb\Api-Hotel"
+          ./Deploy-IIS.ps1 -WebsiteName "Default Web Site" `
+                           -ApplicationName "ApiHotalNoSe" `
+                           -SourcePath "./publish" `
+                           -DestinationPath "C:\AddWeb\Api-Hotel"
