@@ -16,12 +16,11 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Configura el entorno de .NET
-      # Asegúrate de que la versión coincida con la de tu proyecto.
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
+      # EL PASO 'SETUP .NET' SE ELIMINA PORQUE YA ESTÁ INSTALADO EN EL SERVIDOR
+      # - name: Setup .NET
+      #   uses: actions/setup-dotnet@v4
+      #   with:
+      #     dotnet-version: '9.0.x'
 
       # 3. Restaura, compila y publica el proyecto
       # Esto genera una carpeta 'publish' con los archivos listos para desplegar.
