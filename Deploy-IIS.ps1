@@ -50,19 +50,23 @@ try {
 
     # --- INICIO DE CAMBIOS ---
 
-    # 3. Limpiar el directorio de destino, EXCLUYENDO web.config
-    Write-Host "Limpiando el directorio de destino: '$DestinationPath' (excluyendo web.config)..."
+    # Lista de archivos a preservar en el servidor
+    $filesToPreserve = @('web.config', 'appsettings.json')
+    Write-Host "Se preservarán los siguientes archivos: $($filesToPreserve -join ', ')"
+
+    # 3. Limpiar el directorio de destino, EXCLUYENDO $fileToPreserve
+    Write-Host "Limpiando el directorio de destino: '$DestinationPath'..."
     if (Test-Path $DestinationPath) {
-        Get-ChildItem -Path $DestinationPath -Force | Where-Object { $_.Name -ne 'web.config' } | Remove-Item -Recurse -Force
+        Get-ChildItem -Path $DestinationPath -Force | Where-Object { $_.Name -notin $filesToPreserve } | Remove-Item -Recurse -Force
         Write-Host "Directorio limpiado."
     } else {
         Write-Host "El directorio de destino no existe, se creará al copiar."
     }
 
-    # 4. Copiar los nuevos archivos de la aplicación, EXCLUYENDO web.config
-    Write-Host "Copiando archivos desde '$SourcePath' hacia '$DestinationPath' (excluyendo web.config)..."
-    # NUEVO: Usamos el parámetro -Exclude en Copy-Item para ignorar el web.config del origen.
-    Copy-Item -Path "$SourcePath\*" -Destination $DestinationPath -Recurse -Force -Exclude "web.config"
+    # 4. Copiar los nuevos archivos de la aplicación, EXCLUYENDO $fileToPreserve
+    Write-Host "Copiando archivos desde '$SourcePath' hacia '$DestinationPath'..."
+    
+    Copy-Item -Path "$SourcePath\*" -Destination $DestinationPath -Recurse -Force -Exclude $filesToPreserve
     Write-Host "Archivos copiados correctamente."
 
     # --- FIN DE CAMBIOS ---
