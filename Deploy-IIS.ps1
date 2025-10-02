@@ -42,7 +42,11 @@ try {
 
     Write-Host "Deteniendo Application Pool '$appPool'..."
     Stop-WebAppPool -Name $appPool -ErrorAction Stop
-    Write-Host "Application Pool detenido correctamente."
+
+    Write-Host "Deteniendo el Sitio Web '$WebsiteName'..."
+    Stop-Website -Name $WebsiteName -ErrorAction Stop
+    
+    Write-Host "Application Pool y Sitio detenidos correctamente."
 
     # --- INICIO DE CAMBIOS ---
 
@@ -63,11 +67,15 @@ try {
 
     # --- FIN DE CAMBIOS ---
 
-    Write-Host "Esperando 10 segundos antes de iniciar el pool..."
-    Start-Sleep -Seconds 10
+    Write-Host "Esperando 30 segundos antes de iniciar el pool..."
+    Start-Sleep -Seconds 30
 
+    Write-Host "Iniciando el Sitio Web '$WebsiteName'..."
+    Start-Website -Name $WebsiteName -ErrorAction Stop
+    
     Write-Host "Iniciando Application Pool '$appPool'..."
-    Start-WebAppPool -Name $appPool -ErrorAction Stop
+    Start-WebAppPool -Name $appPool -ErrorAction Stop    
+    
     Write-Host "Application Pool iniciado correctamente."
 
     Write-Host "¡Despliegue completado con éxito! El archivo web.config del servidor fue preservado."
