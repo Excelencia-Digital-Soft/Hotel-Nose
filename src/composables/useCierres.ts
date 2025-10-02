@@ -444,76 +444,145 @@ export function useCierres(): UseCierresReturn {
   }
 
   // Print utilities
-  const preparePrintContent = (
-    content: HTMLElement
-  ): { content: string; styles: string } | null => {
-    try {
-      // Clone styles from document
-      const styles = Array.from(document.styleSheets)
-        .map((styleSheet) => {
-          try {
-            return Array.from(styleSheet.cssRules)
-              .map((rule) => rule.cssText)
-              .join('\n')
-          } catch (error) {
-            return '' // Ignore cross-origin styles
-          }
-        })
-        .join('\n')
+  // const preparePrintContent = (
+  //   content: HTMLElement
+  // ): { content: string; styles: string } | null => {
+  //   try {
+  //     // Clone styles from document
+  //     const styles = Array.from(document.styleSheets)
+  //       .map((styleSheet) => {
+  //         try {
+  //           return Array.from(styleSheet.cssRules)
+  //             .map((rule) => rule.cssText)
+  //             .join('\n')
+  //         } catch (error) {
+  //           return '' // Ignore cross-origin styles
+  //         }
+  //       })
+  //       .join('\n')
 
-      return { content: content.innerHTML, styles }
-    } catch (error) {
-      console.error('Error preparing print content:', error)
-      showError('❌ Error al preparar la impresión')
-      return null
-    }
-  }
+  //     return { content: content.innerHTML, styles }
+  //   } catch (error) {
+  //     console.error('Error preparing print content:', error)
+  //     showError('❌ Error al preparar la impresión')
+  //     return null
+  //   }
+  // }
 
-  const openPrintWindow = (htmlContent: string, styles: string): void => {
-    try {
-      const printWindow = window.open('', '_blank')
+  // const openPrintWindow = (htmlContent: string, styles: string): void => {
+  //   try {
+  //     const printWindow = window.open('', '_blank')
 
-      if (!printWindow) {
-        showError(
-          '❌ Error al abrir la ventana de impresión. Verifique si el bloqueador de ventanas emergentes está activado.'
-        )
-        return
-      }
+  //     if (!printWindow) {
+  //       showError(
+  //         '❌ Error al abrir la ventana de impresión. Verifique si el bloqueador de ventanas emergentes está activado.'
+  //       )
+  //       return
+  //     }
 
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>Imprimir Cierre de Caja</title>
-            <style>${styles}</style>
-          </head>
-          <body>
-            <div id="cierre-caja-content">${htmlContent}</div>
-            <script>
-              window.onload = function() {
-                window.print();
-                window.onafterprint = function() { 
-                  window.close(); 
-                };
-              };
-            </script> 
-          </body>
-        </html>
-      `)
+  //     printWindow.document.write(`
+  //       <html>
+  //         <head>
+  //           <title>Imprimir Cierre de Caja</title>
+  //           <style>${styles}</style>
+  //         </head>
+  //         <body>
+  //           <div id="cierre-caja-content">${htmlContent}</div>
+  //           <script>
+  //             window.onload = function() {
+  //               window.print();
+  //               window.onafterprint = function() { 
+  //                 window.close(); 
+  //               };
+  //             };
+  //           </script> 
+  //         </body>
+  //       </html>
+  //     `)
 
-      printWindow.document.close()
-      showSuccess('🖨️ Preparando impresión...')
-    } catch (error) {
-      console.error('Error opening print window:', error)
-      showError('❌ Error al abrir la ventana de impresión')
-    }
-  }
+  //     printWindow.document.close()
+  //     showSuccess('🖨️ Preparando impresión...')
+  //   } catch (error) {
+  //     console.error('Error opening print window:', error)
+  //     showError('❌ Error al abrir la ventana de impresión')
+  //   }
+  // }
+
+  // const handlePrint = (contentElement: HTMLElement): void => {
+  //   const printData = preparePrintContent(contentElement)
+  //   if (printData) {
+  //     openPrintWindow(printData.content, printData.styles)
+  //   }
+  // }
 
   const handlePrint = (contentElement: HTMLElement): void => {
-    const printData = preparePrintContent(contentElement)
-    if (printData) {
-      openPrintWindow(printData.content, printData.styles)
-    }
+
+    if (!contentElement) return;
+
+    const printWindow = window.open('', '', 'width=900,height=650');
+    if (!printWindow) return;
+
+     printWindow.document.write(`
+      <html>
+        <head>
+          <title>Imprimir Tabla</title>
+          <style>
+            /* General */
+            * {
+              color: black !important;   /* todo en blanco y negro */
+              background: white !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+
+            body {
+              font-family: Arial, sans-serif;
+              margin: 0;      /* sin márgenes */
+              padding: 20px;  /* un poco de aire */
+            }
+
+            /* Tabla ocupa todo el ancho */
+            table {
+              border-collapse: collapse;
+              width: 100%;
+              margin: 0;
+            }
+
+            th, td {
+              border: 1px solid #000;
+              padding: 6px 8px;
+              font-size: 12px;
+            }
+
+            th {
+              font-weight: bold;
+              text-align: left;
+            }
+
+            /* Pie de tabla (totales) bien marcado */
+            tfoot td {
+              font-weight: bold;
+              border-top: 2px solid #000;
+            }
+
+            @page {
+              margin: 10mm; /* márgenes mínimos en impresión */
+            }
+          </style>
+        </head>
+        <body>
+          ${contentElement.outerHTML}
+        </body>
+      </html>
+    `)
+
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+
   }
+
 
   // Pagination Methods
   const goToPage = async (page: number, viewMode: string = 'historical'): Promise<void> => {

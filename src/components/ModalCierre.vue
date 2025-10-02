@@ -89,8 +89,14 @@
 
         <!-- Main Table with glassmorphism -->
         <div class="glass-card overflow-hidden" ref="cierreCajaRef" id="cierre-caja-content">
+
+          <div v-if="isLoadingTable" class="flex flex-col justify-center items-center py-10 space-y-4">
+            <i class="pi pi-spinner pi-spin text-4xl text-primary-400"></i>
+            <p class="text-white text-lg">Cargando los datos...</p>
+          </div>
+
           <!-- Table wrapper for horizontal scroll on mobile -->
-          <div class="overflow-x-auto">
+          <div v-else class="overflow-x-auto">
             <table class="w-full min-w-[1400px]">
               <!-- Headers -->
               <thead>
@@ -327,6 +333,7 @@
           <!-- Print Button -->
           <button 
             @click="imprimirModal"
+            :disabled="isLoadingTable"
             class="w-full glass-button py-4 text-white font-bold hover:bg-white/20 
                    transform hover:scale-[1.02] transition-all flex items-center justify-center space-x-2"
           >
@@ -353,6 +360,19 @@ import { ref, onMounted, onBeforeMount } from 'vue';
 import InfoPago from './InfoPago.vue';
 import axiosClient from '../axiosClient';
 import CerrarCajaModal from './CerrarCajaModal.vue';
+
+
+const isLoadingTable = ref(true)
+
+const cargarPagos = async () => {
+  try {
+    isLoadingTable.value = true
+    // 👇 acá iría tu fetch de pagos/egresos
+    await fetchPagos() 
+  } finally {
+    isLoadingTable.value = false
+  }
+}
 
 const props = defineProps({
   selectedPagos: Array,
@@ -405,16 +425,29 @@ const imprimirModal = () => {
   }
 };
 
-const fetchDetalleCierre = () => {
-  axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`)
-    .then(({ data }) => {
-      listaPagos.value = data.data.pagos;
-      egresos.value = data.data.egresos;
-    })
-    .catch(error => {
-      console.error('Error al obtener detalle cierres:', error);
-    });
-};
+// const fetchDetalleCierre = () => {
+//   axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`)
+//     .then(({ data }) => {
+//       listaPagos.value = data.data.pagos;
+//       egresos.value = data.data.egresos;
+//     })
+//     .catch(error => {
+//       console.error('Error al obtener detalle cierres:', error);
+//     });
+// };
+
+const fetchDetalleCierre = async () => {
+  try {
+    isLoadingTable.value = true
+    const { data } = await axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`)
+    listaPagos.value = data.data.pagos
+    egresos.value = data.data.egresos
+  } catch (error) {
+    console.error('Error al obtener detalle cierres:', error)
+  } finally {
+    isLoadingTable.value = false
+  }
+}
 
 const openInfoModal = (pago) => {
   selectedPago.value = pago;
@@ -521,7 +554,20 @@ const calculateAdicional = () => {
 };
 </script>
 
+
 <style scoped>
+
+.pi.pi-spinner.pi-spin {
+  animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(359deg); }
+}
+
+
+
 /* Glassmorphism components */
 .glass-container {
   background-color: rgba(255, 255, 255, 0.1);

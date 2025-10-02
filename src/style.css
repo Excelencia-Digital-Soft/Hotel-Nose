@@ -388,7 +388,7 @@ body {
 
 /* Base Glass Classes - Using CSS Variables */
 .glass-card {
-  @apply bg-neutral-900/90 rounded-2xl p-8 transition-all duration-300;
+  @apply bg-black/90 rounded-2xl p-8 transition-all duration-300;
   background: linear-gradient(135deg, rgba(255, 255, 255, var(--glass-opacity)), rgba(255, 255, 255, calc(var(--glass-opacity) * 0.5)));
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid rgba(255, 255, 255, var(--glass-border-opacity));
@@ -450,7 +450,7 @@ body {
 
 .glass-button {
   @apply text-white font-medium transition-all duration-300;
-  background: rgba(255, 255, 255, var(--glass-opacity));
+  background: rgba(0, 255, 255, var(--glass-opacity));
   backdrop-filter: blur(calc(var(--glass-blur) * 0.5));
   border: 1px solid rgba(255, 255, 255, var(--glass-border-opacity));
 }
@@ -758,4 +758,47 @@ html body div[data-pc-name="toast"] .p-toast-message.p-toast-message-info * {
 .p-toast-message-success .p-toast-message-content,
 .p-toast-message-success .p-toast-message-text {
   color: white !important;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* ====== FIX global para selects ====== */
+
+/* Estilo base */
+select, 
+select option {
+  background-color: #222;   /* fondo oscuro por defecto */
+  color: #fff;              /* texto blanco */
+}
+
+/* Cuando el tema es claro (High o Medium) */
+.theme-high select,
+.theme-high select option,
+.theme-medium select,
+.theme-medium select option {
+  background-color: #fff;   /* fondo blanco */
+  color: #000;              /* texto negro */
+}
+
+/* Cuando el tema es oscuro (Low o Minimal) */
+.theme-low select,
+.theme-low select option,
+.theme-minimal select,
+.theme-minimal select option {
+  background-color: #222;   /* fondo oscuro */
+  color: #fff;              /* texto blanco */
+}
+
+/* Para navegadores que aplican estilos raros en <option> */
+option:checked,
+option:hover {
+  background-color: #444 !important;
+  color: #fff !important;
 }
