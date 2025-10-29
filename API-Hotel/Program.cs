@@ -17,6 +17,7 @@ builder.Services.AddBackgroundServices();
 
 var app = builder.Build();
 
+
 // Configure the HTTP request pipeline
 app.UseApplicationPipeline();
 
