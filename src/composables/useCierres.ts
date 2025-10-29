@@ -52,7 +52,7 @@ export interface UseCierresReturn {
   } | null>
   cerrarCaja(montoInicial: number, observacion?: string): Promise<boolean>
   selectCierre(cierre: CierreBasicoDto): void
-  openCurrentSession(): void
+  openCurrentSession(): Promise<void>
   handlePrint(contentElement: HTMLElement): void
   initialize(): Promise<void>
 
@@ -439,9 +439,35 @@ export function useCierres(): UseCierresReturn {
     showInfo(`👁️ Abriendo detalles del cierre #${cierre.cierreId}`)
   }
 
-  const openCurrentSession = (): void => {
-    showInfo('🟢 Abriendo sesión actual')
+  const openCurrentSession = async (): Promise<void> => {
+  try {
+    isLoading.value = true
+    showInfo('🟢 Cargando sesión actual...')
+    
+    // Refetch current data to ensure it's up to date
+    const response = await CierresService.getCierresyActual()
+    
+    if (response.isSuccess && response.data) {
+      const data = response.data as CierresyActualDto
+      transaccionesPendientes.value = data.transaccionesPendientes || []
+      egresosPendientes.value = data.egresosPendientes || []
+      
+      if (transaccionesPendientes.value.length === 0 && egresosPendientes.value.length === 0) {
+        showInfo('ℹ️ No hay transacciones pendientes en esta sesión')
+      } else {
+        showSuccess('✅ Sesión actual cargada correctamente')
+      }
+    } else {
+      console.error('Error loading current session:', response.message)
+      showError(response.message || '❌ Error al cargar la sesión actual')
+    }
+  } catch (error) {
+    console.error('Error loading current session:', error)
+    showError('❌ Error al cargar la sesión actual')
+  } finally {
+    isLoading.value = false
   }
+}
 
   // Print utilities
   // const preparePrintContent = (

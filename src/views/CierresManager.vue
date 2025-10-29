@@ -312,8 +312,17 @@ const openCierreModal = async (cierre) => {
   }
 };
 
-const openCurrentSessionModal = () => {
-  openCurrentSession();
+const openCurrentSessionModal = async () => {
+  console.log('🔍 Abriendo modal de sesión actual...');
+  console.log('🔍 Transacciones:', transaccionesPendientes.value);
+  console.log('🔍 Egresos:', egresosPendientes.value);
+  
+  await openCurrentSession();
+  
+  // Pequeño delay para asegurar que los datos estén listos
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  console.log('✅ Abriendo modal con datos actualizados');
   showCurrentSessionModal.value = true;
 };
 
