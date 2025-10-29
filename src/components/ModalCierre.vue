@@ -356,23 +356,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeMount } from 'vue';
+import { ref, onMounted, onBeforeMount, watch } from 'vue';
 import InfoPago from './InfoPago.vue';
 import axiosClient from '../axiosClient';
 import CerrarCajaModal from './CerrarCajaModal.vue';
 
-
 const isLoadingTable = ref(true)
-
-const cargarPagos = async () => {
-  try {
-    isLoadingTable.value = true
-    // 👇 acá iría tu fetch de pagos/egresos
-    await fetchPagos() 
-  } finally {
-    isLoadingTable.value = false
-  }
-}
 
 const props = defineProps({
   selectedPagos: Array,
@@ -393,23 +382,42 @@ const egresos = ref([]);
 const isClosing = ref(false);
 
 // Lifecycle
-onBeforeMount(() => {
-  if (props.selectedPagos.length > 0) {
-    listaPagos.value = props.selectedPagos;
-  }
-  if (props.idcierre > 0) {
-    fetchDetalleCierre();
-  } else {
-    egresos.value = props.selectedEgresos;
+onBeforeMount(async () => {
+  console.log('🔍 ModalCierre - esAbierto:', props.esAbierto);
+  console.log('🔍 ModalCierre - idcierre:', props.idcierre);
+  console.log('🔍 ModalCierre - selectedPagos length:', props.selectedPagos?.length);
+  console.log('🔍 ModalCierre - selectedEgresos length:', props.selectedEgresos?.length);
+
+  try {
+    isLoadingTable.value = true;
+
+    if (props.esAbierto) {
+      // Para sesión actual, usar los props directamente
+      console.log('✅ Cargando sesión actual...');
+      listaPagos.value = props.selectedPagos || [];
+      egresos.value = props.selectedEgresos || [];
+      console.log('✅ Sesión actual cargada:', listaPagos.value.length, 'pagos,', egresos.value.length, 'egresos');
+    } else if (props.idcierre > 0) {
+      // Para cierres históricos, hacer fetch
+      console.log('✅ Cargando cierre histórico ID:', props.idcierre);
+      await fetchDetalleCierre();
+    }
+  } catch (error) {
+    console.error('❌ Error en onBeforeMount:', error);
+  } finally {
+    isLoadingTable.value = false;
+    console.log('✅ isLoadingTable ahora es false');
   }
 });
 
-onMounted(() => {
-  if (props.selectedPagos.length > 0) {
-    listaPagos.value = props.selectedPagos;
+// Watch for changes in props (in case they update after mount)
+watch(() => [props.selectedPagos, props.selectedEgresos], ([newPagos, newEgresos]) => {
+  if (props.esAbierto) {
+    console.log('🔄 Props actualizados:', newPagos?.length, 'pagos,', newEgresos?.length, 'egresos');
+    listaPagos.value = newPagos || [];
+    egresos.value = newEgresos || [];
   }
-  listaPagos.value = [...listaPagos.value, ...egresos.value];
-});
+}, { immediate: true });
 
 // Methods
 const closeModal = () => {
@@ -425,29 +433,20 @@ const imprimirModal = () => {
   }
 };
 
-// const fetchDetalleCierre = () => {
-//   axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`)
-//     .then(({ data }) => {
-//       listaPagos.value = data.data.pagos;
-//       egresos.value = data.data.egresos;
-//     })
-//     .catch(error => {
-//       console.error('Error al obtener detalle cierres:', error);
-//     });
-// };
-
 const fetchDetalleCierre = async () => {
   try {
-    isLoadingTable.value = true
-    const { data } = await axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`)
-    listaPagos.value = data.data.pagos
-    egresos.value = data.data.egresos
+    isLoadingTable.value = true;
+    console.log('🔍 Fetching detalle cierre:', props.idcierre);
+    const { data } = await axiosClient.get(`/api/Caja/GetDetalleCierre?idCierre=${props.idcierre}`);
+    listaPagos.value = data.data.pagos || [];
+    egresos.value = data.data.egresos || [];
+    console.log('✅ Detalle cargado:', listaPagos.value.length, 'pagos,', egresos.value.length, 'egresos');
   } catch (error) {
-    console.error('Error al obtener detalle cierres:', error)
+    console.error('❌ Error al obtener detalle cierres:', error);
   } finally {
-    isLoadingTable.value = false
+    isLoadingTable.value = false;
   }
-}
+};
 
 const openInfoModal = (pago) => {
   selectedPago.value = pago;
