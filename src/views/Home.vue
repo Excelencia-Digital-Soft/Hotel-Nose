@@ -6,7 +6,7 @@
         alt="MOTEL X"
         class="h-1/3 text-[40px] flex bg-gradient-to-l from-accent-200 via-secondary-500 to-primary-300 bg bg-clip-text text-transparent lexend-exa md:text-[70px] font-bold"
       >
-        inRoom<img src="../assets/pin.png" class="h-16 md:h-24 invert" alt="" />
+        inRoom..<img src="../assets/pin.png" class="h-16 md:h-24 invert" alt="" />
       </div>
     </Transition>
 
@@ -49,3 +49,4 @@
     opacity: 0;
   }
 </style>
+
