@@ -1,0 +1,40 @@
+name: Deploy .NET Project to IIS
+
+on:
+  push:
+    branches:
+      - iis-production
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy .NET to IIS
+    # Se ejecutará en tu runner de organización
+    runs-on: [self-hosted, Windows, X64]
+
+    steps:
+      # 1. Descarga el código del repositorio (incluyendo el script .ps1)
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # EL PASO 'SETUP .NET' SE ELIMINA PORQUE YA ESTÁ INSTALADO EN EL SERVIDOR
+      # - name: Setup .NET
+      #   uses: actions/setup-dotnet@v4
+      #   with:
+      #     dotnet-version: '9.0.x'
+
+      # 3. Restaura, compila y publica el proyecto
+      # Esto genera una carpeta 'publish' con los archivos listos para desplegar.
+      - name: Restore, Build, and Publish
+        run: |
+          dotnet restore
+          dotnet build --configuration Release --no-restore
+          dotnet publish --configuration Release --no-build --output ./publish
+
+      # 4. Despliega en IIS usando tu script de PowerShell avanzado
+      - name: Deploy to IIS Application
+        shell: powershell
+        run: |
+          ./Deploy-IIS.ps1 -WebsiteName "Default Web Site" `
+                           -ApplicationName "ApiHotalNoSe" `
+                           -SourcePath "./publish" `
+                           -DestinationPath "C:\AddWeb\Api-Hotel"
