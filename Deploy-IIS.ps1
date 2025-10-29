@@ -3,7 +3,7 @@
 <#
 .SYNOPSIS
     Este script automatiza el despliegue en una APLICACIÓN específica dentro de un sitio de IIS.
-    Detiene el Application Pool asociado, fuerza la detención del proceso trabajador (w3wp.exe),
+    Detiene el Application Pool asociado, fuerza la detención del proceso trabajador (w3wpex.e),
     limpia el directorio (PRESERVANDO web.config/appsettings.json), copia los nuevos archivos
     (EXCLUYENDO los preservados) y reinicia el pool.
 #>
@@ -42,10 +42,14 @@ try {
     Write-Host "La aplicación usa el Application Pool: '$appPool'"
 
     Write-Host "Deteniendo Application Pool '$appPool'..."
-    Stop-WebAppPool -Name $appPool -ErrorAction Stop
+    # ----- INICIO: Cambio -----
+    # Cambiado a SilentlyContinue para evitar errores si el pool YA está detenido.
+    Stop-WebAppPool -Name $appPool -ErrorAction SilentlyContinue
 
     Write-Host "Deteniendo el Sitio Web '$WebsiteName'..."
-    Stop-Website -Name $WebsiteName -ErrorAction Stop
+    # Cambiado a SilentlyContinue para evitar errores si el sitio YA está detenido.
+    Stop-Website -Name $WebsiteName -ErrorAction SilentlyContinue
+    # ----- FIN: Cambio -----
     
     Write-Host "Application Pool y Sitio detenidos."
 
@@ -115,3 +119,4 @@ catch {
     }
     exit 1
 }
+
