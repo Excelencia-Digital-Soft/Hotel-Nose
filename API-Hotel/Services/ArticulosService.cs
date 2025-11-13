@@ -127,198 +127,270 @@ public class ArticulosService : IArticulosService
         }
     }
 
-    public async Task<ApiResponse<ArticuloDto>> CreateAsync(
-        ArticuloCreateDto createDto,
-        int institucionId,
-        string? creadoPorId = null,
-        CancellationToken cancellationToken = default
-    )
+  public async Task<ApiResponse<ArticuloDto>> CreateAsync(
+    ArticuloCreateDto createDto,
+    int institucionId,
+    string? creadoPorId = null,
+    CancellationToken cancellationToken = default
+)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+    try
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        try
+        // ✅ Validar categoría si se proporciona
+        if (createDto.CategoriaId.HasValue)
         {
-            // Validate category if provided
-            if (createDto.CategoriaId.HasValue)
-            {
-                var categoryExists = await _context.CategoriasArticulos.AnyAsync(
-                    c =>
-                        c.CategoriaId == createDto.CategoriaId.Value
-                        && c.InstitucionID == institucionId,
-                    cancellationToken
-                );
-
-                if (!categoryExists)
-                {
-                    return ApiResponse<ArticuloDto>.Failure("Category not found");
-                }
-            }
-
-            var articulo = new Articulos
-            {
-                NombreArticulo = createDto.NombreArticulo,
-                Precio = createDto.Precio,
-                CategoriaID = createDto.CategoriaId,
-                InstitucionID = institucionId,
-                Anulado = false,
-                FechaRegistro = DateTime.Now,
-                FechaCreacion = DateTime.Now,
-                CreadoPorId = creadoPorId,
-            };
-
-            _context.Articulos.Add(articulo);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // Registrar auditoría de creación
-            await _registrosService.LogAuditAsync(
-                $"Artículo creado: {createDto.NombreArticulo} (ID: {articulo.ArticuloId})",
-                ModuloSistema.INVENTARIO,
-                institucionId,
-                creadoPorId,
-                null, // direccionIP se puede obtener del contexto HTTP si es necesario
-                System.Text.Json.JsonSerializer.Serialize(
-                    new
-                    {
-                        ArticuloId = articulo.ArticuloId,
-                        Nombre = createDto.NombreArticulo,
-                        Precio = createDto.Precio,
-                        CategoriaId = createDto.CategoriaId,
-                        FechaCreacion = DateTime.Now,
-                    }
-                ),
-                null,
+            var categoryExists = await _context.CategoriasArticulos.AnyAsync(
+                c => c.CategoriaId == createDto.CategoriaId.Value && c.InstitucionID == institucionId,
                 cancellationToken
             );
-
-            await transaction.CommitAsync(cancellationToken);
-
-            // Retrieve with includes for response
-            var createdArticulo = await _context
-                .Articulos.AsNoTracking()
-                .Include(a => a.Imagen)
-                .Include(a => a.CreadoPor)
-                .Include(a => a.ModificadoPor)
-                .FirstOrDefaultAsync(a => a.ArticuloId == articulo.ArticuloId, cancellationToken);
-
-            var articuloDto = MapToDto(createdArticulo!);
-
-            _logger.LogInformation(
-                "Created article {ArticuloId} for institution {InstitucionId}",
-                articulo.ArticuloId,
-                institucionId
-            );
-
-            return ApiResponse<ArticuloDto>.Success(articuloDto, "Article created successfully");
-        }
-        catch (Exception ex)
-        {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(
-                ex,
-                "Error creating article for institution {InstitucionId}",
-                institucionId
-            );
-            return ApiResponse<ArticuloDto>.Failure(
-                "Error creating article",
-                "An error occurred while creating the article"
-            );
-        }
-    }
-
-    public async Task<ApiResponse<ArticuloDto>> CreateWithImageAsync(
-        ArticuloCreateWithImageDto createDto,
-        int institucionId,
-        string? creadoPorId = null,
-        CancellationToken cancellationToken = default
-    )
-    {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
-        try
-        {
-            // Validate category if provided
-            if (createDto.CategoriaId.HasValue)
+            if (!categoryExists)
             {
-                var categoryExists = await _context.CategoriasArticulos.AnyAsync(
-                    c =>
-                        c.CategoriaId == createDto.CategoriaId.Value
-                        && c.InstitucionID == institucionId,
-                    cancellationToken
-                );
-
-                if (!categoryExists)
-                {
-                    return ApiResponse<ArticuloDto>.Failure("Category not found");
-                }
+                return ApiResponse<ArticuloDto>.Failure("Category not found");
             }
+        }
 
-            // Create article
-            var articulo = new Articulos
+        // ✅ Crear artículo base
+        var articulo = new Articulos
+        {
+            NombreArticulo = createDto.NombreArticulo,
+            Precio = createDto.Precio,
+            CategoriaID = createDto.CategoriaId,
+            InstitucionID = institucionId,
+            Anulado = false,
+            FechaRegistro = DateTime.Now,
+            FechaCreacion = DateTime.Now,
+            CreadoPorId = creadoPorId,
+        };
+
+        _context.Articulos.Add(articulo);
+        await _context.SaveChangesAsync(cancellationToken); // Para obtener el ID del artículo
+
+        // ✅ Crear InventarioGeneral si no existe
+        bool existeGeneral = await _context.InventarioGeneral
+            .AnyAsync(i => i.ArticuloId == articulo.ArticuloId && i.InstitucionID == institucionId, cancellationToken);
+
+        if (!existeGeneral)
+        {
+            var inventarioGeneral = new InventarioGeneral
             {
-                NombreArticulo = createDto.NombreArticulo,
-                Precio = createDto.Precio,
-                CategoriaID = createDto.CategoriaId,
-                InstitucionID = institucionId,
-                Anulado = false,
+                ArticuloId = articulo.ArticuloId,
+                Cantidad = 0,
                 FechaRegistro = DateTime.Now,
-                FechaCreacion = DateTime.Now,
-                CreadoPorId = creadoPorId,
+                InstitucionID = institucionId,
+                Anulado = false
             };
-
-            _context.Articulos.Add(articulo);
-            await _context.SaveChangesAsync(cancellationToken);
-
-            // Handle image if provided
-            if (createDto.Imagen != null && createDto.Imagen.Length > 0)
-            {
-                var imageResult = await SaveImageAsync(
-                    createDto.Imagen,
-                    institucionId,
-                    cancellationToken
-                );
-                if (imageResult.IsSuccess)
-                {
-                    articulo.imagenID = imageResult.Data!.ImagenId;
-                    _context.Articulos.Update(articulo);
-                    await _context.SaveChangesAsync(cancellationToken);
-                }
-            }
-
-            await transaction.CommitAsync(cancellationToken);
-
-            // Retrieve with includes for response
-            var createdArticulo = await _context
-                .Articulos.AsNoTracking()
-                .Include(a => a.Imagen)
-                .Include(a => a.CreadoPor)
-                .Include(a => a.ModificadoPor)
-                .FirstOrDefaultAsync(a => a.ArticuloId == articulo.ArticuloId, cancellationToken);
-
-            var articuloDto = MapToDto(createdArticulo!);
-
-            _logger.LogInformation(
-                "Created article with image {ArticuloId} for institution {InstitucionId}",
-                articulo.ArticuloId,
-                institucionId
-            );
-
-            return ApiResponse<ArticuloDto>.Success(
-                articuloDto,
-                "Article created with image successfully"
-            );
+            _context.InventarioGeneral.Add(inventarioGeneral);
         }
-        catch (Exception ex)
+
+        // ✅ Crear InventarioUnificado si no existe
+        bool existeUnificado = await _context.InventarioUnificado
+            .AnyAsync(i => i.ArticuloId == articulo.ArticuloId && i.InstitucionID == institucionId, cancellationToken);
+
+        if (!existeUnificado)
         {
-            await transaction.RollbackAsync(cancellationToken);
-            _logger.LogError(
-                ex,
-                "Error creating article with image for institution {InstitucionId}",
-                institucionId
-            );
-            return ApiResponse<ArticuloDto>.Failure(
-                "Error creating article with image",
-                "An error occurred while creating the article with image"
-            );
+            var inventarioUnificado = new InventarioUnificado
+            {
+                ArticuloId = articulo.ArticuloId,
+                InstitucionID = institucionId,
+                TipoUbicacion = (int)TipoUbicacionInventario.General, // ✅ General = 0
+                UbicacionId = null,
+                Cantidad = 0,
+                FechaRegistro = DateTime.UtcNow,
+                FechaUltimaActualizacion = DateTime.UtcNow,
+                UsuarioRegistro = creadoPorId,
+                Anulado = false,
+                CantidadMinima = 0,
+                PuntoReorden = 0,
+                Notas = "Creado automáticamente al registrar artículo"
+            };
+            _context.InventarioUnificado.Add(inventarioUnificado);
         }
+
+        // ✅ Guardar todo dentro de la transacción
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // ✅ Registrar auditoría
+        await _registrosService.LogAuditAsync(
+            $"Artículo creado: {createDto.NombreArticulo} (ID: {articulo.ArticuloId})",
+            ModuloSistema.INVENTARIO,
+            institucionId,
+            creadoPorId,
+            null,
+            System.Text.Json.JsonSerializer.Serialize(new
+            {
+                ArticuloId = articulo.ArticuloId,
+                Nombre = createDto.NombreArticulo,
+                Precio = createDto.Precio,
+                CategoriaId = createDto.CategoriaId,
+                FechaCreacion = DateTime.Now,
+            }),
+            null,
+            cancellationToken
+        );
+
+        // ✅ Confirmar transacción
+        await transaction.CommitAsync(cancellationToken);
+
+        // ✅ Recuperar el artículo completo para devolverlo
+        var createdArticulo = await _context.Articulos.AsNoTracking()
+            .Include(a => a.Imagen)
+            .Include(a => a.CreadoPor)
+            .Include(a => a.ModificadoPor)
+            .FirstOrDefaultAsync(a => a.ArticuloId == articulo.ArticuloId, cancellationToken);
+
+        var articuloDto = MapToDto(createdArticulo!);
+
+        _logger.LogInformation(
+            "Artículo {ArticuloId} creado junto con InventarioGeneral e InventarioUnificado para institución {InstitucionId}",
+            articulo.ArticuloId, institucionId
+        );
+
+        return ApiResponse<ArticuloDto>.Success(
+            articuloDto,
+            "Artículo e inventarios creados correctamente"
+        );
     }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync(cancellationToken);
+        _logger.LogError(
+            ex,
+            "Error al crear artículo e inventarios para institución {InstitucionId}",
+            institucionId
+        );
+        return ApiResponse<ArticuloDto>.Failure(
+            "Error creating article",
+            ex.Message
+        );
+    }
+}
+
+
+   public async Task<ApiResponse<ArticuloDto>> CreateWithImageAsync(
+    ArticuloCreateWithImageDto createDto,
+    int institucionId,
+    string? creadoPorId = null,
+    CancellationToken cancellationToken = default
+)
+{
+    using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+    try
+    {
+        // ✅ Validar categoría si se proporciona
+        if (createDto.CategoriaId.HasValue)
+        {
+            var categoryExists = await _context.CategoriasArticulos.AnyAsync(
+                c => c.CategoriaId == createDto.CategoriaId.Value && c.InstitucionID == institucionId,
+                cancellationToken
+            );
+            if (!categoryExists)
+            {
+                return ApiResponse<ArticuloDto>.Failure("Category not found");
+            }
+        }
+
+        // ✅ Crear artículo base
+        var articulo = new Articulos
+        {
+            NombreArticulo = createDto.NombreArticulo,
+            Precio = createDto.Precio,
+            CategoriaID = createDto.CategoriaId,
+            InstitucionID = institucionId,
+            Anulado = false,
+            FechaRegistro = DateTime.Now,
+            FechaCreacion = DateTime.Now,
+            CreadoPorId = creadoPorId,
+        };
+
+        _context.Articulos.Add(articulo);
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // ✅ Guardar imagen si fue enviada
+        if (createDto.Imagen != null && createDto.Imagen.Length > 0)
+        {
+            var imageResult = await SaveImageAsync(createDto.Imagen, institucionId, cancellationToken);
+            if (imageResult.IsSuccess && imageResult.Data != null)
+            {
+                articulo.imagenID = imageResult.Data.ImagenId;
+                _context.Articulos.Update(articulo);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        // ✅ Crear InventarioGeneral si no existe
+        bool existeGeneral = await _context.InventarioGeneral
+            .AnyAsync(i => i.ArticuloId == articulo.ArticuloId && i.InstitucionID == institucionId, cancellationToken);
+
+        if (!existeGeneral)
+        {
+            var inventarioGeneral = new InventarioGeneral
+            {
+                ArticuloId = articulo.ArticuloId,
+                Cantidad = 0,
+                FechaRegistro = DateTime.Now,
+                InstitucionID = institucionId,
+                Anulado = false
+            };
+            _context.InventarioGeneral.Add(inventarioGeneral);
+        }
+
+        // ✅ Crear InventarioUnificado si no existe
+        bool existeUnificado = await _context.InventarioUnificado
+            .AnyAsync(i => i.ArticuloId == articulo.ArticuloId && i.InstitucionID == institucionId, cancellationToken);
+
+        if (!existeUnificado)
+        {
+            var inventarioUnificado = new InventarioUnificado
+            {
+                ArticuloId = articulo.ArticuloId,
+                InstitucionID = institucionId,
+                TipoUbicacion = (int)TipoUbicacionInventario.General, // ✅ 0 = General
+                UbicacionId = null,
+                Cantidad = 0,
+                FechaRegistro = DateTime.UtcNow,
+                FechaUltimaActualizacion = DateTime.UtcNow,
+                UsuarioRegistro = creadoPorId,
+                Anulado = false,
+                CantidadMinima = 0,
+                PuntoReorden = 0,
+                Notas = "Creado automáticamente al registrar artículo con imagen"
+            };
+            _context.InventarioUnificado.Add(inventarioUnificado);
+        }
+
+        // ✅ Guardar inventarios dentro de la misma transacción
+        await _context.SaveChangesAsync(cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+
+        // ✅ Recuperar el artículo para devolverlo en respuesta
+        var createdArticulo = await _context.Articulos.AsNoTracking()
+            .Include(a => a.Imagen)
+            .Include(a => a.CreadoPor)
+            .Include(a => a.ModificadoPor)
+            .FirstOrDefaultAsync(a => a.ArticuloId == articulo.ArticuloId, cancellationToken);
+
+        var articuloDto = MapToDto(createdArticulo!);
+
+        _logger.LogInformation(
+            "Artículo {ArticuloId} creado junto con imagen e inventarios para institución {InstitucionId}",
+            articulo.ArticuloId, institucionId
+        );
+
+        return ApiResponse<ArticuloDto>.Success(
+            articuloDto,
+            "Artículo con imagen e inventarios creados correctamente"
+        );
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync(cancellationToken);
+        _logger.LogError(ex, "Error al crear artículo con imagen e inventarios para institución {InstitucionId}", institucionId);
+        return ApiResponse<ArticuloDto>.Failure("Error creating article with image", ex.Message);
+    }
+}
+
 
     public async Task<ApiResponse<ArticuloDto>> UpdateAsync(
         int id,

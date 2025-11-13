@@ -11,7 +11,7 @@ namespace hotel.Services;
 /// Refactored service implementation for unified inventory management using specialized services
 /// This service now delegates complex operations to specialized services while maintaining core inventory operations
 /// </summary>
-public class InventoryUnifiedService : IInventoryService
+public class InventoryUnifiedService : IInventoryUnifiedService
 {
     private readonly HotelDbContext _context;
     private readonly ILogger<InventoryUnifiedService> _logger;
@@ -1012,36 +1012,41 @@ public class InventoryUnifiedService : IInventoryService
         }
     }
 
-    public async Task<ApiResponse<MovimientoInventarioDto>> RegisterMovementAsync(
-        MovimientoInventarioCreateDto movementDto,
-        int institucionId,
-        string userId,
-        string? ipAddress = null,
-        CancellationToken cancellationToken = default
-    )
+   public async Task<ApiResponse<MovimientoInventarioDto>> RegisterMovementAsync(
+    MovimientoInventarioCreateDto movementDto,
+    int institucionId,
+    string userId,
+    string? ipAddress = null,
+    CancellationToken cancellationToken = default
+)
+{
+    var existingTransaction = _context.Database.CurrentTransaction;
+
+    // 🔄 Si ya hay una transacción activa, no abrimos una nueva
+    if (existingTransaction != null)
     {
-        using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        _logger.LogInformation(
+            "🔄 Transacción existente detectada. RegisterMovementAsync se ejecutará dentro de la transacción actual."
+        );
 
         try
         {
-            // First, get and update the inventory
+            // 1️⃣ Obtener inventario
             var inventory = await _context.InventarioUnificado.FirstOrDefaultAsync(
                 i => i.InventarioId == movementDto.InventarioId && i.InstitucionID == institucionId,
                 cancellationToken
             );
 
             if (inventory == null)
-            {
                 return ApiResponse<MovimientoInventarioDto>.Failure("Inventory not found");
-            }
 
-            // Update inventory quantity to the new quantity specified in the movement
+            // 2️⃣ Actualizar cantidad
             inventory.Cantidad = movementDto.CantidadNueva;
             inventory.FechaUltimaActualizacion = DateTime.UtcNow;
 
             await _context.SaveChangesAsync(cancellationToken);
 
-            // Then record the movement
+            // 3️⃣ Registrar movimiento
             var movementResult = await _movementService.CreateMovementAsync(
                 movementDto,
                 institucionId,
@@ -1051,22 +1056,17 @@ public class InventoryUnifiedService : IInventoryService
             );
 
             if (!movementResult.IsSuccess)
-            {
-                await transaction.RollbackAsync(cancellationToken);
                 return movementResult;
-            }
 
-            // Check and generate alerts after inventory update
+            // 4️⃣ Verificar alertas
             await _alertService.CheckAndGenerateAlertsAsync(
                 movementDto.InventarioId,
                 institucionId,
                 cancellationToken
             );
 
-            await transaction.CommitAsync(cancellationToken);
-
             _logger.LogInformation(
-                "Inventory {InventoryId} updated from {OldQuantity} to {NewQuantity} and movement recorded",
+                "✅ Movimiento registrado dentro de transacción activa. Inventario {InventoryId}: {OldQuantity} → {NewQuantity}",
                 movementDto.InventarioId,
                 movementDto.CantidadAnterior,
                 movementDto.CantidadNueva
@@ -1076,16 +1076,83 @@ public class InventoryUnifiedService : IInventoryService
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync(cancellationToken);
             _logger.LogError(
                 ex,
-                "Error registering movement for inventory {InventoryId} in institution {InstitucionId}",
+                "❌ Error al registrar movimiento dentro de transacción existente. Inventario {InventoryId} Institución {InstitucionId}",
                 movementDto.InventarioId,
                 institucionId
             );
-            return ApiResponse<MovimientoInventarioDto>.Failure("Error registering movement and updating inventory");
+            return ApiResponse<MovimientoInventarioDto>.Failure("Error registering movement within existing transaction");
         }
     }
+
+    // 🧱 Si NO hay transacción activa, creamos una nueva
+    using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+    try
+    {
+        // 1️⃣ Obtener inventario
+        var inventory = await _context.InventarioUnificado.FirstOrDefaultAsync(
+            i => i.InventarioId == movementDto.InventarioId && i.InstitucionID == institucionId,
+            cancellationToken
+        );
+
+        if (inventory == null)
+            return ApiResponse<MovimientoInventarioDto>.Failure("Inventory not found");
+
+        // 2️⃣ Actualizar cantidad
+        inventory.Cantidad = movementDto.CantidadNueva;
+        inventory.FechaUltimaActualizacion = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        // 3️⃣ Registrar movimiento
+        var movementResult = await _movementService.CreateMovementAsync(
+            movementDto,
+            institucionId,
+            userId,
+            ipAddress,
+            cancellationToken
+        );
+
+        if (!movementResult.IsSuccess)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return movementResult;
+        }
+
+        // 4️⃣ Verificar alertas
+        await _alertService.CheckAndGenerateAlertsAsync(
+            movementDto.InventarioId,
+            institucionId,
+            cancellationToken
+        );
+
+        // 5️⃣ Confirmar transacción
+        await transaction.CommitAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "✅ Inventory {InventoryId} updated from {OldQuantity} to {NewQuantity} and movement recorded",
+            movementDto.InventarioId,
+            movementDto.CantidadAnterior,
+            movementDto.CantidadNueva
+        );
+
+        return movementResult;
+    }
+    catch (Exception ex)
+    {
+        await transaction.RollbackAsync(cancellationToken);
+        _logger.LogError(
+            ex,
+            "❌ Error registering movement for inventory {InventoryId} in institution {InstitucionId}",
+            movementDto.InventarioId,
+            institucionId
+        );
+        return ApiResponse<MovimientoInventarioDto>.Failure("Error registering movement and updating inventory");
+    }
+}
+
 
     public async Task<ApiResponse<MovimientoInventarioResumenDto>> GetInventoryMovementsAsync(
         int inventoryId,
