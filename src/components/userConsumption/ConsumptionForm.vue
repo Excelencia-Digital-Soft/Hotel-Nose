@@ -68,17 +68,17 @@
             >
               <div
                 v-for="article in filteredArticles"
-                :key="article.articuloID"
+                :key="getArticleId(article)"
                 @click="selectArticle(article)"
                 class="p-3 hover:bg-white/10 cursor-pointer transition-colors border-b border-white/10 last:border-b-0"
               >
                 <div class="flex justify-between items-center">
                   <div>
-                    <p class="text-white font-medium">{{ article.nombreArticulo }}</p>
-                    <p class="text-gray-400 text-sm">ID: {{ article.articuloID }}</p>
+                    <p class="text-white font-medium">{{ getArticleName(article) }}</p>
+                    <p class="text-gray-400 text-sm">ID: {{ getArticleId(article) }}</p>
                   </div>
                   <div class="text-right">
-                    <p class="text-green-400 font-semibold">{{ formatCurrency(article.precio) }}</p>
+                    <p class="text-green-400 font-semibold">{{ formatCurrency(getArticlePrice(article)) }}</p>
                   </div>
                 </div>
               </div>
@@ -102,8 +102,8 @@
             <div v-if="form.articuloId" class="glass-card p-4 bg-green-500/10 border-green-500/30">
               <div class="flex justify-between items-center">
                 <div>
-                  <p class="text-white font-medium">{{ selectedArticle?.nombreArticulo }}</p>
-                  <p class="text-gray-400 text-sm">ID: {{ selectedArticle?.articuloID }}</p>
+                  <p class="text-white font-medium">{{ getArticleName(selectedArticle) }}</p>
+                  <p class="text-gray-400 text-sm">ID: {{ getArticleId(selectedArticle) }}</p>
                 </div>
                 <button
                   type="button"
@@ -149,7 +149,7 @@
             />
             <p class="text-gray-400 text-xs">
               💡 Si no se especifica, se usará el precio del artículo:
-              {{ formatCurrency(selectedArticle?.precio || 0) }}
+              {{ formatCurrency(getArticlePrice(selectedArticle) || 0) }}
             </p>
           </div>
 
@@ -164,15 +164,15 @@
               class="glass-input w-full px-4 py-3"
               :disabled="loadingRooms"
             >
-              <option value="">
+              <option :value="null">
                 {{ loadingRooms ? 'Cargando habitaciones...' : 'Seleccionar habitación...' }}
               </option>
               <option
                 v-for="room in availableRooms"
-                :key="room.habitacionId"
-                :value="room.habitacionId"
+                :key="getRoomId(room)"
+                :value="getRoomId(room)"
               >
-                {{ room.nombreHabitacion }} - Capacidad: {{ room.capacidadMaxima }}
+                {{ getRoomName(room) }} - Capacidad: {{ getRoomCapacity(room) }}
               </option>
             </select>
           </div>
@@ -283,6 +283,15 @@
   // Debounce timer
   let searchDebounceTimer = null
 
+  // Helper functions to handle both camelCase and PascalCase
+  const getArticleId = (article) => article?.articuloID || article?.ArticuloID || article?.articuloId || article?.ArticuloId
+  const getArticleName = (article) => article?.nombreArticulo || article?.NombreArticulo
+  const getArticlePrice = (article) => article?.precio || article?.Precio
+  
+  const getRoomId = (room) => room?.habitacionId || room?.HabitacionId
+  const getRoomName = (room) => room?.nombreHabitacion || room?.NombreHabitacion
+  const getRoomCapacity = (room) => room?.capacidadMaxima || room?.CapacidadMaxima
+
   // Computed properties
   const filteredArticles = computed(() => {
     if (!searchTerm.value) return availableArticles.value
@@ -290,13 +299,13 @@
     const term = searchTerm.value.toLowerCase()
     return availableArticles.value.filter(
       (article) =>
-        article.nombreArticulo?.toLowerCase().includes(term) ||
-        article.articuloID?.toString().includes(term)
+        getArticleName(article)?.toLowerCase().includes(term) ||
+        getArticleId(article)?.toString().includes(term)
     )
   })
 
   const effectivePrice = computed(() => {
-    return form.value.precioUnitario || selectedArticle.value?.precio || 0
+    return form.value.precioUnitario || getArticlePrice(selectedArticle.value) || 0
   })
 
   const totalPreview = computed(() => {
@@ -315,21 +324,26 @@
   // Methods
   const searchArticles = () => {
     showDropdown.value = true
-    // If we have a search term but no articles loaded yet, try to load them
     if (searchTerm.value && availableArticles.value.length === 0) {
       loadArticles()
     }
   }
 
   const selectArticle = (article) => {
-    form.value.articuloId = article.articuloId
+    const articleId = getArticleId(article)
+    const articlePrice = getArticlePrice(article)
+    const articleName = getArticleName(article)
+    
+    console.log('🎯 Selecting article:', { articleId, articlePrice, articleName })
+    
+    form.value.articuloId = articleId
     selectedArticle.value = article
-    searchTerm.value = article.nombreArticulo
+    searchTerm.value = articleName
     showDropdown.value = false
 
     // Auto-fill price if not manually set
-    if (!form.value.precioUnitario) {
-      form.value.precioUnitario = article.precio
+    if (!form.value.precioUnitario && articlePrice) {
+      form.value.precioUnitario = articlePrice
     }
   }
 
@@ -349,20 +363,33 @@
   }
 
   const handleSubmit = async () => {
-    if (!isFormValid.value) return
+    if (!isFormValid.value) {
+      toast.add({
+        severity: 'warn',
+        summary: 'Validación',
+        detail: 'Por favor complete todos los campos requeridos',
+        life: 3000,
+      })
+      return
+    }
 
     try {
+      // Prepare consumption data with proper casing for C# DTO
       const consumptionData = {
-        articuloId: form.value.articuloId,
+        articuloId: form.value.articuloId, // Keep camelCase for axios
         cantidad: form.value.cantidad,
-        precioUnitario: form.value.precioUnitario || selectedArticle.value?.precio,
+        precioUnitario: form.value.precioUnitario || getArticlePrice(selectedArticle.value) || null,
         habitacionId: form.value.habitacionId || null,
         reservaId: form.value.reservaId || null,
         tipoConsumo: form.value.tipoConsumo || 'Servicio',
         observaciones: form.value.observaciones || null,
       }
 
+      console.log('📤 Sending consumption data:', consumptionData)
+
       const result = await createConsumption(consumptionData)
+
+      console.log('✅ Consumption created:', result)
 
       toast.add({
         severity: 'success',
@@ -373,11 +400,17 @@
 
       emit('created', result)
     } catch (error) {
-      console.error('Error creating consumption:', error)
+      console.error('❌ Error creating consumption:', error)
+      
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.errors?.[0] ||
+                          error?.message || 
+                          'Error al registrar el consumo'
+      
       toast.add({
         severity: 'error',
         summary: 'Error',
-        detail: 'Error al registrar el consumo',
+        detail: errorMessage,
         life: 5000,
       })
     }
@@ -395,10 +428,13 @@
     loadingArticles.value = true
     try {
       const response = await ArticleService.getArticles()
+      console.log('📦 Articles response:', response)
+      
       if (response.isSuccess && response.data) {
         availableArticles.value = response.data
+        console.log(`✅ Loaded ${response.data.length} articles`)
       } else {
-        console.warn('Failed to load articles:', response.message)
+        console.warn('⚠️ Failed to load articles:', response.message)
         toast.add({
           severity: 'warn',
           summary: 'Advertencia',
@@ -407,7 +443,7 @@
         })
       }
     } catch (error) {
-      console.error('Error loading articles:', error)
+      console.error('❌ Error loading articles:', error)
       toast.add({
         severity: 'error',
         summary: 'Error',
@@ -424,15 +460,16 @@
     loadingRooms.value = true
     try {
       const response = await HabitacionService.getRooms()
+      console.log('🏠 Rooms response:', response)
+      
       if (response.isSuccess && response.data) {
         availableRooms.value = response.data
+        console.log(`✅ Loaded ${response.data.length} rooms`)
       } else {
-        console.warn('Failed to load rooms:', response.message)
-        // Rooms are optional, so we don't show a warning toast
+        console.warn('⚠️ Failed to load rooms:', response.message)
       }
     } catch (error) {
-      console.error('Error loading rooms:', error)
-      // Rooms are optional, so we don't show an error toast
+      console.error('❌ Error loading rooms:', error)
     } finally {
       loadingRooms.value = false
     }
@@ -440,12 +477,9 @@
 
   onMounted(async () => {
     document.addEventListener('click', handleClickOutside)
-
-    // Load initial data
     await Promise.all([loadArticles(), loadRooms()])
   })
 
-  // Watch for search term changes with debounce
   watch(searchTerm, (newValue) => {
     if (searchDebounceTimer) {
       clearTimeout(searchDebounceTimer)
@@ -482,7 +516,6 @@
     @apply ring-2 ring-primary-400 border-primary-400 outline-none;
   }
 
-  /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
   }
@@ -501,4 +534,3 @@
     background: rgba(255, 255, 255, 0.5);
   }
 </style>
-

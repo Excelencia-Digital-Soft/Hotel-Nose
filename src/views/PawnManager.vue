@@ -68,8 +68,8 @@
         </div>
       </div>
 
-      <!-- Filters and Search -->
-      <div class="glass-card mb-6">
+      <!-- Filters and Search - Solo visible en modo "active" -->
+      <div v-if="viewMode === 'active'" class="glass-card mb-6">
         <div class="grid lg:grid-cols-4 gap-4">
           <!-- Search -->
           <div class="space-y-2">
@@ -107,7 +107,7 @@
             </select>
           </div>
 
-          <!-- Refresh Button -->
+          <!-- Refresh Button - Solo en modo "active" -->
           <div class="space-y-2">
             <label class="block text-white font-medium text-sm opacity-0">Acciones</label>
             <button
@@ -207,6 +207,15 @@
               filteredPawns.length
             }})
           </h2>
+          
+          <!-- Botón Imprimir Informe -->
+          <button
+            @click="printReport"
+            class="glass-button px-6 py-3 rounded-xl font-medium transition-all duration-300 hover:scale-105"
+          >
+            <i class="pi pi-print mr-2"></i>
+            Imprimir Informe
+          </button>
         </div>
 
         <div v-if="isLoading" class="text-center py-12">
@@ -281,6 +290,15 @@
                         {{ getStatusText(pawn.status) }}
                       </span>
                     </div>
+                    <!-- Información de usuarios -->
+                    <div v-if="pawn.userName">
+                      <span class="text-white/70">Creado por:</span>
+                      <span class="text-white font-semibold ml-2">{{ pawn.userName }}</span>
+                    </div>
+                    <div v-if="pawn.pagoUserName">
+                      <span class="text-white/70">Pagado por:</span>
+                      <span class="text-white font-semibold ml-2">{{ pawn.pagoUserName }}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -325,7 +343,6 @@
     <Toast />
   </div>
 </template>
-
 <script setup lang="ts">
   import { ref, onMounted } from 'vue'
   import { usePawnManager } from '../composables/usePawnManager'
@@ -335,6 +352,8 @@
   import ConfirmDialog from 'primevue/confirmdialog'
   import Toast from 'primevue/toast'
   import type { PawnDto, PawnStatus } from '../types'
+  import jsPDF from 'jspdf'
+  import autoTable from 'jspdf-autotable'
 
   // Auth store
   const authStore = useAuthStore()
@@ -376,6 +395,130 @@
         return 'Desconocido'
     }
   }
+
+  const getInstitucionName = (institucionId: number): string => {
+    // Implementa la lógica para obtener el nombre de la institución
+    return 'NOSE' // Placeholder
+  }
+
+  // Función para imprimir informe
+  const printReport = () => {
+    const doc = new jsPDF("l", "pt", "a4"); // Horizontal
+
+    // Encabezado
+    doc.setFontSize(20);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(40);
+    doc.text("Informe de Empeños", 40, 40);
+
+    // Fecha de generación
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    const today = new Date().toLocaleString("es-AR", {
+      day: '2-digit',
+      month: '2-digit', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    doc.text(`Generado: ${today}`, 40, 60);
+
+    // Totales
+    const totalEmpeños = filteredPawns.value.length;
+    const totalMonto = filteredPawns.value.reduce((acc, p) => acc + (p.monto || 0), 0);
+
+    doc.setFontSize(11);
+    doc.setTextColor(40);
+    doc.text(`Total Empeños: ${totalEmpeños}`, 40, 85);
+    doc.text(`Monto Total: $${totalMonto.toLocaleString("es-AR")}`, 200, 85);
+
+    // Datos de tabla
+    const rows = filteredPawns.value.map(pawn => [
+      pawn.empenoId ?? '-',
+      pawn.visitaId ?? '-',
+      pawn.detalle ?? '-',
+      pawn.monto != null ? `$${pawn.monto.toLocaleString("es-AR")}` : '-',
+      pawn.pagoId ?? '-',
+      pawn.fechaRegistro ? new Date(pawn.fechaRegistro).toLocaleDateString('es-AR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }) : '-',
+      pawn.anulado === true ? 'Sí' : 'No',
+      getInstitucionName(pawn.institucionId),
+      pawn.userName ?? '-',
+      pawn.pagoUserName ?? '-',
+    ]);
+
+    // Tabla formateada
+    autoTable(doc, {
+      head: [
+        [
+          "ID",
+          "Visita",
+          "Detalle",
+          "Monto",
+          "Pago",
+          "Fecha Registro",
+          "Anulado",
+          "Institución",
+          "Creado por",
+          "Pagado por",
+        ],
+      ],
+      body: rows,
+      startY: 100,
+      theme: "striped",
+      headStyles: {
+        fillColor: [99, 102, 241],
+        textColor: 255,
+        fontSize: 10,
+        fontStyle: 'bold',
+        halign: 'center',
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: 6,
+        overflow: 'linebreak',
+        valign: 'middle',
+      },
+      columnStyles: {
+        0: { cellWidth: 45, halign: 'center' },
+        1: { cellWidth: 50, halign: 'center' },
+        2: { cellWidth: 140, halign: 'left' },
+        3: { cellWidth: 70, halign: 'right' },
+        4: { cellWidth: 50, halign: 'center' },
+        5: { cellWidth: 90, halign: 'center' },
+        6: { cellWidth: 35, halign: 'center' },
+        7: { cellWidth: 70, halign: 'center' },
+        8: { cellWidth: 100, halign: 'left' },
+        9: { cellWidth: 100, halign: 'left' },
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 250],
+      },
+      didDrawPage: (data) => {
+        const pageCount = doc.internal.getNumberOfPages();
+        doc.setFontSize(9);
+        doc.setTextColor(120);
+        
+        const pageText = `Página ${data.pageNumber} de ${pageCount}`;
+        const textWidth = doc.getTextWidth(pageText);
+        const pageWidth = doc.internal.pageSize.width;
+        
+        doc.text(
+          pageText,
+          (pageWidth - textWidth) / 2,
+          doc.internal.pageSize.height - 20
+        );
+      },
+    });
+
+    doc.output("dataurlnewwindow");
+  };
 
   // Lifecycle
   onMounted(() => {

@@ -15,77 +15,23 @@ import type {
   PawnStatusFilter,
 } from '../types'
 
-interface UsePawnManagerReturn {
-  // Data state
-  pawns: Ref<PawnDto[]>
-  paymentCards: Ref<PaymentCardDto[]>
-
-  // UI state
-  isLoading: Ref<boolean>
-  showPaymentModal: Ref<boolean>
-  selectedPawn: Ref<PawnDto | null>
-  viewMode: Ref<'active' | 'all'>
-
-  // Payment form
-  paymentForm: Ref<PawnPaymentForm>
-  isSubmittingPayment: Ref<boolean>
-  isLoadingCards: Ref<boolean>
-
-  // Computed values
-  totalWithAdjustments: ComputedRef<number>
-  cardSurcharge: ComputedRef<number>
-  totalPayment: ComputedRef<number>
-  remainingBalance: ComputedRef<number>
-  isPaymentValid: ComputedRef<boolean>
-  formattedPawns: ComputedRef<FormattedPawnDto[]>
-  filteredPawns: ComputedRef<FormattedPawnDto[]>
-  statistics: ComputedRef<PawnStatistics>
-
-  // Filters
-  searchTerm: Ref<string>
-  statusFilter: Ref<PawnStatusFilter>
-  sortBy: Ref<PawnSortField>
-
-  // Methods
-  openPaymentModal: (pawn: PawnDto) => void
-  closePaymentModal: () => void
-  resetPaymentForm: () => void
-  handleCardSelection: () => void
-  autoFillCash: () => void
-  autoFillCard: () => void
-  splitPayment: () => void
-  fetchPaymentCards: () => Promise<void>
-  fetchPawns: (mode?: 'active' | 'all') => Promise<void>
-  toggleViewMode: () => void
-  formatCurrency: (amount: number) => string
-  formatDate: (dateString: string) => string
-  getPawnStatus: (pawn: PawnDto) => PawnStatus
-  calculateDaysOverdue: (dateString: string) => number
-  getStatusColor: (status: PawnStatus) => string
-  getStatusIcon: (status: PawnStatus) => string
-  showSuccess: (message: string) => void
-  showError: (message: string) => void
-  showWarning: (message: string) => void
-  confirmPayment: () => Promise<boolean>
-}
-
-export function usePawnManager(): UsePawnManagerReturn {
+export function usePawnManager() {
   const toast = useToast()
   const confirm = useConfirm()
   const authStore = useAuthStore()
 
   // Data state
-  const pawns: Ref<PawnDto[]> = ref([])
-  const paymentCards: Ref<PaymentCardDto[]> = ref([])
+  const pawns = ref<PawnDto[]>([])
+  const paymentCards = ref<PaymentCardDto[]>([])
 
   // UI state
-  const isLoading: Ref<boolean> = ref(false)
-  const showPaymentModal: Ref<boolean> = ref(false)
-  const selectedPawn: Ref<PawnDto | null> = ref(null)
-  const viewMode: Ref<'active' | 'all'> = ref('active')
+  const isLoading = ref(false)
+  const showPaymentModal = ref(false)
+  const selectedPawn = ref<PawnDto | null>(null)
+  const viewMode = ref<'active' | 'all'>('active')
 
   // Payment form state
-  const paymentForm: Ref<PawnPaymentForm> = ref({
+  const paymentForm = ref<PawnPaymentForm>({
     cash: 0,
     card: 0,
     discount: 0,
@@ -95,40 +41,83 @@ export function usePawnManager(): UsePawnManagerReturn {
   })
 
   // Loading states
-  const isSubmittingPayment: Ref<boolean> = ref(false)
-  const isLoadingCards: Ref<boolean> = ref(false)
+  const isSubmittingPayment = ref(false)
+  const isLoadingCards = ref(false)
 
-  // Computed values
-  const totalWithAdjustments: ComputedRef<number> = computed(() => {
-    if (!selectedPawn.value) return 0
-    return selectedPawn.value.monto - paymentForm.value.discount + paymentForm.value.surcharge
-  })
-
-  const cardSurcharge: ComputedRef<number> = computed(() => {
-    // No automatic card surcharge - user will input manually in surcharge field
+  // Helper: calculate surcharge for a card over a base amount
+  const calculateCardSurcharge = (card: PaymentCardDto | null, base: number): number => {
+    if (!card || base <= 0) return 0
+    const percentage = Number((card as any).montoPorcentual || 0)
+    const fixed = Number((card as any).montoFijo || 0)
+    if (percentage > 0) return (base * percentage) / 100
+    if (fixed > 0) return fixed
     return 0
+  }
+
+  // Computeds
+  // Card surcharge: calculated over the pawn amount or card amount depending on the strategy.
+  
+// NUEVO CAMBIO:
+
+const totalWithAdjustments = computed(() => {
+  if (!selectedPawn.value) return 0
+  
+  const base = selectedPawn.value.monto
+  const discount = paymentForm.value.discount || 0
+  const additionalSurcharge = paymentForm.value.surcharge || 0
+  
+  // Si hay tarjeta seleccionada, calcular el interés sobre el monto base
+  let cardInterest = 0
+  if (paymentForm.value.selectedCard && paymentForm.value.card > 0) {
+    const card = paymentForm.value.selectedCard
+    const porcentaje = card.montoPorcentual || 0
+    const montoFijo = card.montoFijo || 0
+    
+    if (porcentaje > 0) {
+  cardInterest = ((base + additionalSurcharge) * porcentaje) / 100
+} else if (montoFijo > 0) {
+  cardInterest = montoFijo
+}
+
+  }
+  
+  // Total = base - descuento + recargo adicional + interés de tarjeta
+  const total = base - discount + additionalSurcharge + cardInterest
+  
+  return total
+})
+
+
+  const totalPayment = computed(() => {
+    return (paymentForm.value.cash || 0) + (paymentForm.value.card || 0)
   })
 
-  const totalPayment: ComputedRef<number> = computed(() => {
-    return paymentForm.value.cash + paymentForm.value.card
-  })
-
-  const remainingBalance: ComputedRef<number> = computed(() => {
-    // Balance = Total with adjustments (includes manual surcharge) - total payment
+  const remainingBalance = computed(() => {
     return totalWithAdjustments.value - totalPayment.value
   })
+// ========================================
+// EXPLICACIÓN DE LA LÓGICA:
+// ========================================
+// Ejemplo: Empeño de $1,000 con tarjeta de 15%
+//
+// totalWithAdjustments = $1,000 (monto base sin ajustes)
+// paymentForm.card = $1,150 (incluye $1,000 + $150 de interés)
+// totalPayment = $1,150
+// remainingBalance = $1,000 - $1,150 = -$150 ❌ INCORRECTO
+//
+// CORRECTO: Si el cliente paga con tarjeta, DEBE pagar más
+// totalWithAdjustments = $1,150 (debe incluir el interés)
+// paymentForm.card = $1,150
+// totalPayment = $1,150
+// remainingBalance = $1,150 - $1,150 = $0 ✅ CORRECTO
+//
 
-  const isPaymentValid: ComputedRef<boolean> = computed(() => {
-    const absBalance = Math.abs(remainingBalance.value)
-    console.log('💰 Payment validation:', {
-      remainingBalance: remainingBalance.value,
-      absBalance,
-      isValid: absBalance < 1, // Increased tolerance to 1 peso
-    })
-    return absBalance < 1 // Increased tolerance for debugging
+
+  const isPaymentValid = computed(() => {
+    return Math.abs(remainingBalance.value) < 0.01
   })
 
-  const formattedPawns: ComputedRef<FormattedPawnDto[]> = computed(() => {
+  const formattedPawns = computed<FormattedPawnDto[]>(() => {
     return pawns.value.map((pawn) => ({
       ...pawn,
       formattedAmount: formatCurrency(pawn.monto),
@@ -143,23 +132,17 @@ export function usePawnManager(): UsePawnManagerReturn {
     }))
   })
 
-  // Filters and search
   const searchTerm: Ref<string> = ref('')
   const statusFilter: Ref<PawnStatusFilter> = ref('all')
   const sortBy: Ref<PawnSortField> = ref('date')
 
-  const filteredPawns: ComputedRef<FormattedPawnDto[]> = computed(() => {
-    let filtered = formattedPawns.value
+  const filteredPawns = computed(() => {
+    let filtered = formattedPawns.value.slice()
 
-    // Filter by view mode - in 'active' mode, only show unpaid pawns
     if (viewMode.value === 'active') {
-      const beforeFilter = filtered.length
-      filtered = filtered.filter((pawn) => pawn.estadoPago === 'Pendiente')
-      console.log(`✅ Active mode filter: ${beforeFilter} → ${filtered.length} pawns`)
+      filtered = filtered.filter((p) => p.estadoPago === 'Pendiente')
     }
-    // In 'all' mode, show all pawns (both paid and unpaid)
 
-    // Search filter
     if (searchTerm.value) {
       const term = searchTerm.value.toLowerCase()
       filtered = filtered.filter(
@@ -170,29 +153,20 @@ export function usePawnManager(): UsePawnManagerReturn {
       )
     }
 
-    // Status filter - only apply time-based status filtering in active mode
     if (statusFilter.value !== 'all' && viewMode.value === 'active') {
       filtered = filtered.filter((pawn) => pawn.status === statusFilter.value)
     } else if (statusFilter.value !== 'all' && viewMode.value === 'all') {
-      // In 'all' mode, allow filtering by payment status
-      if (statusFilter.value === 'paid') {
-        filtered = filtered.filter((pawn) => pawn.estadoPago === 'Pagado')
-      } else if (statusFilter.value === 'unpaid') {
-        filtered = filtered.filter((pawn) => pawn.estadoPago === 'Pendiente')
-      }
+      if (statusFilter.value === 'paid') filtered = filtered.filter((p) => p.estadoPago === 'Pagado')
+      if (statusFilter.value === 'unpaid') filtered = filtered.filter((p) => p.estadoPago === 'Pendiente')
     }
 
-    // Sort
     filtered.sort((a, b) => {
       switch (sortBy.value) {
         case 'amount':
           return b.monto - a.monto
         case 'status':
-          // In 'all' mode, sort by payment status first, then by time status
-          if (viewMode.value === 'all') {
-            if (a.estadoPago !== b.estadoPago) {
-              return a.estadoPago === 'Pagado' ? -1 : 1
-            }
+          if (viewMode.value === 'all' && a.estadoPago !== b.estadoPago) {
+            return a.estadoPago === 'Pagado' ? -1 : 1
           }
           return a.status.localeCompare(b.status)
         case 'date':
@@ -204,163 +178,168 @@ export function usePawnManager(): UsePawnManagerReturn {
     return filtered
   })
 
-  // Statistics
-  const statistics: ComputedRef<PawnStatistics> = computed(() => {
-    // Calculate based on the filtered view
-    const relevantPawns =
-      viewMode.value === 'active'
-        ? pawns.value.filter((pawn) => pawn.estadoPago === 'Pendiente')
-        : pawns.value
-
-    const total = relevantPawns.length
-    const totalAmount = relevantPawns.reduce((sum, pawn) => sum + pawn.monto, 0)
-
-    let overdue = 0
-    if (viewMode.value === 'active') {
-      overdue = relevantPawns.filter((pawn) => getPawnStatus(pawn) === 'overdue').length
-    } else {
-      overdue = pawns.value.filter((pawn) => pawn.estadoPago === 'Pagado').length
-    }
-
+  const statistics = computed(() => {
+    const relevant = viewMode.value === 'active' ? pawns.value.filter((p) => p.estadoPago === 'Pendiente') : pawns.value
+    const total = relevant.length
+    const totalAmount = relevant.reduce((s, p) => s + (p.monto || 0), 0)
+    const overdue = viewMode.value === 'active' ? relevant.filter((p) => getPawnStatus(p) === 'overdue').length : pawns.value.filter((p) => p.estadoPago === 'Pagado').length
     const averageAmount = total > 0 ? totalAmount / total : 0
-
     return {
       total,
       totalAmount: formatCurrency(totalAmount),
       overdue,
       averageAmount: formatCurrency(averageAmount),
       overduePercentage: total > 0 ? Math.round((overdue / total) * 100) : 0,
-    }
+    } as PawnStatistics
   })
 
-  // Payment modal methods
-  const openPaymentModal = (pawn: PawnDto): void => {
+  // Methods
+
+  const openPaymentModal = (pawn: PawnDto) => {
     selectedPawn.value = pawn
     resetPaymentForm()
     showPaymentModal.value = true
-
-    // Set default observation
     paymentForm.value.observation = `Pago de empeño correspondiente a la visita ${pawn.visitaId}`
+    // preload payment cards if not loaded
+    if (!paymentCards.value.length) fetchPaymentCards()
   }
 
-  const closePaymentModal = (): void => {
+  const closePaymentModal = () => {
     showPaymentModal.value = false
     selectedPawn.value = null
     resetPaymentForm()
   }
 
-  const resetPaymentForm = (): void => {
+  const resetPaymentForm = () => {
     paymentForm.value = {
       cash: 0,
       card: 0,
       discount: 0,
       surcharge: 0,
       selectedCard: null,
-      observation: selectedPawn.value
-        ? `Pago de empeño correspondiente a la visita ${selectedPawn.value.visitaId}`
-        : '',
+      observation: selectedPawn.value ? `Pago de empeño correspondiente a la visita ${selectedPawn.value.visitaId}` : '',
     }
   }
 
-  // Card selection handling
-  const handleCardSelection = (): void => {
-    if (paymentForm.value.selectedCard && paymentForm.value.card > 0) {
-      // Recalculate card amount with surcharge
-      //const baseAmount = paymentForm.value.card
-      //const percentage = paymentForm.value.selectedCard.montoPorcentual || 0
-      //const surcharge = (baseAmount * percentage) / 100
-      // Update the card amount to include surcharge for display
-      // But keep the original amount for calculation
+  // When user selects a card from the UI this should be called (e.g. @change="handleCardSelection")
+  const handleCardSelection = () => {
+    const card = paymentForm.value.selectedCard
+    // If user deselected card -> reset card-related fields and keep manual surcharge if any
+    if (!card) {
+      paymentForm.value.card = 0
+      paymentForm.value.surcharge = 0
+      showWarning('Tarjeta deseleccionada.')
+      return
     }
-  }
 
-  // Auto-fill payment methods
-  const autoFillCash = (): void => {
-    paymentForm.value.cash = totalWithAdjustments.value
+    if (!selectedPawn.value) {
+      showWarning('Seleccioná un empeño primero')
+      return
+    }
+
+    const base = selectedPawn.value.monto || 0
+
+    // Reset previous values to avoid accumulation
     paymentForm.value.card = 0
-    paymentForm.value.selectedCard = null
-    showSuccess(`Pago configurado: todo en efectivo ${formatCurrency(totalWithAdjustments.value)}`)
-  }
-
-  const autoFillCard = (): void => {
-    if (isLoadingCards.value) {
-      showWarning('Espera a que terminen de cargar las tarjetas')
-      return
-    }
-
-    if (!paymentCards.value.length) {
-      showError('No hay tarjetas disponibles')
-      return
-    }
-
-    // Select the first available card
-    if (!paymentForm.value.selectedCard && paymentCards.value.length > 0) {
-      paymentForm.value.selectedCard = paymentCards.value[0]
-    }
-
-    // Simply set all amount to card - user will add surcharge manually if needed
     paymentForm.value.cash = 0
-    paymentForm.value.card = totalWithAdjustments.value
+    paymentForm.value.surcharge = 0
 
-    showSuccess(`Pago configurado: todo con tarjeta ${paymentForm.value.selectedCard?.nombre}`)
-  }
-
-  const splitPayment = (): void => {
-    if (isLoadingCards.value) {
-      showWarning('Espera a que terminen de cargar las tarjetas')
-      return
-    }
-
-    if (!paymentCards.value.length) {
-      showError('No hay tarjetas disponibles')
-      return
-    }
-
-    // Select the first available card
-    if (!paymentForm.value.selectedCard && paymentCards.value.length > 0) {
-      paymentForm.value.selectedCard = paymentCards.value[0]
-    }
-
-    // Simple 50/50 split - user will add surcharge manually if needed
-    const total = totalWithAdjustments.value
-    paymentForm.value.cash = Math.round(total / 2)
-    paymentForm.value.card = total - paymentForm.value.cash
+    // Calculate surcharge and assign
+    const surcharge = calculateCardSurcharge(card, base)
+    paymentForm.value.surcharge = surcharge
+    paymentForm.value.card = base + surcharge
 
     showSuccess(
-      `Pago dividido: ${formatCurrency(paymentForm.value.cash)} efectivo + ${formatCurrency(paymentForm.value.card)} tarjeta`
+      `Tarjeta seleccionada (${(card as any).nombre}). Total: ${formatCurrency(paymentForm.value.card)}`
     )
   }
 
-  // Fetch payment cards
+  // Auto-fill cash: full payment in cash, clear card/method
+  const autoFillCash = () => {
+  paymentForm.value.card = 0
+  paymentForm.value.selectedCard = null
+  paymentForm.value.surcharge = 0
+  const total = selectedPawn.value?.monto || 0
+  const adjusted = total - (paymentForm.value.discount || 0) + (paymentForm.value.surcharge || 0)
+  paymentForm.value.cash = adjusted
+  showSuccess(`Pago configurado: todo en efectivo ${formatCurrency(adjusted)}`)
+}
+
+
+  // Auto-fill card: compute surcharge based on pawn base and set card to original + surcharge
+  // IMPORTANT: do NOT auto-assign the first card; require the user to select the card explicitly
+  const autoFillCard = () => {
+    if (isLoadingCards.value) {
+      showWarning('Espera a que terminen de cargar las tarjetas')
+      return
+    }
+    if (!selectedPawn.value) {
+      showWarning('Seleccioná un empeño primero')
+      return
+    }
+
+    const original = selectedPawn.value.monto || 0
+
+    // Pago completo con tarjeta, sin aplicar recargo automático
+    paymentForm.value.card = original
+    paymentForm.value.cash = 0
+    paymentForm.value.surcharge = 0
+
+    // No obligamos a seleccionar tarjeta aquí
+    paymentForm.value.selectedCard = null
+
+    showSuccess(`Pago configurado: todo con tarjeta (${formatCurrency(paymentForm.value.card)} total)`)
+  }
+
+
+  // Split payment: keep deterministic calculation, surcharge applied over card portion's base amount
+  const splitPayment = () => {
+    if (isLoadingCards.value) {
+      showWarning('Espera a que terminen de cargar las tarjetas')
+      return
+    }
+    if (!selectedPawn.value) {
+      showWarning('Seleccioná un empeño primero')
+      return
+    }
+    if (!paymentCards.value.length) {
+      showError('No hay tarjetas disponibles')
+      return
+    }
+
+    if (!paymentForm.value.selectedCard) {
+      showWarning('Seleccioná una tarjeta antes de continuar')
+      return
+    }
+
+    const original = selectedPawn.value.monto || 0
+    // deterministic split
+    const half = Math.round(original / 2)
+
+    // cash gets half (base)
+    paymentForm.value.cash = half
+
+    // surcharge must be computed only over the card base (half)
+    const surchargeOnCard = calculateCardSurcharge(paymentForm.value.selectedCard as PaymentCardDto, half)
+    paymentForm.value.surcharge = surchargeOnCard
+    // card should cover remaining base (original - half) plus surcharge on the card portion
+    paymentForm.value.card = (original - half) + surchargeOnCard
+
+    showSuccess(`Pago dividido: ${formatCurrency(paymentForm.value.cash)} efectivo + ${formatCurrency(paymentForm.value.card)} tarjeta (Recargo: ${formatCurrency(surchargeOnCard)})`)
+  }
+
   const fetchPaymentCards = async (): Promise<void> => {
     try {
       isLoadingCards.value = true
-
       const institucionID = authStore.institucionID
-      console.log('🔍 Fetching payment cards for institucionID:', institucionID)
-
       if (!institucionID) {
         showError('No se encontró la institución')
         return
       }
-
       const response = await PawnService.getPaymentCards(institucionID)
-      console.log('📋 Payment cards response:', response)
-
-      if (response && response.isSuccess && response.data) {
-        paymentCards.value = response.data
-        console.log('✅ Payment cards loaded:', response.data.length, 'cards')
-      } else if (response && response.data) {
-        // Try legacy response format
-        paymentCards.value = response.data
-        console.log('✅ Payment cards loaded (legacy format):', response.data.length, 'cards')
-      } else {
-        paymentCards.value = []
-        console.warn('⚠️ No payment cards found')
-        showError(response?.message || 'No se encontraron tarjetas de pago')
-      }
-    } catch (error) {
-      console.error('❌ Error fetching payment cards:', error)
+      paymentCards.value = response?.data || []
+    } catch (err) {
+      console.error(err)
       showError('Error al cargar tarjetas de pago')
       paymentCards.value = []
     } finally {
@@ -368,96 +347,48 @@ export function usePawnManager(): UsePawnManagerReturn {
     }
   }
 
-  // Utility methods
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0,
-    }).format(amount)
-  }
-
-  const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('es-CO', {
-      year: 'numeric',
-      month: 'short',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    })
-  }
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit' })
 
   const getPawnStatus = (pawn: PawnDto): PawnStatus => {
-    const daysOverdue = calculateDaysOverdue(pawn.fechaRegistro)
-    if (daysOverdue > 30) return 'overdue'
-    if (daysOverdue > 15) return 'warning'
+    const days = calculateDaysOverdue(pawn.fechaRegistro)
+    if (days > 30) return 'overdue'
+    if (days > 15) return 'warning'
     return 'active'
   }
 
-  const calculateDaysOverdue = (dateString: string): number => {
+  const calculateDaysOverdue = (dateString: string) => {
     const pawnDate = new Date(dateString)
     const now = new Date()
-    const diffTime = now.getTime() - pawnDate.getTime()
-    return Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    const diff = now.getTime() - pawnDate.getTime()
+    return Math.floor(diff / (1000 * 60 * 60 * 24))
   }
 
-  const getStatusColor = (status: PawnStatus): string => {
+  const getStatusColor = (status: PawnStatus) => {
     switch (status) {
-      case 'overdue':
-        return 'text-red-400'
-      case 'warning':
-        return 'text-yellow-400'
-      case 'active':
-        return 'text-green-400'
-      default:
-        return 'text-white'
+      case 'overdue': return 'text-red-400'
+      case 'warning': return 'text-yellow-400'
+      case 'active': return 'text-green-400'
+      default: return 'text-white'
     }
   }
 
-  const getStatusIcon = (status: PawnStatus): string => {
+  const getStatusIcon = (status: PawnStatus) => {
     switch (status) {
-      case 'overdue':
-        return 'pi-exclamation-triangle'
-      case 'warning':
-        return 'pi-clock'
-      case 'active':
-        return 'pi-check-circle'
-      default:
-        return 'pi-circle'
+      case 'overdue': return 'pi-exclamation-triangle'
+      case 'warning': return 'pi-clock'
+      case 'active': return 'pi-check-circle'
+      default: return 'pi-circle'
     }
   }
 
-  // Toast messages
-  const showSuccess = (message: string): void => {
-    toast.add({
-      severity: 'success',
-      summary: 'Éxito',
-      detail: message,
-      life: 5000,
-    })
-  }
+  // Toast helpers
+  const showSuccess = (message: string) => toast.add({ severity: 'success', summary: 'Éxito', detail: message, life: 5000 })
+  const showError = (message: string) => toast.add({ severity: 'error', summary: 'Error', detail: message, life: 5000 })
+  const showWarning = (message: string) => toast.add({ severity: 'warn', summary: 'Advertencia', detail: message, life: 5000 })
 
-  const showError = (message: string): void => {
-    toast.add({
-      severity: 'error',
-      summary: 'Error',
-      detail: message,
-      life: 5000,
-    })
-  }
-
-  const showWarning = (message: string): void => {
-    toast.add({
-      severity: 'warn',
-      summary: 'Advertencia',
-      detail: message,
-      life: 5000,
-    })
-  }
-
-  // Confirmation dialogs
+  // Confirmation dialog wrapper used elsewhere
   const confirmPayment = (): Promise<boolean> => {
-    console.log('🤔 Showing confirmation dialog...', selectedPawn.value)
     return new Promise((resolve) => {
       confirm.require({
         message: `¿Confirmar el pago de ${formatCurrency(totalWithAdjustments.value)} para el empeño ${selectedPawn.value?.empenoId}?`,
@@ -466,53 +397,55 @@ export function usePawnManager(): UsePawnManagerReturn {
         acceptLabel: 'Sí, confirmar',
         rejectLabel: 'Cancelar',
         acceptClass: 'p-button-success',
-        accept: () => {
-          console.log('✅ User confirmed payment')
-          resolve(true)
-        },
-        reject: () => {
-          console.log('❌ User rejected payment')
-          resolve(false)
-        },
+        accept: () => resolve(true),
+        reject: () => resolve(false),
       })
     })
   }
 
-  // Fetch pawns method
+  // Fetch pawns
   const fetchPawns = async (mode: 'active' | 'all' = viewMode.value): Promise<void> => {
     try {
       isLoading.value = true
-
       let response
-      if (mode === 'all') {
-        console.log('🔄 Fetching ALL pawns...')
-        response = await PawnService.getAllPawns()
-      } else {
-        console.log('🔄 Fetching ACTIVE pawns...')
-        response = await PawnService.getPawns()
-      }
-
-      if (response && response.isSuccess && response.data) {
-        console.log(`📦 Received ${response.data.length} pawns for mode '${mode}':`, response.data)
-
-        pawns.value = response.data
-      } else {
-        pawns.value = []
-        console.warn('No pawns data received:', response)
-      }
-    } catch (error) {
-      console.error('Error fetching pawns:', error)
+      if (mode === 'all') response = await PawnService.getAllPawns()
+      else response = await PawnService.getPawns()
+      if (response && response.isSuccess && response.data) pawns.value = response.data
+      else pawns.value = []
+    } catch (err) {
+      console.error(err)
       pawns.value = []
     } finally {
       isLoading.value = false
     }
   }
 
-  // Toggle view mode
-  const toggleViewMode = (): void => {
+  const toggleViewMode = () => {
     viewMode.value = viewMode.value === 'active' ? 'all' : 'active'
-    // Automatically fetch data for the new mode
     fetchPawns(viewMode.value)
+  }
+
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount || 0)
+  }
+
+  // exposed: keep applyCardRecalculation for backward compatibility
+  const applyCardRecalculation = () => {
+    if (!selectedPawn.value || !paymentForm.value.selectedCard) return
+
+    const pawnAmount = selectedPawn.value.monto || 0
+    const card = paymentForm.value.selectedCard
+
+    const surcharge = calculateCardSurcharge(card, pawnAmount)
+
+    paymentForm.value.surcharge = surcharge
+    paymentForm.value.card = pawnAmount + surcharge
+    paymentForm.value.cash = 0
   }
 
   return {
@@ -533,7 +466,6 @@ export function usePawnManager(): UsePawnManagerReturn {
 
     // Computed values
     totalWithAdjustments,
-    cardSurcharge,
     totalPayment,
     remainingBalance,
     isPaymentValid,
@@ -567,5 +499,7 @@ export function usePawnManager(): UsePawnManagerReturn {
     showError,
     showWarning,
     confirmPayment,
+    // utils
+    applyCardRecalculation,
   }
 }

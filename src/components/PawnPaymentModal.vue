@@ -72,9 +72,12 @@
               </div>
             </div>
 
-            <!-- Surcharge -->
+            <!-- Surcharge Manual (solo para recargos adicionales que NO sean de tarjeta) -->
             <div class="space-y-2">
-              <label class="block text-white font-medium text-sm"> Recargo </label>
+              <label class="block text-white font-medium text-sm"> 
+                Recargo Adicional
+                <span class="text-xs text-white/50 ml-1">(ej: daños, extras)</span>
+              </label>
               <div class="relative">
                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70"
                   >$</span
@@ -85,6 +88,7 @@
                   min="0"
                   placeholder="0.00"
                   class="glass-input w-full pl-8"
+                  title="Recargos por daños u otros conceptos. El interés de la tarjeta se calculará sobre el total incluyendo este recargo."
                 />
               </div>
             </div>
@@ -93,10 +97,13 @@
           <!-- Adjusted Total -->
           <div class="mt-4 p-4 bg-primary-500/10 border border-primary-400/30 rounded-xl">
             <div class="flex justify-between items-center">
-              <span class="text-white font-medium">Total con Ajustes:</span>
+              <span class="text-white font-medium">Monto Base Ajustado:</span>
               <span class="text-white font-bold text-xl">{{
                 formatCurrency(totalWithAdjustments)
               }}</span>
+            </div>
+            <div v-if="paymentForm.selectedCard" class="text-xs text-white/50 mt-1">
+              (El interés de la tarjeta se agrega automáticamente al monto de tarjeta)
             </div>
           </div>
         </div>
@@ -178,6 +185,7 @@
               <label class="block text-white font-medium text-sm">
                 <i class="pi pi-credit-card mr-2 text-blue-400"></i>
                 Tarjeta
+                <span class="text-xs text-white/50 ml-1">(automático)</span>
               </label>
               <div class="relative">
                 <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/70"
@@ -187,16 +195,17 @@
                   v-model.number="paymentForm.card"
                   type="number"
                   min="0"
-                  placeholder="0.00"
-                  class="glass-input w-full pl-8"
-                  @input="handleCardAmountChange"
+                  placeholder="Selecciona una tarjeta"
+                  class="glass-input w-full pl-8 bg-white/5"
+                  readonly
+                  title="El monto se calcula automáticamente: Monto base + Interés de la tarjeta"
                 />
               </div>
             </div>
           </div>
 
           <!-- Card Selection -->
-          <div v-if="paymentForm.card > 0" class="mt-4 space-y-3">
+          <div v-if="paymentForm.card > 0 || paymentCards.length > 0" class="mt-4 space-y-3">
             <label class="text-white font-medium text-sm flex items-center">
               <i class="pi pi-credit-card mr-2 text-blue-400"></i>
               Seleccionar Tarjeta
@@ -211,7 +220,6 @@
                 v-model="paymentForm.selectedCard"
                 :disabled="isLoadingCards || !paymentCards.length"
                 class="glass-input w-full pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
-                @change="handleCardSelection"
               >
                 <option :value="null">
                   {{ isLoadingCards ? 'Cargando tarjetas...' : 'Selecciona una tarjeta' }}
@@ -237,19 +245,22 @@
               </div>
             </div>
 
-            <!-- Card Info (No automatic surcharge) -->
+            <!-- Card Info -->
             <div
               v-if="paymentForm.selectedCard"
               class="p-3 bg-blue-500/10 border border-blue-400/30 rounded-lg"
             >
-              <div class="flex items-center text-sm">
-                <i class="pi pi-credit-card mr-2 text-blue-400"></i>
-                <span class="text-blue-300"
-                  >Tarjeta seleccionada: {{ paymentForm.selectedCard.nombre }}</span
-                >
+              <div class="flex items-center justify-between text-sm mb-1">
+                <div class="flex items-center">
+                  <i class="pi pi-credit-card mr-2 text-blue-400"></i>
+                  <span class="text-blue-300">{{ paymentForm.selectedCard.nombre }}</span>
+                </div>
+                <span class="text-blue-300 font-bold">
+                  {{ formatCurrency(paymentForm.card) }}
+                </span>
               </div>
-              <div class="mt-1 text-xs text-blue-300/70">
-                Si aplica recargo, ingrésalo manualmente en el campo "Recargo"
+              <div class="text-xs text-blue-300/70">
+                Incluye monto base + interés de {{ paymentForm.selectedCard.montoPorcentual }}%
               </div>
             </div>
           </div>
@@ -263,12 +274,41 @@
           </h3>
 
           <div class="space-y-4">
+            <!-- Base amounts breakdown -->
+            <div class="space-y-2 pb-3 border-b border-white/10">
+              <div class="flex justify-between items-center text-sm">
+                <span class="text-white/70">Monto Original del Empeño:</span>
+                <span class="text-white font-medium">{{ formatCurrency(pawn?.monto || 0) }}</span>
+              </div>
+              
+              <div v-if="paymentForm.discount > 0" class="flex justify-between items-center text-sm">
+                <span class="text-green-400">(-) Descuento:</span>
+                <span class="text-green-400 font-medium">{{ formatCurrency(paymentForm.discount) }}</span>
+              </div>
+              
+              <div v-if="paymentForm.surcharge > 0" class="flex justify-between items-center text-sm">
+                <span class="text-yellow-400">(+) Recargo Adicional:</span>
+                <span class="text-yellow-400 font-medium">{{ formatCurrency(paymentForm.surcharge) }}</span>
+              </div>
+
+              <!-- Subtotal antes del interés -->
+              <div v-if="paymentForm.discount > 0 || paymentForm.surcharge > 0" class="flex justify-between items-center text-sm pt-2 border-t border-white/10">
+                <span class="text-white/90 font-medium">Subtotal:</span>
+                <span class="text-white font-medium">{{ formatCurrency(subtotalWithoutInterest) }}</span>
+              </div>
+
+              <div v-if="paymentForm.selectedCard" class="flex justify-between items-center text-sm">
+                <span class="text-blue-400">(+) Interés por Tarjeta ({{ paymentForm.selectedCard.montoPorcentual }}%):</span>
+                <span class="text-blue-400 font-medium">{{ formatCurrency(currentCardInterest) }}</span>
+              </div>
+            </div>
+
             <!-- Payment Methods Breakdown -->
             <div class="space-y-3">
-              <div class="flex justify-between items-center text-sm">
+              <div v-if="paymentForm.cash > 0" class="flex justify-between items-center text-sm">
                 <div class="flex items-center">
                   <i class="pi pi-money-bill mr-2 text-green-400"></i>
-                  <span class="text-white/70">Efectivo:</span>
+                  <span class="text-white/70">Pago en Efectivo:</span>
                 </div>
                 <span class="text-white font-medium">{{
                   formatCurrency(paymentForm.cash || 0)
@@ -278,7 +318,7 @@
               <div v-if="paymentForm.card > 0" class="flex justify-between items-center text-sm">
                 <div class="flex items-center">
                   <i class="pi pi-credit-card mr-2 text-blue-400"></i>
-                  <span class="text-white/70">Tarjeta:</span>
+                  <span class="text-white/70">Pago con Tarjeta:</span>
                 </div>
                 <span class="text-white font-medium">{{
                   formatCurrency(paymentForm.card || 0)
@@ -290,15 +330,15 @@
 
             <!-- Totals Section -->
             <div class="space-y-3">
-              <div class="flex justify-between items-center">
-                <span class="text-white font-medium">Total Requerido:</span>
-                <span class="text-white font-bold text-xl">{{
+              <div class="flex justify-between items-center p-3 bg-blue-500/10 rounded-lg">
+                <span class="text-white font-bold">Total a Pagar:</span>
+                <span class="text-blue-300 font-bold text-2xl">{{
                   formatCurrency(totalWithAdjustments)
                 }}</span>
               </div>
 
               <div class="flex justify-between items-center">
-                <span class="text-white font-medium">Total Pagado:</span>
+                <span class="text-white/70 font-medium">Total Pagado:</span>
                 <span class="text-white font-bold text-lg">{{ formatCurrency(totalPayment) }}</span>
               </div>
 
@@ -308,59 +348,45 @@
               <div
                 class="flex justify-between items-center p-3 rounded-lg"
                 :class="{
-                  'bg-green-500/10 border border-green-400/30': remainingBalance === 0,
-                  'bg-red-500/10 border border-red-400/30': remainingBalance !== 0,
+                  'bg-green-500/10 border border-green-400/30': Math.abs(remainingBalance) < 0.01,
+                  'bg-red-500/10 border border-red-400/30': Math.abs(remainingBalance) >= 0.01,
                 }"
               >
                 <div class="flex items-center">
                   <i
                     :class="{
-                      'pi pi-check-circle text-green-400': remainingBalance === 0,
-                      'pi pi-exclamation-circle text-red-400': remainingBalance !== 0,
+                      'pi pi-check-circle text-green-400': Math.abs(remainingBalance) < 0.01,
+                      'pi pi-exclamation-circle text-red-400': Math.abs(remainingBalance) >= 0.01,
                     }"
                     class="mr-2"
                   ></i>
                   <span
                     :class="{
-                      'text-green-400': remainingBalance === 0,
-                      'text-red-400': remainingBalance !== 0,
+                      'text-green-400': Math.abs(remainingBalance) < 0.01,
+                      'text-red-400': Math.abs(remainingBalance) >= 0.01,
                     }"
                     class="font-medium"
                   >
                     {{
-                      remainingBalance === 0
-                        ? '✅ Pagado Completo'
+                      Math.abs(remainingBalance) < 0.01
+                        ? '✅ Pago Completo'
                         : remainingBalance > 0
                           ? '⚠️ Falta por Pagar'
                           : '💰 Exceso de Pago'
                     }}
-                    <span class="text-xs opacity-75 ml-2"> (Valid: {{ isPaymentValid }}) </span>
                   </span>
                 </div>
                 <span
                   :class="{
-                    'text-green-400': remainingBalance === 0,
-                    'text-red-400': remainingBalance !== 0,
+                    'text-green-400': Math.abs(remainingBalance) < 0.01,
+                    'text-red-400': Math.abs(remainingBalance) >= 0.01,
                   }"
                   class="font-bold text-lg"
                 >
-                  {{ remainingBalance === 0 ? '✓' : formatCurrency(Math.abs(remainingBalance)) }}
+                  {{ Math.abs(remainingBalance) < 0.01 ? '✓' : formatCurrency(Math.abs(remainingBalance)) }}
                 </span>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Debug Info (Remove in production) -->
-        <div class="glass-section-card bg-gray-800/30">
-          <h3 class="text-sm text-gray-400 mb-2">🔍 Debug Info:</h3>
-          <div class="text-xs text-gray-300 space-y-1">
-            <div>Total Required: {{ formatCurrency(totalWithAdjustments) }}</div>
-            <div>Total Payment: {{ formatCurrency(totalPayment) }}</div>
-            <div>Remaining: {{ formatCurrency(remainingBalance) }} ({{ remainingBalance }})</div>
-            <div>Is Valid: {{ isPaymentValid }} (abs: {{ Math.abs(remainingBalance) }})</div>
-            <div>Cash: {{ paymentForm.cash }}, Card: {{ paymentForm.card }}</div>
-            <div>Discount: {{ paymentForm.discount }}, Surcharge: {{ paymentForm.surcharge }}</div>
           </div>
         </div>
 
@@ -416,7 +442,6 @@
   import { ref, computed, watch, onMounted } from 'vue'
   import { usePawnManager } from '../composables/usePawnManager'
   import { PawnService } from '../services/pawnService'
-  import { useAuthStore } from '../store/auth.js'
   import type { PawnDto, PaymentCardDto, PayPawnRequest } from '../types'
 
   // Props and emits
@@ -434,8 +459,8 @@
     'payment-completed': []
   }>()
 
-  // Auth store
-  const authStore = useAuthStore()
+  // Mantener el monto original del empeño como referencia
+  const originalPawnAmount = ref(0)
 
   // Initialize composable
   const {
@@ -447,9 +472,9 @@
     totalPayment,
     remainingBalance,
     isPaymentValid,
-    autoFillCash,
-    autoFillCard,
-    splitPayment,
+    autoFillCash: autoFillCashComposable,
+    autoFillCard: autoFillCardComposable,
+    splitPayment: splitPaymentComposable,
     fetchPaymentCards,
     formatCurrency,
     formatDate,
@@ -460,6 +485,121 @@
     selectedPawn,
     paymentCards,
   } = usePawnManager()
+
+  // Sobrescribir las funciones de auto-fill para considerar recargos adicionales
+  const autoFillCash = () => {
+    paymentForm.value.card = 0
+    paymentForm.value.selectedCard = null
+    
+    const base = originalPawnAmount.value
+    const discount = paymentForm.value.discount || 0
+    const additionalSurcharge = paymentForm.value.surcharge || 0
+    const adjusted = base - discount + additionalSurcharge
+    
+    paymentForm.value.cash = adjusted
+    showSuccess(`Pago configurado: todo en efectivo ${formatCurrency(adjusted)}`)
+  }
+
+  const autoFillCard = () => {
+    if (isLoadingCards.value) {
+      showError('Espera a que terminen de cargar las tarjetas')
+      return
+    }
+    if (!paymentCards.value || paymentCards.value.length === 0) {
+      showError('No hay tarjetas de pago disponibles')
+      return
+    }
+
+    // Limpiar efectivo
+    paymentForm.value.cash = 0
+    
+    // Si ya hay una tarjeta seleccionada, recalcular
+    if (paymentForm.value.selectedCard) {
+      handleCardSelection()
+    } else {
+      // Si no hay tarjeta, mostrar el monto ajustado sin interés aún
+      const base = originalPawnAmount.value
+      const discount = paymentForm.value.discount || 0
+      const additionalSurcharge = paymentForm.value.surcharge || 0
+      const adjusted = base - discount + additionalSurcharge
+      
+      paymentForm.value.card = adjusted
+      showSuccess(`Selecciona una tarjeta para calcular el interés sobre ${formatCurrency(adjusted)}`)
+    }
+  }
+
+  const splitPayment = () => {
+    if (isLoadingCards.value) {
+      showError('Espera a que terminen de cargar las tarjetas')
+      return
+    }
+    if (!paymentCards.value || paymentCards.value.length === 0) {
+      showError('No hay tarjetas de pago disponibles')
+      return
+    }
+    if (!paymentForm.value.selectedCard) {
+      showError('Selecciona una tarjeta antes de dividir el pago')
+      return
+    }
+
+    const base = originalPawnAmount.value
+    const discount = paymentForm.value.discount || 0
+    const additionalSurcharge = paymentForm.value.surcharge || 0
+    const adjusted = base - discount + additionalSurcharge
+    
+    // Dividir el monto ajustado
+    const half = Math.round(adjusted / 2)
+    
+    // Efectivo recibe la mitad
+    paymentForm.value.cash = half
+    
+    // Para la tarjeta: calcular interés sobre la otra mitad
+    const cardBase = adjusted - half
+    const card = paymentForm.value.selectedCard
+    const porcentaje = card.montoPorcentual || 0
+    const montoFijo = card.montoFijo || 0
+    
+    let interes = 0
+    if (porcentaje > 0) {
+      interes = (cardBase * porcentaje) / 100
+    } else if (montoFijo > 0) {
+      interes = montoFijo
+    }
+    
+    paymentForm.value.card = cardBase + interes
+    
+    showSuccess(`Pago dividido: ${formatCurrency(half)} efectivo + ${formatCurrency(paymentForm.value.card)} tarjeta (incluye ${formatCurrency(interes)} de interés)`)
+  }
+
+  // Computed para calcular el interés actual de la tarjeta
+  const currentCardInterest = computed(() => {
+    if (!paymentForm.value.selectedCard) return 0
+    
+    const base = originalPawnAmount.value
+    const discount = paymentForm.value.discount || 0
+    const additionalSurcharge = paymentForm.value.surcharge || 0
+    const adjustedBase = base - discount + additionalSurcharge
+    
+    const card = paymentForm.value.selectedCard
+    const porcentaje = card.montoPorcentual || 0
+    const montoFijo = card.montoFijo || 0
+    
+    if (porcentaje > 0) {
+      return (adjustedBase * porcentaje) / 100
+    } else if (montoFijo > 0) {
+      return montoFijo
+    }
+    
+    return 0
+  })
+
+  // Computed para el subtotal sin interés
+  const subtotalWithoutInterest = computed(() => {
+    const base = originalPawnAmount.value
+    const discount = paymentForm.value.discount || 0
+    const additionalSurcharge = paymentForm.value.surcharge || 0
+    return base - discount + additionalSurcharge
+  })
 
   // Set initial values from props (ensure reactive updates)
   onMounted(() => {
@@ -482,21 +622,74 @@
   }
 
   const handleCardAmountChange = (): void => {
-    // Auto-select first card if amount > 0 and no card selected
-    if (
-      paymentForm.value.card > 0 &&
-      !paymentForm.value.selectedCard &&
-      paymentCards.value.length > 0
-    ) {
-      paymentForm.value.selectedCard = paymentCards.value[0]
+    if (!paymentForm.value.card || paymentForm.value.card <= 0) {
+      // Si el monto de tarjeta queda vacío → limpiar selección
+      paymentForm.value.selectedCard = null
     }
   }
 
-  const handleCardSelection = (): void => {
-    // Recalculate surcharge when card changes
-    if (paymentForm.value.selectedCard && paymentForm.value.card > 0) {
-      // The composable will handle the calculation
+  const handleCardSelection = () => {
+    const selectedCard = paymentForm.value.selectedCard
+    
+    // Si no hay tarjeta seleccionada, limpiar valores
+    if (!selectedCard) {
+      paymentForm.value.card = 0
+      paymentForm.value.cash = 0
+      showError('No se seleccionó ninguna tarjeta')
+      return
     }
+
+    // Base ajustada: monto original - descuento + recargo adicional
+    const baseAmount = originalPawnAmount.value
+    const discount = paymentForm.value.discount || 0
+    const additionalSurcharge = paymentForm.value.surcharge || 0
+    
+    const adjustedBase = baseAmount - discount + additionalSurcharge
+    
+    if (adjustedBase <= 0) {
+      showError('El monto ajustado no es válido')
+      return
+    }
+
+    // Calcular el interés sobre la BASE AJUSTADA (incluye recargos adicionales)
+    const porcentaje = selectedCard.montoPorcentual || 0
+    const montoFijo = selectedCard.montoFijo || 0
+    
+    let interes = 0
+    if (porcentaje > 0) {
+      interes = (adjustedBase * porcentaje) / 100
+    } else if (montoFijo > 0) {
+      interes = montoFijo
+    }
+
+    console.log('📊 Cálculo de interés por medio de pago:', {
+      baseAmount,
+      discount,
+      additionalSurcharge,
+      adjustedBase,
+      porcentaje,
+      montoFijo,
+      interes,
+      totalCard: adjustedBase + interes,
+      tarjeta: selectedCard.nombre
+    })
+
+    // El monto de tarjeta es: base ajustada + interés
+    paymentForm.value.card = adjustedBase + interes
+    
+    // Limpiar efectivo cuando se selecciona pago total con tarjeta
+    paymentForm.value.cash = 0
+
+    const breakdown = []
+    breakdown.push(`Monto base: ${formatCurrency(baseAmount)}`)
+    if (discount > 0) breakdown.push(`Descuento: -${formatCurrency(discount)}`)
+    if (additionalSurcharge > 0) breakdown.push(`Recargo adicional: +${formatCurrency(additionalSurcharge)}`)
+    breakdown.push(`Subtotal: ${formatCurrency(adjustedBase)}`)
+    breakdown.push(`Interés ${porcentaje}%: +${formatCurrency(interes)}`)
+    
+    showSuccess(
+      `Tarjeta "${selectedCard.nombre}" - ${breakdown.join(', ')} = Total: ${formatCurrency(paymentForm.value.card)}`
+    )
   }
 
   const confirmPayment = async (): Promise<void> => {
@@ -505,7 +698,6 @@
       isValid: isPaymentValid.value,
       remainingBalance: remainingBalance.value,
       totalRequired: totalWithAdjustments.value,
-      cardSurcharge: cardSurcharge.value,
       totalPayment: totalPayment.value,
       cash: paymentForm.value.cash,
       card: paymentForm.value.card,
@@ -544,7 +736,7 @@
       const paymentData: PayPawnRequest = {
         pawnId: props.pawn.empenoId,
         montoEfectivo: paymentForm.value.cash || 0,
-        montoTarjeta: paymentForm.value.card || 0, // No automatic surcharge - user handles it manually
+        montoTarjeta: paymentForm.value.card || 0,
         observacion: paymentForm.value.observation,
         tarjetaId: paymentForm.value.selectedCard?.tarjetaId,
       }
@@ -572,6 +764,9 @@
   // Initialize form data and ensure proper reactive setup
   onMounted(async () => {
     if (props.pawn) {
+      // Guardar el monto original del empeño
+      originalPawnAmount.value = props.pawn.monto || 0
+      
       // These should already be set above, but ensure they're reactive
       selectedPawn.value = props.pawn
       paymentCards.value = props.paymentCards
@@ -591,6 +786,9 @@
     () => props.pawn,
     (newPawn) => {
       if (newPawn) {
+        // Actualizar el monto original cuando cambia el empeño
+        originalPawnAmount.value = newPawn.monto || 0
+        
         // Reset form when pawn changes
         console.log('newPawn', newPawn)
         paymentForm.value.cash = 0
@@ -605,6 +803,30 @@
     },
     { immediate: true }
   )
+
+  // Watch para recalcular el monto de tarjeta cuando cambian descuento o recargo adicional
+  watch(
+    () => [paymentForm.value.discount, paymentForm.value.surcharge],
+    () => {
+      // Si hay una tarjeta seleccionada, recalcular
+      if (paymentForm.value.selectedCard) {
+        console.log('🔄 Recalculando por cambio en descuento/recargo')
+        handleCardSelection()
+      }
+    }
+  )
+
+  // Watch para cuando cambia la tarjeta seleccionada
+  watch(
+    () => paymentForm.value.selectedCard,
+    (newCard, oldCard) => {
+      if (newCard && newCard !== oldCard) {
+        console.log('🔄 Tarjeta cambiada, recalculando...')
+        handleCardSelection()
+      }
+    }
+  )
+
 </script>
 
 <style scoped>
