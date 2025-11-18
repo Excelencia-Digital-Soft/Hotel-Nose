@@ -1,0 +1,49 @@
+name: Deploy to Production IIS
+
+# Disparador: Este workflow se ejecuta cada vez que se hace un push a la rama 'production'.
+on:
+  push:
+    branches:
+      - iis-production
+
+jobs:
+  build-and-deploy:
+    # Nombre del Job
+    name: Build and Deploy to IIS
+
+    # Runner: Aquí le decimos a GitHub que use el runner que configuraste.
+    # Asegúrate de que las etiquetas coincidan con las que definiste en el Paso 1.
+    runs-on: [self-hosted, windows, x64]
+
+    # Pasos que se ejecutarán en el runner
+    steps:
+      # 1. Clonar el repositorio
+      # Descarga el código de la rama 'production' en el runner.
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Configurar Node.js
+      # Necesario para instalar dependencias y compilar el proyecto frontend.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3. Instalar dependencias del proyecto
+      # Ejecuta 'npm install' para descargar los paquetes necesarios.
+      - name: Install Dependencies
+        run: npm install
+
+      # Ejecuta el script de build definido en tu package.json.
+      # Esto generará la carpeta 'build' o 'dist' con los archivos estáticos.
+      - name: Build Project
+        run: npm run build
+        env:
+          # Algunas apps de React necesitan esta variable para el build en entornos CI
+          CI: false
+
+      # 5. Ejecutar el script de despliegue en PowerShell para la aplicación 'FrontHotel'
+      - name: Deploy to IIS Application 'Legacy Front Hotel'
+        run: |
+          ./Deploy-IIS.ps1 -WebsiteName "Default Web Site" -ApplicationName "hotel" -SourcePath "./dist" -DestinationPath "C:\sites\hotel"
+        shell: powershell

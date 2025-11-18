@@ -1,0 +1,46 @@
+{
+  "name": "inroom-project",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode development --port 3001",
+    "build": "vue-tsc && vite build",
+    "build:dev": "vue-tsc && vite build --mode development",
+    "build:prod": "vue-tsc && vite build --mode production",
+    "preview": "vite preview --mode production",
+    "preview:dev": "vite preview --mode development",
+    "typecheck": "vue-tsc --noEmit",
+    "lint": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@headlessui/vue": "^1.7.16",
+    "@heroicons/vue": "^2.0.18",
+    "@microsoft/signalr": "^8.0.17",
+    "axios": "^1.6.2",
+    "chart.js": "^4.5.0",
+    "date-fns": "^2.30.0",
+    "dayjs": "^1.11.13",
+    "pinia": "^2.1.7",
+    "pinia-plugin-persistedstate": "^3.2.1",
+    "primeicons": "^7.0.0",
+    "primevue": "^3.51.0",
+    "swiper": "^11.2.5",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.6",
+    "@types/axios": "^0.9.36",
+    "@types/node": "^24.0.15",
+    "@vitejs/plugin-vue": "^4.2.3",
+    "@vue/tsconfig": "^0.7.0",
+    "autoprefixer": "^10.4.15",
+    "postcss": "^8.4.31",
+    "tailwindcss": "^3.3.3",
+    "terser": "^5.43.1",
+    "typescript": "^5.8.3",
+    "vite": "^4.4.5",
+    "vue-tsc": "^3.0.3"
+  }
+}
