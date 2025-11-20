@@ -433,3 +433,5 @@ dist-ssr
 GEMINI.md
 .claude/
 CLAUDE.md
+.claude/agents
+CLAUDE.md
