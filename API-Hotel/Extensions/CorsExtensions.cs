@@ -35,6 +35,7 @@ public static class CorsExtensions
                     builder
                         .WithOrigins(
                             "http://localhost:3000",
+                            "http://localhost:3002",
                             "http://localhost:3001",
                             "https://excelencia.myiphost.com:86",
                             "https://excelencia.myiphost.com"

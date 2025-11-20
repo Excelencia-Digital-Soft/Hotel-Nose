@@ -1,18 +1,10 @@
-using System.Reflection;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.OpenApi.Models;
+using hotel.Filters;
 
 namespace hotel.Extensions;
 
-/// <summary>
-/// Extension methods for Swagger/OpenAPI configuration
-/// </summary>
 public static class SwaggerExtensions
 {
-    /// <summary>
-    /// Configure Swagger with JWT authentication
-    /// </summary>
     public static IServiceCollection AddSwaggerConfiguration(this IServiceCollection services)
     {
         services.AddEndpointsApiExplorer();
@@ -20,27 +12,19 @@ public static class SwaggerExtensions
         {
             c.SwaggerDoc("v1", new OpenApiInfo 
             { 
-                Title = "Hotel Management API", 
+                Title = "Hotel API", 
                 Version = "v1",
-                Description = "API para gestión hotelera con autenticación JWT"
+                Description = "API para gestión de hotel"
             });
 
-            // Configure Swagger to work with API versioning
-            c.DocInclusionPredicate((docName, apiDesc) =>
-            {
-                // Include all APIs for now - we can refine this later
-                return true;
-            });
-
-            // Configure JWT authentication in Swagger
+            // Agregar soporte para autenticación JWT
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
                 Name = "Authorization",
                 In = ParameterLocation.Header,
-                Type = SecuritySchemeType.Http,
-                Scheme = "bearer",
-                BearerFormat = "JWT"
+                Type = SecuritySchemeType.ApiKey,
+                Scheme = "Bearer"
             });
 
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -58,29 +42,20 @@ public static class SwaggerExtensions
                 }
             });
 
-            // Include XML comments
-            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            if (File.Exists(xmlPath))
-            {
-                c.IncludeXmlComments(xmlPath);
-            }
+            // *** CRÍTICO: Agregar el filtro para archivos ***
+            c.OperationFilter<FileUploadOperationFilter>();
         });
 
         return services;
     }
 
-    /// <summary>
-    /// Configure Swagger UI
-    /// </summary>
     public static IApplicationBuilder UseSwaggerConfiguration(this IApplicationBuilder app)
     {
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hotel Management API V1");
+            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hotel API V1");
             c.RoutePrefix = "swagger";
-            c.DocumentTitle = "Hotel Management API Documentation";
         });
 
         return app;

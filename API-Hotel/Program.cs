@@ -1,4 +1,5 @@
 using hotel.Extensions;
+using hotel.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,6 +18,8 @@ builder.Services.AddBackgroundServices();
 
 var app = builder.Build();
 
+// Ensure upload folders exist at startup
+app.EnsureUploadsFoldersExist();
 
 // Configure the HTTP request pipeline
 app.UseApplicationPipeline();

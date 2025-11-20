@@ -69,7 +69,7 @@ public static class ServiceCollectionExtensions
 
         // Keep backward compatibility for legacy controllers that still use IInventoryService
         services.AddScoped<IInventoryService, InventoryUnifiedServiceRefactored>();
-        
+        services.AddScoped<IInventoryUnifiedService, InventoryUnifiedService>();
         // Room notification services
         services.AddScoped<IRoomNotificationService, RoomNotificationService>();
         

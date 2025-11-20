@@ -18,13 +18,13 @@ public class UserConsumptionService : IUserConsumptionService
 {
     private readonly HotelDbContext _context;
     private readonly ILogger<UserConsumptionService> _logger;
-    private readonly IInventoryService _inventoryService;
+    private readonly IInventoryUnifiedService _inventoryService;
     private readonly UserManager<ApplicationUser> _userManager;
 
     public UserConsumptionService(
         HotelDbContext context,
         ILogger<UserConsumptionService> logger,
-        IInventoryService inventoryService,
+        IInventoryUnifiedService inventoryService,
         UserManager<ApplicationUser> userManager
     )
     {
@@ -211,6 +211,18 @@ public class UserConsumptionService : IUserConsumptionService
         CancellationToken cancellationToken = default
     )
     {
+         #region log RegisterConsumtionAsync
+            
+    _logger.LogInformation(
+        "📥 RegisterConsumptionAsync called - UserId: {UserId}, InstitucionId: {InstitucionId}, " +
+        "ArticuloId: {ArticuloId}, Cantidad: {Cantidad}, TipoConsumo: {TipoConsumo}, HabitacionId: {HabitacionId}",
+        userId,
+        institucionId,
+        createDto.ArticuloId,
+        createDto.Cantidad,
+        createDto.TipoConsumo,
+        createDto.HabitacionId
+    );
         using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
         try
         {
@@ -221,6 +233,7 @@ public class UserConsumptionService : IUserConsumptionService
                 institucionId,
                 cancellationToken
             );
+              #endregion
             if (!precioUnitario.HasValue)
             {
                 return ApiResponse<UserConsumptionDto>.Failure("Article not found");
@@ -286,9 +299,12 @@ public class UserConsumptionService : IUserConsumptionService
             await transaction.RollbackAsync(cancellationToken);
             return LogAndReturnError<UserConsumptionDto>(
                 ex,
-                "Error registering consumption for user {UserId} in institution {InstitucionId}",
+            "❌ ERROR in RegisterConsumptionAsync - UserId: {UserId}, ArticuloId: {ArticuloId}, " +
+                "Message: {Message}, StackTrace: {StackTrace}",
                 userId,
-                institucionId
+                createDto.ArticuloId,
+                ex.Message,
+                ex.StackTrace
             );
         }
     }
@@ -705,16 +721,17 @@ public class UserConsumptionService : IUserConsumptionService
         return articulo?.Precio;
     }
 
+    #region donde Claude me dijo que reescribiera
     private async Task<ApiResponse> ValidateAndConsumeInventoryAsync(
-        int articuloId,
-        int cantidad,
-        string tipoConsumo,
-        int? habitacionId,
-        int institucionId,
-        string userId,
-        string motivo,
-        CancellationToken cancellationToken
-    )
+    int articuloId,
+    int cantidad,
+    string tipoConsumo,
+    int? habitacionId,
+    int institucionId,
+    string userId,
+    string motivo,
+    CancellationToken cancellationToken
+)
     {
         try
         {
@@ -726,54 +743,165 @@ public class UserConsumptionService : IUserConsumptionService
 
             var locationId = tipoConsumo == "Habitacion" ? habitacionId : null;
 
-            // Validate stock
-            var stockValidation = await _inventoryService.ValidateStockAsync(
+            _logger.LogInformation(
+                "🔍 Validating inventory - Article: {ArticuloId}, Quantity: {Cantidad}, " +
+                "Type: {TipoConsumo}, LocationType: {LocationType}, LocationId: {LocationId}",
                 articuloId,
                 cantidad,
+                tipoConsumo,
                 locationType,
-                locationId,
-                institucionId,
-                cancellationToken
+                locationId
             );
 
-            if (!stockValidation.IsSuccess)
+            // Verify article exists
+            var articulo = await _context.Articulos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(
+                    a => a.ArticuloId == articuloId && a.InstitucionID == institucionId,
+                    cancellationToken
+                );
+
+            if (articulo == null)
             {
-                return ApiResponse.Failure(
-                    "Error validating stock",
-                    stockValidation.Message ?? "Stock validation failed"
+                return ApiResponse.Failure($"Article {articuloId} not found in institution {institucionId}");
+            }
+
+            // 1️⃣ FIND OR CREATE IN InventarioGeneral (Legacy Table)
+            var inventarioGeneral = await _context.InventarioGeneral
+                .FirstOrDefaultAsync(
+                    i => i.ArticuloId == articuloId && i.InstitucionID == institucionId,
+                    cancellationToken
+                );
+
+            if (inventarioGeneral == null)
+            {
+                _logger.LogWarning(
+                    "📦 InventarioGeneral not found for article {ArticuloId}. Creating new record.",
+                    articuloId
+                );
+
+                inventarioGeneral = new InventarioGeneral
+                {
+                    ArticuloId = articuloId,
+                    Cantidad = 0, // Start with 0
+                    FechaRegistro = DateTime.Now,
+                    Anulado = false,
+                    InstitucionID = institucionId
+                };
+
+                _context.InventarioGeneral.Add(inventarioGeneral);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "✅ Created InventarioGeneral ID {InventarioId} for article {ArticuloId}",
+                    inventarioGeneral.InventarioId,
+                    articuloId
                 );
             }
 
-            if (!stockValidation.Data!.IsValid)
+            // 2️⃣ FIND OR CREATE IN InventarioUnificado (New Unified Table)
+            var inventarioUnificado = await _context.InventarioUnificado
+                .FirstOrDefaultAsync(
+                    i =>
+                        i.ArticuloId == articuloId
+                        && i.TipoUbicacion == (int)locationType
+                        && i.UbicacionId == locationId
+                        && i.InstitucionID == institucionId,
+                    cancellationToken
+                );
+
+            if (inventarioUnificado == null)
             {
-                return ApiResponse.Failure(
-                    $"Insufficient stock. Available: {stockValidation.Data.AvailableQuantity}, Requested: {cantidad}"
+                _logger.LogWarning(
+                    "📦 InventarioUnificado not found for article {ArticuloId} in location {LocationType}:{LocationId}. Creating new record.",
+                    articuloId,
+                    locationType,
+                    locationId
+                );
+
+                inventarioUnificado = new InventarioUnificado
+                {
+                    ArticuloId = articuloId,
+                    InstitucionID = institucionId,
+                    TipoUbicacion = (int)locationType,
+                    UbicacionId = locationId,
+                    Cantidad = 0, // Start with 0
+                    FechaRegistro = DateTime.UtcNow,
+                    FechaUltimaActualizacion = DateTime.UtcNow,
+                    UsuarioRegistro = userId,
+                    UsuarioUltimaActualizacion = userId,
+                    Anulado = false,
+                    CantidadMinima = 0,
+                    CantidadMaxima = null,
+                    PuntoReorden = 0,
+                    Notas = locationType == InventoryLocationType.Room
+                        ? $"Auto-created for room {locationId} inventory consumption"
+                        : "Auto-created for general inventory consumption"
+                };
+
+                _context.InventarioUnificado.Add(inventarioUnificado);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogInformation(
+                    "✅ Created InventarioUnificado ID {InventarioId} for article {ArticuloId} in location {LocationType}:{LocationId}",
+                    inventarioUnificado.InventarioId,
+                    articuloId,
+                    locationType,
+                    locationId
                 );
             }
 
-            // Find inventory and register movement
-            var inventory = await _context.InventarioUnificado.FirstOrDefaultAsync(
-                i =>
-                    i.ArticuloId == articuloId
-                    && i.TipoUbicacion == (int)locationType
-                    && i.UbicacionId == locationId
-                    && i.InstitucionID == institucionId,
-                cancellationToken
-            );
-
-            if (inventory == null)
+            // 3️⃣ VALIDATE STOCK AVAILABILITY
+            if (inventarioUnificado.Cantidad < cantidad)
             {
-                return ApiResponse.Failure("Inventory not found for article in specified location");
+                _logger.LogWarning(
+                    "⚠️ Insufficient stock for article {ArticuloId}. Available: {Available}, Requested: {Requested}",
+                    articuloId,
+                    inventarioUnificado.Cantidad,
+                    cantidad
+                );
+
+                return ApiResponse.Failure(
+                    $"Stock insuficiente. Disponible: {inventarioUnificado.Cantidad}, " +
+                    $"Solicitado: {cantidad}. " +
+                    $"Por favor, reabastezca el inventario para el artículo '{articulo.NombreArticulo}' " +
+                    $"en la ubicación {(locationType == InventoryLocationType.Room ? $"Habitación {locationId}" : "General")}."
+                );
             }
 
-            // Register movement to reduce stock
+            // 4️⃣ UPDATE INVENTORY QUANTITY DIRECTLY (within existing transaction)
+            _logger.LogInformation(
+                "📝 Updating inventory - Reducing {Cantidad} units from article {ArticuloId}",
+                cantidad,
+                articuloId
+            );
+
+            var previousQuantity = inventarioUnificado.Cantidad;
+            inventarioUnificado.Cantidad -= cantidad;
+            inventarioUnificado.FechaUltimaActualizacion = DateTime.UtcNow;
+            inventarioUnificado.UsuarioUltimaActualizacion = userId;
+
+            // Update InventarioGeneral as well (keep legacy table in sync)
+            if (locationType == InventoryLocationType.General && inventarioGeneral != null)
+            {
+                inventarioGeneral.Cantidad = inventarioUnificado.Cantidad;
+            }
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // 5️⃣ REGISTER MOVEMENT (using CreateMovementAsync - no nested transaction)
+            _logger.LogInformation(
+                "📝 Registering movement for inventory {InventarioId}",
+                inventarioUnificado.InventarioId
+            );
+
             var movementResult = await _inventoryService.RegisterMovementAsync(
                 new MovimientoInventarioCreateDto
                 {
-                    InventarioId = inventory.InventarioId,
+                    InventarioId = inventarioUnificado.InventarioId,
                     TipoMovimiento = "Salida",
-                    CantidadAnterior = inventory.Cantidad,
-                    CantidadNueva = inventory.Cantidad - cantidad,
+                    CantidadAnterior = previousQuantity,
+                    CantidadNueva = inventarioUnificado.Cantidad,
                     CantidadCambiada = -cantidad,
                     Motivo = $"{motivo} - {tipoConsumo}",
                     NumeroDocumento = $"CONSUMO-{DateTime.UtcNow:yyyyMMddHHmmss}",
@@ -783,27 +911,51 @@ public class UserConsumptionService : IUserConsumptionService
                 cancellationToken: cancellationToken
             );
 
-            return movementResult.IsSuccess
-                ? ApiResponse.Success("Inventory updated successfully")
-                : ApiResponse.Failure(
+            if (!movementResult.IsSuccess)
+            {
+                _logger.LogError(
+                    "❌ Failed to register inventory movement for article {ArticuloId}",
+                    articuloId
+                );
+                return ApiResponse.Failure(
                     "Error updating inventory",
                     movementResult.Message ?? "Failed to register inventory movement"
                 );
+            }
+
+            _logger.LogInformation(
+                "✅ Inventory successfully updated for article {ArticuloId}. " +
+                "Previous: {PreviousQuantity}, New: {NewQuantity}, Changed: {Changed}",
+                articuloId,
+                previousQuantity,
+                inventarioUnificado.Cantidad,
+                -cantidad
+            );
+
+            return ApiResponse.Success("Inventory updated successfully");
         }
         catch (Exception ex)
         {
             _logger.LogError(
                 ex,
-                "Error validating and consuming inventory for article {ArticuloId}",
-                articuloId
+                "❌ ERROR in ValidateAndConsumeInventoryAsync - Article: {ArticuloId}, " +
+                "Quantity: {Cantidad}, Type: {TipoConsumo}, Message: {Message}, " +
+                "StackTrace: {StackTrace}",
+                articuloId,
+                cantidad,
+                tipoConsumo,
+                ex.Message,
+                ex.StackTrace
             );
+
             return ApiResponse.Failure(
                 "Error processing inventory",
-                "An unexpected error occurred while processing inventory"
+                $"An unexpected error occurred: {ex.Message}"
             );
         }
     }
-
+#endregion
+// consume de HotelDbContext.DbSets.cs
     private async Task<ApiResponse> RestoreInventoryForCancelledConsumptionAsync(
         int articuloId,
         int cantidad,

@@ -3,9 +3,14 @@
 <#
 .SYNOPSIS
     Este script automatiza el despliegue en una APLICACIÓN específica dentro de un sitio de IIS.
-    Detiene el Application Pool asociado, fuerza la detención del proceso trabajador (w3wpex.e),
-    limpia el directorio (PRESERVANDO web.config/appsettings.json), copia los nuevos archivos
-    (EXCLUYENDO los preservados) y reinicia el pool.
+    Detiene el Application Pool asociado, limpia el directorio (PRESERVANDO web.config y wwwroot),
+    copia los nuevos archivos (EXCLUYENDO web.config) y reinicia primero el pool, luego el sitio.
+
+.DESCRIPTION
+    Orden de operaciones optimizado para IIS:
+    - Detención: App Pool → Website → Forzar w3wp.exe (libera recursos primero)
+    - Inicio: App Pool → Validación → Website (backend listo antes de aceptar tráfico)
+    Este orden garantiza detección temprana de errores y elimina cold starts.
 #>
 
 param (
@@ -17,7 +22,7 @@ param (
 
     [Parameter(Mandatory=$true)]
     [string]$SourcePath,
-    
+
     [Parameter(Mandatory=$true)]
     [string]$DestinationPath
 )
@@ -25,7 +30,7 @@ param (
 Import-Module WebAdministration -ErrorAction Stop
 
 Write-Host "Iniciando despliegue para la aplicación: '$ApplicationName' en el sitio '$WebsiteName'"
-Write-Host "IMPORTANTE: Se preservarán los archivos web.config y appsettings.json existentes en el destino."
+Write-Host "IMPORTANTE: Se preservarán web.config, appsettings.json y la carpeta wwwroot/ (imágenes de usuarios)."
 
 $appPath = "IIS:\Sites\$WebsiteName\$ApplicationName"
 $appPool = $null
@@ -34,7 +39,7 @@ try {
     if (-not (Test-Path $appPath)) {
         throw "La aplicación '$ApplicationName' no existe en el sitio '$WebsiteName'. Por favor, créala primero."
     }
-    
+
     $appPool = (Get-ItemProperty -Path $appPath -Name applicationPool).Value
     if (-not $appPool) {
         throw "No se pudo determinar el Application Pool para la aplicación '$ApplicationName'."
@@ -77,22 +82,23 @@ try {
     # ----- FIN: Bloque modificado -----
 
 
-    # Lista de archivos a preservar en el servidor
-    $filesToPreserve = @('web.config', 'appsettings.json')
-    Write-Host "Se preservarán los siguientes archivos: $($filesToPreserve -join ', ')"
+    # Lista de archivos/carpetas a preservar en el servidor
+    # CRÍTICO: wwwroot/ contiene todas las imágenes subidas por usuarios
+    $filesToPreserve = @('web.config', 'appsettings.json', 'wwwroot')
+    Write-Host "Se preservarán los siguientes archivos/carpetas: $($filesToPreserve -join ', ')"
 
-    # 3. Limpiar el directorio de destino, EXCLUYENDO $filesToPreserve
+    # 3. Limpiar el directorio de destino, EXCLUYENDO archivos/carpetas preservados
     Write-Host "Limpiando el directorio de destino: '$DestinationPath'..."
     if (Test-Path $DestinationPath) {
         Get-ChildItem -Path $DestinationPath -Force | Where-Object { $_.Name -notin $filesToPreserve } | Remove-Item -Recurse -Force
-        Write-Host "Directorio limpiado."
+        Write-Host "Directorio limpiado (preservados: $($filesToPreserve -join ', '))."
     } else {
         Write-Host "El directorio de destino no existe, se creará al copiar."
     }
 
-    # 4. Copiar los nuevos archivos de la aplicación, EXCLUYENDO $filesToPreserve
+    # 4. Copiar los nuevos archivos de la aplicación, EXCLUYENDO archivos preservados
     Write-Host "Copiando archivos desde '$SourcePath' hacia '$DestinationPath'..."
-    
+
     Copy-Item -Path "$SourcePath\*" -Destination $DestinationPath -Recurse -Force -Exclude $filesToPreserve
     Write-Host "Archivos copiados correctamente."
 
@@ -100,15 +106,26 @@ try {
     # gracias a la detención forzada del w3wp.exe.
     # Start-Sleep -Seconds 30 
 
+    # IMPORTANTE: Iniciar Application Pool ANTES del Sitio Web
+    # Esto asegura que el backend esté listo antes de aceptar tráfico HTTP
+    Write-Host "Iniciando Application Pool '$appPool'..."
+    Start-WebAppPool -Name $appPool -ErrorAction Stop
+
+    # Validar que el Application Pool está realmente activo antes de continuar
+    Write-Host "Validando estado del Application Pool..."
+    Start-Sleep -Milliseconds 500
+    $poolState = (Get-WebAppPoolState -Name $appPool).Value
+    if ($poolState -ne "Started") {
+        throw "Application Pool '$appPool' no se inició correctamente. Estado actual: $poolState"
+    }
+    Write-Host "Application Pool iniciado y validado correctamente."
+
     Write-Host "Iniciando el Sitio Web '$WebsiteName'..."
     Start-Website -Name $WebsiteName -ErrorAction Stop
-    
-    Write-Host "Iniciando Application Pool '$appPool'..."
-    Start-WebAppPool -Name $appPool -ErrorAction Stop    
-    
-    Write-Host "Application Pool iniciado correctamente."
 
-    Write-Host "¡Despliegue completado con éxito! Los archivos ($($filesToPreserve -join ', ')) del servidor fueron preservados."
+    Write-Host "Application Pool y Sitio Web iniciados correctamente."
+
+    Write-Host "¡Despliegue completado con éxito! Archivos preservados: web.config, appsettings.json, wwwroot/"
 }
 catch {
     Write-Error "Ocurrió un error durante el despliegue: $($_.Exception.Message)"
