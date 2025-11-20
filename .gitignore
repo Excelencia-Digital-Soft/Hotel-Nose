@@ -430,6 +430,9 @@ dist-ssr
 *.sw?
 
 .codegpt
+GEMINI.md
+.claude/
 CLAUDE.md
 CLAUDE.md
 >>>>>>> 042a1f9163b31d928325cd23a5b4a01b4b223977
+CLAUDE.md
