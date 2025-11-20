@@ -42,6 +42,7 @@ try {
 
     Write-Host "Deteniendo Application Pool '$appPool'..."
     Stop-WebAppPool -Name $appPool -ErrorAction Stop
+<<<<<<< HEAD
 
     Write-Host "Deteniendo el Sitio Web '$WebsiteName'..."
     Stop-Website -Name $WebsiteName -ErrorAction Stop
@@ -58,19 +59,37 @@ try {
     Write-Host "Limpiando el directorio de destino: '$DestinationPath'..."
     if (Test-Path $DestinationPath) {
         Get-ChildItem -Path $DestinationPath -Force | Where-Object { $_.Name -notin $filesToPreserve } | Remove-Item -Recurse -Force
+=======
+    Write-Host "Application Pool detenido correctamente."
+
+    # --- INICIO DE CAMBIOS ---
+
+    # 3. Limpiar el directorio de destino, EXCLUYENDO web.config
+    Write-Host "Limpiando el directorio de destino: '$DestinationPath' (excluyendo web.config)..."
+    if (Test-Path $DestinationPath) {
+        Get-ChildItem -Path $DestinationPath -Force | Where-Object { $_.Name -ne 'web.config' } | Remove-Item -Recurse -Force
+>>>>>>> 042a1f9163b31d928325cd23a5b4a01b4b223977
         Write-Host "Directorio limpiado."
     } else {
         Write-Host "El directorio de destino no existe, se creará al copiar."
     }
 
+<<<<<<< HEAD
     # 4. Copiar los nuevos archivos de la aplicación, EXCLUYENDO $fileToPreserve
     Write-Host "Copiando archivos desde '$SourcePath' hacia '$DestinationPath'..."
     
     Copy-Item -Path "$SourcePath\*" -Destination $DestinationPath -Recurse -Force -Exclude $filesToPreserve
+=======
+    # 4. Copiar los nuevos archivos de la aplicación, EXCLUYENDO web.config
+    Write-Host "Copiando archivos desde '$SourcePath' hacia '$DestinationPath' (excluyendo web.config)..."
+    # NUEVO: Usamos el parámetro -Exclude en Copy-Item para ignorar el web.config del origen.
+    Copy-Item -Path "$SourcePath\*" -Destination $DestinationPath -Recurse -Force -Exclude "web.config"
+>>>>>>> 042a1f9163b31d928325cd23a5b4a01b4b223977
     Write-Host "Archivos copiados correctamente."
 
     # --- FIN DE CAMBIOS ---
 
+<<<<<<< HEAD
     Write-Host "Esperando 30 segundos antes de iniciar el pool..."
     Start-Sleep -Seconds 30
 
@@ -80,6 +99,13 @@ try {
     Write-Host "Iniciando Application Pool '$appPool'..."
     Start-WebAppPool -Name $appPool -ErrorAction Stop    
     
+=======
+    Write-Host "Esperando 10 segundos antes de iniciar el pool..."
+    Start-Sleep -Seconds 10
+
+    Write-Host "Iniciando Application Pool '$appPool'..."
+    Start-WebAppPool -Name $appPool -ErrorAction Stop
+>>>>>>> 042a1f9163b31d928325cd23a5b4a01b4b223977
     Write-Host "Application Pool iniciado correctamente."
 
     Write-Host "¡Despliegue completado con éxito! El archivo web.config del servidor fue preservado."

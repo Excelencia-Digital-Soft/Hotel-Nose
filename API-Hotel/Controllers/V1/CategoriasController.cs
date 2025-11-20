@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
+
 namespace hotel.Controllers.V1;
 
 [ApiController]
@@ -178,38 +179,49 @@ public class CategoriasController : ControllerBase
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
     }
 
-    [HttpPatch("{id:int}/image")]
-    [Consumes("multipart/form-data")]
-    [ProducesResponseType(typeof(ApiResponse<CategoriaDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<ApiResponse<CategoriaDto>>> UpdateCategoriaImage(
-        int id,
-        [FromForm] IFormFile imagen,
-        CancellationToken cancellationToken = default)
+   [HttpPatch("{id:int}/image")]
+[Consumes("multipart/form-data")]
+[ProducesResponseType(typeof(ApiResponse<CategoriaDto>), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+[ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+public async Task<ActionResult<ApiResponse<CategoriaDto>>> UpdateCategoriaImage(
+    int id,
+    [FromForm] CategoriaUpdateImageDto updateDto,
+    CancellationToken cancellationToken = default)
+{
+    if (!ModelState.IsValid)
     {
-        if (imagen == null || imagen.Length == 0)
-        {
-            return BadRequest(ApiResponse.Failure("Image file is required"));
-        }
-
-        var institucionId = GetCurrentInstitucionId();
-        if (!institucionId.HasValue)
-        {
-            return BadRequest(ApiResponse.Failure("Institution ID is required"));
-        }
-
-        var userId = GetCurrentUserId();
-        var result = await _categoriasService.UpdateImageAsync(id, imagen, institucionId.Value, userId, cancellationToken);
-        
-        if (!result.IsSuccess && result.Errors.Any(e => e.Contains("not found")))
-        {
-            return NotFound(result);
-        }
-        
-        return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+        var errors = ModelState.Values
+            .SelectMany(v => v.Errors)
+            .Select(e => e.ErrorMessage)
+            .ToList();
+        return BadRequest(ApiResponse.Failure(errors));
     }
+
+    var imagen = updateDto.Imagen;
+    if (imagen == null || imagen.Length == 0)
+    {
+        return BadRequest(ApiResponse.Failure("Image file is required"));
+    }
+
+    var institucionId = GetCurrentInstitucionId();
+    if (!institucionId.HasValue)
+    {
+        return BadRequest(ApiResponse.Failure("Institution ID is required"));
+    }
+
+    var userId = GetCurrentUserId();
+    var result = await _categoriasService.UpdateImageAsync(id, imagen, institucionId.Value, userId, cancellationToken);
+
+    if (!result.IsSuccess && result.Errors.Any(e => e.Contains("not found")))
+    {
+        return NotFound(result);
+    }
+
+    return result.IsSuccess ? Ok(result) : StatusCode(500, result);
+}
+
 
     [HttpDelete("{id:int}")]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status200OK)]

@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace hotel.DTOs.Empenos
@@ -15,6 +16,10 @@ namespace hotel.DTOs.Empenos
         public DateTime? FechaRegistro { get; set; }
         public bool Anulado { get; set; }
         public int InstitucionId { get; set; }
+        
+        // ➡️ CAMPOS AÑADIDOS para exponer los GUIDs de usuario desde la base de datos
+        public string? UserId { get; set; }       // ID del usuario que creó el empeño
+        public string? PagoUserId { get; set; }   // ID del usuario que registró el pago
         
         // Navigation properties info
         public string? EstadoPago => PagoId.HasValue ? "Pagado" : "Pendiente";

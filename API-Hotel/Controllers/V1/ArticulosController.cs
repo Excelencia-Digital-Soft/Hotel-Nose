@@ -180,6 +180,9 @@ public class ArticulosController : ControllerBase
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
     }
 
+    /// <summary>
+    /// Actualiza solo la imagen de un artículo existente
+    /// </summary>
     [HttpPatch("{id:int}/image")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(ApiResponse<ArticuloDto>), StatusCodes.Status200OK)]
@@ -188,10 +191,19 @@ public class ArticulosController : ControllerBase
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ApiResponse<ArticuloDto>>> UpdateArticuloImage(
         int id,
-        [FromForm] IFormFile imagen,
+        [FromForm] ArticuloImageUpdateDto model,
         CancellationToken cancellationToken = default)
     {
-        if (imagen == null || imagen.Length == 0)
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+            return BadRequest(ApiResponse.Failure(errors));
+        }
+
+        if (model.Imagen == null || model.Imagen.Length == 0)
         {
             return BadRequest(ApiResponse.Failure("Image file is required"));
         }
@@ -203,7 +215,7 @@ public class ArticulosController : ControllerBase
         }
 
         var userId = GetCurrentUserId();
-        var result = await _articulosService.UpdateImageAsync(id, imagen, institucionId.Value, userId, cancellationToken);
+        var result = await _articulosService.UpdateImageAsync(id, model.Imagen, institucionId.Value, userId, cancellationToken);
         
         if (!result.IsSuccess && result.Errors.Any(e => e.Contains("not found")))
         {

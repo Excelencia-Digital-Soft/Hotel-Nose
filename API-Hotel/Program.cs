@@ -1,4 +1,5 @@
 using hotel.Extensions;
+using hotel.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
