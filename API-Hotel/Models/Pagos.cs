@@ -24,18 +24,20 @@ public partial class Pagos
     public int? CierreId { get; set; }
 
     public int? TarjetaId { get; set; }
-    public DateTime? fechaHora { get; set; }    
+    public DateTime? fechaHora { get; set; }
     public string? Observacion { get; set; }
     public Recargos? Recargo { get; set; }
     public int InstitucionID { get; set; }
-    
+
     // ASP.NET Identity User tracking
     public string? UserId { get; set; }
-    
+
     // Navigation properties
     public virtual Cierre? Cierre { get; set; }
     [JsonIgnore]
     public virtual MediosPago? MedioPago { get; set; }
+    [JsonIgnore]
+    public virtual Tarjetas? Tarjeta { get; set; }
     [JsonIgnore]
     public virtual ICollection<Movimientos> Movimientos { get; } = new List<Movimientos>();
     public virtual ApplicationUser? User { get; set; }
