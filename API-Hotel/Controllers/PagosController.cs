@@ -28,10 +28,10 @@ namespace hotel.Controllers
         public async Task<Respuesta> PagarVisita(int visitaId, decimal montoDescuento, decimal montoEfectivo, decimal montoTarjeta, decimal montoBillVirt, decimal adicional, int medioPagoId, string? comentario, decimal? montoRecargo, string? descripcionRecargo, int? tarjetaID)
         {
             Respuesta res = new Respuesta();
-            
+
             // Use transaction for data consistency
             using var transaction = await _db.Database.BeginTransactionAsync();
-            
+
             try
             {
                 // Step 1: Find the Visita by visitaId
@@ -67,7 +67,7 @@ namespace hotel.Controllers
                 // Step 4: Calculate the total amount to be paid and validate payment amounts
                 decimal totalFacturado = movimientos.Sum(m => m.TotalFacturado ?? 0);
                 decimal totalPagado = montoEfectivo + montoTarjeta + montoBillVirt + adicional - montoDescuento + (montoRecargo ?? 0);
-                
+
                 // Validate that payment amounts are not negative
                 if (montoEfectivo < 0 || montoTarjeta < 0 || montoBillVirt < 0)
                 {
@@ -75,13 +75,13 @@ namespace hotel.Controllers
                     res.Message = "Los montos de pago no pueden ser negativos.";
                     return res;
                 }
-                
+
                 string observacion = string.IsNullOrWhiteSpace(comentario) ? "-" : comentario;
 
                 // Step 5: Create a new Pago for the Visita with the respective payment methods and UserId
                 // Get authenticated user ID
                 var userId = this.GetCurrentUserId();
-                
+
                 Pagos nuevoPago = new Pagos
                 {
                     MontoDescuento = montoDescuento,
@@ -89,14 +89,16 @@ namespace hotel.Controllers
                     InstitucionID = visita.InstitucionID,
                     MontoTarjeta = montoTarjeta,
                     MontoBillVirt = montoBillVirt,
-                    TarjetaId = tarjetaID,
+                    TarjetaId = (montoTarjeta > 0) ? tarjetaID : null, // Ensure TarjetaId is set only if there is a card payment, and verify logic upstream
                     Adicional = adicional,
                     MedioPagoId = medioPagoId,
                     fechaHora = DateTime.Now,
                     Observacion = observacion,
-                    UserId = userId // Track which user processed this payment
+                    UserId = userId ?? "SYSTEM", // Ensure UserId is set, default to SYSTEM if null (should catch this upstream)
+                    InteresTarjeta = montoRecargo ?? 0, // Store card interest (default to 0)
+
                 };
-                
+
                 _db.Pagos.Add(nuevoPago);
                 await _db.SaveChangesAsync();
 
@@ -118,10 +120,10 @@ namespace hotel.Controllers
                 {
                     movimiento.PagoId = nuevoPago.PagoId;
                 }
-                
+
                 _db.UpdateRange(movimientos);
                 await _db.SaveChangesAsync();
-                
+
                 // Commit transaction if everything succeeded
                 await transaction.CommitAsync();
 

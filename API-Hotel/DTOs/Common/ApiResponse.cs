@@ -46,7 +46,7 @@ public class ApiResponse : ApiResponse<object>
         return new ApiResponse { IsSuccess = true, Message = message };
     }
 
-    public static ApiResponse Failure(string error, string? message = null)
+    public new static ApiResponse Failure(string error, string? message = null)
     {
         return new ApiResponse
         {
@@ -56,7 +56,7 @@ public class ApiResponse : ApiResponse<object>
         };
     }
 
-    public static ApiResponse Failure(List<string> errors, string? message = null)
+    public new static ApiResponse Failure(List<string> errors, string? message = null)
     {
         return new ApiResponse
         {

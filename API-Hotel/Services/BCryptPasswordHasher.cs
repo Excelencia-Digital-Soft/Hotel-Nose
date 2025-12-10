@@ -5,7 +5,7 @@ namespace hotel.Services;
 
 public class BCryptPasswordHasher : IPasswordHasher<ApplicationUser>
 {
-    private readonly ILogger<BCryptPasswordHasher>? _logger;
+
 
     public BCryptPasswordHasher()
     {

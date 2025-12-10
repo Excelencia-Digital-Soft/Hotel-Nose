@@ -88,6 +88,10 @@ namespace hotel.DTOs.Empenos
 
         public int? TarjetaId { get; set; }
 
+        public decimal InteresTarjeta { get; set; } = 0;
+        public decimal Descuento { get; set; } = 0;
+        public decimal Adicional { get; set; } = 0;
+
         /// <summary>
         /// Custom validation to ensure total payment amount is greater than 0
         /// </summary>

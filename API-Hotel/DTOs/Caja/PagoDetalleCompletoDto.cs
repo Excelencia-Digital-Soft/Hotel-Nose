@@ -18,6 +18,7 @@ public class PagoDetalleCompletoDto
     public decimal? MontoTarjeta { get; set; }
     public decimal? MontoBillVirt { get; set; }
     public decimal? MontoDescuento { get; set; }
+    public decimal? InteresTarjeta { get; set; }
     public string? Observacion { get; set; }
     public string? TipoHabitacion { get; set; }
     public string? TipoTransaccion { get; set; } // "Habitación", "Empeño", "Anulación", "Egreso"
