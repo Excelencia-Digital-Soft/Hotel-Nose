@@ -16,20 +16,31 @@ namespace hotel.DTOs.Empenos
         public DateTime? FechaRegistro { get; set; }
         public bool Anulado { get; set; }
         public int InstitucionId { get; set; }
-        
+
         // ➡️ CAMPOS AÑADIDOS para exponer los GUIDs de usuario desde la base de datos
         public string? UserId { get; set; }       // ID del usuario que creó el empeño
         public string? PagoUserId { get; set; }   // ID del usuario que registró el pago
-        
+
         // Navigation properties info
         public string? EstadoPago => PagoId.HasValue ? "Pagado" : "Pendiente";
         public DateTime? FechaPago { get; set; }
-        
+
+        // Payment details
+        public decimal? MontoEfectivo { get; set; }
+        public decimal? MontoTarjeta { get; set; }
+        public decimal? InteresTarjeta { get; set; }
+        public decimal? MontoPagado => (MontoEfectivo ?? 0) + (MontoTarjeta ?? 0);
+
+        // Card information
+        public int? TarjetaId { get; set; }
+        public string? TarjetaNombre { get; set; }
+        public int? TarjetaPorcentaje { get; set; }
+
         // Additional info from related entities
         public string? NombreVisita { get; set; }
         public string? NumeroHabitacion { get; set; }
     }
-    
+
     /// <summary>
     /// DTO for creating new Empeño records
     /// </summary>
@@ -38,16 +49,16 @@ namespace hotel.DTOs.Empenos
         [Required]
         [Range(1, int.MaxValue, ErrorMessage = "VisitaId es requerido")]
         public int VisitaId { get; set; }
-        
+
         [Required]
         [StringLength(500, ErrorMessage = "El detalle no puede exceder 500 caracteres")]
         public string Detalle { get; set; } = string.Empty;
-        
+
         [Required]
         [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a 0")]
         public double Monto { get; set; }
     }
-    
+
     /// <summary>
     /// DTO for updating existing Empeño records
     /// </summary>
@@ -55,11 +66,11 @@ namespace hotel.DTOs.Empenos
     {
         [StringLength(500, ErrorMessage = "El detalle no puede exceder 500 caracteres")]
         public string? Detalle { get; set; }
-        
+
         [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a 0")]
         public double? Monto { get; set; }
     }
-    
+
     /// <summary>
     /// DTO for processing Empeño payment
     /// </summary>
@@ -68,20 +79,24 @@ namespace hotel.DTOs.Empenos
         [Required]
         [StringLength(200, ErrorMessage = "La observación no puede exceder 200 caracteres")]
         public string Observacion { get; set; } = string.Empty;
-        
+
         [Range(0, double.MaxValue, ErrorMessage = "El monto en efectivo no puede ser negativo")]
         public decimal MontoEfectivo { get; set; } = 0;
-        
+
         [Range(0, double.MaxValue, ErrorMessage = "El monto con tarjeta no puede ser negativo")]
         public decimal MontoTarjeta { get; set; } = 0;
-        
+
         public int? TarjetaId { get; set; }
-        
+
+        public decimal InteresTarjeta { get; set; } = 0;
+        public decimal Descuento { get; set; } = 0;
+        public decimal Adicional { get; set; } = 0;
+
         /// <summary>
         /// Custom validation to ensure total payment amount is greater than 0
         /// </summary>
         public bool IsValidPayment => MontoEfectivo + MontoTarjeta > 0;
-        
+
         public decimal MontoTotal => MontoEfectivo + MontoTarjeta;
     }
 }

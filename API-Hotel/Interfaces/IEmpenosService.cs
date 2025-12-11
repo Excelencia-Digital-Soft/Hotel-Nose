@@ -17,7 +17,7 @@ namespace hotel.Interfaces
         Task<ApiResponse<IEnumerable<EmpenoDto>>> GetAllUnpaidByInstitutionAsync(
             int institucionId,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Gets all empeños (paid and unpaid) for a specific institution
         /// </summary>
@@ -29,7 +29,7 @@ namespace hotel.Interfaces
             int institucionId,
             bool includeAnulados = false,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Gets a specific empeño by ID
         /// </summary>
@@ -41,7 +41,7 @@ namespace hotel.Interfaces
             int id,
             int institucionId,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Gets empeños by visit ID
         /// </summary>
@@ -53,7 +53,7 @@ namespace hotel.Interfaces
             int visitaId,
             int institucionId,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Creates a new empeño
         /// </summary>
@@ -67,7 +67,7 @@ namespace hotel.Interfaces
             int institucionId,
             string? userId,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Updates an existing empeño (only if not paid)
         /// </summary>
@@ -81,21 +81,23 @@ namespace hotel.Interfaces
             EmpenoUpdateDto updateDto,
             int institucionId,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Processes payment for an empeño (fixed logic - no duplicate payments)
         /// </summary>
         /// <param name="id">Empeño ID</param>
         /// <param name="pagoDto">Payment details</param>
         /// <param name="institucionId">Institution ID for security</param>
+        /// <param name="userId">User ID who processes the payment</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Payment processing result</returns>
         Task<ApiResponse<EmpenoDto>> PayEmpenoAsync(
             int id,
             EmpernoPagoDto pagoDto,
             int institucionId,
+            string? userId, // Added userId parameter
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Soft deletes (cancels) an empeño
         /// </summary>
@@ -107,7 +109,7 @@ namespace hotel.Interfaces
             int id,
             int institucionId,
             CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Validates if a visit exists and belongs to the institution
         /// </summary>

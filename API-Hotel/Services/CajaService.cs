@@ -38,6 +38,7 @@ public class CajaService : ICajaService
         public Reservas? Reserva { get; set; }
         public Habitaciones? Habitacion { get; set; }
         public CategoriasHabitaciones? Categoria { get; set; }
+        public Recargos? Recargo { get; set; }
     }
 
     /// <summary>
@@ -49,46 +50,51 @@ public class CajaService : ICajaService
     )
     {
         return from pago in pagosSource
-            where pago.InstitucionID == institucionId
-            join tarjeta in _context.Tarjetas.AsNoTracking()
-                on pago.TarjetaId equals tarjeta.TarjetaID
-                into tarjetas
-            from tarjeta in tarjetas.DefaultIfEmpty()
-            join empeno in _context.Empeño.AsNoTracking()
-                on pago.PagoId equals empeno.PagoID
-                into empenos
-            from empeno in empenos.DefaultIfEmpty()
-            join movimiento in _context.Movimientos.AsNoTracking()
-                on pago.PagoId equals movimiento.PagoId
-                into movimientos
-            from movimiento in movimientos.DefaultIfEmpty()
-            join visita in _context.Visitas.AsNoTracking()
-                on movimiento.VisitaId equals visita.VisitaId
-                into visitas
-            from visita in visitas.DefaultIfEmpty()
-            join reserva in _context.Reservas.AsNoTracking()
-                on visita.VisitaId equals reserva.VisitaId
-                into reservas
-            from reserva in reservas.DefaultIfEmpty()
-            join habitacion in _context.Habitaciones.AsNoTracking()
-                on reserva.HabitacionId equals habitacion.HabitacionId
-                into habitaciones
-            from habitacion in habitaciones.DefaultIfEmpty()
-            join categoria in _context.CategoriasHabitaciones.AsNoTracking()
-                on habitacion.CategoriaId equals categoria.CategoriaId
-                into categorias
-            from categoria in categorias.DefaultIfEmpty()
-            select new PagoQueryResult
-            {
-                Pago = pago,
-                Tarjeta = tarjeta,
-                Empeno = empeno,
-                Movimiento = movimiento,
-                Visita = visita,
-                Reserva = reserva,
-                Habitacion = habitacion,
-                Categoria = categoria,
-            };
+               where pago.InstitucionID == institucionId
+               join tarjeta in _context.Tarjetas.AsNoTracking()
+                   on pago.TarjetaId equals tarjeta.TarjetaID
+                   into tarjetas
+               from tarjeta in tarjetas.DefaultIfEmpty()
+               join empeno in _context.Empeño.AsNoTracking()
+                   on pago.PagoId equals empeno.PagoID
+                   into empenos
+               from empeno in empenos.DefaultIfEmpty()
+               join movimiento in _context.Movimientos.AsNoTracking()
+                   on pago.PagoId equals movimiento.PagoId
+                   into movimientos
+               from movimiento in movimientos.DefaultIfEmpty()
+               join visita in _context.Visitas.AsNoTracking()
+                   on movimiento.VisitaId equals visita.VisitaId
+                   into visitas
+               from visita in visitas.DefaultIfEmpty()
+               join reserva in _context.Reservas.AsNoTracking()
+                   on visita.VisitaId equals reserva.VisitaId
+                   into reservas
+               from reserva in reservas.DefaultIfEmpty()
+               join habitacion in _context.Habitaciones.AsNoTracking()
+                   on reserva.HabitacionId equals habitacion.HabitacionId
+                   into habitaciones
+               from habitacion in habitaciones.DefaultIfEmpty()
+               join categoria in _context.CategoriasHabitaciones.AsNoTracking()
+                   on habitacion.CategoriaId equals categoria.CategoriaId
+                   into categorias
+               from categoria in categorias.DefaultIfEmpty()
+               join recargo in _context.Recargos.AsNoTracking()
+                on pago.PagoId equals recargo.PagoID
+                into recargos
+               from recargo in recargos.DefaultIfEmpty()
+               select new PagoQueryResult
+               {
+                   Pago = pago,
+                   Tarjeta = tarjeta,
+                   Empeno = empeno,
+                   Movimiento = movimiento,
+                   Visita = visita,
+                   Reserva = reserva,
+                   Habitacion = habitacion,
+                   Categoria = categoria,
+                   Recargo = recargo
+               };
     }
 
     /// <summary>
@@ -110,6 +116,7 @@ public class CajaService : ICajaService
             MontoTarjeta = x.Pago.MontoTarjeta ?? 0,
             MontoBillVirt = x.Pago.MontoBillVirt ?? 0,
             MontoDescuento = x.Pago.MontoDescuento ?? 0,
+            InteresTarjeta = x.Pago.InteresTarjeta ?? (x.Recargo != null ? x.Recargo.Valor : 0),
             MontoAdicional = x.Pago.Adicional ?? 0,
             Observacion = x.Pago.Observacion,
             TipoTransaccion = x.Empeno != null ? "Empeño" : "Habitación",
@@ -119,7 +126,7 @@ public class CajaService : ICajaService
             HabitacionId = x.Habitacion != null ? x.Habitacion.HabitacionId : null,
             HoraIngreso = x.Reserva != null ? x.Reserva.FechaReserva : null,
             HoraSalida = x.Pago.fechaHora,
-            Periodo = x.Movimiento != null ? x.Movimiento.TotalFacturado : 0,
+            Periodo = x.Movimiento != null ? (x.Movimiento.TotalFacturado ?? 0) : (x.Empeno != null ? (decimal)x.Empeno.Monto : 0),
             TotalConsumo = 0, // Will be calculated separately
         });
 
@@ -144,7 +151,7 @@ public class CajaService : ICajaService
             PagoId = x.Pago.PagoId,
             Fecha = x.Pago.fechaHora,
             CategoriaNombre = x.Categoria != null ? x.Categoria.NombreCategoria : null,
-            Periodo = x.Movimiento != null ? (x.Movimiento.TotalFacturado ?? 0) : 0,
+            Periodo = x.Movimiento != null ? (x.Movimiento.TotalFacturado ?? 0) : (x.Empeno != null ? (decimal)x.Empeno.Monto : 0),
             TarjetaNombre = x.Tarjeta != null ? x.Tarjeta.Nombre : null,
             HoraIngreso = x.Reserva != null ? x.Reserva.FechaReserva : null,
             HoraSalida = x.Pago.fechaHora,
@@ -154,6 +161,7 @@ public class CajaService : ICajaService
             MontoTarjeta = x.Pago.MontoTarjeta,
             MontoBillVirt = x.Pago.MontoBillVirt,
             MontoDescuento = x.Pago.MontoDescuento,
+            InteresTarjeta = x.Pago.InteresTarjeta ?? (x.Recargo != null ? x.Recargo.Valor : 0),
             Observacion = x.Pago.Observacion,
             TipoHabitacion = x.Habitacion != null ? x.Habitacion.NombreHabitacion : null,
             TipoTransaccion = x.Empeno != null ? "Empeño" : "Habitación",
@@ -180,7 +188,7 @@ public class CajaService : ICajaService
             PagoId = x.Pago.PagoId,
             HabitacionId = x.Habitacion != null ? x.Habitacion.HabitacionId : null,
             TarjetaNombre = x.Tarjeta != null ? x.Tarjeta.Nombre : null,
-            Periodo = x.Movimiento != null ? (x.Movimiento.TotalFacturado ?? 0) : 0,
+            Periodo = x.Movimiento != null ? (x.Movimiento.TotalFacturado ?? 0) : (x.Empeno != null ? (decimal)x.Empeno.Monto : 0),
             CategoriaNombre = x.Categoria != null ? x.Categoria.NombreCategoria : null,
             Fecha = x.Pago.fechaHora,
             HoraIngreso = x.Reserva != null ? x.Reserva.FechaReserva : null,
@@ -191,6 +199,7 @@ public class CajaService : ICajaService
             MontoTarjeta = x.Pago.MontoTarjeta,
             MontoBillVirt = x.Pago.MontoBillVirt,
             MontoDescuento = x.Pago.MontoDescuento,
+            InteresTarjeta = x.Pago.InteresTarjeta ?? (x.Recargo != null ? x.Recargo.Valor : 0),
             Observacion = x.Pago.Observacion,
             TipoHabitacion = x.Habitacion != null ? x.Habitacion.NombreHabitacion : null,
             TipoTransaccion = x.Empeno != null ? "Empeño" : "Habitación",
@@ -824,7 +833,7 @@ public class CajaService : ICajaService
         // Get pending payments using optimized query
         var pagosSource = _context
             .Pagos.AsNoTracking()
-            .Where(p => p.CierreId == null && p.UserId == userId);
+            .Where(p => p.CierreId == null && p.InstitucionID == institucionId);
 
         var pagosPendientes = await GetTransaccionesPendientesOptimizedAsync(
             pagosSource,
