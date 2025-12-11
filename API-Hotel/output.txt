@@ -1,0 +1,9 @@
+  Determinando los proyectos que se van a restaurar...
+  Todos los proyectos están actualizados para la restauración.
+  hotel -> C:\Users\rodri\OneDrive\Documentos\Hoteles\Hotel-Nose\API-Hotel\bin\Debug\net9.0\hotel.dll
+
+Compilación correcta.
+    0 Advertencia(s)
+    0 Errores
+
+Tiempo transcurrido 00:00:01.41

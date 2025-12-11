@@ -29,8 +29,8 @@ namespace hotel.Services
             {
                 var empenos = await _context.Empeño
                     .AsNoTracking()
-                    .Where(e => e.InstitucionID == institucionId && 
-                               (e.Anulado == false || e.Anulado == null) && 
+                    .Where(e => e.InstitucionID == institucionId &&
+                               (e.Anulado == false || e.Anulado == null) &&
                                e.PagoID == null)
                     .Include(e => e.Visita)
                     .Select(e => new EmpenoDto
@@ -49,7 +49,7 @@ namespace hotel.Services
                     .OrderBy(e => e.FechaRegistro)
                     .ToListAsync(cancellationToken);
 
-                _logger.LogInformation("Retrieved {Count} unpaid empeños for institution {InstitucionId}", 
+                _logger.LogInformation("Retrieved {Count} unpaid empeños for institution {InstitucionId}",
                     empenos.Count, institucionId);
 
                 return ApiResponse<IEnumerable<EmpenoDto>>.Success(empenos);
@@ -58,7 +58,7 @@ namespace hotel.Services
             {
                 _logger.LogError(ex, "Error retrieving unpaid empeños for institution {InstitucionId}", institucionId);
                 return ApiResponse<IEnumerable<EmpenoDto>>.Failure(
-                    "Error al obtener los empeños pendientes", 
+                    "Error al obtener los empeños pendientes",
                     "Ocurrió un error al recuperar los empeños pendientes");
             }
         }
@@ -99,7 +99,7 @@ namespace hotel.Services
                     .OrderByDescending(e => e.FechaRegistro)
                     .ToListAsync(cancellationToken);
 
-                _logger.LogInformation("Retrieved {Count} empeños for institution {InstitucionId} (includeAnulados: {IncludeAnulados})", 
+                _logger.LogInformation("Retrieved {Count} empeños for institution {InstitucionId} (includeAnulados: {IncludeAnulados})",
                     empenos.Count, institucionId, includeAnulados);
 
                 return ApiResponse<IEnumerable<EmpenoDto>>.Success(empenos);
@@ -108,7 +108,7 @@ namespace hotel.Services
             {
                 _logger.LogError(ex, "Error retrieving empeños for institution {InstitucionId}", institucionId);
                 return ApiResponse<IEnumerable<EmpenoDto>>.Failure(
-                    "Error al obtener los empeños", 
+                    "Error al obtener los empeños",
                     "Ocurrió un error al recuperar los empeños");
             }
         }
@@ -154,7 +154,7 @@ namespace hotel.Services
             {
                 _logger.LogError(ex, "Error retrieving empeño {EmpenoId} for institution {InstitucionId}", id, institucionId);
                 return ApiResponse<EmpenoDto>.Failure(
-                    "Error al obtener el empeño", 
+                    "Error al obtener el empeño",
                     "Ocurrió un error al recuperar el empeño");
             }
         }
@@ -188,7 +188,7 @@ namespace hotel.Services
                     .OrderBy(e => e.FechaRegistro)
                     .ToListAsync(cancellationToken);
 
-                _logger.LogInformation("Retrieved {Count} empeños for visit {VisitaId} in institution {InstitucionId}", 
+                _logger.LogInformation("Retrieved {Count} empeños for visit {VisitaId} in institution {InstitucionId}",
                     empenos.Count, visitaId, institucionId);
 
                 return ApiResponse<IEnumerable<EmpenoDto>>.Success(empenos);
@@ -197,7 +197,7 @@ namespace hotel.Services
             {
                 _logger.LogError(ex, "Error retrieving empeños for visit {VisitaId} in institution {InstitucionId}", visitaId, institucionId);
                 return ApiResponse<IEnumerable<EmpenoDto>>.Failure(
-                    "Error al obtener los empeños de la visita", 
+                    "Error al obtener los empeños de la visita",
                     "Ocurrió un error al recuperar los empeños de la visita");
             }
         }
@@ -236,7 +236,7 @@ namespace hotel.Services
                 await _context.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
 
-                _logger.LogInformation("Created empeño {EmpenoId} for visit {VisitaId} in institution {InstitucionId} by user {UserId}", 
+                _logger.LogInformation("Created empeño {EmpenoId} for visit {VisitaId} in institution {InstitucionId} by user {UserId}",
                     newEmpeno.EmpeñoID, createDto.VisitaId, institucionId, userId);
 
                 // Return the created empeño with related data
@@ -247,7 +247,7 @@ namespace hotel.Services
                 await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Error creating empeño for visit {VisitaId} in institution {InstitucionId}", createDto.VisitaId, institucionId);
                 return ApiResponse<EmpenoDto>.Failure(
-                    "Error al crear el empeño", 
+                    "Error al crear el empeño",
                     "Ocurrió un error al crear el empeño");
             }
         }
@@ -308,7 +308,7 @@ namespace hotel.Services
                 await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Error updating empeño {EmpenoId} in institution {InstitucionId}", id, institucionId);
                 return ApiResponse<EmpenoDto>.Failure(
-                    "Error al actualizar el empeño", 
+                    "Error al actualizar el empeño",
                     "Ocurrió un error al actualizar el empeño");
             }
         }
@@ -317,6 +317,7 @@ namespace hotel.Services
             int id,
             EmpernoPagoDto pagoDto,
             int institucionId,
+            string? userId, // Added userId parameter
             CancellationToken cancellationToken = default)
         {
             using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
@@ -354,14 +355,17 @@ namespace hotel.Services
                 // FIXED LOGIC: Create single payment record (no duplicate Movimiento)
                 var nuevoPago = new Pagos
                 {
-                    MontoDescuento = 0,
+                    MontoDescuento = -Math.Abs(pagoDto.Descuento),
                     MontoEfectivo = pagoDto.MontoEfectivo,
                     MontoTarjeta = pagoDto.MontoTarjeta,
                     MedioPagoId = 1, // Default payment method
-                    TarjetaId = pagoDto.TarjetaId,
+                    TarjetaId = (pagoDto.MontoTarjeta > 0) ? pagoDto.TarjetaId : null, // Only set TarjetaId if card amount > 0
                     fechaHora = DateTime.Now,
+                    Adicional = pagoDto.Adicional,
                     InstitucionID = institucionId,
-                    Observacion = pagoDto.Observacion
+                    Observacion = pagoDto.Observacion,
+                    UserId = userId ?? "SYSTEM", // Ensure UserId is recorded
+                    InteresTarjeta = pagoDto.InteresTarjeta // Store card interest
                 };
 
                 // Add payment
@@ -374,7 +378,7 @@ namespace hotel.Services
 
                 await transaction.CommitAsync(cancellationToken);
 
-                _logger.LogInformation("Processed payment for empeño {EmpenoId} with payment {PagoId} (Total: {MontoTotal}) in institution {InstitucionId}", 
+                _logger.LogInformation("Processed payment for empeño {EmpenoId} with payment {PagoId} (Total: {MontoTotal}) in institution {InstitucionId}",
                     id, nuevoPago.PagoId, pagoDto.MontoTotal, institucionId);
 
                 return await GetByIdAsync(id, institucionId, cancellationToken);
@@ -384,7 +388,7 @@ namespace hotel.Services
                 await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Error processing payment for empeño {EmpenoId} in institution {InstitucionId}", id, institucionId);
                 return ApiResponse<EmpenoDto>.Failure(
-                    "Error al procesar el pago", 
+                    "Error al procesar el pago",
                     "Ocurrió un error al procesar el pago del empeño");
             }
         }
@@ -426,7 +430,7 @@ namespace hotel.Services
                 await transaction.RollbackAsync(cancellationToken);
                 _logger.LogError(ex, "Error deleting empeño {EmpenoId} in institution {InstitucionId}", id, institucionId);
                 return ApiResponse.Failure(
-                    "Error al anular el empeño", 
+                    "Error al anular el empeño",
                     "Ocurrió un error al anular el empeño");
             }
         }
@@ -448,7 +452,7 @@ namespace hotel.Services
             {
                 _logger.LogError(ex, "Error validating visit {VisitaId} for institution {InstitucionId}", visitaId, institucionId);
                 return ApiResponse<bool>.Failure(
-                    "Error al validar la visita", 
+                    "Error al validar la visita",
                     "Ocurrió un error al validar la visita");
             }
         }

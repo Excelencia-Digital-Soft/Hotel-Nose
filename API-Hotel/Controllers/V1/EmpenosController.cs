@@ -242,7 +242,7 @@ namespace hotel.Controllers.V1
             }
 
             var currentUserId = this.GetCurrentUserId();
-            
+
             _logger.LogInformation(
                 "Creating empeño for visit {VisitaId} in institution {InstitucionId} requested by user {UserId}",
                 createDto.VisitaId,
@@ -392,6 +392,7 @@ namespace hotel.Controllers.V1
                 id,
                 pagoDto,
                 institucionId.Value,
+                this.GetCurrentUserId(), // Pass current user ID
                 cancellationToken
             );
 
