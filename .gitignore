@@ -92,5 +92,10 @@ dist-ssr
 
 # Otros
 .codegpt
+GEMINI.md
+.claude/
+.claude/agents
 CLAUDE.md
 FrontHotel/
+src/
+public/
