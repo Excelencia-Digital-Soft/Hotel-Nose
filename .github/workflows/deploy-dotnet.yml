@@ -8,29 +8,37 @@ on:
 jobs:
   build-and-deploy:
     name: Build and Deploy .NET to IIS
-    # Se ejecutará en tu runner de organización
     runs-on: [self-hosted, Windows, X64]
 
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: 1
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+
     steps:
-      # 1. Descarga el código del repositorio (incluyendo el script .ps1)
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # EL PASO 'SETUP .NET' SE ELIMINA PORQUE YA ESTÁ INSTALADO EN EL SERVIDOR
-      # - name: Setup .NET
-      #   uses: actions/setup-dotnet@v4
-      #   with:
-      #     dotnet-version: '9.0.x'
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
 
-      # 3. Restaura, compila y publica el proyecto
-      # Esto genera una carpeta 'publish' con los archivos listos para desplegar.
-      - name: Restore, Build, and Publish
+      - name: Restore
+        run: dotnet restore ./API-Hotel.sln
+
+      - name: Build
+        run: dotnet build ./API-Hotel.sln -c Release --no-restore
+
+      - name: Clean publish folder
+        shell: powershell
         run: |
-          dotnet restore
-          dotnet build --configuration Release --no-restore
-          dotnet publish --configuration Release --no-build --output ./publish
+          if (Test-Path publish) {
+            Remove-Item publish -Recurse -Force
+          }
 
-      # 4. Despliega en IIS usando tu script de PowerShell avanzado
+      - name: Publish
+        run: dotnet publish ./API-Hotel/hotel.csproj -c Release -o publish --no-build
+
       - name: Deploy to IIS Application
         shell: powershell
         run: |
