@@ -10,35 +10,55 @@ jobs:
     name: Build and Deploy .NET to IIS
     runs-on: [self-hosted, Windows, X64]
 
+    # Variables de entorno para deshabilitar telemetría
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: 1
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+      DOTNET_NOLOGO: true
 
     steps:
+      # 1. Descarga el código del repositorio
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
-
-      - name: Restore
-        run: dotnet restore ./API-Hotel.sln
-
-      - name: Build
-        run: dotnet build ./API-Hotel.sln -c Release --no-restore
-
-      - name: Clean publish folder
+      # 2. Limpiar caché y archivos temporales anteriores
+      - name: Clean Previous Build Artifacts
         shell: powershell
         run: |
-          if (Test-Path publish) {
-            Remove-Item publish -Recurse -Force
-          }
+          if (Test-Path "./API-Hotel/obj") { Remove-Item -Path "./API-Hotel/obj" -Recurse -Force }
+          if (Test-Path "./API-Hotel/bin") { Remove-Item -Path "./API-Hotel/bin" -Recurse -Force }
+          if (Test-Path "./publish") { Remove-Item -Path "./publish" -Recurse -Force }
+          Write-Host "Limpieza completada"
 
-      - name: Publish
-        run: dotnet publish ./API-Hotel/hotel.csproj -c Release -o publish --no-build
+      # 3. Restaurar paquetes NuGet especificando el proyecto
+      - name: Restore NuGet Packages
+        shell: powershell
+        run: |
+          $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+          dotnet restore "./API-Hotel/hotel.csproj" --verbosity detailed
 
+      # 4. Compilar el proyecto
+      - name: Build Project
+        shell: powershell
+        run: |
+          $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+          dotnet build "./API-Hotel/hotel.csproj" --configuration Release --no-restore
+
+      # 5. Publicar el proyecto
+      - name: Publish Project
+        shell: powershell
+        run: |
+          $env:DOTNET_CLI_TELEMETRY_OPTOUT = "1"
+          dotnet publish "./API-Hotel/hotel.csproj" --configuration Release --no-build --output "./publish"
+
+      # 6. Verificar archivos publicados
+      - name: Verify Published Files
+        shell: powershell
+        run: |
+          Write-Host "Archivos en ./publish:"
+          Get-ChildItem -Path "./publish" -Recurse | Select-Object FullName
+
+      # 7. Desplegar en IIS usando el script de PowerShell
       - name: Deploy to IIS Application
         shell: powershell
         run: |
