@@ -1,4 +1,4 @@
-﻿using hotel.Models;
+using hotel.Models;
 using hotel.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -84,7 +84,7 @@ namespace hotel.Controllers
 
                 Pagos nuevoPago = new Pagos
                 {
-                    MontoDescuento = montoDescuento,
+                    MontoDescuento = -Math.Abs(montoDescuento),
                     MontoEfectivo = montoEfectivo,
                     InstitucionID = visita.InstitucionID,
                     MontoTarjeta = montoTarjeta,
