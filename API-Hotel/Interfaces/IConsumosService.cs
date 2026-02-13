@@ -15,7 +15,7 @@ public interface IConsumosService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of consumos</returns>
     Task<ApiResponse<IEnumerable<ConsumoDto>>> GetConsumosByVisitaAsync(
-        int visitaId, 
+        int visitaId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -27,9 +27,9 @@ public interface IConsumosService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success response</returns>
     Task<ApiResponse> AddGeneralConsumosAsync(
-        int habitacionId, 
-        int visitaId, 
-        IEnumerable<ConsumoCreateDto> items, 
+        int habitacionId,
+        int visitaId,
+        IEnumerable<ConsumoCreateDto> items,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -41,9 +41,9 @@ public interface IConsumosService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success response</returns>
     Task<ApiResponse> AddRoomConsumosAsync(
-        int habitacionId, 
-        int visitaId, 
-        IEnumerable<ConsumoCreateDto> items, 
+        int habitacionId,
+        int visitaId,
+        IEnumerable<ConsumoCreateDto> items,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -53,7 +53,7 @@ public interface IConsumosService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Success response</returns>
     Task<ApiResponse> CancelConsumoAsync(
-        int consumoId, 
+        int consumoId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -64,8 +64,8 @@ public interface IConsumosService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Updated consumo</returns>
     Task<ApiResponse<ConsumoDto>> UpdateConsumoQuantityAsync(
-        int consumoId, 
-        int quantity, 
+        int consumoId,
+        int quantity,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -75,6 +75,16 @@ public interface IConsumosService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Consumos summary</returns>
     Task<ApiResponse<ConsumoSummaryDto>> GetConsumosSummaryAsync(
-        int visitaId, 
+        int visitaId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get all consumos associated with a specific payment
+    /// </summary>
+    /// <param name="pagoId">Payment ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of consumos</returns>
+    Task<ApiResponse<IEnumerable<ConsumoDto>>> GetConsumosByPagoAsync(
+        int pagoId,
         CancellationToken cancellationToken = default);
 }

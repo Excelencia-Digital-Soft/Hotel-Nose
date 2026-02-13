@@ -214,7 +214,7 @@ namespace hotel.Controllers
                                 .Where(c =>
                                     movimientosPago.Any(m => m.MovimientosId == c.MovimientosId)
                                 )
-                                .Sum(c => c.PrecioUnitario);
+                                .Sum(c => c.PrecioUnitario * (c.Cantidad ?? 1));
                             var habitacionNombre =
                                 ultimaReserva != null
                                     ? habitaciones
@@ -317,7 +317,7 @@ namespace hotel.Controllers
                             .Where(c =>
                                 movimientosPago.Any(m => m.MovimientosId == c.MovimientosId)
                             )
-                            .Sum(c => c.PrecioUnitario);
+                            .Sum(c => c.PrecioUnitario * (c.Cantidad ?? 1));
                         var visita = movimiento?.Visita;
                         var ultimaReserva = visita?.Reservas?.FirstOrDefault();
                         var habitacionNombre =
@@ -497,7 +497,7 @@ namespace hotel.Controllers
                             .Where(c =>
                                 movimientosPago.Any(m => m.MovimientosId == c.MovimientosId)
                             )
-                            .Sum(c => c.PrecioUnitario);
+                            .Sum(c => c.PrecioUnitario * (c.Cantidad ?? 1));
 
                         var habitacion =
                             ultimaReserva != null
@@ -728,7 +728,7 @@ namespace hotel.Controllers
                             .Where(c =>
                                 movimientosPago.Any(m => m.MovimientosId == c.MovimientosId)
                             )
-                            .Sum(c => c.PrecioUnitario);
+                            .Sum(c => c.PrecioUnitario * (c.Cantidad ?? 1));
                         var visita = movimiento?.Visita;
                         var ultimaReserva = visita?.Reservas?.FirstOrDefault();
                         var habitacionNombre =

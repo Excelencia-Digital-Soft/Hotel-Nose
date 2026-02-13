@@ -25,7 +25,7 @@ namespace hotel.Controllers
         [Route("PagarVisita")] // Paga todos los movimientos de una visita
         [Authorize(AuthenticationSchemes = "Bearer")]
         [Obsolete("This endpoint is deprecated. Consider using /api/v1/pagos instead.")]
-        public async Task<Respuesta> PagarVisita(int visitaId, decimal montoDescuento, decimal montoEfectivo, decimal montoTarjeta, decimal montoBillVirt, decimal adicional, int medioPagoId, string? comentario, decimal? montoRecargo, string? descripcionRecargo, int? tarjetaID)
+        public async Task<Respuesta> PagarVisita(int visitaId, decimal montoDescuento, decimal montoEfectivo, decimal montoTarjeta, decimal montoBillVirt, decimal adicional, int medioPagoId, string? comentario, decimal? montoRecargo, string? descripcionRecargo, int? tarjetaID, bool pausarDespuesDePago = false)
         {
             Respuesta res = new Respuesta();
 
@@ -35,12 +35,34 @@ namespace hotel.Controllers
             try
             {
                 // Step 1: Find the Visita by visitaId
-                var visita = await _db.Visitas.FindAsync(visitaId);
+                var visita = await _db.Visitas
+                    .Include(v => v.Reservas)
+                    .FirstOrDefaultAsync(v => v.VisitaId == visitaId);
+
                 if (visita == null)
                 {
                     res.Ok = false;
                     res.Message = "La visita no existe.";
                     return res;
+                }
+
+                // Step 1.1: Validation for Definitive Pause Window
+                var reservaActiva = visita.Reservas.FirstOrDefault(r => r.FechaFin == null);
+                if (reservaActiva != null)
+                {
+                    var configPausa = await _db.Configuraciones.FirstOrDefaultAsync(c =>
+                        c.Clave == "TIPO_PAUSA" && c.InstitucionId == (int)reservaActiva.InstitucionID && c.Activo);
+
+                    if (configPausa != null && configPausa.Valor == "DEFINITIVA" && (reservaActiva.PausaHoras != null || reservaActiva.PausaMinutos != null))
+                    {
+                        if (reservaActiva.FechaRecalculo == null || (DateTime.Now - reservaActiva.FechaRecalculo.Value).TotalSeconds > 65) // 5 sec grace
+                        {
+                            await transaction.RollbackAsync();
+                            res.Ok = false;
+                            res.Message = "El tiempo de confirmación del monto ha expirado. Debe recalcular para poder confirmar el pago.";
+                            return res;
+                        }
+                    }
                 }
 
                 // Step 2: Find all Movimientos related to the Visita
@@ -124,12 +146,38 @@ namespace hotel.Controllers
                 _db.UpdateRange(movimientos);
                 await _db.SaveChangesAsync();
 
+                // Step 7: Handle automatic pause if requested (Cobro en Habitación mode)
+                if (pausarDespuesDePago)
+                {
+                    var reserva = await _db.Reservas.FirstOrDefaultAsync(r => r.VisitaId == visitaId);
+                    if (reserva != null && reserva.PausaHoras == null)
+                    {
+                        DateTime fechaReserva = reserva.FechaReserva ?? DateTime.Now;
+                        var fechaActual = (
+                            DateTime.Now
+                            - TimeSpan.FromHours((double)(reserva.TotalHoras ?? 0))
+                            - TimeSpan.FromMinutes((double)(reserva.TotalMinutos ?? 0))
+                        );
+
+                        TimeSpan timer = fechaReserva - fechaActual;
+                        reserva.PausaHoras = timer.Hours;
+                        reserva.PausaMinutos = timer.Minutes;
+
+                        _db.Update(reserva);
+                        await _db.SaveChangesAsync();
+                    }
+                }
+
                 // Commit transaction if everything succeeded
                 await transaction.CommitAsync();
 
                 res.Ok = true;
-                res.Message = "El pago de la visita se realizó correctamente.";
-                res.Data = nuevoPago;
+                res.Data = new
+                {
+                    pago = nuevoPago,
+                    pausado = pausarDespuesDePago
+                };
+                res.Message = "El pago de la visita se realizó correctamente." + (pausarDespuesDePago ? " El tiempo ha sido pausado automáticamente." : "");
             }
             catch (DbUpdateException dbEx)
             {

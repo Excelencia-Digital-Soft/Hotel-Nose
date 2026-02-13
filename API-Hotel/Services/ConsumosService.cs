@@ -393,6 +393,53 @@ public class ConsumosService : IConsumosService
         }
     }
 
+    /// <inheritdoc/>
+    public async Task<ApiResponse<IEnumerable<ConsumoDto>>> GetConsumosByPagoAsync(
+        int pagoId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            var consumos = await _context
+                .Consumo.AsNoTracking()
+                .Where(c => c.Movimientos!.PagoId == pagoId && c.Anulado != true)
+                .Include(c => c.Movimientos)
+                .Include(c => c.Articulo)
+                .Select(c => new ConsumoDto
+                {
+                    ConsumoId = c.ConsumoId,
+                    ArticuloId = c.ArticuloId ?? 0,
+                    ArticleName = c.Articulo!.NombreArticulo ?? string.Empty,
+                    Cantidad = c.Cantidad ?? 0,
+                    PrecioUnitario = c.PrecioUnitario ?? 0,
+                    Total = (c.Cantidad ?? 0) * (c.PrecioUnitario ?? 0),
+                    EsHabitacion = c.EsHabitacion ?? false,
+                    FechaConsumo = c.Movimientos!.FechaRegistro ?? DateTime.Now,
+                    VisitaId = c.Movimientos.VisitaId ?? 0,
+                    HabitacionId = c.Movimientos.HabitacionId ?? 0,
+                    Activo = !(c.Anulado ?? false),
+                })
+                .ToListAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Retrieved {Count} consumos for payment {PagoId}",
+                consumos.Count,
+                pagoId
+            );
+
+            return ApiResponse<IEnumerable<ConsumoDto>>.Success(consumos);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving consumos for payment {PagoId}", pagoId);
+            return ApiResponse<IEnumerable<ConsumoDto>>.Failure(
+                "Error retrieving consumos",
+                "An error occurred while retrieving the consumos"
+            );
+        }
+    }
+
     #region Private Helper Methods
 
     /// <summary>
@@ -465,7 +512,7 @@ public class ConsumosService : IConsumosService
             {
                 inventory.Cantidad = 0;
             }
-            
+
             // Update audit fields
             inventory.FechaUltimaActualizacion = DateTime.UtcNow;
         }

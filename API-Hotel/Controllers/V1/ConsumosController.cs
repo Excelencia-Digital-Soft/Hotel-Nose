@@ -55,6 +55,32 @@ public class ConsumosController : ControllerBase
     }
 
     /// <summary>
+    /// Get all consumos for a specific payment
+    /// </summary>
+    /// <param name="pagoId">Payment ID</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>List of consumos</returns>
+    [HttpGet("pago/{pagoId:int}")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ConsumoDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<ApiResponse<IEnumerable<ConsumoDto>>>> GetConsumosByPago(
+        int pagoId,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("Getting consumos for payment {PagoId}", pagoId);
+
+        var result = await _consumosService.GetConsumosByPagoAsync(pagoId, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return NotFound(result);
+        }
+
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Get consumos summary for a visit
     /// </summary>
     /// <param name="visitaId">Visit ID</param>
@@ -108,7 +134,7 @@ public class ConsumosController : ControllerBase
             return BadRequest(ApiResponse.Failure(errors, "Invalid request data"));
         }
 
-        _logger.LogInformation("Adding general consumos for habitacion {HabitacionId}, visita {VisitaId}", 
+        _logger.LogInformation("Adding general consumos for habitacion {HabitacionId}, visita {VisitaId}",
             habitacionId, visitaId);
 
         var result = await _consumosService.AddGeneralConsumosAsync(
@@ -150,7 +176,7 @@ public class ConsumosController : ControllerBase
             return BadRequest(ApiResponse.Failure(errors, "Invalid request data"));
         }
 
-        _logger.LogInformation("Adding room consumos for habitacion {HabitacionId}, visita {VisitaId}", 
+        _logger.LogInformation("Adding room consumos for habitacion {HabitacionId}, visita {VisitaId}",
             habitacionId, visitaId);
 
         var result = await _consumosService.AddRoomConsumosAsync(
@@ -191,7 +217,7 @@ public class ConsumosController : ControllerBase
             return BadRequest(ApiResponse.Failure(errors, "Invalid request data"));
         }
 
-        _logger.LogInformation("Updating consumo {ConsumoId} with quantity {Quantity}", 
+        _logger.LogInformation("Updating consumo {ConsumoId} with quantity {Quantity}",
             consumoId, updateDto.Cantidad);
 
         var result = await _consumosService.UpdateConsumoQuantityAsync(

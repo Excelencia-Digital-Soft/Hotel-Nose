@@ -78,17 +78,17 @@ namespace hotel.Controllers
                 // Step 4: Validate promotion BEFORE creating reservation entity
                 decimal? tarifa = habitacion.Categoria.PrecioNormal; // Default price
                 int? validatedPromocionId = null;
-                
+
                 if (request.PromocionID != null && request.PromocionID != 0)
                 {
                     // Fetch and validate the promotion from the database FIRST
                     var promocion = await _db.Promociones
                         .AsNoTracking()
-                        .FirstOrDefaultAsync(p => 
-                            p.PromocionID == request.PromocionID && 
+                        .FirstOrDefaultAsync(p =>
+                            p.PromocionID == request.PromocionID &&
                             p.InstitucionID == InstitucionID &&
                             p.Anulado != true);
-                            
+
                     if (promocion == null)
                     {
                         res.Message = "La promoción no es válida o no pertenece a esta institución.";
@@ -254,6 +254,7 @@ namespace hotel.Controllers
                 TimeSpan timer = fechaReserva - fechaActual;
                 reserva.PausaHoras = timer.Hours;
                 reserva.PausaMinutos = timer.Minutes;
+                reserva.FechaRecalculo = null; // Reset recalculation on pause
                 await _db.SaveChangesAsync();
             }
             catch (Exception ex)
@@ -293,9 +294,21 @@ namespace hotel.Controllers
                     return res;
                 }
 
+                // Verificar configuración de Pausa Definitiva (Opción 1)
+                var configPausa = await _db.Configuraciones.FirstOrDefaultAsync(c =>
+                    c.Clave == "TIPO_PAUSA" && c.InstitucionId == reserva.InstitucionID && c.Activo);
+
+                if (configPausa != null && configPausa.Valor == "DEFINITIVA")
+                {
+                    res.Message = "No es posible reanudar el tiempo en este modo de pausa definitiva.";
+                    res.Ok = false;
+                    return res;
+                }
+
                 // Establecer PausaHoras y PausaMinutos a NULL
                 reserva.PausaHoras = null;
                 reserva.PausaMinutos = null;
+                reserva.FechaRecalculo = null; // Reanudar invalida la ventana de pago
 
                 // Guardar los cambios en la base de datos
                 await _db.SaveChangesAsync();
@@ -306,8 +319,7 @@ namespace hotel.Controllers
             }
             catch (Exception ex)
             {
-                res.Message =
-                    "Error al reanudar el timer: " + ex.InnerException?.Message ?? ex.Message;
+                res.Message = "Error al reanudar el timer: " + (ex.InnerException?.Message ?? ex.Message);
                 res.Ok = false;
                 return res;
             }
@@ -319,22 +331,49 @@ namespace hotel.Controllers
         public async Task<Respuesta> RecalcularOcupacion(int visitaId)
         {
             Respuesta res = new Respuesta();
-            var reserva = await _db.Reservas.FirstAsync(r => r.VisitaId == visitaId);
-            try
+            var reserva = await _db.Reservas.FirstOrDefaultAsync(r => r.VisitaId == visitaId);
+
+            if (reserva == null)
             {
-                reserva.PausaHoras = null;
-                reserva.PausaMinutos = null;
-                await _db.SaveChangesAsync();
-            }
-            catch (Exception ex)
-            {
-                res.Message = "Error a la hora de pausar el timer " + ex.InnerException;
+                res.Message = "No se encontró la reserva.";
                 res.Ok = false;
                 return res;
             }
-            res.Message = "El timer se reanudo";
-            res.Ok = true;
-            return res;
+
+            if (reserva.PausaHoras == null && reserva.PausaMinutos == null)
+            {
+                res.Message = "La habitación debe estar pausada para poder recalcular el monto final.";
+                res.Ok = false;
+                return res;
+            }
+
+            try
+            {
+                // Al "Recalcular", actualizamos el tiempo pausado al momento actual
+                DateTime fechaReserva = (DateTime)reserva.FechaReserva!;
+                var fechaActual = (
+                    DateTime.Now
+                    - TimeSpan.FromHours((double)reserva.TotalHoras!)
+                    - TimeSpan.FromMinutes((double)reserva.TotalMinutos!)
+                );
+                TimeSpan timer = fechaReserva - fechaActual;
+
+                reserva.PausaHoras = timer.Hours;
+                reserva.PausaMinutos = timer.Minutes;
+                reserva.FechaRecalculo = DateTime.Now; // Inicia ventana de 1 minuto
+
+                await _db.SaveChangesAsync();
+
+                res.Message = "El cálculo ha sido actualizado satisfactoriamente. Tiene 1 minuto para confirmar el pago.";
+                res.Ok = true;
+                return res;
+            }
+            catch (Exception ex)
+            {
+                res.Message = "Error a la hora de recalcular el timer: " + (ex.InnerException?.Message ?? ex.Message);
+                res.Ok = false;
+                return res;
+            }
         }
 
         [HttpPut]
@@ -476,8 +515,20 @@ namespace hotel.Controllers
                 // Check if the reservation exists
                 if (reserva != null)
                 {
+                    // Bloquear extensión en modo DEFINITIVA si está pausado
+                    var configPausa = await _db.Configuraciones.FirstOrDefaultAsync(c =>
+                        c.Clave == "TIPO_PAUSA" && c.InstitucionId == reserva.InstitucionID && c.Activo);
+
+                    if (configPausa != null && configPausa.Valor == "DEFINITIVA" && (reserva.PausaHoras != null || reserva.PausaMinutos != null))
+                    {
+                        res.Message = "No se puede extender el tiempo mientras la habitación está en pausa definitiva.";
+                        res.Ok = false;
+                        return res;
+                    }
+
                     reserva.TotalHoras = reserva.TotalHoras + horas;
                     reserva.TotalMinutos = reserva.TotalMinutos + minutos;
+                    reserva.FechaRecalculo = null; // Extender invalida la ventana de pago
                     await _db.SaveChangesAsync();
                     // Send notification about reservation extension
                     await _notificationService.SendNotificationToInstitutionAsync(
@@ -600,7 +651,13 @@ namespace hotel.Controllers
                     habitacion.Disponible = true;
                     habitacion.VisitaID = null;
                     if (reserva != null)
+                    {
                         reserva.FechaFin = DateTime.Now;
+                        // Limpiar campos de pausa al finalizar
+                        reserva.PausaHoras = null;
+                        reserva.PausaMinutos = null;
+                        reserva.FechaRecalculo = null;
+                    }
 
                     // Save the changes to the database
                     await _db.SaveChangesAsync();
