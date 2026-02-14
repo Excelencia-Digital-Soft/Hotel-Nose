@@ -87,8 +87,8 @@ public class ReservasService : IReservasService
 
             // Send notification about reservation finalization
             await _reservationNotificationService.NotifyReservationFinalizedAsync(
-                reservaActiva?.ReservaId ?? 0, 
-                habitacion, 
+                reservaActiva?.ReservaId ?? 0,
+                habitacion,
                 habitacion.InstitucionID,
                 cancellationToken);
 
@@ -883,15 +883,15 @@ public class ReservasService : IReservasService
             };
 
             var visitaResult = await _visitasService.CreateVisitaAsync(
-                visitaCreateDto, 
-                institucionId, 
-                userId, 
+                visitaCreateDto,
+                institucionId,
+                userId,
                 cancellationToken);
-                
+
             if (!visitaResult.IsSuccess)
             {
                 return ApiResponse<ReservaDto>.Failure(
-                    "Error creating visit", 
+                    "Error creating visit",
                     visitaResult.Errors.FirstOrDefault() ?? "Failed to create visit");
             }
 
@@ -905,11 +905,11 @@ public class ReservasService : IReservasService
                 createDto.HabitacionId,
                 "Movimiento por reserva de habitación",
                 cancellationToken);
-                
+
             if (!movimientoResult.IsSuccess)
             {
                 return ApiResponse<ReservaDto>.Failure(
-                    "Error creating movement", 
+                    "Error creating movement",
                     movimientoResult.Errors.FirstOrDefault() ?? "Failed to create movement");
             }
 
@@ -977,12 +977,12 @@ public class ReservasService : IReservasService
 
             // 10. Send real-time notification to institution
             await _reservationNotificationService.NotifyReservationCreatedAsync(
-                reserva, 
-                habitacion, 
-                visita, 
-                pricingResult.TotalAmount, 
+                reserva,
+                habitacion,
+                visita,
+                pricingResult.TotalAmount,
                 pricingResult.PromocionNombre,
-                cancellationToken);  
+                cancellationToken);
 
             // 11. Return created reservation as DTO
             var reservaDto = new ReservaDto
@@ -1053,8 +1053,8 @@ public class ReservasService : IReservasService
             return (false, "Reservation cannot exceed 7 days");
         }
 
-        // Check date is not too far in the past
-        if (createDto.FechaInicio < DateTime.Now.AddMinutes(-5))
+        // Check date is not too far in the past (allow some margin for clock skew/delays)
+        if (createDto.FechaInicio < DateTime.Now.AddMinutes(-60))
         {
             return (false, "Reservation start date cannot be in the past");
         }
