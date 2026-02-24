@@ -2,6 +2,7 @@ using hotel.DTOs.Caja;
 using hotel.DTOs.Common;
 using hotel.Extensions;
 using hotel.Interfaces;
+using hotel.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -73,6 +74,60 @@ public class CajaController : ControllerBase
             );
 
             return CreatedAtAction(nameof(CrearCaja), new { id = result.Data?.CierreId }, result);
+        }
+
+        return StatusCode(500, result);
+    }
+
+    /// <summary>
+    /// Closes the current cash register shift and opens a new one
+    /// </summary>
+    /// <param name="cerrarCajaDto">Closing data including next shift's initial amount</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>The closed cash register information</returns>
+    [HttpPost("cerrar")]
+    [ProducesResponseType(typeof(ApiResponse<Cierre>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<ApiResponse<Cierre>>> CerrarCaja(
+        [FromBody] CerrarCajaDto cerrarCajaDto,
+        CancellationToken cancellationToken = default
+    )
+    {
+        if (!ModelState.IsValid)
+        {
+            var errors = ModelState
+                .Values.SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            return BadRequest(ApiResponse.Failure("Datos de entrada inválidos", errors.ToString()));
+        }
+
+        var institucionId = this.GetCurrentInstitucionId();
+        if (!institucionId.HasValue)
+        {
+            return BadRequest(ApiResponse.Failure("ID de institución requerido"));
+        }
+
+        var result = await _cajaService.CerrarCajaAsync(
+            cerrarCajaDto.MontoInicial,
+            institucionId.Value,
+            cerrarCajaDto.Observacion,
+            this.GetCurrentUserId(),
+            cancellationToken
+        );
+
+        if (result.IsSuccess)
+        {
+            _logger.LogInformation(
+                "Cash register shift closed successfully for institution {InstitucionId} by user {UserId}",
+                institucionId.Value,
+                this.GetCurrentUserId()
+            );
+
+            return Ok(result);
         }
 
         return StatusCode(500, result);

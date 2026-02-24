@@ -10,7 +10,7 @@ public partial class Cierre
     public int CierreId { get; set; }
 
     public int? UsuarioId { get; set; } // Legacy field - keep for compatibility
-    
+
     /// <summary>
     /// User ID from AspNetUsers (new field)
     /// </summary>
@@ -39,10 +39,13 @@ public partial class Cierre
 
     [JsonIgnore]
     public virtual Usuarios? Usuario { get; set; } // Legacy navigation property
-    
+
     /// <summary>
     /// User who created/closed this cash register (AspNetUsers)
     /// </summary>
     [JsonIgnore]
     public virtual ApplicationUser? User { get; set; }
+
+    [JsonIgnore]
+    public virtual ICollection<Reservas> ReservasAnuladas { get; } = new List<Reservas>();
 }

@@ -1,5 +1,6 @@
 using hotel.DTOs.Caja;
 using hotel.DTOs.Common;
+using hotel.Models;
 
 namespace hotel.Interfaces;
 
@@ -58,6 +59,17 @@ public interface ICajaService
     /// </summary>
     Task<ApiResponse<CierresyActualDto>> GetCierresyActualAsync(
         int institucionId,
+        string? userId = null,
+        CancellationToken cancellationToken = default
+    );
+
+    /// <summary>
+    /// Closes the current cash register shift and creates a new one
+    /// </summary>
+    Task<ApiResponse<Cierre>> CerrarCajaAsync(
+        decimal montoInicial,
+        int institucionId,
+        string? observacion,
         string? userId = null,
         CancellationToken cancellationToken = default
     );

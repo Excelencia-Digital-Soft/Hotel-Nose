@@ -123,6 +123,17 @@ namespace hotel.Data.Configurations
                 .HasConstraintName("FKReservas_Institucion") // Usar el nombre exacto de la DB
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .IsRequired(false); // OPCIONAL - genera LEFT JOIN
+
+            // Configurar relación con Cierre para trazabilidad de anulaciones
+            builder.Property(e => e.CierreId)
+                .HasColumnName("CierreID");
+
+            builder.HasOne(d => d.Cierre)
+                .WithMany(p => p.ReservasAnuladas)
+                .HasForeignKey(d => d.CierreId)
+                .HasConstraintName("FK_Reservas_Cierre")
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .IsRequired(false);
         }
     }
 

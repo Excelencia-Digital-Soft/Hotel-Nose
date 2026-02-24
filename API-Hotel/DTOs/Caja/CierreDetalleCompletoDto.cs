@@ -14,12 +14,18 @@ public class CierreDetalleCompletoDto
     public decimal? MontoInicialCaja { get; set; }
     public string? Observaciones { get; set; }
     public int InstitucionID { get; set; }
-    
+    public int CantidadAnulaciones { get; set; }
+
     /// <summary>
-    /// List of all transaction details including payments, cancellations, and expenses
+    /// List of payment transactions
     /// </summary>
-    public List<PagoDetalleCompletoDto> Transacciones { get; set; } = new();
-    
+    public List<PagoDetalleCompletoDto> Pagos { get; set; } = new();
+
+    /// <summary>
+    /// List of canceled reservations
+    /// </summary>
+    public List<PagoDetalleCompletoDto> Anulaciones { get; set; } = new();
+
     /// <summary>
     /// List of expense details
     /// </summary>

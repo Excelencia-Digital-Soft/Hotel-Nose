@@ -647,14 +647,10 @@ public class CajaService : ICajaService
                 .Include(e => e.TipoEgreso)
                 .ToListAsync(cancellationToken);
 
-            // Get canceled reservations in the time range
+            // Get canceled reservations associated with this closure
             var reservasAnuladas = await _context
                 .Reservas.AsNoTracking()
-                .Where(r =>
-                    r.FechaAnula < cierre.FechaHoraCierre
-                    && r.FechaAnula > fechaCierreAnterior
-                    && r.InstitucionID == institucionId
-                )
+                .Where(r => r.CierreId == cierreId && r.InstitucionID == institucionId)
                 .Include(r => r.Habitacion)
                 .ThenInclude(h => h!.Categoria)
                 .ToListAsync(cancellationToken);
@@ -666,18 +662,11 @@ public class CajaService : ICajaService
             if (pagoIds.Any())
             {
                 // Get payment details with all related information in optimized queries
-                var pagosConDetalle = await GetPagosDetalleCompletoAsync(
+                transacciones = await GetPagosDetalleCompletoAsync(
                     pagoIds,
                     institucionId,
                     cancellationToken
                 );
-                transacciones.AddRange(pagosConDetalle);
-            }
-
-            // Add canceled reservations as transactions using mapper
-            foreach (var reserva in reservasAnuladas)
-            {
-                transacciones.Add(_mapper.MapReservaAnuladaToPagoDetalleCompleto(reserva));
             }
 
             // Map expenses using dedicated mapper
@@ -694,7 +683,9 @@ public class CajaService : ICajaService
                 MontoInicialCaja = cierre.MontoInicialCaja,
                 Observaciones = cierre.Observaciones,
                 InstitucionID = cierre.InstitucionID,
-                Transacciones = transacciones.OrderBy(t => t.Fecha).ToList(),
+                CantidadAnulaciones = reservasAnuladas.Count,
+                Pagos = transacciones,
+                Anulaciones = reservasAnuladas.Select(_mapper.MapReservaAnuladaToPagoDetalleCompleto).ToList(),
                 Egresos = egresosDto,
             };
 
@@ -776,10 +767,10 @@ public class CajaService : ICajaService
                 cancellationToken
             );
 
-            // Get pending expenses (not associated with any closure)
+            // Get pending expenses (not associated with any closure, only since last closure)
             var egresosPendientesRaw = await _context
                 .Egresos.AsNoTracking()
-                .Where(e => e.CierreID == null && e.InstitucionID == institucionId)
+                .Where(e => e.CierreID == null && e.InstitucionID == institucionId && e.Fecha > fechaUltimoCierre)
                 .Include(e => e.TipoEgreso)
                 .ToListAsync(cancellationToken);
 
@@ -830,10 +821,10 @@ public class CajaService : ICajaService
     {
         var transacciones = new List<TransaccionPendienteDto>();
 
-        // Get pending payments using optimized query
+        // Get pending payments using optimized query (only since last closure)
         var pagosSource = _context
             .Pagos.AsNoTracking()
-            .Where(p => p.CierreId == null && p.InstitucionID == institucionId);
+            .Where(p => p.CierreId == null && p.InstitucionID == institucionId && p.fechaHora > fechaUltimoCierre);
 
         var pagosPendientes = await GetTransaccionesPendientesOptimizedAsync(
             pagosSource,
@@ -843,10 +834,10 @@ public class CajaService : ICajaService
 
         transacciones.AddRange(pagosPendientes);
 
-        // Get canceled reservations since last closure
+        // Get canceled reservations that haven't been associated with a closure yet (only since last closure)
         var reservasAnuladas = await _context
             .Reservas.AsNoTracking()
-            .Where(r => r.FechaAnula > fechaUltimoCierre && r.InstitucionID == institucionId)
+            .Where(r => r.FechaAnula != null && r.CierreId == null && r.InstitucionID == institucionId && r.FechaAnula > fechaUltimoCierre)
             .Include(r => r.Habitacion)
             .ThenInclude(h => h!.Categoria)
             .ToListAsync(cancellationToken);
@@ -859,4 +850,132 @@ public class CajaService : ICajaService
 
         return transacciones.OrderBy(t => t.Fecha).ToList();
     }
+
+    /// <summary>
+    /// Closes the current cash register shift and creates a new one
+    /// </summary>
+    public async Task<ApiResponse<Cierre>> CerrarCajaAsync(
+        decimal montoInicial,
+        int institucionId,
+        string? observacion,
+        string? userId = null,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            _logger.LogInformation(
+                "Closing cash register for institution {InstitucionId} and opening new one with {MontoInicial}",
+                institucionId,
+                montoInicial
+            );
+
+            // 1. Get the current active closure (the one with EstadoCierre = false or the latest one)
+            var ultimoCierre = await _context
+                .Cierre.Where(c => c.InstitucionID == institucionId)
+                .OrderBy(c => c.CierreId)
+                .LastOrDefaultAsync(cancellationToken);
+
+            if (ultimoCierre == null)
+            {
+                // Create a basic closure if none exists (similar to legacy logic)
+                ultimoCierre = new Cierre
+                {
+                    TotalIngresosBillVirt = 0,
+                    TotalIngresosEfectivo = 0,
+                    TotalIngresosTarjeta = 0,
+                    InstitucionID = institucionId,
+                    EstadoCierre = false,
+                    UserId = userId,
+                };
+                _context.Cierre.Add(ultimoCierre);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            // 2. Mark as closed
+            ultimoCierre.EstadoCierre = true;
+            ultimoCierre.FechaHoraCierre = DateTime.Now;
+            if (!string.IsNullOrEmpty(observacion))
+            {
+                ultimoCierre.Observaciones = observacion;
+            }
+            if (!string.IsNullOrEmpty(userId))
+            {
+                ultimoCierre.UserId = userId;
+            }
+
+            // 3. Process Payments (associate with this closure)
+            // Include legacy records with InstitucionID = 0 to clean them up
+            var pagos = await _context
+                .Pagos.Where(p => p.CierreId == null && (p.InstitucionID == institucionId || p.InstitucionID == 0))
+                .ToListAsync(cancellationToken);
+
+            foreach (var p in pagos)
+            {
+                p.CierreId = ultimoCierre.CierreId;
+                ultimoCierre.TotalIngresosTarjeta += p.MontoTarjeta ?? 0;
+                ultimoCierre.TotalIngresosEfectivo += p.MontoEfectivo ?? 0;
+                ultimoCierre.TotalIngresosBillVirt += p.MontoBillVirt ?? 0;
+            }
+
+            // 4. Process Expenses (associate with this closure)
+            var egresos = await _context
+                .Egresos.Where(e => e.CierreID == null && (e.InstitucionID == institucionId || e.InstitucionID == 0))
+                .ToListAsync(cancellationToken);
+
+            foreach (var e in egresos)
+            {
+                e.CierreID = ultimoCierre.CierreId;
+                ultimoCierre.TotalIngresosEfectivo -= (e.Precio * e.Cantidad);
+            }
+
+            // 5. NEW: Process Canceled Reservations (associate with this closure)
+            // Claim all reservations canceled since the last closure (i.e., those with FechaAnula and no CierreId)
+            // Also include legacy records with InstitucionID = 0 to clean them up during this closure
+            var reservasAnuladas = await _context
+                .Reservas.Where(r =>
+                    r.FechaAnula != null && r.CierreId == null && (r.InstitucionID == institucionId || r.InstitucionID == 0)
+                )
+                .ToListAsync(cancellationToken);
+
+            _logger.LogInformation("Found {Count} canceled reservations to associate with closure {CierreId}", reservasAnuladas.Count, ultimoCierre.CierreId);
+
+            foreach (var r in reservasAnuladas)
+            {
+                r.CierreId = ultimoCierre.CierreId;
+            }
+
+            // 6. Save changes
+            await _context.SaveChangesAsync(cancellationToken);
+
+            // 7. Create the NEXT shift (Open new cash register)
+            await CrearCajaAsync(
+                new CrearCajaDto { MontoInicial = montoInicial, Observacion = observacion },
+                institucionId,
+                userId,
+                cancellationToken
+            );
+
+            _logger.LogInformation(
+                "Cash register shift {CierreId} closed successfully for institution {InstitucionId}",
+                ultimoCierre.CierreId,
+                institucionId
+            );
+
+            return ApiResponse<Cierre>.Success(ultimoCierre, "Cierre de caja realizado exitosamente");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "Error closing cash register for institution {InstitucionId}",
+                institucionId
+            );
+            return ApiResponse<Cierre>.Failure(
+                "Error al cerrar la caja",
+                "Ocurrió un error interno al procesar el cierre. Por favor, inténtelo nuevamente."
+            );
+        }
+    }
 }
+
