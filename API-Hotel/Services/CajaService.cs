@@ -648,9 +648,14 @@ public class CajaService : ICajaService
                 .ToListAsync(cancellationToken);
 
             // Get canceled reservations associated with this closure
+            // Fallback: also include reservations within the closure time range that don't have a CierreId assigned (for legacy records)
             var reservasAnuladas = await _context
                 .Reservas.AsNoTracking()
-                .Where(r => r.CierreId == cierreId && r.InstitucionID == institucionId)
+                .Where(r =>
+                    (r.CierreId == cierreId) ||
+                    (r.CierreId == null && r.FechaAnula != null && r.FechaAnula <= cierre.FechaHoraCierre && r.FechaAnula > fechaCierreAnterior)
+                )
+                .Where(r => r.InstitucionID == institucionId)
                 .Include(r => r.Habitacion)
                 .ThenInclude(h => h!.Categoria)
                 .ToListAsync(cancellationToken);
@@ -824,7 +829,7 @@ public class CajaService : ICajaService
         // Get pending payments using optimized query (only since last closure)
         var pagosSource = _context
             .Pagos.AsNoTracking()
-            .Where(p => p.CierreId == null && p.InstitucionID == institucionId && p.fechaHora > fechaUltimoCierre);
+            .Where(p => p.CierreId == null && p.InstitucionID == institucionId);
 
         var pagosPendientes = await GetTransaccionesPendientesOptimizedAsync(
             pagosSource,
@@ -837,7 +842,7 @@ public class CajaService : ICajaService
         // Get canceled reservations that haven't been associated with a closure yet (only since last closure)
         var reservasAnuladas = await _context
             .Reservas.AsNoTracking()
-            .Where(r => r.FechaAnula != null && r.CierreId == null && r.InstitucionID == institucionId && r.FechaAnula > fechaUltimoCierre)
+            .Where(r => r.FechaAnula != null && r.CierreId == null && r.InstitucionID == institucionId)
             .Include(r => r.Habitacion)
             .ThenInclude(h => h!.Categoria)
             .ToListAsync(cancellationToken);
