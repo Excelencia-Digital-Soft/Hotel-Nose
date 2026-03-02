@@ -1033,7 +1033,7 @@ public class ReservasService : IReservasService
 
             return ApiResponse<ReservaDto>.Failure(
                 "Error creating reservation",
-                "An unexpected error occurred. Please try again or contact support."
+                $"An unexpected error occurred: {ex.Message} {(ex.InnerException != null ? " | Inner: " + ex.InnerException.Message : "")}"
             );
         }
     }

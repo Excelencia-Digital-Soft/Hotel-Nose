@@ -21,6 +21,9 @@ var app = builder.Build();
 // Ensure upload folders exist at startup
 app.EnsureUploadsFoldersExist();
 
+// Ensure database is up to date and diagnostic check tables
+app.EnsureDatabase();
+
 // Configure the HTTP request pipeline
 app.UseApplicationPipeline();
 

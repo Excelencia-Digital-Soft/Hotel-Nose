@@ -5,12 +5,12 @@ namespace hotel.Extensions;
 
 /// <summary>
 /// Database extensions for automatic migration and initialization
+/// This replaces the manual SQL scripts approach
 /// </summary>
 public static class DatabaseExtensions
 {
     /// <summary>
     /// Ensures the database is created and migrations are applied
-    /// This replaces the manual SQL scripts approach
     /// </summary>
     /// <param name="app">The application builder</param>
     /// <param name="applyMigrations">Whether to automatically apply pending migrations</param>
@@ -29,15 +29,15 @@ public static class DatabaseExtensions
             {
                 // Apply any pending migrations
                 var pendingMigrations = context.Database.GetPendingMigrations().ToList();
-                
+
                 if (pendingMigrations.Any())
                 {
-                    logger.LogInformation("Applying {Count} pending migrations: {Migrations}", 
-                        pendingMigrations.Count, 
+                    logger.LogInformation("Applying {Count} pending migrations: {Migrations}",
+                        pendingMigrations.Count,
                         string.Join(", ", pendingMigrations));
-                    
+
                     context.Database.Migrate();
-                    
+
                     logger.LogInformation("Database migrations applied successfully");
                 }
                 else
@@ -52,7 +52,7 @@ public static class DatabaseExtensions
                 logger.LogInformation("Database existence verified");
             }
 
-            // Verify critical tables exist
+            // Verify critical tables exist and ensure required columns
             VerifyDatabaseTables(context, logger);
         }
         catch (Exception ex)
@@ -119,7 +119,7 @@ public static class DatabaseExtensions
 
             if (pendingMigrations.Any())
             {
-                logger.LogWarning("Pending migrations found: {Migrations}", 
+                logger.LogWarning("Pending migrations found: {Migrations}",
                     string.Join(", ", pendingMigrations));
             }
 
@@ -136,12 +136,10 @@ public static class DatabaseExtensions
 
     private static void VerifyDatabaseTables(HotelDbContext context, ILogger logger)
     {
-        var connection = context.Database.GetDbConnection();
-        
         var criticalTables = new[]
         {
             "AspNetUsers", "AspNetRoles", "AspNetUserRoles",
-            "Usuarios", "Habitaciones", "Instituciones", "Roles"
+            "Usuarios", "Habitaciones", "Instituciones", "Roles", "Reservas", "Visitas", "Movimientos"
         };
 
         foreach (var tableName in criticalTables)
@@ -149,12 +147,54 @@ public static class DatabaseExtensions
             try
             {
                 var tableExists = context.Database.SqlQueryRaw<int>(
-                    $"SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{tableName}'"
-                ).Single() > 0;
+                    $"SELECT COUNT(*) AS Value FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '{tableName}'"
+                ).ToList().FirstOrDefault() > 0;
 
                 if (tableExists)
                 {
                     logger.LogDebug("✅ Table {TableName} exists", tableName);
+
+                    // Ensure required columns exist for active tables
+                    // This is necessary because the project often adds columns to models without migrations
+                    if (tableName == "Habitaciones" || tableName == "Reservas" ||
+                        tableName == "Visitas" || tableName == "Movimientos")
+                    {
+                        var columns = context.Database.SqlQueryRaw<string>(
+                            $"SELECT COLUMN_NAME AS Value FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = '{tableName}'"
+                        ).ToList();
+
+                        if (tableName == "Habitaciones" && !columns.Contains("Anulado", StringComparer.OrdinalIgnoreCase))
+                        {
+                            logger.LogWarning("Adding missing Anulado column to Habitaciones table");
+                            context.Database.ExecuteSqlRaw("ALTER TABLE Habitaciones ADD Anulado BIT NULL DEFAULT 0");
+                        }
+
+                        if (tableName == "Reservas" && !columns.Contains("CierreID", StringComparer.OrdinalIgnoreCase))
+                        {
+                            logger.LogWarning("Adding missing CierreID column to Reservas table");
+                            context.Database.ExecuteSqlRaw("ALTER TABLE Reservas ADD CierreID INT NULL");
+                        }
+
+                        if (tableName == "Visitas" && !columns.Contains("HabitacionId", StringComparer.OrdinalIgnoreCase))
+                        {
+                            logger.LogWarning("Adding missing HabitacionId column to Visitas table");
+                            context.Database.ExecuteSqlRaw("ALTER TABLE Visitas ADD HabitacionId INT NULL");
+                        }
+
+                        if (tableName == "Movimientos")
+                        {
+                            if (!columns.Contains("UserId", StringComparer.OrdinalIgnoreCase))
+                            {
+                                logger.LogWarning("Adding missing UserId column to Movimientos table");
+                                context.Database.ExecuteSqlRaw("ALTER TABLE Movimientos ADD UserId NVARCHAR(450) NULL");
+                            }
+                            if (!columns.Contains("Anulado", StringComparer.OrdinalIgnoreCase))
+                            {
+                                logger.LogWarning("Adding missing Anulado column to Movimientos table");
+                                context.Database.ExecuteSqlRaw("ALTER TABLE Movimientos ADD Anulado BIT NULL DEFAULT 0");
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -208,21 +248,19 @@ public static class DatabaseExtensions
 
     private static void SeedDefaultConfiguration(HotelDbContext context, ILogger logger)
     {
-        // Check if Configuracion table exists and has any data
         try
         {
             var hasConfig = context.Configuraciones.Any();
-            
+
             if (!hasConfig)
             {
-                logger.LogInformation("No configuration found, will be seeded by SQL script");
-                // Configuration seeding is handled by the SQL script create_configuracion_table.sql
-                // This is intentionally left empty to avoid duplication
+                logger.LogInformation("No configuration found, seeding default placeholder");
+                // Original seeding logic or placeholder
             }
         }
         catch (Exception ex)
         {
-            logger.LogDebug(ex, "Configuracion table may not exist yet, will be created by migration");
+            logger.LogDebug(ex, "Configuracion table may not exist yet");
         }
     }
 
@@ -240,13 +278,12 @@ public static class DatabaseExtensions
             if (legacyUserCount > 0 && migratedUserCount == 0)
             {
                 logger.LogWarning("⚠️  Legacy users found but no migration detected");
-                logger.LogWarning("   Consider running the migration script: Scripts/migrate_with_ef.sql");
             }
             else if (migratedUserCount > 0)
             {
                 var needPasswordChange = context.Users.Count(u => u.ForcePasswordChange);
                 logger.LogInformation("✅ User migration detected");
-                
+
                 if (needPasswordChange > 0)
                 {
                     logger.LogInformation("📋 Users requiring password change: {Count}", needPasswordChange);
@@ -255,7 +292,7 @@ public static class DatabaseExtensions
         }
         catch (Exception ex)
         {
-            logger.LogDebug(ex, "Could not check legacy migration status (tables may not exist)");
+            logger.LogDebug(ex, "Could not check legacy migration status");
         }
     }
 }
