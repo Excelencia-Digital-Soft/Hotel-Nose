@@ -254,8 +254,32 @@ public static class DatabaseExtensions
 
             if (!hasConfig)
             {
-                logger.LogInformation("No configuration found, seeding default placeholder");
-                // Original seeding logic or placeholder
+                logger.LogInformation("No configuration found, seeding default values");
+
+                // insert a couple of sensible defaults that the front‑end relies on
+                var defaults = new[]
+                {
+                    new Models.Configuracion
+                    {
+                        Clave = "MODO_COBRO",
+                        Valor = "SALIDA", // other valid value is "ENHABITACION"
+                        Descripcion = "Modo de cobro del hotel (SALIDA/ENHABITACION)",
+                        Categoria = "Sistema",
+                        Activo = true
+                    },
+                    new Models.Configuracion
+                    {
+                        Clave = "TIPO_PAUSA",
+                        Valor = "REVERSIBLE", // other valid value could be "DEFINITIVA"
+                        Descripcion = "Tipo de pausa aplicado al desocupar una habitación",
+                        Categoria = "Sistema",
+                        Activo = true
+                    }
+                };
+
+                context.Configuraciones.AddRange(defaults);
+                context.SaveChanges();
+                logger.LogInformation("Seeded {Count} configuration entries", defaults.Length);
             }
         }
         catch (Exception ex)
