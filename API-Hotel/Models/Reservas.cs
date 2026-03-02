@@ -29,6 +29,7 @@ public partial class Reservas
     public DateTime? FechaRegistro { get; set; }
     public int InstitucionID { get; set; }
     public DateTime? FechaAnula { get; set; }
+    public DateTime? FechaRecalculo { get; set; }
 
     // Navigation properties
     [JsonIgnore]
