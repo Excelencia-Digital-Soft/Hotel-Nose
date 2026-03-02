@@ -77,10 +77,20 @@ namespace hotel.Controllers
                 var pagos = await _db
                     .Pagos.Where(p => p.CierreId == null && p.InstitucionID == institucionID)
                     .ToListAsync();
-                if (pagos.Count == 0)
+
+                var egresos = await _db
+                    .Egresos.Where(p => p.CierreID == null && p.InstitucionID == institucionID)
+                    .ToListAsync();
+
+                var reservasAnuladas = await _db
+                    .Reservas.Where(r => r.FechaAnula != null && r.CierreId == null && r.InstitucionID == institucionID)
+                    .ToListAsync();
+
+                // Permitir cierre si hay al menos un pago, egreso o anulación
+                if (pagos.Count == 0 && egresos.Count == 0 && reservasAnuladas.Count == 0)
                 {
                     res.Ok = false;
-                    res.Message = "No hay pagos para cerrar la caja";
+                    res.Message = "No hay movimientos (pagos, egresos o anulaciones) para cerrar la caja";
                     return res;
                 }
 
@@ -95,9 +105,7 @@ namespace hotel.Controllers
                     ultimoCierre.TotalIngresosBillVirt =
                         ultimoCierre.TotalIngresosBillVirt + p.MontoBillVirt;
                 }
-                var egresos = await _db
-                    .Egresos.Where(p => p.CierreID == null && p.InstitucionID == institucionID)
-                    .ToListAsync();
+
                 foreach (var e in egresos)
                 {
                     e.CierreID = ultimoCierre.CierreId;
@@ -105,6 +113,12 @@ namespace hotel.Controllers
                     ultimoCierre.TotalIngresosEfectivo =
                         ultimoCierre.TotalIngresosEfectivo - (e.Precio * e.Cantidad);
                 }
+
+                foreach (var r in reservasAnuladas)
+                {
+                    r.CierreId = ultimoCierre.CierreId;
+                }
+
                 await _db.SaveChangesAsync();
                 await CrearCaja(montoInicial, institucionID, observacion);
 
@@ -160,7 +174,7 @@ namespace hotel.Controllers
             try
             {
                 // Fetch all necessary data from the database
-                var empeños = await _db.Empeño.ToListAsync();
+                var empeños = await _db.Empeño.Where(e => e.InstitucionID == institucionID).ToListAsync();
 
                 var cierres = await _db
                     .Cierre.Where(c =>
@@ -184,8 +198,10 @@ namespace hotel.Controllers
                     .ThenInclude(v => v!.Reservas)
                     .ToListAsync();
 
+                var movimientoIds = movimientos.Select(m => m.MovimientosId).ToList();
+
                 var habitaciones = await _db.Habitaciones.Include(h => h.Categoria).ToListAsync();
-                var consumos = await _db.Consumo.ToListAsync();
+                var consumos = await _db.Consumo.Where(c => c.MovimientosId != null && movimientoIds.Contains(c.MovimientosId.Value)).ToListAsync();
                 var tarjetas = await _db.Tarjetas.ToListAsync();
                 // List to store the mapped Cierres with Pagos
                 var CierresReturn = new List<object>();
@@ -458,22 +474,30 @@ namespace hotel.Controllers
                 var fechaCierreAnterior = cierreAnterior?.FechaHoraCierre ?? DateTime.MinValue;
 
                 // Obtener datos auxiliares
+                var pagoIds = cierre.Pagos.Select(p => p.PagoId).ToList();
+
                 var habitaciones = await _db.Habitaciones.Include(h => h.Categoria).ToListAsync();
                 var anulados =
                     await _db
                         .Reservas.Where(r =>
                             r.FechaAnula < cierre.FechaHoraCierre
                             && r.FechaAnula > fechaCierreAnterior
+                            && r.InstitucionID == cierre.InstitucionID
                         )
                         .ToListAsync() ?? null;
                 var empeños = await _db
                     .Empeño.Where(e => e.InstitucionID == cierre.InstitucionID)
                     .ToListAsync();
                 var movimientos = await _db
-                    .Movimientos.Include(m => m.Visita)
+                    .Movimientos.Where(m => pagoIds.Contains(m.PagoId ?? 0))
+                    .Include(m => m.Visita)
                     .ThenInclude(v => v!.Reservas)
                     .ToListAsync();
-                var consumos = await _db.Consumo.ToListAsync();
+
+                var movimientoIds = movimientos.Select(m => m.MovimientosId).ToList();
+                var consumos = await _db.Consumo
+                    .Where(c => c.MovimientosId != null && movimientoIds.Contains(c.MovimientosId.Value))
+                    .ToListAsync();
                 var tarjetas = await _db.Tarjetas.ToListAsync();
 
                 var pagosConDetalle = new List<object>();
@@ -683,10 +707,20 @@ namespace hotel.Controllers
                             .ToListAsync()
                         : new List<Pagos>();
 
+                var pagosIds = cierres
+                    .SelectMany(c => c.Pagos)
+                    .Select(p => p.PagoId)
+                    .Concat(pagosSinCierre.Select(p => p.PagoId))
+                    .ToList();
+
                 var movimientos = await _db
-                    .Movimientos.Include(m => m.Visita)
+                    .Movimientos.Where(m => pagosIds.Contains(m.PagoId ?? 0))
+                    .Include(m => m.Visita)
                     .ThenInclude(v => v!.Reservas)
                     .ToListAsync();
+
+                var movimientoIds = movimientos.Select(m => m.MovimientosId).ToList();
+
                 var ultimocierre =
                     cierres.Where(c => c.InstitucionID == InstitucionID).LastOrDefault()
                     ?? new Cierre { FechaHoraCierre = SqlDateTime.MinValue.Value };
@@ -702,7 +736,11 @@ namespace hotel.Controllers
                     .Habitaciones.Include(h => h.Categoria)
                     .Where(h => h.Categoria!.InstitucionID == InstitucionID)
                     .ToListAsync();
-                var consumos = await _db.Consumo.ToListAsync();
+
+                var consumos = await _db.Consumo
+                    .Where(c => c.MovimientosId != null && movimientoIds.Contains(c.MovimientosId.Value))
+                    .ToListAsync();
+
                 var tarjetas = await _db.Tarjetas.ToListAsync();
                 // List to store the mapped Cierres with Pagos
                 var CierresReturn = new List<object>();

@@ -37,4 +37,6 @@ public partial class Reservas
     public virtual Habitaciones? Habitacion { get; set; }
     public virtual ApplicationUser? Usuario { get; set; }
     public virtual Institucion? Institucion { get; set; }
+    public int? CierreId { get; set; }
+    public virtual Cierre? Cierre { get; set; }
 }
