@@ -321,6 +321,23 @@ public class CajaService : ICajaService
                 FechaHoraCierre = null, // Will be set when closing the cash register
             };
 
+            // If we have an ApplicationUser linked to this AspNetUsers id, fill legacy UsuarioId for compatibility
+            if (!string.IsNullOrEmpty(userId))
+            {
+                try
+                {
+                    var appUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+                    if (appUser?.LegacyUserId != null)
+                    {
+                        nuevoCierre.UsuarioId = appUser.LegacyUserId;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Warning: could not resolve legacy UsuarioId for user {UserId}", userId);
+                }
+            }
+
             _context.Cierre.Add(nuevoCierre);
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -907,6 +924,20 @@ public class CajaService : ICajaService
             if (!string.IsNullOrEmpty(userId))
             {
                 ultimoCierre.UserId = userId;
+
+                // Try to fill legacy numeric UsuarioId from ApplicationUser.LegacyUserId for backward compatibility
+                try
+                {
+                    var appUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+                    if (appUser?.LegacyUserId != null)
+                    {
+                        ultimoCierre.UsuarioId = appUser.LegacyUserId;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Warning: could not resolve legacy UsuarioId for user {UserId}", userId);
+                }
             }
 
             // 3. Process Payments (associate with this closure)
