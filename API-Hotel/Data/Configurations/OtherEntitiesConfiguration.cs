@@ -134,6 +134,9 @@ namespace hotel.Data.Configurations
                 .HasConstraintName("FK_Reservas_Cierre")
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .IsRequired(false);
+
+            builder.Property(e => e.FechaRecalculo)
+                .HasColumnName("FechaRecalculo");
         }
     }
 
