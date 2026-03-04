@@ -29,6 +29,7 @@ public partial class Reservas
     public DateTime? FechaRegistro { get; set; }
     public int InstitucionID { get; set; }
     public DateTime? FechaAnula { get; set; }
+    public DateTime? FechaRecalculo { get; set; }
 
     // Navigation properties
     [JsonIgnore]
@@ -37,4 +38,6 @@ public partial class Reservas
     public virtual Habitaciones? Habitacion { get; set; }
     public virtual ApplicationUser? Usuario { get; set; }
     public virtual Institucion? Institucion { get; set; }
+    public int? CierreId { get; set; }
+    public virtual Cierre? Cierre { get; set; }
 }
