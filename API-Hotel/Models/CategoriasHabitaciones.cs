@@ -18,6 +18,7 @@ public partial class CategoriasHabitaciones
     public int InstitucionID { get; set; }
 
     public int PorcentajeXPersona { get; set; }
+    public int? Orden { get; set; }
 
     public virtual ICollection<Habitaciones> Habitaciones { get; } = new List<Habitaciones>();
 

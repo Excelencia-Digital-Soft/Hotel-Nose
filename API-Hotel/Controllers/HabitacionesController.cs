@@ -25,7 +25,8 @@ namespace hotel.Controllers
         public async Task<Respuesta> CrearHabitacion(
             int institucionID,
             string nombreHabitacion,
-            int categoriaID
+            int categoriaID,
+            int? numero = null
         )
         {
             Respuesta res = new Respuesta();
@@ -34,6 +35,7 @@ namespace hotel.Controllers
                 Habitaciones nuevaHabitacion = new Habitaciones
                 {
                     NombreHabitacion = nombreHabitacion,
+                    Numero = numero,
                     InstitucionID = institucionID,
                     CategoriaId = categoriaID,
                 };
@@ -229,6 +231,7 @@ namespace hotel.Controllers
             int institucionID,
             [FromForm] string nombreHabitacion,
             [FromForm] int categoriaID,
+            [FromForm] int? numero,
             [FromForm] IFormFile[] imagenes
         )
         {
@@ -238,6 +241,7 @@ namespace hotel.Controllers
                 Habitaciones nuevaHabitacion = new Habitaciones
                 {
                     NombreHabitacion = nombreHabitacion,
+                    Numero = numero,
                     InstitucionID = institucionID,
                     CategoriaId = categoriaID,
                     FechaRegistro = DateTime.Now,
@@ -393,6 +397,7 @@ namespace hotel.Controllers
             [FromForm] string? disponibilidad,
             [FromForm] DateTime? proximaReserva,
             [FromForm] int usuarioId,
+            [FromForm] int? numero,
             [FromForm] IFormFile[]? nuevasImagenes
         ) // Add this parameter for new images
         {
@@ -435,6 +440,11 @@ namespace hotel.Controllers
                 if (usuarioId > 0)
                 {
                     habitacion.UsuarioId = usuarioId;
+                }
+
+                if (numero.HasValue)
+                {
+                    habitacion.Numero = numero.Value;
                 }
 
                 // Save changes to the room

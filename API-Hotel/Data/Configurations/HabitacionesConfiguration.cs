@@ -25,6 +25,8 @@ namespace hotel.Data.Configurations
             builder.Property(h => h.NombreHabitacion)
                 .HasMaxLength(100);
 
+            builder.Property(h => h.Numero);
+
             builder.Property(h => h.Disponible)
                 .HasDefaultValue(true);
 
