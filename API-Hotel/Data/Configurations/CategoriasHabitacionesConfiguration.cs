@@ -9,6 +9,7 @@ namespace hotel.Data.Configurations
         public void Configure(EntityTypeBuilder<CategoriasHabitaciones> builder)
         {
             builder.HasKey(e => e.CategoriaId);
+            builder.Property(e => e.Orden);
         }
     }
 }

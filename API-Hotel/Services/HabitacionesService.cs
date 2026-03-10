@@ -49,7 +49,10 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
             }
 
             var habitaciones = await query
-                .OrderBy(h => h.NombreHabitacion)
+                .OrderBy(h => h.Categoria != null ? (h.Categoria.Orden ?? 999) : 999)
+                .ThenBy(h => h.Categoria != null ? h.Categoria.NombreCategoria : "")
+                .ThenBy(h => h.Numero)
+                .ThenBy(h => h.NombreHabitacion)
                 .ToListAsync(cancellationToken);
 
             var habitacionDtos = habitaciones.Select(h => MapToDto(h)).ToList();
@@ -217,6 +220,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
             var habitacion = new Habitaciones
             {
                 NombreHabitacion = createDto.NombreHabitacion,
+                Numero = createDto.Numero,
                 CategoriaId = createDto.CategoriaHabitacionId,
                 InstitucionID = institucionId,
                 Disponible = true,
@@ -305,6 +309,11 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                 habitacion.Anulado = !updateDto.Activo.Value;
             }
 
+            if (updateDto.Numero.HasValue)
+            {
+                habitacion.Numero = updateDto.Numero.Value;
+            }
+
             // Update characteristics if provided
             if (updateDto.CaracteristicaIds != null)
             {
@@ -327,7 +336,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                 .FirstAsync(h => h.HabitacionId == habitacionId, cancellationToken);
 
             var habitacionDto = MapToDto(updatedHabitacion);
-            return ApiResponse<HabitacionDto>.Success(habitacionDto, "Room updated successfully");
+            return ApiResponse<HabitacionDto>.Success(habitacionDto, "Habitacion actualizada exitosamente");
         }
         catch (Exception ex)
         {
@@ -475,6 +484,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
         {
             HabitacionId = habitacion.HabitacionId,
             NombreHabitacion = habitacion.NombreHabitacion ?? "",
+            Numero = habitacion.Numero,
             Disponible = habitacion.Disponible ?? false,
             VisitaId = habitacion.VisitaID,
             CategoriaHabitacionId = habitacion.CategoriaId ?? 0,
@@ -569,6 +579,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                 {
                     h.HabitacionId,
                     h.NombreHabitacion,
+                    h.Numero,
                     h.CategoriaId,
                     h.Disponible,
                     h.ProximaReserva,
@@ -580,13 +591,18 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                         .CategoriasHabitaciones.Where(c => c.CategoriaId == h.CategoriaId)
                         .Select(c => c.PrecioNormal)
                         .FirstOrDefault(),
+                    CategoriaOrden = _context.CategoriasHabitaciones.Where(c => c.CategoriaId == h.CategoriaId).Select(c => c.Orden ?? 999).FirstOrDefault(),
+                    NombreCategoria = _context.CategoriasHabitaciones.Where(c => c.CategoriaId == h.CategoriaId).Select(c => c.NombreCategoria).FirstOrDefault(),
                     PedidosPendientes = _context.Encargos.Any(e =>
                         e.VisitaId == h.VisitaID
                         && (e.Anulado ?? false) == false
                         && (e.Entregado ?? false) == false
                     ),
                 })
-                .OrderBy(h => h.NombreHabitacion)
+                .OrderBy(h => h.CategoriaOrden)
+                .ThenBy(h => h.NombreCategoria)
+                .ThenBy(h => h.Numero)
+                .ThenBy(h => h.NombreHabitacion)
                 .ToListAsync(cancellationToken);
 
             var habitacionIds = habitacionesBasic.Select(h => h.HabitacionId).ToList();
@@ -677,6 +693,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                     {
                         HabitacionId = h.HabitacionId,
                         NombreHabitacion = h.NombreHabitacion ?? "",
+                        Numero = h.Numero,
                         CategoriaId = h.CategoriaId,
                         Disponible = h.Disponible,
                         ProximaReserva = h.ProximaReserva,
@@ -771,27 +788,34 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
 
     public async Task<ApiResponse<IEnumerable<HabitacionLibreDto>>> GetFreeHabitacionesOptimizedAsync(
         int institucionId,
+        int? categoriaId = null,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             _logger.LogInformation(
-                "Getting optimized free habitaciones for institution {InstitucionId}",
-                institucionId
+                "Getting optimized free habitaciones for institution {InstitucionId}, categoriaId: {CategoriaId}",
+                institucionId,
+                categoriaId
             );
 
-            var freeRooms = await _context
-                .Habitaciones.AsNoTracking()
-                .Where(h =>
-                    h.InstitucionID == institucionId 
-                    && h.Disponible == true 
-                    && h.Anulado != true
-                )
+            var query = _context.Habitaciones.AsNoTracking()
+                .Where(h => h.InstitucionID == institucionId
+                         && h.Disponible == true
+                         && h.Anulado != true);
+
+            if (categoriaId.HasValue)
+            {
+                query = query.Where(h => h.CategoriaId == categoriaId.Value);
+            }
+
+            var freeRooms = await query
                 .Select(h => new HabitacionLibreDto
                 {
                     HabitacionId = h.HabitacionId,
                     NombreHabitacion = h.NombreHabitacion ?? "",
+                    Numero = h.Numero,
                     Disponible = h.Disponible,
                     CategoriaId = h.CategoriaId,
                     Precio = _context
@@ -799,7 +823,9 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                         .Select(c => c.PrecioNormal)
                         .FirstOrDefault()
                 })
-                .OrderBy(h => h.NombreHabitacion)
+                .OrderBy(h => _context.CategoriasHabitaciones.Where(c => c.CategoriaId == h.CategoriaId).Select(c => c.Orden ?? 999).FirstOrDefault())
+                .ThenBy(h => _context.CategoriasHabitaciones.Where(c => c.CategoriaId == h.CategoriaId).Select(c => c.NombreCategoria).FirstOrDefault())
+                .ThenBy(h => h.NombreHabitacion)
                 .ToListAsync(cancellationToken);
 
             _logger.LogInformation(
@@ -825,29 +851,37 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
 
     public async Task<ApiResponse<IEnumerable<HabitacionOptimizedDto>>> GetOccupiedHabitacionesOptimizedAsync(
         int institucionId,
+        int? categoriaId = null,
         CancellationToken cancellationToken = default
     )
     {
         try
         {
             _logger.LogInformation(
-                "Getting optimized occupied habitaciones for institution {InstitucionId}",
-                institucionId
+                "Getting optimized occupied habitaciones for institution {InstitucionId}, categoriaId: {CategoriaId}",
+                institucionId,
+                categoriaId
             );
 
+            // Get query
+            var query = _context.Habitaciones.AsNoTracking()
+                .Where(h => h.InstitucionID == institucionId
+                         && h.Disponible == false
+                         && h.Anulado != true
+                         && h.VisitaID.HasValue);
+
+            if (categoriaId.HasValue)
+            {
+                query = query.Where(h => h.CategoriaId == categoriaId.Value);
+            }
+
             // Get basic occupied room data
-            var occupiedRoomsBasic = await _context
-                .Habitaciones.AsNoTracking()
-                .Where(h =>
-                    h.InstitucionID == institucionId 
-                    && h.Disponible == false 
-                    && h.Anulado != true
-                    && h.VisitaID.HasValue
-                )
+            var occupiedRoomsBasic = await query
                 .Select(h => new
                 {
                     h.HabitacionId,
                     h.NombreHabitacion,
+                    h.Numero,
                     h.CategoriaId,
                     h.Disponible,
                     h.VisitaID,
@@ -859,9 +893,14 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                         e.VisitaId == h.VisitaID
                         && (e.Anulado ?? false) == false
                         && (e.Entregado ?? false) == false
-                    )
+                    ),
+                    CategoriaOrden = _context.CategoriasHabitaciones.Where(c => c.CategoriaId == h.CategoriaId).Select(c => c.Orden ?? 999).FirstOrDefault(),
+                    NombreCategoria = _context.CategoriasHabitaciones.Where(c => c.CategoriaId == h.CategoriaId).Select(c => c.NombreCategoria).FirstOrDefault()
                 })
-                .OrderBy(h => h.NombreHabitacion)
+                .OrderBy(h => h.CategoriaOrden)
+                .ThenBy(h => h.NombreCategoria)
+                .ThenBy(h => h.Numero)
+                .ThenBy(h => h.NombreHabitacion)
                 .ToListAsync(cancellationToken);
 
             var visitaIds = occupiedRoomsBasic.Select(h => h.VisitaID!.Value).ToList();
@@ -908,6 +947,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                     {
                         HabitacionId = h.HabitacionId,
                         NombreHabitacion = h.NombreHabitacion ?? "",
+                        Numero = h.Numero,
                         Disponible = h.Disponible,
                         Precio = h.Precio,
                         CategoriaId = h.CategoriaId,
@@ -984,12 +1024,12 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
 
             if (filter.OnlyOccupied != true)
             {
-                freeRoomsTask = GetFreeHabitacionesOptimizedAsync(institucionId, cancellationToken);
+                freeRoomsTask = GetFreeHabitacionesOptimizedAsync(institucionId, filter.CategoriaId, cancellationToken);
             }
 
             if (filter.OnlyAvailable != true)
             {
-                occupiedRoomsTask = GetOccupiedHabitacionesOptimizedAsync(institucionId, cancellationToken);
+                occupiedRoomsTask = GetOccupiedHabitacionesOptimizedAsync(institucionId, filter.CategoriaId, cancellationToken);
             }
 
             // Await all tasks
@@ -1044,7 +1084,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
             var occupiedRoomsBasic = await _context
                 .Habitaciones.AsNoTracking()
                 .Where(h =>
-                    h.InstitucionID == institucionId 
+                    h.InstitucionID == institucionId
                     && h.Disponible == false  // Key criteria: must be marked as unavailable
                     && h.Anulado != true      // Key criteria: not cancelled
                     && h.VisitaID.HasValue    // Key criteria: must have active visit
@@ -1057,7 +1097,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                 .ToListAsync(cancellationToken);
 
             var visitaIds = occupiedRoomsBasic.Select(h => h.VisitaID!.Value).ToList();
-            
+
             if (!visitaIds.Any())
             {
                 return new List<DTOs.Rooms.OccupiedRoomDto>();
@@ -1107,7 +1147,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                 .Select(r => r.Reserva!.PromocionId!.Value)
                 .Distinct()
                 .ToList();
-            
+
             var promotions = await _context.Promociones
                 .Where(p => promotionIds.Contains(p.PromocionID) && p.Anulado != true)
                 .Select(p => new { p.PromocionID, p.CantidadHoras, CantidadMinutos = 0 }) // Promociones doesn't have minutes field
@@ -1121,7 +1161,7 @@ public class HabitacionesService(HotelDbContext context, ILogger<HabitacionesSer
                 {
                     var totalMinutes = 60; // Default 60 minutes
                     DateTime? startTime = null;
-                    
+
                     // Try to get total minutes and start time from reservation or promotion
                     if (room.Reserva?.PromocionId.HasValue == true)
                     {

@@ -13,6 +13,7 @@ public class HabitacionOptimizedDto
     /// </summary>
     public int HabitacionId { get; set; }
     public string NombreHabitacion { get; set; } = null!;
+    public int? Numero { get; set; }
     public bool? Disponible { get; set; }
     public decimal? Precio { get; set; }
     public int? CategoriaId { get; set; }
@@ -38,6 +39,7 @@ public class HabitacionLibreDto
 {
     public int HabitacionId { get; set; }
     public string NombreHabitacion { get; set; } = null!;
+    public int? Numero { get; set; }
     public bool? Disponible { get; set; }
     public decimal? Precio { get; set; }
     public int? CategoriaId { get; set; }
@@ -54,7 +56,7 @@ public class ReservaOptimizedDto
     public DateTime? FechaFin { get; set; }
     public int? TotalHoras { get; set; }
     public int? TotalMinutos { get; set; }
-    
+
     /// <summary>
     /// Optional fields - only include when they have values
     /// </summary>
@@ -72,7 +74,7 @@ public class VisitaOptimizedDto
 {
     public int VisitaId { get; set; }
     public string? NombreCompleto { get; set; }
-    
+
     /// <summary>
     /// Optional fields - only include when they have values
     /// </summary>

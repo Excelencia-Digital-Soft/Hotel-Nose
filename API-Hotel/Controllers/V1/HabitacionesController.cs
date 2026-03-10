@@ -52,8 +52,8 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.GetHabitacionesAsync(
-            institucionId.Value, 
-            includeInactive, 
+            institucionId.Value,
+            includeInactive,
             cancellationToken);
 
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
@@ -80,8 +80,8 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.GetHabitacionByIdAsync(
-            id, 
-            institucionId.Value, 
+            id,
+            institucionId.Value,
             cancellationToken);
 
         if (!result.IsSuccess)
@@ -110,7 +110,7 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.GetAvailableHabitacionesAsync(
-            institucionId.Value, 
+            institucionId.Value,
             cancellationToken);
 
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
@@ -134,7 +134,7 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.GetOccupiedHabitacionesAsync(
-            institucionId.Value, 
+            institucionId.Value,
             cancellationToken);
 
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
@@ -158,7 +158,7 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.GetHabitacionStatsAsync(
-            institucionId.Value, 
+            institucionId.Value,
             cancellationToken);
 
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
@@ -184,7 +184,7 @@ public class HabitacionesController : ControllerBase
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
-            
+
             return BadRequest(ApiResponse.Failure(errors, "Invalid request data"));
         }
 
@@ -195,8 +195,8 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.CreateHabitacionAsync(
-            createDto, 
-            institucionId.Value, 
+            createDto,
+            institucionId.Value,
             cancellationToken);
 
         if (!result.IsSuccess)
@@ -205,8 +205,8 @@ public class HabitacionesController : ControllerBase
         }
 
         return CreatedAtAction(
-            nameof(GetHabitacion), 
-            new { id = result.Data!.HabitacionId }, 
+            nameof(GetHabitacion),
+            new { id = result.Data!.HabitacionId },
             result);
     }
 
@@ -233,7 +233,7 @@ public class HabitacionesController : ControllerBase
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
-            
+
             return BadRequest(ApiResponse.Failure(errors, "Invalid request data"));
         }
 
@@ -244,15 +244,15 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.UpdateHabitacionAsync(
-            id, 
-            updateDto, 
-            institucionId.Value, 
+            id,
+            updateDto,
+            institucionId.Value,
             cancellationToken);
 
         if (!result.IsSuccess)
         {
-            return result.Errors?.Any(e => e.Contains("not found")) == true 
-                ? NotFound(result) 
+            return result.Errors?.Any(e => e.Contains("not found")) == true
+                ? NotFound(result)
                 : BadRequest(result);
         }
 
@@ -281,14 +281,14 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.DeleteHabitacionAsync(
-            id, 
-            institucionId.Value, 
+            id,
+            institucionId.Value,
             cancellationToken);
 
         if (!result.IsSuccess)
         {
-            return result.Errors?.Any(e => e.Contains("not found")) == true 
-                ? NotFound(result) 
+            return result.Errors?.Any(e => e.Contains("not found")) == true
+                ? NotFound(result)
                 : BadRequest(result);
         }
 
@@ -318,7 +318,7 @@ public class HabitacionesController : ControllerBase
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage)
                 .ToList();
-            
+
             return BadRequest(ApiResponse.Failure(errors, "Invalid request data"));
         }
 
@@ -329,22 +329,22 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.ChangeAvailabilityAsync(
-            id, 
-            availabilityDto.Disponible, 
-            institucionId.Value, 
+            id,
+            availabilityDto.Disponible,
+            institucionId.Value,
             cancellationToken);
 
         if (!result.IsSuccess)
         {
-            return result.Errors?.Any(e => e.Contains("not found")) == true 
-                ? NotFound(result) 
+            return result.Errors?.Any(e => e.Contains("not found")) == true
+                ? NotFound(result)
                 : BadRequest(result);
         }
 
         // Send real-time notification for room availability change
         var status = availabilityDto.Disponible ? "libre" : "mantenimiento";
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        
+
         await _roomNotificationService.NotifyRoomStatusChanged(
             id,
             status,
@@ -404,8 +404,8 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.GetHabitacionesCompleteAsync(
-            institucionId.Value, 
-            includeInactive, 
+            institucionId.Value,
+            includeInactive,
             cancellationToken);
 
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
@@ -415,12 +415,14 @@ public class HabitacionesController : ControllerBase
     /// Get free rooms with minimal data for optimal performance
     /// Returns ~70% less data compared to complete endpoint
     /// </summary>
+    /// <param name="categoriaId">Optional category ID to filter by</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of free rooms with minimal data</returns>
     [HttpGet("free")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<HabitacionLibreDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<IEnumerable<HabitacionLibreDto>>>> GetFreeHabitaciones(
+        [FromQuery] int? categoriaId = null,
         CancellationToken cancellationToken = default)
     {
         var institucionId = GetCurrentInstitucionId();
@@ -430,8 +432,9 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.GetFreeHabitacionesOptimizedAsync(
-            institucionId.Value, 
-            cancellationToken);
+            institucionId.Value,
+            categoriaId: categoriaId,
+            cancellationToken: cancellationToken);
 
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
     }
@@ -440,12 +443,14 @@ public class HabitacionesController : ControllerBase
     /// Get occupied rooms with optimized data structure
     /// Returns ~40% less data compared to complete endpoint
     /// </summary>
+    /// <param name="categoriaId">Optional category ID to filter by</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of occupied rooms with optimized data</returns>
     [HttpGet("occupied-optimized")]
     [ProducesResponseType(typeof(ApiResponse<IEnumerable<HabitacionOptimizedDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<ApiResponse<IEnumerable<HabitacionOptimizedDto>>>> GetOccupiedHabitacionesOptimized(
+        [FromQuery] int? categoriaId = null,
         CancellationToken cancellationToken = default)
     {
         var institucionId = GetCurrentInstitucionId();
@@ -455,8 +460,9 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.GetOccupiedHabitacionesOptimizedAsync(
-            institucionId.Value, 
-            cancellationToken);
+            institucionId.Value,
+            categoriaId: categoriaId,
+            cancellationToken: cancellationToken);
 
         return result.IsSuccess ? Ok(result) : StatusCode(500, result);
     }
@@ -482,7 +488,7 @@ public class HabitacionesController : ControllerBase
         }
 
         var result = await _habitacionesService.GetHabitacionesOptimizedAsync(
-            institucionId.Value, 
+            institucionId.Value,
             filter ?? new HabitacionFilterDto(),
             cancellationToken);
 
@@ -498,10 +504,10 @@ public class HabitacionesController : ControllerBase
     [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public IActionResult Health()
     {
-        return Ok(new 
-        { 
-            service = "HabitacionesService V1", 
-            status = "healthy", 
+        return Ok(new
+        {
+            service = "HabitacionesService V1",
+            status = "healthy",
             timestamp = DateTime.UtcNow,
             version = "1.0.0"
         });
@@ -520,10 +526,10 @@ public class HabitacionesController : ControllerBase
         {
             return institucionId;
         }
-        
-        _logger.LogWarning("Institution ID not found in user claims for user {UserId}", 
+
+        _logger.LogWarning("Institution ID not found in user claims for user {UserId}",
             User.FindFirstValue(ClaimTypes.NameIdentifier));
-        
+
         return null;
     }
 
