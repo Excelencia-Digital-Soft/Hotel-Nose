@@ -7,6 +7,7 @@ public class HabitacionDto
 {
     public int HabitacionId { get; set; }
     public string NombreHabitacion { get; set; } = null!;
+    public int? Numero { get; set; }
     public bool Disponible { get; set; }
     public int? VisitaId { get; set; }
     public int CategoriaHabitacionId { get; set; }
@@ -37,6 +38,8 @@ public class HabitacionCreateDto
     [StringLength(500)]
     public string? Observaciones { get; set; }
 
+    public int? Numero { get; set; }
+
     public List<int>? CaracteristicaIds { get; set; }
 }
 
@@ -54,6 +57,8 @@ public class HabitacionUpdateDto
     public string? Observaciones { get; set; }
 
     public bool? Activo { get; set; }
+
+    public int? Numero { get; set; }
 
     public List<int>? CaracteristicaIds { get; set; }
 }
@@ -80,7 +85,7 @@ public class HabitacionAvailabilityDto
 {
     [Required]
     public bool Disponible { get; set; }
-    
+
     public string? Observaciones { get; set; }
 }
 
@@ -88,6 +93,7 @@ public class HabitacionCompleteDto
 {
     public int HabitacionId { get; set; }
     public string NombreHabitacion { get; set; } = null!;
+    public int? Numero { get; set; }
     public int? CategoriaId { get; set; }
     public bool? Disponible { get; set; }
     public DateTime? ProximaReserva { get; set; }

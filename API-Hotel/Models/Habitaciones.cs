@@ -7,6 +7,7 @@ public partial class Habitaciones
     public int HabitacionId { get; set; }
 
     public string? NombreHabitacion { get; set; }
+    public int? Numero { get; set; }
 
     public int? CategoriaId { get; set; }
 

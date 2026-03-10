@@ -141,10 +141,12 @@ public interface IHabitacionesService
     /// Returns ~70% less data compared to complete endpoint
     /// </summary>
     /// <param name="institucionId">Institution ID</param>
+    /// <param name="categoriaId">Optional Category ID to filter by</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of free rooms with minimal data</returns>
     Task<ApiResponse<IEnumerable<HabitacionLibreDto>>> GetFreeHabitacionesOptimizedAsync(
         int institucionId,
+        int? categoriaId = null,
         CancellationToken cancellationToken = default
     );
 
@@ -153,10 +155,12 @@ public interface IHabitacionesService
     /// Returns ~40% less data compared to complete endpoint
     /// </summary>
     /// <param name="institucionId">Institution ID</param>
+    /// <param name="categoriaId">Optional Category ID to filter by</param>
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>List of occupied rooms with optimized data</returns>
     Task<ApiResponse<IEnumerable<HabitacionOptimizedDto>>> GetOccupiedHabitacionesOptimizedAsync(
         int institucionId,
+        int? categoriaId = null,
         CancellationToken cancellationToken = default
     );
 
